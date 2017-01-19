@@ -8,6 +8,24 @@ from scipy import fftpack
 import statsmodels.api as sm
 from sklearn import linear_model
 
+def makeGaussian(size, fwhm = 3, center=None):
+    """ Make a square gaussian kernel.
+    size is the length of a side of the square
+    fwhm is full-width-half-maximum, which
+    can be thought of as an effective radius.
+    """
+
+    x = np.arange(0, size, 1, float)
+    y = x[:,np.newaxis]
+    
+    if center is None:
+        x0 = y0 = size // 2
+    else:
+        x0 = center[0]
+        y0 = center[1]
+    
+    return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
+    
 
 #multiple linear regresion (see http://stackoverflow.com/questions/11479064/multiple-linear-regression-in-python/14971531#14971531)
 #using statsmodels
@@ -59,6 +77,7 @@ y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
 mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
 moon_mask[mask]=1
 
+
 #do some maths
 #following Harish's notation:
 #D = moon_zoom
@@ -80,6 +99,7 @@ G_image_shift=fftpack.fftshift(G_image)
 vec_D=moon_minus_sky.flatten('F')
 vec_G=G_image_shift.flatten('F')
 vec_PSF=psf_zoom.flatten('F')
+
 
 H=[vec_G,vec_PSF]
 
@@ -105,7 +125,7 @@ beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
 S_moon=beta_hat[1]
 S_RFI=beta_hat[2]
 
-print "S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
+print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
 
 #Woohoo! all give basically the same answer and it is about what we expect, the Moon disk is close to zero (constant offset is negative so that is good) and the RF is about 29 Jy
 
@@ -186,10 +206,80 @@ py.imshow( ( R ), cmap=py.cm.Greys,origin='lower')
 py.colorbar()
 py.savefig("residual_image.png")
 
-print psf_data.shape
-print psf_zoom.shape
-print moon_mask.shape
+
+###################################################################################
+#What I've done isn't right - need to re-do the maths with this new convolution?
+#residuals show we are oversubtracting in the middle and under-subtracting 
+#at the edges so the RFI must be broader than the PSF (as expected)
+#So instead of using the psf * S_RFI as the model, use a Gaussian of width 3.86 arcmin (Vedantham et al 2015)
+#convolved with the PSF
+#gaussian_fwhm_deg=3.86/60.0
+gaussian_fwhm_deg=3.75/60.0
+gaussian_fwhm_pix = np.round(gaussian_fwhm_deg/pix_size_deg)
+RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
+#Convolve this with the PSF
+RFI_broadening_fft=fftpack.fft2(RFI_broadening)
+RFI_convolved_fourier=psf_fft*RFI_broadening_fft
+RFI_convolved_image=np.real(fftpack.ifft2(RFI_convolved_fourier))
+#shift and normalise - this is the new PSF for RFI
+RFI_convolved_shift=fftpack.fftshift(RFI_convolved_image)/np.max(RFI_convolved_image)
+
+vec_RFI=RFI_convolved_shift.flatten('F')
+
+H2=[vec_G,vec_RFI]
+
+#using statsmodels
+X2 = np.array(H2).T
+X2_const=sm.add_constant(X2)
+
+# Now do just with numpy:
+beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
 
 
+
+S_moon2=beta_hat2[1]
+S_RFI2=beta_hat2[2]
+RFI_alone2=S_RFI2*RFI_convolved_shift
+
+print "With RFI broadening: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon2, S_RFI2)
+
+
+py.figure(10)
+py.clf()
+py.title("RFI Broadening Image")
+py.imshow( ( RFI_broadening ), cmap=py.cm.Greys,origin='lower')
+py.colorbar()
+py.savefig("RFI_broadening_image.png")
+
+py.figure(11)
+py.clf()
+py.title("RFI Broadened Convolved Image")
+py.imshow( ( RFI_convolved_shift ), cmap=py.cm.Greys,origin='lower')
+py.colorbar()
+py.savefig("RFI_broadened_convol_image.png")
+
+py.figure(12)
+py.clf()
+py.title("Broadened Reconstructed RFI-only Dirty Image")
+py.imshow( ( RFI_alone2 ), cmap=py.cm.Greys,origin='lower')
+py.colorbar()
+py.savefig("RFI_only_broadened.png")
+
+reconstructed_moon2=S_moon2*G_image_shift
+R2=moon_minus_sky-reconstructed_moon2-RFI_alone2
+
+py.figure(13)
+py.clf()
+py.title("Residual Image with Broadened RFI")
+py.imshow( ( R2 ), cmap=py.cm.Greys,origin='lower')
+py.colorbar()
+py.savefig("residual_image_broadened_rfi.png")
+
+py.figure(14)
+py.clf()
+py.title("Reconstructed Moon Dirty RFI Broadened Image")
+py.imshow( ( reconstructed_moon2 ), cmap=py.cm.Greys,origin='lower')
+py.colorbar()
+py.savefig("moon_reconstructed_rfi_broadened.png")
 #bask in glory
 
