@@ -8,6 +8,8 @@ from scipy import fftpack
 import statsmodels.api as sm
 from sklearn import linear_model
 
+plot_images=False
+
 def makeGaussian(size, fwhm = 3, center=None):
     """ Make a square gaussian kernel.
     size is the length of a side of the square
@@ -132,68 +134,11 @@ print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
 
 #Woohoo! all give basically the same answer and it is about what we expect, the Moon disk is close to zero (constant offset is negative so that is good) and the RF is about 29 Jy
 
-#Plot images:
-py.figure(1)
-py.clf()
-py.title("Dirty Moon Image")
-py.imshow( ( moon_zoom ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
-py.colorbar()
-py.savefig("moon_image.png")
-
-py.figure(2)
-py.clf()
-py.title("Moon-Sky Difference Image")
-py.imshow( ( moon_minus_sky ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
-py.colorbar()
-py.savefig("moon_minus_sky.png")
-
-py.figure(3)
-py.clf()
-py.title("Moon Mask")
-py.imshow( ( moon_mask ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("moon_mask.png")
-
-py.figure(4)
-py.clf()
-py.title("Moon Mask Convolved with PSF")
-py.imshow( ( G_image_shift ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("moon_mask_psf_convol.png")
-
 #Create reconstructed moon dirty image with RFI removed.
 reconstructed_moon=S_moon*G_image_shift
 
-py.figure(5)
-py.clf()
-py.title("Reconstructed Moon Dirty Image")
-py.imshow( ( reconstructed_moon ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("moon_reconstructed.png")
-
 #Show earthshine (RFI) alone:
 RFI_alone=S_RFI*psf_zoom
-
-py.figure(6)
-py.clf()
-py.title("Reconstructed RFI-only Dirty Image")
-py.imshow( ( RFI_alone ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("RFI_only.png")
-
-py.figure(7)
-py.clf()
-py.title("Dirty Off-Moon Image")
-py.imshow( ( off_moon_zoom ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
-py.colorbar()
-py.savefig("off_moon_image.png")
-
-py.figure(8)
-py.clf()
-py.title("PSF Image")
-py.imshow( ( psf_zoom ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("PSF_image.png")
 
 #Make a residual map (vedantham et al 2015 eqn 18)
 #theta_hat=[[S_moon],[S_RFI]]
@@ -202,12 +147,74 @@ py.savefig("PSF_image.png")
 #R=np.reshape(vec_R, psf_zoom.shape, order='F')
 R=moon_minus_sky-reconstructed_moon-RFI_alone
 
-py.figure(9)
-py.clf()
-py.title("Residual Image")
-py.imshow( ( R ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("residual_image.png")
+
+if (plot_images):
+   #Plot images:
+   py.figure(1)
+   py.clf()
+   py.title("Dirty Moon Image")
+   py.imshow( ( moon_zoom ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
+   py.colorbar()
+   py.savefig("moon_image.png")
+   
+   py.figure(2)
+   py.clf()
+   py.title("Moon-Sky Difference Image")
+   py.imshow( ( moon_minus_sky ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
+   py.colorbar()
+   py.savefig("moon_minus_sky.png")
+
+   py.figure(3)
+   py.clf()
+   py.title("Moon Mask")
+   py.imshow( ( moon_mask ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("moon_mask.png")
+
+   py.figure(4)
+   py.clf()
+   py.title("Moon Mask Convolved with PSF")
+   py.imshow( ( G_image_shift ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("moon_mask_psf_convol.png")
+
+
+   py.figure(5)
+   py.clf()
+   py.title("Reconstructed Moon Dirty Image")
+   py.imshow( ( reconstructed_moon ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("moon_reconstructed.png")
+
+
+   py.figure(6)
+   py.clf()
+   py.title("Reconstructed RFI-only Dirty Image")
+   py.imshow( ( RFI_alone ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("RFI_only.png")
+
+   py.figure(7)
+   py.clf()
+   py.title("Dirty Off-Moon Image")
+   py.imshow( ( off_moon_zoom ), cmap=py.cm.Greys,vmin=-13.0, vmax=22.0,origin='lower')
+   py.colorbar()
+   py.savefig("off_moon_image.png")
+
+   py.figure(8)
+   py.clf()
+   py.title("PSF Image")
+   py.imshow( ( psf_zoom ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("PSF_image.png")
+
+
+   py.figure(9)
+   py.clf()
+   py.title("Residual Image")
+   py.imshow( ( R ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("residual_image.png")
 
 
 ###################################################################################
@@ -246,43 +253,45 @@ RFI_alone2=S_RFI2*RFI_convolved_shift
 
 print "With RFI broadening: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon2, S_RFI2)
 
-
-py.figure(10)
-py.clf()
-py.title("RFI Broadening Image")
-py.imshow( ( RFI_broadening ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("RFI_broadening_image.png")
-
-py.figure(11)
-py.clf()
-py.title("RFI Broadened Convolved Image")
-py.imshow( ( RFI_convolved_shift ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("RFI_broadened_convol_image.png")
-
-py.figure(12)
-py.clf()
-py.title("Broadened Reconstructed RFI-only Dirty Image")
-py.imshow( ( RFI_alone2 ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("RFI_only_broadened.png")
-
 reconstructed_moon2=S_moon2*G_image_shift
 R2=moon_minus_sky-reconstructed_moon2-RFI_alone2
 
-py.figure(13)
-py.clf()
-py.title("Residual Image with Broadened RFI")
-py.imshow( ( R2 ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("residual_image_broadened_rfi.png")
 
-py.figure(14)
-py.clf()
-py.title("Reconstructed Moon Dirty RFI Broadened Image")
-py.imshow( ( reconstructed_moon2 ), cmap=py.cm.Greys,origin='lower')
-py.colorbar()
-py.savefig("moon_reconstructed_rfi_broadened.png")
+if (plot_images):
+   py.figure(10)
+   py.clf()
+   py.title("RFI Broadening Image")
+   py.imshow( ( RFI_broadening ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("RFI_broadening_image.png")
+
+   py.figure(11)
+   py.clf()
+   py.title("RFI Broadened Convolved Image")
+   py.imshow( ( RFI_convolved_shift ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("RFI_broadened_convol_image.png")
+
+   py.figure(12)
+   py.clf()
+   py.title("Broadened Reconstructed RFI-only Dirty Image")
+   py.imshow( ( RFI_alone2 ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("RFI_only_broadened.png")
+
+   py.figure(13)
+   py.clf()
+   py.title("Residual Image with Broadened RFI")
+   py.imshow( ( R2 ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("residual_image_broadened_rfi.png")
+
+   py.figure(14)
+   py.clf()
+   py.title("Reconstructed Moon Dirty RFI Broadened Image")
+   py.imshow( ( reconstructed_moon2 ), cmap=py.cm.Greys,origin='lower')
+   py.colorbar()
+   py.savefig("moon_reconstructed_rfi_broadened.png")
+
 #bask in glory
 
