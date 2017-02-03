@@ -37,7 +37,8 @@ def makeGaussian(size, fwhm = 3, center=None):
 #xstart,xend,ystart,yend=2000,3120,2000,3120
 xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
 xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
-moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
+#moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
+moon_fitsname="1127311184_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
 moon_hdulist = pyfits.open(moon_fitsname)
 moon_data=moon_hdulist[0].data[0,0,:,:]
 moon_header=moon_hdulist[0].header
@@ -47,7 +48,8 @@ moon_radius_pix = np.round(0.25/pix_size_deg)
 
 
 #read in off moon images
-off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
+#off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
+off_moon_fitsname="1127569680_cotter_20150929_moon_93_track_off_moon_paired_1127311184_peeled-0001_dirty_applied-I.fits"
 off_moon_hdulist = pyfits.open(off_moon_fitsname)
 off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
 off_moon_header=off_moon_hdulist[0].header
@@ -58,7 +60,8 @@ moon_minus_sky=moon_zoom-off_moon_zoom
 
 
 #read in psf images
-psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
+#psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
+psf_fitsname="1127311184_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
 psf_hdulist = pyfits.open(psf_fitsname)
 psf_data=psf_hdulist[0].data[0,0,:,:]
 psf_header=psf_hdulist[0].header
