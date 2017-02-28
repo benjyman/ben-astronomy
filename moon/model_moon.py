@@ -341,10 +341,10 @@ for centre_chan in band_centre_chans:
       big_Srfi_average_stddev_spectrum[133-57:133-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[133-57:133-57+24,1]=Srfi_average_stddev_spectrum[:,1]
    if (centre_chan==169):
-      big_Smoon_average_stddev_spectrum[169-57:169-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-      big_Smoon_average_stddev_spectrum[169-57:169-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-      big_Srfi_average_stddev_spectrum[169-57:169-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-      big_Srfi_average_stddev_spectrum[169-57:169-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+      big_Smoon_average_stddev_spectrum[157-57:157-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+      big_Smoon_average_stddev_spectrum[157-57:157-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+      big_Srfi_average_stddev_spectrum[157-57:157-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+      big_Srfi_average_stddev_spectrum[157-57:157-57+24,1]=Srfi_average_stddev_spectrum[:,1]
 
 
    ##now plot the  Smoon with std dev as error bars for each subband
