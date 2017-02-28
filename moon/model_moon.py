@@ -8,6 +8,8 @@ from scipy import fftpack
 import statsmodels.api as sm
 from sklearn import linear_model
 import matplotlib.pyplot as plt
+import os
+import os.path
 
 plot_images=False
 #speed of light
@@ -97,10 +99,10 @@ for centre_chan in band_centre_chans:
       xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
       xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
    #initialise arrays of length n_chans to store Smoon and Srfi values
-   Smoon_spectrum_values=np.empty([n_chans,n_obs])
-   Srfi_spectrum_values=np.empty([n_chans,n_obs])
-   Smoon_average_stddev_spectrum=np.empty([n_chans,2])
-   Srfi_average_stddev_spectrum=np.empty([n_chans,2])
+   Smoon_spectrum_values=np.zeros([n_chans,n_obs])
+   Srfi_spectrum_values=np.zeros([n_chans,n_obs])
+   Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
+   Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
    
    
    #need to do all this stuff for each frequency channel and each obsid
@@ -118,8 +120,12 @@ for centre_chan in band_centre_chans:
          psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
          #difference image filename
          moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
-   
-         moon_hdulist = pyfits.open(moon_fitsname)
+        
+         if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
+            moon_hdulist = pyfits.open(moon_fitsname)
+         else:
+            print "Either file %s is missing or is not readable" % moon_fitsname
+            break
          moon_data=moon_hdulist[0].data[0,0,:,:]
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
@@ -138,6 +144,11 @@ for centre_chan in band_centre_chans:
          #to convert from Jy/beam to Jy per pis, divide by n_pixels_per_beam
          
          #read in off moon images
+         if os.path.isfile(off_moon_fitsname) and os.access(off_moon_fitsname, os.R_OK):
+             off_moon_hdulist = pyfits.open(off_moon_fitsname)
+         else:
+             print "Either file %s is missing or is not readable" % off_moon_fitsname
+             break
          off_moon_hdulist = pyfits.open(off_moon_fitsname)
          off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
          off_moon_header=off_moon_hdulist[0].header
@@ -153,7 +164,11 @@ for centre_chan in band_centre_chans:
          #pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
 
          #read in psf images
-         psf_hdulist = pyfits.open(psf_fitsname)
+         if os.path.isfile(psf_fitsname) and os.access(psf_fitsname, os.R_OK):         
+            psf_hdulist = pyfits.open(psf_fitsname)
+         else:
+            print "Either file %s is missing or is not readable" % psf_fitsname
+            break
          psf_data=psf_hdulist[0].data[0,0,:,:]
          psf_header=psf_hdulist[0].header
          psf_zoom=psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
