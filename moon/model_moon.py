@@ -54,8 +54,8 @@ big_freq_array=big_chan_array*1.28
 big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 
-#band_centre_chans=[69,93,121,145,169]
 band_centre_chans=[69,93,121,145,169]
+#band_centre_chans=[145,169]
 
 for centre_chan in band_centre_chans:
    
