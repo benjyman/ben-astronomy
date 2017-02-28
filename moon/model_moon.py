@@ -55,7 +55,7 @@ big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 
 #band_centre_chans=[69,93,121,145,169]
-band_centre_chans=[69,93,121,145]
+band_centre_chans=[69,93,121,145,169]
 
 for centre_chan in band_centre_chans:
    
@@ -125,7 +125,7 @@ for centre_chan in band_centre_chans:
             moon_hdulist = pyfits.open(moon_fitsname)
          else:
             print "Either file %s is missing or is not readable" % moon_fitsname
-            break
+            continue
          moon_data=moon_hdulist[0].data[0,0,:,:]
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
@@ -148,7 +148,7 @@ for centre_chan in band_centre_chans:
              off_moon_hdulist = pyfits.open(off_moon_fitsname)
          else:
              print "Either file %s is missing or is not readable" % off_moon_fitsname
-             break
+             continue
          off_moon_hdulist = pyfits.open(off_moon_fitsname)
          off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
          off_moon_header=off_moon_hdulist[0].header
@@ -168,7 +168,7 @@ for centre_chan in band_centre_chans:
             psf_hdulist = pyfits.open(psf_fitsname)
          else:
             print "Either file %s is missing or is not readable" % psf_fitsname
-            break
+            continue
          psf_data=psf_hdulist[0].data[0,0,:,:]
          psf_header=psf_hdulist[0].header
          psf_zoom=psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
