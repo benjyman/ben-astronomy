@@ -53,7 +53,7 @@ big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 
 #band_centre_chans=[69,93,121,145,169]
-band_centre_chans=[69,93,121]
+band_centre_chans=[69,93,121,145]
 
 for centre_chan in band_centre_chans:
    
@@ -87,9 +87,15 @@ for centre_chan in band_centre_chans:
    #for each obsid
    #for each channel
    #xstart,xend,ystart,yend=2000,3120,2000,3120
-   xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
-   xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
-   
+   #crop images to make FFTs quicker
+   #69, 93 and 121 are all 5120 x 5120 pix
+   if (centre_chan <= 121): 
+      xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
+      xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
+   #145,169 are 3840 x 3840
+   else:
+      xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
+      xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
    #initialise arrays of length n_chans to store Smoon and Srfi values
    Smoon_spectrum_values=np.empty([n_chans,n_obs])
    Srfi_spectrum_values=np.empty([n_chans,n_obs])
