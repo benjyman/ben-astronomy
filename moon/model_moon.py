@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 import os
 import os.path
 
+#set if you just want to plot already saved data
+plot_only=False
+
 plot_images=False
 #speed of light
 c=299792458.0
@@ -37,6 +40,9 @@ def makeGaussian(size, fwhm = 3, center=None):
     
     return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
     
+#filename for big numpy arrays
+big_Smoon_average_stddev_spectrum_npy_filename="big_Smoon_average_stddev_spectrum.npy"
+big_Srfi_average_stddev_spectrum_npy_filename="big_Srfi_average_stddev_spectrum.npy"
 
 #To get a spectrum across the whole MWA observing band, we need to repeat this for all 5 bands observed
 
@@ -57,7 +63,9 @@ big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 band_centre_chans=[69,93,121,145,169]
 #band_centre_chans=[145,169]
 
-for centre_chan in band_centre_chans:
+if (not plot_only):
+
+ for centre_chan in band_centre_chans:
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
    on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
@@ -381,6 +389,11 @@ for centre_chan in band_centre_chans:
    print "Predicted Tsky is:"
    print T_sky
 
+   #predicted sky flux density for moon-disk area on sky
+   S_sky=(2.0*k*T_sky*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
+   print "Predicted Ssky is:"
+   print T_sky
+   
    #Plot the inferred and predicted background temp
    plt.clf()
    Tb_plot=plt.figure(2)
@@ -394,7 +407,16 @@ for centre_chan in band_centre_chans:
    print freq_array
    print Smoon_average_stddev_spectrum[:,0]
 
+ #save the big array for later use
+ np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
+ np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
+
 #Now plot the big array
+if (plot_only):
+   big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
+   big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
+else:
+   pass
 plt.clf()
 big_Smoon_plot=plt.figure(2)
 plt.errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1])
