@@ -335,7 +335,18 @@ if (not plot_only):
    Srfi_average_stddev_spectrum[:,1]=np.std(Srfi_spectrum_values, axis=1)
    print "S_rfi average and std dev for each chan:"
    print Srfi_average_stddev_spectrum
-
+   
+   #what freqs?
+   if centre_chan==69:
+      freq_array=(np.arange(24)+57)*1.28
+   if centre_chan==93:
+      freq_array=(np.arange(24)+57+24)*1.28
+   if centre_chan==121:
+      freq_array=(np.arange(24)+57+24+24+4)*1.28
+   if centre_chan==145:
+      freq_array=(np.arange(24)+57+24+24+24+4)*1.28
+   if centre_chan==169:
+      freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
 
    #Now calculate the inferred background temperature in kilokelvin
    Tb = 230.0 + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
@@ -402,17 +413,6 @@ if (not plot_only):
    ##now plot the  Smoon with std dev as error bars for each subband
    plt.clf()
    Smoon_plot=plt.figure(1)
-   #what freqs?
-   if centre_chan==69:
-      freq_array=(np.arange(24)+57)*1.28
-   if centre_chan==93:
-      freq_array=(np.arange(24)+57+24)*1.28
-   if centre_chan==121:
-      freq_array=(np.arange(24)+57+24+24+4)*1.28
-   if centre_chan==145:
-      freq_array=(np.arange(24)+57+24+24+24+4)*1.28
-   if centre_chan==169:
-      freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
    plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
    ##plt.plot(freq_array,Smoon_average_stddev_spectrum[:,0])
    plt.title('Moon flux density vs frequency for MWA')
