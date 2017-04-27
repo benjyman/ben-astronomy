@@ -357,19 +357,19 @@ if (not plot_only):
    print Tb_error
 
    #predicted sky temp
-   T_sky=248.0*((freq_array/150.0)**(-2.5))
+   T_sky_predicted=248.0*((freq_array/150.0)**(-2.5))
    print "Predicted Tsky is:"
-   print T_sky
+   print T_sky_predicted
 
    #predicted sky flux density for moon-disk area on sky
-   S_sky_predicted=(2.0*k*T_sky*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
+   S_sky_predicted=(2.0*k*T_sky_predicted*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
    print "Predicted Ssky is:"
-   print S_sky
+   print S_sky_predicted
    
    #predicted sky flux density for moon-disk area on sky
    S_moon_predicted=(2.0*k*T_moon*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
    print "Predicted Smoon is:"
-   print S_moon
+   print S_moon_predicted
    
    
    
