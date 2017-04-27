@@ -21,6 +21,7 @@ c=299792458.0
 k=1.380648*10**(-23)
 #Solid angle subtended by the Moon in steradians
 Omega=6.67*10.0**(-5)
+T_moon=230 #K
 
 def makeGaussian(size, fwhm = 3, center=None):
     """ Make a square gaussian kernel.
@@ -44,6 +45,9 @@ def makeGaussian(size, fwhm = 3, center=None):
 big_Smoon_average_stddev_spectrum_npy_filename="big_Smoon_average_stddev_spectrum.npy"
 big_Srfi_average_stddev_spectrum_npy_filename="big_Srfi_average_stddev_spectrum.npy"
 
+big_Smoon_pedicted_npy_filename="big_Smoon_predicted.npy"
+big_Ssky_predicted_npy_filename="big_Ssky_predicted.npy"
+
 #To get a spectrum across the whole MWA observing band, we need to repeat this for all 5 bands observed
 
 #make one big freaking array to cover each 1.28 MHz subband
@@ -56,12 +60,17 @@ number_coarse_chans=int(5*24+4)
 big_chan_array=np.arange(number_coarse_chans)+57
 big_freq_array=big_chan_array*1.28
 
+
 #initialise the other big arrays
 big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
+big_Ssky_predicted_values=np.zeros(number_coarse_chans)
+big_Smoon_predicted_values=np.zeros(number_coarse_chans)
 
 band_centre_chans=[69,93,121,145,169]
 #band_centre_chans=[145,169]
+
+
 
 if (not plot_only):
 
@@ -327,33 +336,68 @@ if (not plot_only):
    print "S_rfi average and std dev for each chan:"
    print Srfi_average_stddev_spectrum
 
+
+   #Now calculate the inferred background temperature in kilokelvin
+   Tb = 230.0 + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   #Tb = 230.0 + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   Tb_error=abs(0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
+   print "Tb in K is"
+   print Tb
+   print Tb_error
+
+   #predicted sky temp
+   T_sky=248.0*((freq_array/150.0)**(-2.5))
+   print "Predicted Tsky is:"
+   print T_sky
+
+   #predicted sky flux density for moon-disk area on sky
+   S_sky_predicted=(2.0*k*T_sky*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
+   print "Predicted Ssky is:"
+   print S_sky
+   
+   #predicted sky flux density for moon-disk area on sky
+   S_moon_predicted=(2.0*k*T_moon*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
+   print "Predicted Smoon is:"
+   print S_moon
+   
+   
+   
    #put in to the big arrays:
    if (centre_chan==69):
       big_Smoon_average_stddev_spectrum[57-57:57-57+24,0]=Smoon_average_stddev_spectrum[:,0]
       big_Smoon_average_stddev_spectrum[57-57:57-57+24,1]=Smoon_average_stddev_spectrum[:,1]
       big_Srfi_average_stddev_spectrum[57-57:57-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[57-57:57-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+      big_Ssky_predicted_values[57-57:57-57+24]=S_sky_predicted
+      big_Smoon_predicted_values[57-57:57-57+24]=S_moon_predicted
    if (centre_chan==93):
       big_Smoon_average_stddev_spectrum[81-57:81-57+24,0]=Smoon_average_stddev_spectrum[:,0]
       big_Smoon_average_stddev_spectrum[81-57:81-57+24,1]=Smoon_average_stddev_spectrum[:,1]
       big_Srfi_average_stddev_spectrum[81-57:81-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[81-57:81-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+      big_Ssky_predicted_values[81-57:81-57+24]=S_sky_predicted
+      big_Smoon_predicted_values[81-57:81-57+24]=S_moon_predicted
    if (centre_chan==121):
       big_Smoon_average_stddev_spectrum[109-57:109-57+24,0]=Smoon_average_stddev_spectrum[:,0]
       big_Smoon_average_stddev_spectrum[109-57:109-57+24,1]=Smoon_average_stddev_spectrum[:,1]
       big_Srfi_average_stddev_spectrum[109-57:109-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[109-57:109-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+      big_Ssky_predicted_values[109-57:109-57+24]=S_sky_predicted
+      big_Smoon_predicted_values[109-57:109-57+24]=S_moon_predicted
    if (centre_chan==145):
       big_Smoon_average_stddev_spectrum[133-57:133-57+24,0]=Smoon_average_stddev_spectrum[:,0]
       big_Smoon_average_stddev_spectrum[133-57:133-57+24,1]=Smoon_average_stddev_spectrum[:,1]
       big_Srfi_average_stddev_spectrum[133-57:133-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[133-57:133-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+      big_Ssky_predicted_values[133-57:133-57+24]=S_sky_predicted
+      big_Smoon_predicted_values[133-57:133-57+24]=S_moon_predicted
    if (centre_chan==169):
       big_Smoon_average_stddev_spectrum[157-57:157-57+24,0]=Smoon_average_stddev_spectrum[:,0]
       big_Smoon_average_stddev_spectrum[157-57:157-57+24,1]=Smoon_average_stddev_spectrum[:,1]
       big_Srfi_average_stddev_spectrum[157-57:157-57+24,0]=Srfi_average_stddev_spectrum[:,0]
       big_Srfi_average_stddev_spectrum[157-57:157-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-
+      big_Ssky_predicted_values[157-57:157-57+24]=S_sky_predicted
+      big_Smoon_predicted_values[157-57:157-57+24]=S_moon_predicted
 
    ##now plot the  Smoon with std dev as error bars for each subband
    plt.clf()
@@ -376,23 +420,6 @@ if (not plot_only):
    plt.xlabel('Frequency (MHz)')
    Smoon_plot.savefig('Smoon_plot.png')
 
-   #Now calculate the inferred background temperature in kilokelvin
-   Tb = 230.0 + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   #Tb = 230.0 + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   Tb_error=abs(0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
-   print "Tb in K is"
-   print Tb
-   print Tb_error
-
-   #predicted sky temp
-   T_sky=248.0*((freq_array/150.0)**(-2.5))
-   print "Predicted Tsky is:"
-   print T_sky
-
-   #predicted sky flux density for moon-disk area on sky
-   S_sky=(2.0*k*T_sky*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
-   print "Predicted Ssky is:"
-   print T_sky
    
    #Plot the inferred and predicted background temp
    plt.clf()
@@ -410,20 +437,30 @@ if (not plot_only):
  #save the big array for later use
  np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
  np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
+ np.save(big_Smoon_pedicted_npy_filename,big_Smoon_predicted_values)
+ np.save(big_Ssky_pedicted_npy_filename,big_Ssky_predicted_values)
 
 #Now plot the big array
 if (plot_only):
    big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
    big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
+   big_Ssky_predicted_values=np.load(big_Ssky_pedicted_npy_filename)
+   big_Smoon_predicted_values=np.load(big_Smoon_pedicted_npy_filename)
 else:
    pass
+   
+#predicted moon-sky difference
+big_predicted_moon_sky_difference=big_Smoon_predicted_values-big_Ssky_predicted_values
+
 plt.clf()
 big_Smoon_plot=plt.figure(2)
 plt.errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1])
+plt.errorbar(big_freq_array,big_predicted_moon_sky_difference)
 plt.title('Moon flux density vs frequency for MWA')
 plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
 plt.xlabel('Frequency (MHz)')
-big_Smoon_plot.savefig('big_Smoon_plot.png')
+big_Smoon_plot.savefig('big_Smoon_and_predicted_moon_sky.png')
+
 
 if (plot_images):
    #Plot images:
