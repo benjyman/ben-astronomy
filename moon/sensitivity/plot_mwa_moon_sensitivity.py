@@ -18,7 +18,7 @@ def make_baselines(pos):
 def read_mwa_tile_pos():
    fname = 'ant_MWA_ph2_extended_miriad.txt'
    #fname = 'ant128_miriad.txt'
-   array = np.loadtxt(fname, delimiter=' ', usecols=(0,1,2), unpack=True,skiprow=1)
+   array = np.loadtxt(fname, delimiter=' ', usecols=(0,1,2), unpack=True,skiprows=1)
    return array
 
 
@@ -81,7 +81,7 @@ plt.clf()
 T_sensitivity_plot=plt.figure(1)
 plt.semilogy(freq/1e6,temp_std)
 plt.grid(True,which="both")
-plt.title("Global EoR Temperature Uncertainy for MWA")
+#plt.title("Global EoR Temperature Uncertainy for MWA")
 plt.ylabel('Temperature Uncertainty (K)')
 plt.xlabel('Frequency (MHz)')
 T_sensitivity_plot.savefig('temp_uncertainty.png')
