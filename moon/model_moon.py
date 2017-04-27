@@ -454,11 +454,12 @@ big_predicted_moon_sky_difference=big_Smoon_predicted_values-big_Ssky_predicted_
 
 plt.clf()
 big_Smoon_plot=plt.figure(2)
-plt.errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1])
-plt.errorbar(big_freq_array,big_predicted_moon_sky_difference)
-plt.title('Moon flux density vs frequency for MWA')
-plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
+plt.errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="Measured")
+plt.errorbar(big_freq_array,big_predicted_moon_sky_difference,label="Predicted")
+plt.title('Moon Flux Density vs Frequency for MWA')
+plt.ylabel('Mean Moon Flux Density (Jy)')
 plt.xlabel('Frequency (MHz)')
+plt.legend(loc=4)
 big_Smoon_plot.savefig('big_Smoon_and_predicted_moon_sky.png')
 
 
