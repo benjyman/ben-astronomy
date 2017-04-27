@@ -425,7 +425,7 @@ if (not plot_only):
    plt.clf()
    Tb_plot=plt.figure(2)
    plt.errorbar(freq_array,Tb,yerr=Tb_error)
-   plt.plot(freq_array,T_sky)
+   plt.plot(freq_array,T_sky_predicted)
    plt.title('Inferred backroud temperature vs frequency for MWA')
    plt.ylabel('Inferred background temperature (Tb in K)')
    plt.xlabel('Frequency (MHz)')
