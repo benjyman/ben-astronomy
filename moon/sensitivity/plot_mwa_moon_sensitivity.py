@@ -16,8 +16,9 @@ def make_baselines(pos):
 
 
 def read_mwa_tile_pos():
-   fname = 'ant128_miriad.txt'
-   array = np.loadtxt(fname, delimiter=' ', usecols=(0,1,2), unpack=True)
+   fname = 'ant_MWA_ph2_extended_miriad.txt'
+   #fname = 'ant128_miriad.txt'
+   array = np.loadtxt(fname, delimiter=' ', usecols=(0,1,2), unpack=True,skiprow=1)
    return array
 
 
