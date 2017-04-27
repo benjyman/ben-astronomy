@@ -45,7 +45,7 @@ def makeGaussian(size, fwhm = 3, center=None):
 big_Smoon_average_stddev_spectrum_npy_filename="big_Smoon_average_stddev_spectrum.npy"
 big_Srfi_average_stddev_spectrum_npy_filename="big_Srfi_average_stddev_spectrum.npy"
 
-big_Smoon_pedicted_npy_filename="big_Smoon_predicted.npy"
+big_Smoon_predicted_npy_filename="big_Smoon_predicted.npy"
 big_Ssky_predicted_npy_filename="big_Ssky_predicted.npy"
 
 #To get a spectrum across the whole MWA observing band, we need to repeat this for all 5 bands observed
@@ -437,15 +437,15 @@ if (not plot_only):
  #save the big array for later use
  np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
  np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
- np.save(big_Smoon_pedicted_npy_filename,big_Smoon_predicted_values)
- np.save(big_Ssky_pedicted_npy_filename,big_Ssky_predicted_values)
+ np.save(big_Smoon_predicted_npy_filename,big_Smoon_predicted_values)
+ np.save(big_Ssky_predicted_npy_filename,big_Ssky_predicted_values)
 
 #Now plot the big array
 if (plot_only):
    big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
    big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
-   big_Ssky_predicted_values=np.load(big_Ssky_pedicted_npy_filename)
-   big_Smoon_predicted_values=np.load(big_Smoon_pedicted_npy_filename)
+   big_Ssky_predicted_values=np.load(big_Ssky_predicted_npy_filename)
+   big_Smoon_predicted_values=np.load(big_Smoon_predicted_npy_filename)
 else:
    pass
    
