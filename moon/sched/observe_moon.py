@@ -162,7 +162,7 @@ for a in options[:]:
 #setup file to write for observations
 
 #outfile="G0017_2015_schedule_obs_test.txt"
-outfile="G0017_2015B_schedule_obs.txt"
+outfile="G0017_2017B_schedule_obs.txt"
 fileprint = open(outfile, 'w')
 #print >> fileprint, "# set of commands to schedule G0017 (moon EoR global signal) for 2015-A"
 print >> fileprint, "# set of commands to schedule G0017 (moon EoR global signal) for 2015-B"
@@ -211,12 +211,12 @@ for dt in rrule.rrule(frequency,dtstart=start,until=end):
    sun = Sun(MRO);
    sun_el = sun.alt * r2d
    
-   #work out if its a good night to observe
+   #work out if its a good night to observe 
    if sun_el < sun_elev and el > moon_elev and (lat0 < -1.0*gal_sep or lat0 > gal_sep):
       good_night=True
    else:
       good_night=False
-   #if its a good night and we haven't already written this night to the file and we want to then do it:
+   #if its a good night and we haven't already written this night to the file and we want to then do it:   
    if (good_night==True) and (current_date != previous_date) and print_type=='t':
       #work out Moon transit
       MRO.date=dt
@@ -250,9 +250,9 @@ for dt in rrule.rrule(frequency,dtstart=start,until=end):
 
 
 
-#   #only print all this stuff if --schedule not set  if the criteria above are met:
-#   if good_night and print_type=='l':
-#      print "UTC Date: %1s, LST: %s=%f, %1s: ra = %11s, dec = %11s, gal_lat = %11s, el = %8.4f, %1s: el = %8.4f " % (dt,LST_time, LST_time_r2h,'Moon', ra0, dec0, lat0, el, 'Sun',sun_el)
+   #only print all this stuff if --schedule not set  if the criteria above are met:
+   if good_night and print_type=='l':
+      print "UTC Date: %1s, LST: %s=%f, %1s: ra = %11s, dec = %11s, gal_lat = %11s, el = %8.4f, %1s: el = %8.4f " % (dt,LST_time, LST_time_r2h,'Moon', ra0, dec0, lat0, el, 'Sun',sun_el)
 
 print ""
 

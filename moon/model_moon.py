@@ -22,6 +22,9 @@ k=1.380648*10**(-23)
 #Solid angle subtended by the Moon in steradians
 Omega=6.67*10.0**(-5)
 T_moon=230 #K
+#Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
+Tsky_150=245 #K (Landecker and wielebinski 1970)
+T_refl_gal=245 #(guess)
 
 def makeGaussian(size, fwhm = 3, center=None):
     """ Make a square gaussian kernel.
@@ -462,6 +465,33 @@ plt.xlabel('Frequency (MHz)')
 plt.legend(loc=4)
 big_Smoon_plot.savefig('big_Smoon_and_predicted_moon_sky.png')
 
+#Convert to brightness temperature units (Got to add in the Galactic average temp + plus the reflected galactic emission in the predicted signal (7% albedo?)
+Tmoon_measured_average= (big_Smoon_average_stddev_spectrum[:,0]*(300.0/big_freq_array)**2*1e-26) / (2.0*k*Omega) + Tsky_150*(big_freq_array/150.0)**(-2.5)
+Tmoon_measured_stddev= (big_Smoon_average_stddev_spectrum[:,1]*(300.0/big_freq_array)**2*1e-26) / (2.0*k*Omega)
+predicted_Tmoon_big=np.zeros(len(big_freq_array)) + T_moon +  0.07*(T_refl_gal)*(big_freq_array/150.0)**(-2.5)
+
+plt.clf()
+big_Tmoon_plot=plt.figure(3)
+plt.errorbar(big_freq_array,Tmoon_measured_average,yerr=Tmoon_measured_stddev,label="Measured")
+plt.errorbar(big_freq_array,predicted_Tmoon_big,label="Predicted")
+plt.title('Moon Brightness Temperature vs Frequency for MWA')
+plt.ylabel('Mean Moon Brightness Temperature (K)')
+plt.xlabel('Frequency (MHz)')
+plt.legend(loc=4)
+big_Tmoon_plot.savefig('big_Tmoon_and_predicted_moon_sky_T.png')
+
+plt.clf()
+big_Tmoon_plot=plt.figure(3)
+plt.errorbar(big_freq_array,Tmoon_measured_average,yerr=Tmoon_measured_stddev,label="Measured")
+plt.errorbar(big_freq_array,predicted_Tmoon_big,label="Predicted")
+axes = plt.gca()
+#axes.set_xlim([xmin,xmax])
+axes.set_ylim([-100,500])
+plt.title('Moon Brightness Temperature vs Frequency for MWA')
+plt.ylabel('Mean Moon Brightness Temperature (K)')
+plt.xlabel('Frequency (MHz)')
+plt.legend(loc=4)
+big_Tmoon_plot.savefig('big_Tmoon_and_predicted_moon_sky_T_zoom.png')
 
 if (plot_images):
    #Plot images:
