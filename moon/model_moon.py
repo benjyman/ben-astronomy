@@ -5,8 +5,8 @@ import pylab as py
 import numpy as np
 from scipy import signal
 from scipy import fftpack
-import statsmodels.api as sm
-from sklearn import linear_model
+#import statsmodels.api as sm
+#from sklearn import linear_model
 import matplotlib.pyplot as plt
 import os
 import os.path
@@ -233,16 +233,16 @@ if (not plot_only):
          print "max psf is:"
          print np.max(vec_PSF)
          #using statsmodels
-         X = np.array(H).T
-         X_const=sm.add_constant(X)
-         results = sm.OLS(endog=vec_D, exog=X_const).fit()
-         #print results.summary()
+         #X = np.array(H).T
+         #X_const=sm.add_constant(X)
+         #results = sm.OLS(endog=vec_D, exog=X_const).fit()
+         ##print results.summary()
 
-         #Try again using sklearn
-         reg = linear_model.LinearRegression(fit_intercept=True)
-         reg.fit(X,vec_D)
-         #print reg.coef_
-         #print reg.intercept_
+         ##Try again using sklearn
+         #reg = linear_model.LinearRegression(fit_intercept=True)
+         #reg.fit(X,vec_D)
+         ##print reg.coef_
+         ##print reg.intercept_
 
          # Now do just with numpy:
          beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
@@ -298,8 +298,8 @@ if (not plot_only):
 	 H2=[vec_G,vec_RFI]
 
 	 #using statsmodels
-	 X2 = np.array(H2).T
-	 X2_const=sm.add_constant(X2)
+	 #X2 = np.array(H2).T
+	 #X2_const=sm.add_constant(X2)
 
 	 # Now do just with numpy:
 	 beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
