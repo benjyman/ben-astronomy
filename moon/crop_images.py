@@ -13,8 +13,12 @@ band_centre_chans=[69,93,121,145,169]
 
 for centre_chan in band_centre_chans:
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-   on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
-   off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
+   if (galaxy):
+     on_moon_filename="20150926_moon1/%s/20150926_moon_%s_test.txt" % (str(centre_chan),str(centre_chan))
+     off_moon_filename="20150929_off_moon1/%s/20150929_off_moon1_%s_test.txt" % (str(centre_chan),str(centre_chan))   
+   else:
+     on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
+     off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
    
    print on_moon_filename
    
