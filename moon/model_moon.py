@@ -14,6 +14,10 @@ import os.path
 #set if you just want to plot already saved data
 plot_only=False
 
+#set if using already cropped images
+use_cropped_images=True
+
+
 plot_images=False
 #speed of light
 c=299792458.0
@@ -108,16 +112,20 @@ if (not plot_only):
    #read in moon images
    #for each obsid
    #for each channel
-   #xstart,xend,ystart,yend=2000,3120,2000,3120
-   #crop images to make FFTs quicker
-   #69, 93 and 121 are all 5120 x 5120 pix
-   if (centre_chan <= 121): 
-      xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
-      xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
-   #145,169 are 3840 x 3840
+   if (use_cropped_images): 
+      xstart_moon,xend_moon,ystart_moon,yend_moon=0,520,0,520
+      xstart_psf,xend_psf,ystart_psf,yend_psf=0,520,0,520
    else:
-      xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
-      xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
+      #xstart,xend,ystart,yend=2000,3120,2000,3120
+      #crop images to make FFTs quicker
+      #69, 93 and 121 are all 5120 x 5120 pix
+      if (centre_chan <= 121): 
+         xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
+         xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
+      #145,169 are 3840 x 3840
+      else:
+         xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
+         xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
    #initialise arrays of length n_chans to store Smoon and Srfi values
    Smoon_spectrum_values=np.zeros([n_chans,n_obs])
    Srfi_spectrum_values=np.zeros([n_chans,n_obs])
@@ -132,14 +140,20 @@ if (not plot_only):
          on_moon_obsid=on_moon_obsid_list[obsid_index]
          off_moon_obsid=off_moon_obsid_list[obsid_index] 
          chan_string='%.04d' % chan
-         #moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
-         moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-         #off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
-         off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-         #psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
-         psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-         #difference image filename
-         moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+         if (use_cropped_images): 
+            moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+            off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I_cropped.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+         else:
+            #moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
+            moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+            #off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
+            off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            #psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
+            psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+            #difference image filename
+            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
         
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
             moon_hdulist = pyfits.open(moon_fitsname)
