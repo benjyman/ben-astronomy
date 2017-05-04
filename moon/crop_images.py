@@ -61,7 +61,12 @@ for centre_chan in band_centre_chans:
             cropped_psf_outname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
 
          #On Moon
-         f = fits.open(large_on_moon_image_name)
+         if os.path.isfile(large_on_moon_image_name) and os.access(large_on_moon_image_name, os.R_OK):
+             f = fits.open(large_on_moon_image_name)
+         else:
+            print "Either file %s is missing or is not readable" % large_on_moon_image_name
+            continue
+        
          w = wcs.WCS(f[0].header)
          newf = fits.PrimaryHDU()
 
@@ -83,7 +88,11 @@ for centre_chan in band_centre_chans:
          f.close()
          
          #Off Moon
-         f = fits.open(large_off_moon_image_name)
+         if os.path.isfile(large_off_moon_image_name) and os.access(large_off_moon_image_name, os.R_OK):
+             f = fits.open(large_off_moon_image_name)
+         else:
+            print "Either file %s is missing or is not readable" % large_off_moon_image_name
+            continue
          w = wcs.WCS(f[0].header)
          newf = fits.PrimaryHDU()
 
@@ -105,7 +114,11 @@ for centre_chan in band_centre_chans:
          f.close()
          
          #PSF
-         f = fits.open(large_psf_image_name)
+         if os.path.isfile(large_psf_image_name) and os.access(large_psf_image_name, os.R_OK):
+             f = fits.open(large_psf_image_name)
+         else:
+            print "Either file %s is missing or is not readable" % large_psf_image_name
+            continue
          w = wcs.WCS(f[0].header)
          newf = fits.PrimaryHDU()
          if (centre_chan <= 121): 
