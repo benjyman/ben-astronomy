@@ -12,7 +12,7 @@ import os
 import os.path
 
 #set if you just want to plot already saved data
-plot_only=True
+plot_only=False
 
 plot_images=False
 #speed of light
