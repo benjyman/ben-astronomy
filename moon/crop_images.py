@@ -4,6 +4,8 @@ from astropy.io import fits
 from astropy import wcs
 import numpy as np
 import scipy.ndimage as ndimage
+import os
+import os.path
 
 #set if processing on Galaxy
 galaxy=True
