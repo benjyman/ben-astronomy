@@ -160,7 +160,10 @@ if (not plot_only):
          else:
             print "Either file %s is missing or is not readable" % moon_fitsname
             continue
-         moon_data=moon_hdulist[0].data[0,0,:,:]
+         if (use_cropped_images):
+            moon_data=moon_hdulist[0].data
+         else:
+            moon_data=moon_hdulist[0].data[0,0,:,:]
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          pix_size_deg = np.abs(float(moon_header['CDELT1']))
@@ -184,7 +187,10 @@ if (not plot_only):
              print "Either file %s is missing or is not readable" % off_moon_fitsname
              continue
          off_moon_hdulist = pyfits.open(off_moon_fitsname)
-         off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
+         if (use_cropped_images):
+            off_moon_data=off_moon_hdulist[0].data
+         else:
+            off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
          off_moon_header=off_moon_hdulist[0].header
          off_moon_zoom=off_moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          
@@ -203,7 +209,10 @@ if (not plot_only):
          else:
             print "Either file %s is missing or is not readable" % psf_fitsname
             continue
-         psf_data=psf_hdulist[0].data[0,0,:,:]
+         if (use_cropped_images):
+            psf_data=psf_hdulist[0].data
+         else:
+            psf_data=psf_hdulist[0].data[0,0,:,:]
          psf_header=psf_hdulist[0].header
          psf_zoom=psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
          psf_zoom=np.require(psf_zoom, dtype=np.float32)
