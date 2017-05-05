@@ -154,16 +154,13 @@ if (not plot_only):
             psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             #difference image filename
             moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
-        
+         print moon_fitsname       
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
             moon_hdulist = pyfits.open(moon_fitsname)
          else:
             print "Either file %s is missing or is not readable" % moon_fitsname
-            continue
-         if (use_cropped_images):
-            moon_data=moon_hdulist[0].data
-         else:
-            moon_data=moon_hdulist[0].data[0,0,:,:]
+            continue         
+         moon_data=moon_hdulist[0].data[0,0,:,:]
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          pix_size_deg = np.abs(float(moon_header['CDELT1']))
@@ -187,10 +184,7 @@ if (not plot_only):
              print "Either file %s is missing or is not readable" % off_moon_fitsname
              continue
          off_moon_hdulist = pyfits.open(off_moon_fitsname)
-         if (use_cropped_images):
-            off_moon_data=off_moon_hdulist[0].data
-         else:
-            off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
+         off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
          off_moon_header=off_moon_hdulist[0].header
          off_moon_zoom=off_moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          
@@ -209,16 +203,13 @@ if (not plot_only):
          else:
             print "Either file %s is missing or is not readable" % psf_fitsname
             continue
-         if (use_cropped_images):
-            psf_data=psf_hdulist[0].data
-         else:
-            psf_data=psf_hdulist[0].data[0,0,:,:]
+         psf_data=psf_hdulist[0].data[0,0,:,:]
          psf_header=psf_hdulist[0].header
          psf_zoom=psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
          psf_zoom=np.require(psf_zoom, dtype=np.float32)
          #convert to Jy per pix
          psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
-   
+ 
          image_length=moon_zoom.shape[0]
          image_height=moon_zoom.shape[1]
          moon_mask = np.zeros((image_length,image_height))
