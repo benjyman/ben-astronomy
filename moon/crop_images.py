@@ -79,11 +79,11 @@ for centre_chan in band_centre_chans:
          else:
             xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
          
-         image=f[0].data[xstart_moon:xend_moon,ystart_moon:yend_moon]
+         image=f[0].data[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon]
 
          newf.data = image
          newf.header = f[0].header
-         newf.header.update(w[xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
+         newf.header.update(w[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
  
          fits.writeto(cropped_on_moon_outname,newf.data,clobber=True)
          fits.update(cropped_on_moon_outname, newf.data, newf.header)
@@ -105,11 +105,11 @@ for centre_chan in band_centre_chans:
          else:
             xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
          
-         image=f[0].data[xstart_moon:xend_moon,ystart_moon:yend_moon]
+         image=f[0].data[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon]
 
          newf.data = image
          newf.header = f[0].header
-         newf.header.update(w[xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
+         newf.header.update(w[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
  
          fits.writeto(cropped_off_moon_outname,newf.data,clobber=True)
          fits.update(cropped_off_moon_outname, newf.data, newf.header)
@@ -129,11 +129,11 @@ for centre_chan in band_centre_chans:
          else:
             xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
 
-         image=f[0].data[xstart_psf:xend_psf,ystart_psf:yend_psf]
+         image=f[0].data[:,:,xstart_psf:xend_psf,ystart_psf:yend_psf]
 
          newf.data = image
          newf.header = f[0].header
-         newf.header.update(w[xstart_psf:xend_psf,ystart_psf:yend_psf].to_header())
+         newf.header.update(w[:,:,xstart_psf:xend_psf,ystart_psf:yend_psf].to_header())
  
          fits.writeto(cropped_psf_outname,newf.data,clobber=True)
          fits.update(cropped_psf_outname, newf.data, newf.header)
