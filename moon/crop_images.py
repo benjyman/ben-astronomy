@@ -11,7 +11,8 @@ import os.path
 galaxy=True
 
 #final_image_size=520
-band_centre_chans=[69,93,121,145,169]
+#band_centre_chans=[69,93,121,145,169]
+band_centre_chans=[145]
 
 for centre_chan in band_centre_chans:
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
@@ -54,6 +55,9 @@ for centre_chan in band_centre_chans:
             cropped_off_moon_outname="20150929_off_moon1/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
             large_psf_image_name="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
             cropped_psf_outname="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            print large_psf_image_name
+            print large_on_moon_image_name
+            print large_off_moon_image_name
          else:
             large_on_moon_image_name="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             cropped_on_moon_outname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
@@ -84,6 +88,8 @@ for centre_chan in band_centre_chans:
          newf.data = image
          newf.header = f[0].header
          newf.header.update(w[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
+         newf.header['CDELT1']=f[0].header['CDELT1']
+         print newf.header['CDELT1'] 
  
          fits.writeto(cropped_on_moon_outname,newf.data,clobber=True)
          fits.update(cropped_on_moon_outname, newf.data, newf.header)
