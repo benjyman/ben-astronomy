@@ -87,6 +87,7 @@ for centre_chan in band_centre_chans:
          newf.data = image
          newf.header = f[0].header
          newf.header.update(w[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
+         print newf.header['CDELT1'] 
          #newf.header['CDELT1']=f[0].header['CDELT1']
          #print newf.header['CDELT1'] 
  
