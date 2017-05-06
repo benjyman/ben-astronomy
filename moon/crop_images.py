@@ -88,8 +88,8 @@ for centre_chan in band_centre_chans:
          newf.header = f[0].header
          newf.header.update(w[:,:,xstart_moon:xend_moon,ystart_moon:yend_moon].to_header())
          print newf.header['CDELT1'] 
-         #newf.header['CDELT1']=f[0].header['CDELT1']
-         #print newf.header['CDELT1'] 
+         newf.header['cdelt1']=cdelt1
+         print newf.header['cdelt1'] 
  
          fits.writeto(cropped_on_moon_outname,newf.data,clobber=True)
          fits.update(cropped_on_moon_outname, newf.data, newf.header)
