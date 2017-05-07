@@ -15,7 +15,7 @@ import os.path
 plot_only=False
 
 #set if using already cropped images
-use_cropped_images=False
+use_cropped_images=True
 
 
 plot_images=False
@@ -84,8 +84,8 @@ if (not plot_only):
  for centre_chan in band_centre_chans:
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-   on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
-   off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
+   on_moon_filename="20150926_moon_%s.txt" % (str(centre_chan))
+   off_moon_filename="20150929_off_moon1_%s.txt" % (str(centre_chan))
    
    print on_moon_filename
    
@@ -163,15 +163,15 @@ if (not plot_only):
          moon_data=moon_hdulist[0].data[0,0,:,:]
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
-         pix_size_deg = np.abs(float(moon_header['CDELT1']))
+         pix_size_deg = np.abs(float(moon_header['cdelt1']))
          moon_radius_pix = np.round(0.25/pix_size_deg)
    
          #Need to have the images in Jy per pixel for the equations to make sense
          #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
          pix_area_deg_sq = pix_size_deg * pix_size_deg
          #beam area (gaussian restoring beam)
-         bmaj_deg=np.abs(float(moon_header['BMAJ'])) 
-         bmin_deg=np.abs(float(moon_header['BMIN']))   
+         bmaj_deg=np.abs(float(moon_header['bmaj'])) 
+         bmin_deg=np.abs(float(moon_header['bmin']))   
          #beamarea for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
          beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
          n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
@@ -247,8 +247,6 @@ if (not plot_only):
 
          H=[vec_G,vec_PSF]
 
-         print "max psf is:"
-         print np.max(vec_PSF)
          #using statsmodels
          X = np.array(H).T
          X_const=sm.add_constant(X)
