@@ -84,8 +84,8 @@ if (not plot_only):
  for centre_chan in band_centre_chans:
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-   on_moon_filename="20150926_moon_%s.txt" % (str(centre_chan))
-   off_moon_filename="20150929_off_moon1_%s.txt" % (str(centre_chan))
+   on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
+   off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
    
    print on_moon_filename
    
@@ -250,8 +250,10 @@ if (not plot_only):
          #using statsmodels
          X = np.array(H).T
          X_const=sm.add_constant(X)
-         #results = sm.OLS(endog=vec_D, exog=X_const).fit()
-         ##print results.summary()
+         results = sm.OLS(endog=vec_D, exog=X_const).fit()
+         #beta_hat=results.params
+         #print results.summary()
+
 
          ##Try again using sklearn
          #reg = linear_model.LinearRegression(fit_intercept=True)
@@ -260,12 +262,21 @@ if (not plot_only):
          ##print reg.intercept_
 
          # Now do just with numpy:
-         beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
+         #beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
          #print beta_hat
 
+         #Do it using the MLE from Vedantham et al 2015  (eqn 17)
+         H_matrix=np.column_stack((vec_G,vec_PSF))
+         theta_hat=np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),vec_D)
+         print "theta_hat is %s" % str(theta_hat)
+
+
          #Use whichever one for now
-         S_moon=beta_hat[1]
-         S_RFI=beta_hat[2]
+         #S_moon=beta_hat[1]
+         #S_RFI=beta_hat[2]
+         S_moon=theta_hat[0]
+         S_RFI=theta_hat[1]
+
 
          print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
 
@@ -319,9 +330,20 @@ if (not plot_only):
 	 # Now do just with numpy:
 	 beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
 
-	 S_moon2=beta_hat2[1]
-	 S_RFI2=beta_hat2[2]
-	 RFI_alone2=S_RFI2*RFI_convolved_shift_jyppix
+         #using vedantham MLE as above
+         H2_matrix=np.column_stack((vec_G,vec_RFI))
+         theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+         print "theta_hat2 is %s" % str(theta_hat2)
+
+        
+         #S_moon2=beta_hat2[1]
+         #S_RFI2=beta_hat2[2]
+         S_moon2=theta_hat2[0]
+         S_RFI2=theta_hat2[1]         
+         RFI_alone2=S_RFI2*RFI_convolved_shift_jyppix
+
+
+
 
 	 #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
 	 S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
@@ -493,7 +515,7 @@ plt.legend(loc=4)
 big_Tmoon_plot.savefig('big_Tmoon_and_predicted_moon_sky_T.png')
 
 plt.clf()
-big_Tmoon_plot=plt.figure(3)
+big_Tmoon_plot=plt.figure(4)
 plt.errorbar(big_freq_array,Tmoon_measured_average,yerr=Tmoon_measured_stddev,label="Measured")
 plt.errorbar(big_freq_array,predicted_Tmoon_big,label="Predicted")
 axes = plt.gca()
@@ -504,6 +526,18 @@ plt.ylabel('Mean Moon Brightness Temperature (K)')
 plt.xlabel('Frequency (MHz)')
 plt.legend(loc=4)
 big_Tmoon_plot.savefig('big_Tmoon_and_predicted_moon_sky_T_zoom.png')
+
+#Plot the RFI
+plt.clf()
+big_Smoon_plot=plt.figure(5)
+plt.errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="Measured")
+#plt.errorbar(big_freq_array,big_predicted_moon_sky_difference,label="Predicted")
+plt.title('Reflected Moon RFI Flux Density vs Frequency for MWA')
+plt.ylabel('Mean ReflectedcRFI Flux Density (Jy)')
+plt.xlabel('Frequency (MHz)')
+plt.legend(loc=4)
+big_Smoon_plot.savefig('big_Srfi.png')
+
 
 if (plot_images):
    #Plot images:
