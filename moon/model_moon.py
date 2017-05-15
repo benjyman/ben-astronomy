@@ -30,6 +30,10 @@ T_moon=230 #K
 Tsky_150=245 #K (Landecker and wielebinski 1970)
 T_refl_gal=245 #(guess)
 
+#RFI model mask radius in arcmin - limits the extent of the gausssian reflection model
+rfi_model_mask_size=2.0
+
+
 def makeGaussian(size, fwhm = 3, center=None):
     """ Make a square gaussian kernel.
     size is the length of a side of the square
@@ -154,6 +158,7 @@ if (not plot_only):
             psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             #difference image filename
             moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+         print "############################"
          print moon_fitsname       
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
             moon_hdulist = pyfits.open(moon_fitsname)
@@ -165,6 +170,9 @@ if (not plot_only):
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          pix_size_deg = np.abs(float(moon_header['cdelt1']))
          moon_radius_pix = np.round(0.25/pix_size_deg)
+
+         #print max value of moon image in Jy/beam to check against rfi + moon total flux
+         print "Max moon is %s Jy/beam" % (np.max(moon_zoom))
    
          #Need to have the images in Jy per pixel for the equations to make sense
          #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
@@ -221,6 +229,13 @@ if (not plot_only):
          mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
          moon_mask[mask]=1
 
+         #make rfi model mask
+         rfi_radius_deg=rfi_model_mask_size/60.0
+         rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
+         print "rfi radius in pix is %s " % rfi_radius_pix
+         rfi_model_mask = np.zeros((image_length,image_height))
+         rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
+         rfi_model_mask[rfi_mask]=1
 
          #do some maths
          #following Harish's notation:
@@ -250,7 +265,7 @@ if (not plot_only):
          #using statsmodels
          X = np.array(H).T
          X_const=sm.add_constant(X)
-         results = sm.OLS(endog=vec_D, exog=X_const).fit()
+         #results = sm.OLS(endog=vec_D, exog=X_const).fit()
          #beta_hat=results.params
          #print results.summary()
 
@@ -266,27 +281,27 @@ if (not plot_only):
          #print beta_hat
 
          #Do it using the MLE from Vedantham et al 2015  (eqn 17)
-         H_matrix=np.column_stack((vec_G,vec_PSF))
-         theta_hat=np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),vec_D)
-         print "theta_hat is %s" % str(theta_hat)
+         #H_matrix=np.column_stack((vec_G,vec_PSF))
+         #theta_hat=np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),vec_D)
+         #print "theta_hat is %s" % str(theta_hat)
 
 
          #Use whichever one for now
          #S_moon=beta_hat[1]
          #S_RFI=beta_hat[2]
-         S_moon=theta_hat[0]
-         S_RFI=theta_hat[1]
+         #S_moon=theta_hat[0]
+         #S_RFI=theta_hat[1]
 
 
-         print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
+         #print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
 
          #Woohoo! all give basically the same answer and it is about what we expect, the Moon disk is close to zero (constant offset is negative so that is good) and the RF is about 29 Jy
 
          #Create reconstructed moon dirty image with RFI removed.
-         reconstructed_moon=S_moon*G_image_shift
+         #reconstructed_moon=S_moon*G_image_shift
 
          #Show earthshine (RFI) alone:
-         RFI_alone=S_RFI*psf_zoom_jyppix
+         #RFI_alone=S_RFI*psf_zoom_jyppix
 
          #Make a residual map (vedantham et al 2015 eqn 18)
          #theta_hat=[[S_moon],[S_RFI]]
@@ -294,7 +309,7 @@ if (not plot_only):
          #vec_R=vec_D - H_theta_hat
 	 #R=np.reshape(vec_R, psf_zoom.shape, order='F')
 	 #equivalent to just:
-	 R=moon_minus_sky_jyppix-reconstructed_moon-RFI_alone
+	 #R=moon_minus_sky_jyppix-reconstructed_moon-RFI_alone
 
 	 ###############
 	 #What I've done isn't right - need to re-do the maths with this new convolution?
@@ -306,7 +321,8 @@ if (not plot_only):
 	 gaussian_fwhm_deg=3.75/60.0
 	 gaussian_fwhm_pix = np.round(gaussian_fwhm_deg/pix_size_deg)
 	 RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
-
+         #limit extent of broadened rfi model
+         RFI_broadening=RFI_broadening*rfi_model_mask
 	 ##Convolve this with the PSF
 	 #RFI_broadening_fft=fftpack.fft2(RFI_broadening)
 	 #RFI_convolved_fourier=psf_fft*RFI_broadening_fft
@@ -315,9 +331,13 @@ if (not plot_only):
 	 #RFI_convolved_shift=fftpack.fftshift(RFI_convolved_image)/np.max(RFI_convolved_image)
 
 	 RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
-	 RFI_convolved_shift=(RFI_convolved_image)/np.max(RFI_convolved_image)
-	 #convert Jy per pix
+         ##Don't need this normalising step
+	 #RFI_convolved_shift=(RFI_convolved_image)/np.max(RFI_convolved_image)
+	 RFI_convolved_shift=RFI_convolved_image
+         #convert Jy per pix
 	 RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam   
+
+
 
 	 vec_RFI=RFI_convolved_shift_jyppix.flatten('F')
 
@@ -333,30 +353,59 @@ if (not plot_only):
          #using vedantham MLE as above
          H2_matrix=np.column_stack((vec_G,vec_RFI))
          theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
-         print "theta_hat2 is %s" % str(theta_hat2)
+         print "theta_hat2 is %s Jy/pix" % str(theta_hat2)
 
         
          #S_moon2=beta_hat2[1]
          #S_RFI2=beta_hat2[2]
          S_moon2=theta_hat2[0]
          S_RFI2=theta_hat2[1]         
-         RFI_alone2=S_RFI2*RFI_convolved_shift_jyppix
 
+         #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
+         S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
+         print "Initial total moon flux density is %s Jy" % S_moon2_tot_Jy
+         RFI_alone2=np.sum(S_RFI2*RFI_broadening)
+         print "Initial total RFI flux density is %s Jy" % RFI_alone2
 
+         #enforce Srfi is always positive
+         if (S_RFI2 <0.0):
+            print "Srfi is negative, but this is unphysical, enforcing Srfi to be positive"
+            vec_RFI=-1.0*vec_RFI
+         #enforce S_moon to be negative if we are in coarse chan 69 or 93 
+         if (S_moon2 >= 0.0 and centre_chan <= 93):
+            #repeat the analysis above but reverse the sign of G (i.e. equivalent to making the mask M negative?)
+            print "Smoon is positive, but frequency is below 150 MHz, enforcing Smoon to be negative"
+            vec_G=-1.0*vec_G
+         #enforce S_moon to be positive if we are in coarse chan 145 or 169 
+         if (S_moon2 <= 0.0 and centre_chan >= 145):
+            print "Smoon is negative, but frequency is above 150 MHz, enforcing Smoon to be positive"
+            vec_G=-1.0*vec_G
+
+         H2_matrix=np.column_stack((vec_G,vec_RFI))
+         theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+         print "New theta_hat2 is %s Jy/pix for negative Smoon" % str(theta_hat2) 
+         S_moon2=theta_hat2[0]
+         #Need to conserve flux density: check RFI and moon flux density against max Moon
+         S_RFI2=theta_hat2[1]
+
+         
+
+         RFI_alone2=np.sum(S_RFI2*RFI_broadening)
 
 
 	 #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
 	 S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
+   
 
-	 print "With RFI broadening: S_moon is %s Jy/pix and S_RFI is %s Jy/pix for moon obsid %s chan %s" % (S_moon2, S_RFI2,on_moon_obsid,chan_string)
-	 print "With RFI broadening: Total Moon flux density is %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy, S_RFI2,on_moon_obsid,chan_string)
+	 print "Final Smoon, with RFI broadening: is %s Jy/pix and S_RFI is %s Jy/pix for moon obsid %s chan %s" % (S_moon2, S_RFI2,on_moon_obsid,chan_string)
+	 print "Final total Moon flux density, with RFI broadening: is %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy, RFI_alone2,on_moon_obsid,chan_string)
 
 	 reconstructed_moon2=S_moon2*G_image_shift
 	 R2=moon_minus_sky_jyppix-reconstructed_moon2-RFI_alone2
 
 	 #place values in the arrays
 	 Smoon_spectrum_values[chan,obsid_index]=S_moon2_tot_Jy
-	 Srfi_spectrum_values[chan,obsid_index]=S_RFI2      
+	 Srfi_spectrum_values[chan,obsid_index]=RFI_alone2    
 
    #work out average values and standard deviations
    #Smoon_spectrum_values=np.empty([n_chans,n_obs])
