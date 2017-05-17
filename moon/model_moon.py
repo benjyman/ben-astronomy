@@ -31,8 +31,8 @@ Tsky_150=245 #K (Landecker and wielebinski 1970)
 T_refl_gal=245 #(guess)
 
 #RFI model mask radius in arcmin - limits the extent of the gausssian reflection model
-rfi_model_mask_size=2.0
-
+#rfi_model_mask_size=2.0
+rfi_model_mask_size=(3.75/2)
 
 def makeGaussian(size, fwhm = 3, center=None):
     """ Make a square gaussian kernel.
@@ -88,8 +88,8 @@ if (not plot_only):
  for centre_chan in band_centre_chans:
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-   on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
-   off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
+   on_moon_filename="20150926_moon_%s.txt" % (str(centre_chan))
+   off_moon_filename="20150929_off_moon1_%s.txt" % (str(centre_chan))
    
    print on_moon_filename
    
@@ -131,8 +131,10 @@ if (not plot_only):
          xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
          xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
    #initialise arrays of length n_chans to store Smoon and Srfi values
-   Smoon_spectrum_values=np.zeros([n_chans,n_obs])
-   Srfi_spectrum_values=np.zeros([n_chans,n_obs])
+   Smoon_spectrum_values=np.empty([n_chans,n_obs])
+   Smoon_spectrum_values[:]=np.nan 
+   Srfi_spectrum_values=np.empty([n_chans,n_obs])
+   Srfi_spectrum_values[:]=np.nan
    Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
    Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
    
@@ -320,9 +322,14 @@ if (not plot_only):
 	 #gaussian_fwhm_deg=3.86/60.0
 	 gaussian_fwhm_deg=3.75/60.0
 	 gaussian_fwhm_pix = np.round(gaussian_fwhm_deg/pix_size_deg)
-	 RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
+	 
+         #For the broadened RFI, try a disk insted of a Gaussian 
+         #old:
+         #RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
+         #new:
+         RFI_broadening=rfi_model_mask
          #limit extent of broadened rfi model
-         RFI_broadening=RFI_broadening*rfi_model_mask
+         #RFI_broadening=RFI_broadening*rfi_model_mask
 	 ##Convolve this with the PSF
 	 #RFI_broadening_fft=fftpack.fft2(RFI_broadening)
 	 #RFI_convolved_fourier=psf_fft*RFI_broadening_fft
@@ -413,13 +420,24 @@ if (not plot_only):
    #Smoon_average_stddev_spectrum=np.empty([n_chans,2])
    #Srfi_average_stddev_spectrum=np.empty([n_chans,2])
    #print Smoon_spectrum_values
-   Smoon_average_stddev_spectrum[:,0]=np.mean(Smoon_spectrum_values, axis=1)
-   Smoon_average_stddev_spectrum[:,1]=np.std(Smoon_spectrum_values, axis=1)
-   print "S_moon average and std dev for each chan:" 
+   Smoon_average_stddev_spectrum[:,0]=np.nanmean(Smoon_spectrum_values, axis=1)
+   std_dev_Smoon=np.nanstd(Smoon_spectrum_values, axis=1)
+   #count the number of non-nan data points
+   #~ inverts the boolean matrix returned from np.isnan
+   check_non_zero_array=~np.isnan(Smoon_spectrum_values)
+   Smoon_data_points=np.sum(check_non_zero_array,axis=1)
+   print "Number of Smoon data points is %s" % Smoon_data_points
+   std_dev_of_mean_Smoon=std_dev_Smoon/np.sqrt(Smoon_data_points)
+   Smoon_average_stddev_spectrum[:,1]=std_dev_of_mean_Smoon
+   print "S_moon average and std dev of mean for each chan:" 
    print Smoon_average_stddev_spectrum
-   Srfi_average_stddev_spectrum[:,0]=np.mean(Srfi_spectrum_values, axis=1)
-   Srfi_average_stddev_spectrum[:,1]=np.std(Srfi_spectrum_values, axis=1)
-   print "S_rfi average and std dev for each chan:"
+   Srfi_average_stddev_spectrum[:,0]=np.nanmean(Srfi_spectrum_values, axis=1)
+   std_dev_Srfi=np.nanstd(Srfi_spectrum_values, axis=1)
+   check_non_zero_array_rfi=~np.isnan(Srfi_spectrum_values)
+   Srfi_data_points=np.sum(check_non_zero_array_rfi,axis=1)
+   std_dev_of_mean_Srfi=std_dev_Srfi/np.sqrt(Srfi_data_points)
+   Srfi_average_stddev_spectrum[:,1]=std_dev_of_mean_Srfi
+   print "S_rfi average and std dev of mean for each chan:"
    print Srfi_average_stddev_spectrum
    
    #what freqs?
@@ -438,24 +456,24 @@ if (not plot_only):
    Tb = 230.0 + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
    #Tb = 230.0 + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
    Tb_error=abs(0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
-   print "Tb in K is"
-   print Tb
-   print Tb_error
+   #print "Tb in K is"
+   #print Tb
+   #print Tb_error
 
    #predicted sky temp
    T_sky_predicted=248.0*((freq_array/150.0)**(-2.5))
-   print "Predicted Tsky is:"
-   print T_sky_predicted
+   #print "Predicted Tsky is:"
+   #print T_sky_predicted
 
    #predicted sky flux density for moon-disk area on sky
    S_sky_predicted=(2.0*k*T_sky_predicted*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
-   print "Predicted Ssky is:"
-   print S_sky_predicted
+   #print "Predicted Ssky is:"
+   #print S_sky_predicted
    
    #predicted sky flux density for moon-disk area on sky
    S_moon_predicted=(2.0*k*T_moon*Omega)/((300.0/freq_array)**(2)*10.0**(-26))
-   print "Predicted Smoon is:"
-   print S_moon_predicted
+   #print "Predicted Smoon is:"
+   #print S_moon_predicted
    
    
    
