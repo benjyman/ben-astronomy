@@ -348,7 +348,12 @@ if (not plot_only):
 
 	 vec_RFI=RFI_convolved_shift_jyppix.flatten('F')
 
-	 H2=[vec_G,vec_RFI]
+	 ##Use this for broadened RFI
+         #H2=[vec_G,vec_RFI]
+         #Go back to pt source RFI for test
+         vec_RFI=vec_PSF
+         H2=[vec_G,vec_RFI]
+         
 
 	 #using statsmodels
 	 X2 = np.array(H2).T
@@ -371,7 +376,9 @@ if (not plot_only):
          #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
          S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
          print "Initial total moon flux density is %s Jy" % S_moon2_tot_Jy
-         RFI_alone2=np.sum(S_RFI2*RFI_broadening)
+         #for non-point source version:
+         #RFI_alone2=np.sum(S_RFI2*RFI_broadening)
+         RFI_alone2=S_RFI2
          print "Initial total RFI flux density is %s Jy" % RFI_alone2
 
          #enforce Srfi is always positive
@@ -395,10 +402,9 @@ if (not plot_only):
          #Need to conserve flux density: check RFI and moon flux density against max Moon
          S_RFI2=theta_hat2[1]
 
-         
-
-         RFI_alone2=np.sum(S_RFI2*RFI_broadening)
-
+         #
+         #RFI_alone2=np.sum(S_RFI2*RFI_broadening)
+         RFI_alone2=S_RFI2
 
 	 #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
 	 S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
@@ -426,19 +432,25 @@ if (not plot_only):
    #~ inverts the boolean matrix returned from np.isnan
    check_non_zero_array=~np.isnan(Smoon_spectrum_values)
    Smoon_data_points=np.sum(check_non_zero_array,axis=1)
-   print "Number of Smoon data points is %s" % Smoon_data_points
+   #print "Number of Smoon data points is %s" % Smoon_data_points
    std_dev_of_mean_Smoon=std_dev_Smoon/np.sqrt(Smoon_data_points)
-   Smoon_average_stddev_spectrum[:,1]=std_dev_of_mean_Smoon
-   print "S_moon average and std dev of mean for each chan:" 
-   print Smoon_average_stddev_spectrum
+   
+   #Go back to using std dev rather than std dev of mean
+   #Smoon_average_stddev_spectrum[:,1]=std_dev_of_mean_Smoon
+   Smoon_average_stddev_spectrum[:,1]=std_dev_Smoon
+   #print "S_moon average and std dev of mean for each chan:" 
+   #print Smoon_average_stddev_spectrum
    Srfi_average_stddev_spectrum[:,0]=np.nanmean(Srfi_spectrum_values, axis=1)
    std_dev_Srfi=np.nanstd(Srfi_spectrum_values, axis=1)
    check_non_zero_array_rfi=~np.isnan(Srfi_spectrum_values)
    Srfi_data_points=np.sum(check_non_zero_array_rfi,axis=1)
    std_dev_of_mean_Srfi=std_dev_Srfi/np.sqrt(Srfi_data_points)
-   Srfi_average_stddev_spectrum[:,1]=std_dev_of_mean_Srfi
-   print "S_rfi average and std dev of mean for each chan:"
-   print Srfi_average_stddev_spectrum
+
+   #Go back to using std dev rather than std dev of mean 
+   #Srfi_average_stddev_spectrum[:,1]=std_dev_of_mean_Srfi
+   Srfi_average_stddev_spectrum[:,1]=std_dev_Srfi
+   #print "S_rfi average and std dev of mean for each chan:"
+   #print Srfi_average_stddev_spectrum
    
    #what freqs?
    if centre_chan==69:
@@ -453,8 +465,8 @@ if (not plot_only):
       freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
 
    #Now calculate the inferred background temperature in kilokelvin
-   Tb = 230.0 + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   #Tb = 230.0 + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   Tb = T_moon + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   #Tb = T_moon + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
    Tb_error=abs(0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    #print "Tb in K is"
    #print Tb
@@ -605,6 +617,29 @@ plt.xlabel('Frequency (MHz)')
 plt.legend(loc=4)
 big_Smoon_plot.savefig('big_Srfi.png')
 
+#Now calculate the inferred background temperature in kilokelvin
+Tb = T_moon + 160.0*(big_freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
+#Tb = T_moon + 0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+#Tb_error=abs(0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
+#Tb_error=abs(0.07*160*(big_freq_array/60.0)**(-2.24) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
+Tb_error=abs((10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(big_freq_array*10**6)**2))
+#print "Tb in K is"
+#print Tb
+#print Tb_error
+
+#predicted sky temp
+T_sky_predicted=Tsky_150*((big_freq_array/150.0)**(-2.5))
+
+#Plot the inferred and predicted background temp
+plt.clf()
+Tb_plot=plt.figure(6)
+plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
+plt.plot(big_freq_array,T_sky_predicted,label="Predicted")
+plt.title('Inferred backgroud temperature vs frequency for MWA')
+plt.ylabel('Inferred background temperature (Tb in K)')
+plt.xlabel('Frequency (MHz)')
+plt.legend(loc=4)
+Tb_plot.savefig('big_inferred_Tb_plot.png')
 
 if (plot_images):
    #Plot images:
