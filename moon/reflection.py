@@ -8,14 +8,26 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, Distance
 from skyfield.api import Topos, load
 import numpy as np
+import healpy as hp
+import matplotlib.pyplot as plt  
 
 moon_radius_km=1738.1
+moon_radius_deg=0.25
+NSIDE=32
 
 r2d = 180.0/np.pi
 d2r = np.pi/180.0
 
 r2h = 12.0/np.pi
 h2r = np.pi/12.0
+
+#Functions for converting healpix pixel index to RA, DEC and vice versa
+def IndexToRaDec(index):
+    theta,phi=hp.pixelfunc.pix2ang(NSIDE,index)
+    return np.degrees(np.pi*2.-phi),-np.degrees(theta-np.pi/2.)
+
+def RaDecToIndex(RA,Dec):
+    return hp.pixelfunc.ang2pix(NSIDE,np.radians(-Dec+90.),np.radians(360.-RA))
 
 
 #set time
@@ -39,13 +51,49 @@ t=ts.utc(2015, 9, 26, 16, 55, 28.0)
 ##if obs_epoch != '': MRO.epoch = obs_epoch
 
 planets = load('de421.bsp')
-
 earth=planets['earth']
 
 MWA = earth + Topos(latitude_degrees=-26.70331940, longitude_degrees=116.67081524 ,elevation_m=377.83)
 moon = planets['moon']
 astrometric_moon_centre_ephem=MWA.at(t).observe(moon)
 moon_centre_ra, moon_centre_dec, moon_centre_distance = astrometric_moon_centre_ephem.radec()
+
+#define a healpix grid (N=32) on the lunar surface
+healpix_grid_full = np.zeros(hp.nside2npix(NSIDE))
+hp.mollview(healpix_grid_full, title="Mollview image RING")
+fig_name="mollview_image_blank"
+figmap = plt.gcf()
+figmap.savefig(fig_name,dpi=100)
+plt.clf()
+
+#now extract all the moon pixels
+for index,pix in enumerate(healpix_grid_full):
+  #define moon pixels as a disk with radius 15 arcmin (0.25 deg) and centre moon_centre_ra, moon_centre_dec
+  pixel_RA,pixel_Dec=IndexToRaDec(index)
+  #print pixel_RA
+  #print pixel_Dec
+
+  min_moon_ra=(moon_centre_ra.to(u.deg)/u.deg)-moon_radius_deg
+  #print min_moon_ra
+  max_moon_ra=(moon_centre_ra.to(u.deg)/u.deg)+moon_radius_deg
+  #print max_moon_ra
+  min_moon_dec=(moon_centre_dec.to(u.deg)/u.deg)-moon_radius_deg
+  #print min_moon_dec
+  max_moon_dec=(moon_centre_dec.to(u.deg)/u.deg)+moon_radius_deg
+  #print max_moon_dec
+  #if (1.8 < hp.pix2ang(NSIDE,index)[0] < 2.2 and 1.8 < hp.pix2ang(NSIDE,index)[1] < 2.2):
+  if (min_moon_ra < pixel_RA < max_moon_ra and min_moon_dec < pixel_Dec < max_moon_dec):
+     print min_moon_ra
+     healpix_grid_full[index]=1
+
+print healpix_grid_full
+
+hp.mollview(healpix_grid_full, title="Mollview Moon Pix")
+
+fig_name="mollview_moon_pix"
+figmap = plt.gcf()
+figmap.savefig(fig_name,dpi=100)
+plt.clf()
 
 #print(moon_centre_ra.hstr())
 #print(moon_centre_dec.dstr())
@@ -64,14 +112,28 @@ moon_centre_skycoord=SkyCoord(ra=moon_centre_ra.to(u.deg), dec=moon_centre_dec.t
 #print float(moon_centre_skycoord.cartesian.x/u.km)
 
 moon_centre_vector=np.array([moon_centre_skycoord.cartesian.x/u.km,moon_centre_skycoord.cartesian.y/u.km,moon_centre_skycoord.cartesian.z/u.km])
-print moon_centre_vector
+#print moon_centre_vector
 
 moon_pixel_skycoord=SkyCoord(ra=moon_pix_ra, dec=moon_pix_dec, distance=moon_pix_distance_km*u.km)
 moon_pixel_vector=np.array([moon_pixel_skycoord.cartesian.x/u.km,moon_pixel_skycoord.cartesian.y/u.km,moon_pixel_skycoord.cartesian.z/u.km])
-print moon_pixel_vector
+#print moon_pixel_vector
 
 normal_vector=moon_centre_vector-moon_pixel_vector
-print normal_vector
+#print normal_vector
+
+#calculate tangential vector
+tangent=np.cross(np.cross(normal_vector,moon_centre_vector),normal_vector)
+#print tangent
+
+
+
+
+
+
+
+
+
+
 
 ##RA Dec of the Moon centre
 ##moon_centre = Moon(MRO);
