@@ -16,10 +16,22 @@ from pygsm import GlobalSkyModel
 from pygsm import GSMObserver
 from datetime import datetime
 
+#Set the time
+#This is is equivalent to 2015/09/26 16:55:28
+date_time_string="2015_09_26_16_55_28"
+
+year=float(date_time_string.split("_")[0])
+month=float(date_time_string.split("_")[1])
+day=float(date_time_string.split("_")[2])
+hour=float(date_time_string.split("_")[3])
+minute=float(date_time_string.split("_")[4])
+second=float(date_time_string.split("_")[5])
 
 moon_radius_km=1738.1
 moon_radius_deg=0.25
-NSIDE=32
+
+NSIDE_interim=512
+NSIDE_final=32
 
 r2d = 180.0/np.pi
 d2r = np.pi/180.0
@@ -66,8 +78,8 @@ def HMS2deg(ra='', dec=''):
 ##obs_epoch='2000/1/1 12'
 #skyfield:
 ts = load.timescale()
-t=ts.utc(2015, 9, 26, 16, 55, 28.0)
-t_HMS=[16, 55, 28.0]
+t=ts.utc(year, month, day, hour, minute, second)
+t_HMS=[hour, minute, second]
 
 planets = load('de421.bsp')
 earth=planets['earth']
@@ -106,13 +118,18 @@ ov = GSMObserver()
 ov.lon = longitude
 ov.lat = latitude
 ov.elev = elevation
-ov.date = datetime(2015, 9, 26, 16, 55, 28)
+ov.date = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
+
+#set frequency
+freq_MHz=150
+
 
 ##new celestial from Moon
-gsm_map_from_moon=ov.generate(150)
+gsm_map_from_moon=ov.generate(freq_MHz)
 
-##want NSIDE=32
-#hp.ud_grade(gsm_map_from_moon, NSIDE)
+#This messes it all up! Don't do it =(
+##want a smaller map to speed things up but still higher res than the final nside = 32
+#hp.ud_grade(gsm_map_from_moon, NSIDE_interim)
 
 #What pixel is zenith?
 # Get RA and DEC of zenith
@@ -133,7 +150,7 @@ gsm_map_from_moon=ov.generate(150)
 ####
 #Test some stuff
 #Make a new healpix map nside 32 for speed
-moon_map=np.zeros(hp.nside2npix(512))
+moon_map=np.zeros(hp.nside2npix(NSIDE_interim))
 #zenith_pixel=hp.ang2pix(32,np.pi/2,0)
 #test_map[zenith_pixel]=1
 
@@ -147,7 +164,7 @@ zenith_vector=hp.ang2vec(zenith_theta,zenith_phi)
 #The vector of the moon pixel is a normal to the surface of the Moon
 
 for moon_pixel_index,moon_pixel in enumerate(moon_map):
-   pixel_theta,pixel_phi=hp.pix2ang(512,moon_pixel_index)
+   pixel_theta,pixel_phi=hp.pix2ang(NSIDE_interim,moon_pixel_index)
 
    moon_normal_vector=hp.ang2vec(pixel_theta,pixel_phi)
 
@@ -177,44 +194,44 @@ for moon_pixel_index,moon_pixel in enumerate(moon_map):
    #print reflected_vector
 
    #now find the pixel number  corresponding to the reflected vector
-   gsm_pixel_mapped=hp.vec2pix(512,reflected_vector[0],reflected_vector[1],reflected_vector[2])
+   gsm_pixel_mapped=hp.vec2pix(NSIDE_interim,reflected_vector[0],reflected_vector[1],reflected_vector[2])
    gsm_pixel_temp=gsm_map_from_moon[gsm_pixel_mapped]
    #print gsm_pixel_temp
 
    #the actual reflected temp will be scaled by the dot product between the normal and incident unit vectors
+   #and the Moon albedo of 7%
    dot_product=np.dot(-moon_normal_vector,incident_vector_unit)
-   gsm_pixel_temp_reflected=gsm_pixel_temp*dot_product
+   gsm_pixel_temp_reflected=gsm_pixel_temp*dot_product*0.07
    #print dot_product
    #print gsm_pixel_temp_reflected
    
    moon_map[moon_pixel_index]=gsm_pixel_temp_reflected
 
-hp.ud_grade(moon_map, NSIDE)
+
+hp.ud_grade(moon_map, NSIDE_final)
+
+#mask the negative values
+moon_map[moon_map < 0] = np.nan
+
+#Calculate the disk-averged temperature
+disk_averaged_temp=np.nanmean(moon_map)
+print "disk_averaged_temp %s K" % disk_averaged_temp
+
+
 
 plt.clf()
-map_title="moon map"
+map_title="Moon Map"
 hp.orthview(map=moon_map,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
 #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-fig_name="moon_map.png"
+fig_name="moon_map_%s_%s.png" % (date_time_string,str(freq_MHz))
 figmap = plt.gcf()
 figmap.savefig(fig_name,dpi=100)
 
-# Apply rotation
-#hrot = hp.Rotator(rot=[ra_deg, dec_deg], coord=['G', 'C'], inv=True)
-#go through each pixel in the healpix scheme until you find the zenith one
-#m = np.zeros(hp.nside2npix(512))
-#for pixel in enumerate(m):
-#   theta,phi=hp.pix2ang(pixel)
-#   g0, g1 = hrot(theta, phi)
-#pix0 = hp.ang2pix(512, g0, g1)
-#sky_rotated = sky[pix0]
-
-
-#plt.clf()
-#map_title="GSM 150 Moon"
-#hp.orthview(map=gsm_map_from_moon,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
-##hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-#fig_name="orthview_gsm_150_moon.png"
-#figmap = plt.gcf()
-#figmap.savefig(fig_name,dpi=100)
+#also print the generated gsm map for comparison
+plt.clf()
+map_title="gsm map"
+hp.orthview(map=gsm_map_from_moon,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+fig_name="gsm_map_%s_%s.png" % (date_time_string,str(freq_MHz))
+figmap = plt.gcf()
+figmap.savefig(fig_name,dpi=100)
 
