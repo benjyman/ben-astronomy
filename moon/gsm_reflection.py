@@ -39,6 +39,14 @@ d2r = np.pi/180.0
 r2h = 12.0/np.pi
 h2r = np.pi/12.0
 
+#define frequencies
+#number_coarse_chans=int(5*24+4)
+#big_chan_array=np.arange(number_coarse_chans)+57
+#big_freq_array=big_chan_array*1.28
+freq_array=np.arange(70,235,5)
+freq_array_filename="freq_array_%s.npy" % date_time_string
+np.save(freq_array_filename,freq_array)
+
 #normalise vectors to unit vectors:
 def magnitude(v):
     return math.sqrt(sum(v[i]*v[i] for i in range(len(v))))
@@ -120,118 +128,111 @@ ov.lat = latitude
 ov.elev = elevation
 ov.date = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
 
-#set frequency
-freq_MHz=150
+#initialise array of average brightness temp
+disk_averaged_temp_array=np.zeros(len(freq_array))
+disk_average_temp_filename="disk_av_temp_array_%s.npy" % date_time_string
 
+#Do for each freq
+for freq_index,freq_MHz in enumerate(freq_array):
+   print str(freq_MHz)
+   ##new celestial from Moon
+   gsm_map_from_moon=ov.generate(freq_MHz)
 
-##new celestial from Moon
-gsm_map_from_moon=ov.generate(freq_MHz)
+   #This messes it all up! Don't do it =(
+   ##want a smaller map to speed things up but still higher res than the final nside = 32
+   #hp.ud_grade(gsm_map_from_moon, NSIDE_interim)
 
-#This messes it all up! Don't do it =(
-##want a smaller map to speed things up but still higher res than the final nside = 32
-#hp.ud_grade(gsm_map_from_moon, NSIDE_interim)
+   moon_map=np.zeros(hp.nside2npix(NSIDE_interim))
+   #zenith_pixel=hp.ang2pix(32,np.pi/2,0)
+   #test_map[zenith_pixel]=1
 
-#What pixel is zenith?
-# Get RA and DEC of zenith
-#ra_rad, dec_rad = ov.radec_of(0, np.pi/2)
-#ra_deg  = ra_rad / np.pi * 180
-#dec_deg = dec_rad / np.pi * 180
+   #make some vectors.
 
-#zenith_theta=90.0-moon_observatory_lat
-#zenith_phi=moon_observatory_lon
-#zenith_theta_rad=zenith_theta/180 * np.pi
-#zenith_phi_rad=zenith_phi/180 * np.pi
+   #The zenith vector is important, it points from the Moon to the MWA. We need it to get the incindent moon surface vector
+   zenith_theta=np.pi/2
+   zenith_phi=0
+   zenith_vector=hp.ang2vec(zenith_theta,zenith_phi)
 
-#zenith_pixel=hp.ang2pix(512,float(zenith_theta_rad),float(zenith_phi_rad))
-#print zenith_pixel
+   #The vector of the moon pixel is a normal to the surface of the Moon
 
+   for moon_pixel_index,moon_pixel in enumerate(moon_map):
+      pixel_theta,pixel_phi=hp.pix2ang(NSIDE_interim,moon_pixel_index)
 
-####
-####
-#Test some stuff
-#Make a new healpix map nside 32 for speed
-moon_map=np.zeros(hp.nside2npix(NSIDE_interim))
-#zenith_pixel=hp.ang2pix(32,np.pi/2,0)
-#test_map[zenith_pixel]=1
+      moon_normal_vector=hp.ang2vec(pixel_theta,pixel_phi)
 
-#make some vectors.
+      earth_moon_vector=zenith_vector*float(moon_centre_distance.to(u.km)/u.km)
+      #print earth_moon_vector
+      #incident vector is:  -earth_moon_vector+moon_normal_vector
+      incident_vector=-earth_moon_vector+moon_normal_vector
+      #incident vector is actually the reflected vector so:
+      #incident_vector=-1.0*incident_vector
 
-#The zenith vector is important, it points from the Moon to the MWA. We need it to get the incindent moon surface vector
-zenith_theta=np.pi/2
-zenith_phi=0
-zenith_vector=hp.ang2vec(zenith_theta,zenith_phi)
+      #print incident_vector
 
-#The vector of the moon pixel is a normal to the surface of the Moon
+      #Neeed to normalise the incident vector
+      incident_vector_unit=normalise(incident_vector)
+      #print incident_vector_unit
 
-for moon_pixel_index,moon_pixel in enumerate(moon_map):
-   pixel_theta,pixel_phi=hp.pix2ang(NSIDE_interim,moon_pixel_index)
-
-   moon_normal_vector=hp.ang2vec(pixel_theta,pixel_phi)
-
-   earth_moon_vector=zenith_vector*float(moon_centre_distance.to(u.km)/u.km)
-   #print earth_moon_vector
-   #incident vector is:  -earth_moon_vector+moon_normal_vector
-   incident_vector=-earth_moon_vector+moon_normal_vector
-   #incident vector is actually the reflected vector so:
-   #incident_vector=-1.0*incident_vector
-
-   #print incident_vector
-
-   #Neeed to normalise the incident vector
-   incident_vector_unit=normalise(incident_vector)
-   #print incident_vector_unit
-
-   #dot product of these two vectors
-   #dot_product = np.dot(incident_vector_unit,moon_normal_vector)
-   #print dot_product
-
-   #now we have the normal and incident unit vectors, we can get the reflected vector (this is all assuming a ray coming from Earth/MWA!)
-   #Snells law:
-   reflected_vector=2.0*np.dot(moon_normal_vector,incident_vector_unit)*moon_normal_vector - incident_vector_unit
-   #print reflected_vector
-   #change the sign of the reflected vector:
-   reflected_vector=reflected_vector*-1.0
-   #print reflected_vector
-
-   #now find the pixel number  corresponding to the reflected vector
-   gsm_pixel_mapped=hp.vec2pix(NSIDE_interim,reflected_vector[0],reflected_vector[1],reflected_vector[2])
-   gsm_pixel_temp=gsm_map_from_moon[gsm_pixel_mapped]
-   #print gsm_pixel_temp
-
-   #the actual reflected temp will be scaled by the dot product between the normal and incident unit vectors
-   #and the Moon albedo of 7%
-   dot_product=np.dot(-moon_normal_vector,incident_vector_unit)
-   gsm_pixel_temp_reflected=gsm_pixel_temp*dot_product*0.07
-   #print dot_product
-   #print gsm_pixel_temp_reflected
+      #dot product of these two vectors
+      #dot_product = np.dot(incident_vector_unit,moon_normal_vector)
+      #print dot_product
    
-   moon_map[moon_pixel_index]=gsm_pixel_temp_reflected
+      #now we have the normal and incident unit vectors, we can get the reflected vector (this is all assuming a ray coming from Earth/MWA!)
+      #Snells law:
+      reflected_vector=2.0*np.dot(moon_normal_vector,incident_vector_unit)*moon_normal_vector - incident_vector_unit
+      #print reflected_vector
+      #change the sign of the reflected vector:
+      reflected_vector=reflected_vector*-1.0
+      #print reflected_vector
+
+      #now find the pixel number  corresponding to the reflected vector
+      gsm_pixel_mapped=hp.vec2pix(NSIDE_interim,reflected_vector[0],reflected_vector[1],reflected_vector[2])
+      gsm_pixel_temp=gsm_map_from_moon[gsm_pixel_mapped]
+      #print gsm_pixel_temp
+   
+      #the actual reflected temp will be scaled by the dot product between the normal and incident unit vectors
+      #and the Moon albedo of 7%
+      dot_product=np.dot(-moon_normal_vector,incident_vector_unit)
+      gsm_pixel_temp_reflected=gsm_pixel_temp*dot_product*0.07
+      #print dot_product
+      #print gsm_pixel_temp_reflected
+   
+      moon_map[moon_pixel_index]=gsm_pixel_temp_reflected
 
 
-hp.ud_grade(moon_map, NSIDE_final)
+   hp.ud_grade(moon_map, NSIDE_final)
 
-#mask the negative values
-moon_map[moon_map < 0] = np.nan
+   #mask the negative values
+   moon_map[moon_map < 0] = np.nan
 
-#Calculate the disk-averged temperature
-disk_averaged_temp=np.nanmean(moon_map)
-print "disk_averaged_temp %s K" % disk_averaged_temp
+   #Calculate the disk-averged temperature
+   disk_averaged_temp=np.nanmean(moon_map)
+   disk_averaged_temp_array[freq_index]=disk_averaged_temp
+   print "disk_averaged_temp is %s K for datetime %s and freq %s MHz" % (disk_averaged_temp,date_time_string,freq_MHz)
+
+   #save the moon map data
+   moon_map_array_filename="moon_map_%s_%sMHz.npy" % (date_time_string,freq_MHz)
+   np.save(moon_map_array_filename,moon_map)
+
+   plt.clf()
+   map_title="Moon Map"
+   hp.orthview(map=moon_map,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+   #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+   fig_name="moon_map_%s_%sMHz.png" % (date_time_string,str(freq_MHz))
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=100)
+
+   #also print the generated gsm map for comparison
+   #plt.clf()
+   #map_title="gsm map"
+   #hp.orthview(map=gsm_map_from_moon,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+   #fig_name="gsm_map_%s_%sMHz.png" % (date_time_string,str(freq_MHz))
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name,dpi=100)
+
+#save the disk avergaged temp array
+np.save(disk_average_temp_filename,disk_averaged_temp_array)
 
 
 
-plt.clf()
-map_title="Moon Map"
-hp.orthview(map=moon_map,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
-#hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-fig_name="moon_map_%s_%s.png" % (date_time_string,str(freq_MHz))
-figmap = plt.gcf()
-figmap.savefig(fig_name,dpi=100)
-
-#also print the generated gsm map for comparison
-plt.clf()
-map_title="gsm map"
-hp.orthview(map=gsm_map_from_moon,coord='C',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
-fig_name="gsm_map_%s_%s.png" % (date_time_string,str(freq_MHz))
-figmap = plt.gcf()
-figmap.savefig(fig_name,dpi=100)
 
