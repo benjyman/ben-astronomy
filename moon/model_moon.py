@@ -28,8 +28,8 @@ Omega=6.67*10.0**(-5)
 T_moon=230 #K
 #Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
 Tsky_150=245 #K (Landecker and wielebinski 1970)
-T_refl_gal=245 #(guess)
-
+T_refl_gal_150=14.6 # temp of reflected galactic emisssion at 150 from refl;ection modelling (takes into account albedo of 0.07)
+refl_gal_alpha=-2.50
 #RFI model mask radius in arcmin - limits the extent of the gausssian reflection model
 #rfi_model_mask_size=2.0
 rfi_model_mask_size=(3.75/2)
@@ -77,6 +77,8 @@ big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Ssky_predicted_values=np.zeros(number_coarse_chans)
 big_Smoon_predicted_values=np.zeros(number_coarse_chans)
+big_Tb_value_error=np.zeros([number_coarse_chans,2])
+
 
 band_centre_chans=[69,93,121,145,169]
 #band_centre_chans=[145,169]
@@ -465,9 +467,9 @@ if (not plot_only):
       freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
 
    #Now calculate the inferred background temperature in kilokelvin
-   Tb = T_moon + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   #Tb = T_moon + 0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   Tb_error=abs(0.07*148.0*(freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
+   #Tb = T_moon + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   Tb = T_moon + T_refl_gal_150*(freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+   Tb_error=abs( (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    #print "Tb in K is"
    #print Tb
    #print Tb_error
@@ -581,7 +583,7 @@ big_Smoon_plot.savefig('big_Smoon_and_predicted_moon_sky.png')
 #Convert to brightness temperature units (Got to add in the Galactic average temp + plus the reflected galactic emission in the predicted signal (7% albedo?)
 Tmoon_measured_average= (big_Smoon_average_stddev_spectrum[:,0]*(300.0/big_freq_array)**2*1e-26) / (2.0*k*Omega) + Tsky_150*(big_freq_array/150.0)**(-2.5)
 Tmoon_measured_stddev= (big_Smoon_average_stddev_spectrum[:,1]*(300.0/big_freq_array)**2*1e-26) / (2.0*k*Omega)
-predicted_Tmoon_big=np.zeros(len(big_freq_array)) + T_moon +  0.07*(T_refl_gal)*(big_freq_array/150.0)**(-2.5)
+predicted_Tmoon_big=np.zeros(len(big_freq_array)) + T_moon +  (T_refl_gal_150)*(big_freq_array/150.0)**(-2.5)
 
 plt.clf()
 big_Tmoon_plot=plt.figure(3)
@@ -618,8 +620,8 @@ plt.legend(loc=4)
 big_Smoon_plot.savefig('big_Srfi.png')
 
 #Now calculate the inferred background temperature in kilokelvin
-Tb = T_moon + 160.0*(big_freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
-#Tb = T_moon + 0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
+#Tb = T_moon + 160.0*(big_freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
+Tb = T_moon + T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
 #Tb_error=abs(0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
 #Tb_error=abs(0.07*160*(big_freq_array/60.0)**(-2.24) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
 Tb_error=abs((10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(big_freq_array*10**6)**2))
@@ -630,7 +632,12 @@ Tb_error=abs((10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omeg
 #predicted sky temp
 T_sky_predicted=Tsky_150*((big_freq_array/150.0)**(-2.5))
 
-#Plot the inferred and predicted background temp
+#Save and plot the inferred and predicted background temp
+tb_filename="inferred_sky_background_temp_and_error.npy"
+big_Tb_value_error[:,0]=Tb
+big_Tb_value_error[:,1]=Tb_error
+np.save(tb_filename,big_Tb_value_error)
+
 plt.clf()
 Tb_plot=plt.figure(6)
 plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
