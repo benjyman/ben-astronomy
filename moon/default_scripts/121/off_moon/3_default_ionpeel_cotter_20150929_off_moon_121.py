@@ -1,0 +1,1 @@
+python /group/mwaeor/CODE/MWA_Tools/scripts/generate_qselfcal_concat_ms.py --tagname=20150929_moon_121  --ionpeel="/scratch2/mwaeor/bmckinley/EoR2/sourcelists/PUMA/srclist_IDR2deep_puma-noextended_HydAGuas.txt" --cotter --track_off_moon=track_off_moon_20150926_121.txt  --selfcal=0 20150929_off_moon1_121.txt     
