@@ -83,15 +83,13 @@ big_Tb_value_error=np.zeros([number_coarse_chans,2])
 band_centre_chans=[69,93,121,145,169]
 #band_centre_chans=[145,169]
 
-
-
 if (not plot_only):
 
  for centre_chan in band_centre_chans:
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-   on_moon_filename="20150926_moon_%s.txt" % (str(centre_chan))
-   off_moon_filename="20150929_off_moon1_%s.txt" % (str(centre_chan))
+   on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
+   off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
    
    print on_moon_filename
    
@@ -152,7 +150,7 @@ if (not plot_only):
             moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
             psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I_cropped.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I_cropped.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
          else:
             #moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
             moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
@@ -161,7 +159,7 @@ if (not plot_only):
             #psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
             psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             #difference image filename
-            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+            moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
          print "############################"
          print moon_fitsname       
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
@@ -206,8 +204,12 @@ if (not plot_only):
          moon_minus_sky_jyppix=moon_minus_sky/n_pixels_per_beam
    
          #write out the difference image
-         #pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
-         #pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
+         pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
+         pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
+
+         #print out the rms of the difference image
+         difference_rms=np.sqrt(np.mean(np.square(moon_minus_sky)))
+         print "rms of difference map is %s" % difference_rms
 
          #read in psf images
          if os.path.isfile(psf_fitsname) and os.access(psf_fitsname, os.R_OK):         

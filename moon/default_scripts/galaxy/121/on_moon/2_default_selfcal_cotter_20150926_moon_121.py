@@ -1,0 +1,1 @@
+python /group/mwaeor/CODE/MWA_Tools/scripts/generate_qselfcal_concat_ms.py --tagname=20150926_moon_121 --cotter --track_moon --sourcelist=/scratch2/mwaeor/bmckinley/EoR2/sourcelists/PUMA/srclist_IDR2deep_puma-noextended_HydAGuas.txt  --selfcal=0 20150926_moon_121.txt 
