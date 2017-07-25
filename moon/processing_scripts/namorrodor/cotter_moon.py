@@ -3,28 +3,25 @@
 from astropy.io import fits
 import string
 import os.path
+import cmd
 
-def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
-   
-   obsid_list=obsid_string.split(',')
-   obsid=obsid_list[int(list_index)].strip()
+def cotter_moon(obsid,track_off_moon_string,options):
+
    print obsid
-
-   list_index=int(list_index)
    
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
 
-      track_off_moon_paired_obsid=track_off_moon_list[int(float(list_index)*3)].strip()
+      track_off_moon_paired_obsid=track_off_moon_list[0].strip()
 
-      track_off_moon_new_RA=track_off_moon_list[int(list_index*3+1)].strip()
+      track_off_moon_new_RA=track_off_moon_list[1].strip()
 
-      track_off_moon_new_DEC=track_off_moon_list[int(list_index*3+2)].strip()
+      track_off_moon_new_DEC=track_off_moon_list[2].strip()
 
       print "obs paired with %s centering at RA:%s DEC:%s" % (track_off_moon_paired_obsid,track_off_moon_new_RA,track_off_moon_new_DEC)
  
 
-   data_dir='%sdata/%s/' % (mwa_dir,obsid)
+   data_dir='%s%s/' % (mwa_dir,obsid)
    
    tagname=options.tagname
    base_name=obsid+'_cotter_'+tagname
@@ -84,27 +81,40 @@ def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
       track_moon_string=' -centre %s %s ' % (moon_ra,new_moon_dec)
       print track_moon_string
 
+
    #if tracking off moon, shift to required moon  position from a previous time
    if (options.track_off_moon):
       off_moon_ra=track_off_moon_new_RA
       off_moon_dec=track_off_moon_new_DEC
       track_moon_string=' -centre %s %s ' % (off_moon_ra,off_moon_dec)
       print track_moon_string
+   
+   #flagfiles for this observation
+   flagfiles_string= " %s%s_%s.mwaf " % (data_dir,obsid,"%%")
+   print flagfiles_string
 
-   cmd='aprun -n 1 cotter -flagfiles %s%s_%s.mwaf -norfi -o %s %s -m %s -timeres 8 -freqres 80 %s*gpubox*.fits' % (data_dir,obsid,"%%",ms_name,track_moon_string,metafits_filename,data_dir)
+   ##flagfiles for paired observation
+   #flagfiles_string2= " %s%s/%s_%s.mwaf " % (mwa_dir,track_off_moon_paired_obsid,track_off_moon_paired_obsid,"%%")
+   #print flagfiles_string2
+   
+   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres 8 -freqres 80 %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,data_dir)
    print cmd
    os.system(cmd)
 
    if (options.flag_ants):
       flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
+      print flag_ants_cmd_string
+      os.system(flag_ants_cmd_string)
+   
+   if (options.cleanup and os.path.exists(ms_name)):
+      cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
       print cmd
       os.system(cmd)
-   
 
 import sys,os
 from optparse import OptionParser,OptionGroup
 
-usage = 'Usage: cotter_moon.py [obsid_string] [list_index] [options]'
+usage = 'Usage: cotter_moon.py [obsid] [options]'
 
 parser = OptionParser(usage=usage)
 
@@ -112,18 +122,18 @@ parser.add_option('--track_moon',action='store_true',dest='track_moon',default=F
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
+parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
 
 (options, args) = parser.parse_args()
 
-obsid_string = args[0]
-list_index = args[1]
+obsid = args[0]
 if (options.track_off_moon):
-   track_off_moon_string= args[2]
+   track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
 
-mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-cotter_moon(obsid_string,list_index,track_off_moon_string,options)
+cotter_moon(obsid,track_off_moon_string,options)
 
 
