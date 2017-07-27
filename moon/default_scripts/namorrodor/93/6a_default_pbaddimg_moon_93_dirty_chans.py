@@ -1,1 +1,0 @@
-python /group/astronomy883/CODE/MWA_Tools/scripts/generate_qpbaddimg.py  20150926_moon_93_test.txt  20150926_moon_93_dirty_integrated --applyion="/scratch2/astronomy883/bmckinley/EoR2/sourcelists/PUMA/srclist_IDR2deep_puma-noextended_HydAGuas.txt"   --dirty --ionpeeled --track_moon --tagname=20150926_moon_93 --selfcal="0" --channelsout=24

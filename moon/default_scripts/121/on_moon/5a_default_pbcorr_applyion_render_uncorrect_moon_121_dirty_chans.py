@@ -1,1 +1,0 @@
-python /group/mwaeor/CODE/MWA_Tools/scripts/generate_qpbcorr_multi.py  20150926_moon_121.txt   --applyion="/scratch2/mwaeor/bmckinley/EoR2/sourcelists/PUMA/srclist_IDR2deep_puma-noextended_HydAGuas.txt"  --clustered_model="clustered_moon"  --dirty --ionpeeled --pbuncorrect --track_moon --tagname=20150926_moon_121 --selfcal="0" --channelsout=24
