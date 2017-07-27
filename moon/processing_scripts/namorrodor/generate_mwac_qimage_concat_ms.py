@@ -7,12 +7,11 @@ Generates a qsub scripts to qa, and image a list of obsIDs that have already bee
 """
 import os.path
 
-def generate_galaxy(infile,chunk_name,array,options):
+def generate_namorrodor(infile,options):
 
     obsid_list=[]
     for line in open(infile):
-       obsid_list.append(line.strip())
-    obsid_list_string=",".join(obsid_list)  
+       obsid_list.append(line.strip()) 
 
     n_obs = sum(1 for line in open(infile))
 
@@ -104,49 +103,26 @@ def generate_galaxy(infile,chunk_name,array,options):
 
     wsclean_options_string=' --wsclean_options="'+options.wsclean_options+'" '
 
-    imaging_file = open('q_image_concat_ms_wrapper.sh','w+')
+    q_script_name='q_image_concat_ms_wrapper.sh'
+
+    imaging_file = open(q_script_name,'w+')
     imaging_file.write('#!/bin/bash -l\n')
-    imaging_file.write('#SBATCH --time=12:00:00\n' )
-    imaging_file.write('#SBATCH --partition=workq\n')
-    imaging_file.write('#SBATCH --account=mwaeor\n')
-    imaging_file.write('#SBATCH --export=NONE\n')
-    imaging_file.write('#SBATCH -J image_concat_ms\n')
-    if (not options.multi):
-       imaging_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
-    imaging_file.write('source /scratch2/mwaeor/bpindor/MWA_Python/bin/activate \n')
-    imaging_file.write('cd $SLURM_SUBMIT_DIR\n')
+    for obsid_index,obsid in enumerate(obsid_list):
+       if (options.track_off_moon):
+          track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
+       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+tagname_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
     
-    
-    
-    if (options.multi):
-       if (options.cotter):
-          obslist=['%sdata/%s/%s_cotter_%s%s.ms' % (mwa_dir,line.strip(),line.strip(),tagname,vis_suffix) for line in open(infile)]
-       else:
-          obslist=['%sdata/%s/%s_%s%s.ms' % (mwa_dir,line.strip(),line.strip(),tagname,vis_suffix) for line in open(infile)]
-       mslist_string=' '.join(obslist)
-       multi_string=' --multi=" %s " ' % (mslist_string)
-       imaging_file.write('python /group/mwaeor/CODE/MWA_Tools/scripts/image_concat_ms.py '+obsid_list_string+' 0 ' + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+selfcal_string+tagname_string + pol_string+concat6_string+wsclean_options_string+multi_string+cotter_string+ionpeeled_string+' \n')
+    imaging_file.close()
+    print "wrote %s" %  q_script_name
 
-
-
-    else:
-    #   for line in in_file:
-    #      obs_id = (line.split())[0]
-    #      data_dir = mwa_dir + 'data/%s' % obs_id
-    #      imaging_file.write('cd '+ data_dir +'\n')
-    #      #here is where you put all of your write commands for the 'inner' file 
-    #      #put this stuff in a separate python script (import_and_image.py) and just call that.
-
-       imaging_file.write('python /group/mwaeor/CODE/MWA_Tools/scripts/image_concat_ms.py '+obsid_list_string+' ${SLURM_ARRAY_TASK_ID} ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+tagname_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
-
-       imaging_file.close()
-       print "wrote script q_image_concat_ms_wrapper.sh"
-###
+    command="chmod +x %s " % (q_script_name) 
+    print command
+    os.system(command)
 
 import sys,os,glob
 from optparse import OptionParser,OptionGroup
 
-usage = 'Usage: generate_mwac_qimage_concat_ms.py [text file of obsIDs] [chunk_name] '
+usage = 'Usage: generate_mwac_qimage_concat_ms.py [options]  [text file of obsIDs]'
 
 parser = OptionParser(usage=usage)
 
@@ -169,11 +145,8 @@ parser.add_option('--cotter',action='store_true',dest='cotter',default=False,hel
 (options, args) = parser.parse_args()
 
 infile = args[0]
-chunk_name = args[1]
-array = '128T' # No 32T option for this script
 
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-mwa_dir = os.getenv('MWA_DIR','/scratch/partner1019/MWA/')
-
-if(mwa_dir == '/scratch2/mwaeor/MWA/'):
-    generate_galaxy(infile,chunk_name,array,options)
+if(mwa_dir == '/data/MWA/'):
+    generate_namorrodor(infile,options)

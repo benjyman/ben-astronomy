@@ -4,28 +4,26 @@
 
 import numpy as np
 
-def pbcorr_multi(obsid_string,list_index,track_off_moon_string,options):
+def pbcorr_multi(obsid,track_off_moon_string,options):
 
    #do all the next steps for each chan
    number_images=int(options.channelsout)
 
-   list_index=int(list_index)
-   obsid_list=obsid_string.split(',')
-   n_obs=len(obsid_list)
-   print n_obs
-   obsid_list_index=int(np.floor(list_index/number_images))
-   print obsid_list_index
-   obsid=obsid_list[obsid_list_index].strip()
    print obsid
 
-   image_number=list_index-(obsid_list_index*number_images)
-   print image_number
 
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
-      track_off_moon_paired_obsid=track_off_moon_list[int(float(obsid_list_index)*3)].strip()
+
+      track_off_moon_paired_obsid=track_off_moon_list[0].strip()
+
+      track_off_moon_new_RA=track_off_moon_list[1].strip()
+
+      track_off_moon_new_DEC=track_off_moon_list[2].strip()
+
+      print "obs paired with %s centering at RA:%s DEC:%s" % (track_off_moon_paired_obsid,track_off_moon_new_RA,track_off_moon_new_DEC)
    
-   data_dir='%sdata/%s/' % (mwa_dir,obsid)
+   data_dir='%s%s/' % (mwa_dir,obsid)
 
    if (options.tagname):
       tagname=options.tagname
@@ -88,55 +86,74 @@ def pbcorr_multi(obsid_string,list_index,track_off_moon_string,options):
 
       #flag the bad ionsolutions so applyion doesn't crash
       flagged_ion_solutions='flagged_%s' % (ion_solutions)
-      cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/ionsol -o %s -threshold-dl 4e-4 -threshold-dm 4e-4 -max-gain 2 -min-gain 0.2 -replace-unset %s %s ' % (flagged_ion_solutions,ion_solutions,clustered_model)
+      cmd='ionsol -o %s -threshold-dl 4e-4 -threshold-dm 4e-4 -max-gain 2 -min-gain 0.2 -replace-unset %s %s ' % (flagged_ion_solutions,ion_solutions,clustered_model)
       print cmd
       os.system(cmd)
 
-   #go!
-   if number_images>1:
-      image_base_name_loop='%s-%04d' % (image_base_name,image_number)
-      beam_base_name_loop='%s-%04d' % (beam_base_name,image_number)
-      print image_base_name_loop
-      print beam_base_name_loop
+   #Do MFS image first:
+   MFS_image_base_name_loop='%s-MFS' % (image_base_name)
+   MFS_beam_base_name_loop='%s-MFS' % (beam_base_name) 
+   print MFS_image_base_name_loop
+   print MFS_beam_base_name_loop
 
    if not (options.havebeam):
-      cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/beam -2014i -proto '+ image_base_name_loop+'-XX-image.fits -name '+ beam_base_name_loop+ ' -ms '+ms_name+ ' -m ' +metafits_name
+      cmd='beam -2014i -proto '+ MFS_image_base_name_loop+'-XX-image.fits -name '+ MFS_beam_base_name_loop+ ' -ms '+ms_name+ ' -m ' +metafits_name
       print cmd
       os.system(cmd)
-   
+          
    if (options.dirty):
-      cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/pbcorrect '+image_base_name_loop+ ' dirty.fits '+beam_base_name_loop+' '+ image_base_name_loop+'_dirty'
+      cmd='pbcorrect '+MFS_image_base_name_loop+ ' dirty.fits '+MFS_beam_base_name_loop+' '+ MFS_image_base_name_loop+'_dirty'
    else:
-      cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/pbcorrect '+image_base_name_loop+ ' image.fits '+beam_base_name_loop+' '+ image_base_name_loop
+      cmd='pbcorrect '+MFS_image_base_name_loop+ ' image.fits '+MFS_beam_base_name_loop+' '+ MFS_image_base_name_loop
    print cmd
    os.system(cmd)
 
-   if (options.applyion):
-      if (options.dirty):
-         pbcorr_image_name='%s_dirty-I.fits' % (image_base_name_loop)
-         applied_image_base='%s_dirty_applied' % (image_base_name_loop)
-      else:
-         pbcorr_image_name='%s-I.fits' % (image_base_name_loop)
-         applied_image_base='%s_applied' % (image_base_name_loop)
-      
-      applied_image_name=applied_image_base+'-I.fits' 
-      cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/applyion %s %s %s %s ' % (pbcorr_image_name,applied_image_name,clustered_model,flagged_ion_solutions)
-      print cmd
-      os.system(cmd)
-      if (options.pbuncorrect and not options.render):
-         cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/pbcorrect -uncorrect %s image.fits %s %s ' % (applied_image_base,beam_base_name_loop,applied_image_base)
-         print cmd
-         os.system(cmd)
+   #Then rest of chans
+   for image_number in range(number_images):
+       image_base_name_loop='%s-%04d' % (image_base_name,image_number)
+       beam_base_name_loop='%s-%04d' % (beam_base_name,image_number)
+       print image_base_name_loop
+       print beam_base_name_loop
 
-      if (options.render):
+       if not (options.havebeam):
+          cmd='beam -2014i -proto '+ image_base_name_loop+'-XX-image.fits -name '+ beam_base_name_loop+ ' -ms '+ms_name+ ' -m ' +metafits_name
+          print cmd
+          os.system(cmd)
+          
+   
+       if (options.dirty):
+          cmd='pbcorrect '+image_base_name_loop+ ' dirty.fits '+beam_base_name_loop+' '+ image_base_name_loop+'_dirty'
+       else:
+          cmd='pbcorrect '+image_base_name_loop+ ' image.fits '+beam_base_name_loop+' '+ image_base_name_loop
+       print cmd
+       os.system(cmd)
+
+       if (options.applyion):
+          if (options.dirty):
+             pbcorr_image_name='%s_dirty-I.fits' % (image_base_name_loop)
+             applied_image_base='%s_dirty_applied' % (image_base_name_loop)
+          else:
+             pbcorr_image_name='%s-I.fits' % (image_base_name_loop)
+             applied_image_base='%s_applied' % (image_base_name_loop)
+      
+          applied_image_name=applied_image_base+'-I.fits' 
+          cmd='applyion %s %s %s %s ' % (pbcorr_image_name,applied_image_name,clustered_model,flagged_ion_solutions)
+          print cmd
+          os.system(cmd)
+       if (options.pbuncorrect and not options.render):
+          cmd='pbcorrect -uncorrect %s image.fits %s %s ' % (applied_image_base,beam_base_name_loop,applied_image_base)
+          print cmd
+          os.system(cmd)
+
+       if (options.render):
          rendered_image_base='%s_rendered' % (applied_image_base)
          rendered_image_name='%s-I.fits' % rendered_image_base
-         cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/render -a -r -ion %s rendered -t %s -o %s %s' % (ion_solutions,applied_image_name,rendered_image_name,clustered_model)
+         cmd='render -a -r -ion %s rendered -t %s -o %s %s' % (ion_solutions,applied_image_name,rendered_image_name,clustered_model)
          print cmd
          os.system(cmd)
          
          if (options.pbuncorrect):
-            cmd='aprun -n 1 /group/mwasci/bmckinley/code/anoko/mwa-reduce/build/pbcorrect -uncorrect %s image.fits %s %s ' % (rendered_image_base,beam_base_name_loop,rendered_image_base) 
+            cmd='pbcorrect -uncorrect %s image.fits %s %s ' % (rendered_image_base,beam_base_name_loop,rendered_image_base) 
             print cmd
             os.system(cmd)
          
@@ -168,15 +185,14 @@ parser.add_option('--channelsout',type='string', dest='channelsout',default='1',
 
 (options, args) = parser.parse_args()
 
-obsid_string = args[0]
-list_index = args[1]
+obsid = args[0]
 if (options.track_off_moon):
-   track_off_moon_string= args[2]
+   track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
 
-mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-pbcorr_multi(obsid_string,list_index,track_off_moon_string,options)
+pbcorr_multi(obsid,track_off_moon_string,options)
 
 

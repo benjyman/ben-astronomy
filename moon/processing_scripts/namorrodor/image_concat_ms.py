@@ -1,23 +1,26 @@
 #! /usr/bin/env python
 
-#script to import rts uvfits files to ms and image with wsclean
+#script to image with wsclean
 #option to track the moon.
 
-def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
+import string 
 
-   obsid_list=obsid_string.split(',')
-   obsid=obsid_list[int(list_index)].strip()
+def image_concat_ms(obsid,track_off_moon_string,options):
+
    print obsid
-
-   list_index=int(list_index)
+   
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
-      track_off_moon_paired_obsid=track_off_moon_list[int(float(list_index)*3)].strip()
-      track_off_moon_new_RA=track_off_moon_list[int(list_index*3+1)].strip()
-      track_off_moon_new_DEC=track_off_moon_list[int(list_index*3+2)].strip()
+
+      track_off_moon_paired_obsid=track_off_moon_list[0].strip()
+
+      track_off_moon_new_RA=track_off_moon_list[1].strip()
+
+      track_off_moon_new_DEC=track_off_moon_list[2].strip()
+
       print "obs paired with %s centering at RA:%s DEC:%s" % (track_off_moon_paired_obsid,track_off_moon_new_RA,track_off_moon_new_DEC)
  
-   data_dir='%sdata/%s/' % (mwa_dir,obsid)
+   data_dir='%s%s/' % (mwa_dir,obsid)
    
    imsize=options.imsize
    #wsclean, beam correct
@@ -85,52 +88,7 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
          
       concat_vis_name=data_dir+concat_vis_base+'.ms'
 
-   #This is now done earlier at the cotter stage 
-   #if tracking moon, use chgcentre
-   #if (options.track_moon and not options.concat6):
-   #   #get the date and time of the observation from the metafits file
-   #   try:
-   #      HDU_list = pyfits.open(metafits_filename)
-   #   except IOError, err:
-   #      'Cannot open metadata file %s\n' % str(options.input_file)
-   #   header=HDU_list[0].header 
-   #   date = (header)['DATESTRT']
-   #   print date
-   #   #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
-   #   new_date=string.replace(string.replace(date,'-','/'),'T',' ')
-   #   print new_date
-   #   #find position of moon
-   #   cmd="print_src.py --date='"+new_date+"' > src_file.txt"
-   #   print cmd
-   #   os.system(cmd)
-   #   #read src_file.txt to get Moon ra and dec 
-   #   with open('src_file.txt', "r") as infile:
-   #      lines=infile.readlines()
-   #      moon_ra=lines[6].split()[3].split(',')[0]
-   #      moon_dec=lines[6].split()[6].split(',')[0]
-   #      print moon_ra
-   #      print moon_dec
-   #   #get ra and dec in right format for chg_centre 
-   #   new_moon_dec=string.replace(moon_dec,":",".")
-   #   #make a copy of the ms to change phase centre of
-   #   ms_copy_name=concat_vis_base+"_chgcentre.ms"
-   #   cmd="rm -rf "+ms_copy_name
-   #   print cmd
-   #   os.system(cmd)
-   #   cmd="cp -r "+concat_vis_name+ " "+ms_copy_name
-   #   print cmd
-   #   os.system(cmd)
-   #
-   #   concat_vis_name = ms_copy_name
-   #   #change the phase centre of the ms to the Moon position
-   #   cmd="aprun -n 1 chgcentre "+concat_vis_name+" "+moon_ra+" "+new_moon_dec
-   #   print cmd
-   #   os.system(cmd)
-   #      
-   #   #clean up?
-
-   #   #if not tracking moon, just image the original ms.
-
+ 
    if (options.chgcentre and not options.multi):
       #make a copy of the ms to change phase centre of
       ms_newcentre_base=concat_vis_base+"_newcentre"
@@ -144,7 +102,7 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
          os.system(cmd)
 
          #change the phase centre of the ms to the Moon position
-         cmd="aprun -n 1 chgcentre %s %s " % (ms_newcentre_name, chgcentre_string)
+         cmd="chgcentre %s %s " % (ms_newcentre_name, chgcentre_string)
          print cmd
          os.system(cmd)
          
@@ -163,16 +121,16 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
             #find the minw position for the specified ms
             minw_filename=ms_copy_base+'.txt'
             if (minw_string=='self'):
-                cmd="aprun -n 1 chgcentre %s > %s " % (ms_copy_name,minw_filename)    
+                cmd="chgcentre %s > %s " % (ms_copy_name,minw_filename)    
             else:
-                cmd="aprun -n 1 chgcentre %s > %s " % (minw_string,minw_filename)
+                cmd="chgcentre %s > %s " % (minw_string,minw_filename)
             print cmd
             os.system(cmd)
             with open(minw_filename) as f:
                 minw_value=f.readlines()[8].strip()
                 print minw_value
             #change the phase centre of the minw position and shiftback
-            cmd="aprun -n 1 chgcentre -shiftback %s %s " % (ms_copy_name,minw_value)
+            cmd="chgcentre -shiftback %s %s " % (ms_copy_name,minw_value)
             print cmd
             os.system(cmd)
          
@@ -205,7 +163,7 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
                   print cmd
                   os.system(cmd)
                   #change the phase centre of the ms to the Moon position
-                  cmd="aprun -n 1 chgcentre %s %s " % (ms_copy_name,chgcentre_string)
+                  cmd="chgcentre %s %s " % (ms_copy_name,chgcentre_string)
                   print cmd
                   os.system(cmd)
                new_multi_string+=(ms_copy_name + " ")
@@ -231,29 +189,29 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
                   #find the minw position for the specified ms
                   minw_filename=ms_file.split('.ms')[0]+'_minw.txt'
                   if (minw_string=='self'):
-                      cmd="aprun -n 1 chgcentre %s > %s " % (ms_file,minw_filename)    
+                      cmd="chgcentre %s > %s " % (ms_file,minw_filename)    
                   else:
-                      cmd="aprun -n 1 chgcentre %s > %s " % (minw_string,minw_filename)
+                      cmd="chgcentre %s > %s " % (minw_string,minw_filename)
                   print cmd
                   os.system(cmd)
                   with open(minw_filename) as f:
                      minw_value=f.readlines()[8].strip()
                      print minw_value
                   #change the phase centre of the minw position and shiftback
-                  cmd="aprun -n 1 chgcentre -shiftback %s %s " % (ms_copy_name,minw_value)
+                  cmd="chgcentre -shiftback %s %s " % (ms_copy_name,minw_value)
                   print cmd
                   os.system(cmd)
                new_multi_string+=(ms_copy_name + " ")
                multi_string=new_multi_string
          
-         cmd='aprun -n 1 wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ ' ' +wsclean_options_string+' '+ pol_string + ' ' + multi_string
+         cmd='wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ ' ' +wsclean_options_string+' '+ pol_string + ' ' + multi_string
          print cmd
          os.system(cmd)
 
 
       #image with wsclean
       else: 
-         cmd='aprun -n 1 wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ ' ' +wsclean_options_string+' '+ pol_string + ' ' + concat_vis_name
+         cmd='wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ ' ' +wsclean_options_string+' '+ pol_string + ' ' + concat_vis_name
          print cmd
          os.system(cmd)
 		 #delete all the unwanted files
@@ -273,60 +231,19 @@ def image_concat_ms(obsid_string,list_index,track_off_moon_string,options):
       #only generate beam if any one of the beam files doesn't already exist and you are doing pbcorrecting at this stage (not mosaicking later
       if not (options.no_pbcorr):
          if not os.path.exists(concat_image_base+'_beam-xxi.fits') or not os.path.exists(concat_image_base+'_beam-xxr.fits') or not os.path.exists(concat_image_base+'_beam-xyi.fits') or not os.path.exists(concat_image_base+'_beam-xyr.fits') or not os.path.exists(concat_image_base+'_beam-yxi.fits')  or not os.path.exists(concat_image_base+'_beam-yxr.fits')  or not os.path.exists(concat_image_base+'_beam-yyi.fits') or not os.path.exists(concat_image_base+'_beam-yyr.fits'):
-            cmd='aprun -n 1 beam -2014i -proto '+ concat_image_base+'-XX-image.fits -name '+concat_image_base+'_beam -ms '+concat_vis_name+ ' -m ' +obsid+ '.metafits'
+            cmd='beam -2014i -proto '+ concat_image_base+'-XX-image.fits -name '+concat_image_base+'_beam -ms '+concat_vis_name+ ' -m ' +obsid+ '.metafits'
             os.system(cmd)
-         cmd='aprun -n 1 pbcorrect '+concat_image_base+ ' image.fits '+concat_image_base+'_beam '+ concat_image_base
+         cmd='pbcorrect '+concat_image_base+ ' image.fits '+concat_image_base+'_beam '+ concat_image_base
          print cmd
          os.system(cmd)
 
-   if (options.concat6):
-      for band in range(1,5):
-
-         concat_vis_base='%s_%s_concat_%sof4' % (obsid,tagname,str(band))
-         concat_vis_name=concat_vis_base+'.ms'
-         concat_image_base='%s_%s_concat_%sof4' % (obsid,tagname,str(band))
-
-         #remove any old images before re-imaging:
-         cmd='rm -f '+concat_image_base+'*.fits'
-         print cmd
-         os.system(cmd)
-
-         #image with wsclean
-         cmd='aprun -n 1 wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ '  -scale .015 -niter 1000 -weight uniform -threshold 0.05 -mgain 0.80 -datacolumn '+data_column+' -absmem 32 '+ pol_string + ' ' + concat_vis_name
-         print cmd
-         os.system(cmd)
-         #delete all the unwanted files
-         cmd='rm -f '+concat_image_base+'*-residual.fits'
-         print cmd
-         os.system(cmd)
-         cmd='rm -f '+concat_image_base+'*-dirty.fits'
-         print cmd
-         os.system(cmd)
-         cmd='rm -f '+concat_image_base+'*-model.fits'
-         print cmd
-         os.system(cmd)
-         cmd='rm -f '+concat_image_base+'*-psf.fits'
-         print cmd
-         os.system(cmd)
-
-         #only generate beam if any one of the beam files doesn't already exist and you are doing pbcorrecting at this stage (not mosaicking later
-         if not (options.no_pbcorr):
-            if not os.path.exists(concat_image_base+'_beam-xxi.fits') or not os.path.exists(concat_image_base+'_beam-xxr.fits') or not os.path.exists(concat_image_base+'_beam-xyi.fits') or not os.path.exists(concat_image_base+'_beam-xyr.fits') or not os.path.exists(concat_image_base+'_beam-yxi.fits')  or not os.path.exists(concat_image_base+'_beam-yxr.fits')  or not os.path.exists(concat_image_base+'_beam-yyi.fits') or not os.path.exists(concat_image_base+'_beam-yyr.fits'):
-               cmd='aprun -n 1 beam -2014i -proto '+ concat_image_base+'-XX-image.fits -name '+concat_image_base+'_beam -ms '+concat_vis_name+ ' -m ' +obsid+ '.metafits'
-               os.system(cmd)
-            cmd='aprun -n 1 pbcorrect '+concat_image_base+ ' image.fits '+concat_image_base+'_beam '+ concat_image_base
-            print cmd
-            os.system(cmd)
-
-
-
-
+   
 ##
 import sys,os
 from optparse import OptionParser,OptionGroup
 
 #If --multi is true, then put in chunk_no as obs_id, that forms base of image name
-usage = 'Usage: image_concat_ms.py [obsid_string list_index'
+usage = 'Usage: image_concat_ms.py [options] [obsid]'
 
 parser = OptionParser(usage=usage)
 
@@ -349,16 +266,15 @@ parser.add_option('--cotter',action='store_true',dest='cotter',default=False,hel
 
 (options, args) = parser.parse_args()
 
-obsid_string = args[0]
-list_index = args[1]
+obsid = args[0]
 if (options.track_off_moon):
-   track_off_moon_string= args[2]
+   track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
 
 
-mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-image_concat_ms(obsid_string,list_index,track_off_moon_string,options)
+image_concat_ms(obsid,track_off_moon_string,options)
 
 

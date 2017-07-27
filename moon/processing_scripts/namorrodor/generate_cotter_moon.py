@@ -71,7 +71,8 @@ def generate_cotter_moon(obsid_infile,options):
        sbatch_file.write('#!/bin/bash -l\n')
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
-          track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
+          if (options.track_off_moon):
+             track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
           sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ str(obsid) + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + ' \n')
 
        sbatch_file.close()

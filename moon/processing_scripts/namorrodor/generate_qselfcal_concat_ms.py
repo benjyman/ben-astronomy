@@ -7,12 +7,11 @@ generate qsbatch script for selfcal with andre's tools
 """
 import os.path
 
-def generate_galaxy(infile,options):
+def generate_namorrodor(infile,options):
 
     obsid_list=[]
     for line in open(infile):
        obsid_list.append(line.strip())
-    obsid_list_string=",".join(obsid_list)
   
     n_obs = sum(1 for line in open(infile))
 
@@ -83,24 +82,22 @@ def generate_galaxy(infile,options):
     else:
        applyonly_string=''
        
-    imaging_file = open('q_selfcal_concat_ms_wrapper.sh','w+')
+    q_filename='q_selfcal_concat_ms_wrapper.sh'
+       
+    imaging_file = open(q_filename,'w+')
     imaging_file.write('#!/bin/bash -l\n')
-    imaging_file.write('#SBATCH --nodes=1\n')
-    imaging_file.write('#SBATCH --ntasks-per-node=1\n')
-    imaging_file.write('#SBATCH --time=12:00:00\n' )
-    imaging_file.write('#SBATCH --partition=workq\n')
-    imaging_file.write('#SBATCH --account=mwaeor\n')
-    imaging_file.write('#SBATCH --export=NONE\n')
-    imaging_file.write('#SBATCH -J selfcalconcat_ms\n')
-    imaging_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
-    imaging_file.write('source /scratch2/mwaeor/bpindor/MWA_Python/bin/activate \n')
-    imaging_file.write('cd $SLURM_SUBMIT_DIR\n')
-
-
-    imaging_file.write('/group/mwaeor/CODE/MWA_Tools/scripts/selfcal_concat_ms.py '+obsid_list_string+' ${SLURM_ARRAY_TASK_ID} ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+tagname_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
+    for obsid_index,obsid in enumerate(obsid_list):
+       if (options.track_off_moon):
+          track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
+       imaging_file.write('/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/selfcal_concat_ms.py '+str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+tagname_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
 
     imaging_file.close()
-    print "wrote file q_selfcal_concat_ms_wrapper.sh"
+    print "wrote file %s" % q_filename
+    
+    command="chmod +x %s " % (q_filename) 
+    print command
+    os.system(command)
+    
 ###
 
 import sys,os, glob
@@ -128,7 +125,7 @@ infile = args[0]
 
 
 
-mwa_dir = os.getenv('MWA_DIR','/scratch/partner1019/MWA/')
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-if(mwa_dir == '/scratch2/mwaeor/MWA/'):
-    generate_galaxy(infile,options)
+if(mwa_dir == '/data/MWA/'):
+    generate_namorrodor(infile,options)

@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qpbcorr_multi.py  /data/moon/2017/20150926_moon_69.txt  --dirty --track_moon --tagname=20150926_moon_69 --selfcal="0" --channelsout=24

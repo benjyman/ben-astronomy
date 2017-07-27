@@ -5,27 +5,26 @@
 #option to track the moon.
 import string 
 
-def selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options):
+def selfcal_concat_ms(obsid,track_off_moon_string,options):
 
-   list_index=int(list_index)
-   obsid_list=obsid_string.split(',')
-   obsid=obsid_list[list_index].strip()
    print obsid
    
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
-      track_off_moon_paired_obsid=track_off_moon_list[int(float(list_index)*3)].strip()
-      track_off_moon_new_RA=track_off_moon_list[int(list_index*3+1)].strip()
-      track_off_moon_new_DEC=track_off_moon_list[int(list_index*3+2)].strip()
+
+      track_off_moon_paired_obsid=track_off_moon_list[0].strip()
+
+      track_off_moon_new_RA=track_off_moon_list[1].strip()
+
+      track_off_moon_new_DEC=track_off_moon_list[2].strip()
+
       print "obs paired with %s centering at RA:%s DEC:%s" % (track_off_moon_paired_obsid,track_off_moon_new_RA,track_off_moon_new_DEC)
    
-   data_dir='%sdata/%s/' % (mwa_dir,obsid)
+   data_dir='%s%s/' % (mwa_dir,obsid)
    metafits_file_name = data_dir+obsid+".metafits"
 
-   if (options.tagname):
-      tagname=options.tagname
-   else:
-      tagname='uvdump'
+
+   tagname=options.tagname
 
    if (options.model):
       model_string=' -m %s -applybeam ' % options.model
@@ -33,12 +32,14 @@ def selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options):
       model_string=' '
 
    if (options.sourcelist and not options.model):
-      #make an ao model from the the rts sourclist
+      #make an ao model 
       ao_model_name=options.sourcelist.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt" 
-      print "making %s " % ao_model_name
-      cmd='aprun -n 1  python /group/mwaeor/CODE/MWA_Tools/scripts/srclist_by_beam.py -x --aocalibrate -m %s -n 1000 -s %s ' % (metafits_file_name,options.sourcelist)
-      print cmd
-      os.system(cmd)
+      if (not os.path.exists(ao_model_name)):
+         print "making %s " % ao_model_name
+         cmd='srclist_by_beam.py -x --aocalibrate -m %s -n 1000 -s %s ' % (metafits_file_name,options.sourcelist)
+         os.system(cmd)
+      else:
+         print "using sourcelist %s " % ao_model_name
       model_string=' -m %s -applybeam ' % ao_model_name
    else:
       model_string=' '  
@@ -56,7 +57,7 @@ def selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options):
       clustered_model_name="clustered_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
     
       print "making %s " % clustered_model_name
-      cmd='aprun -n 1 cluster %s %s 25 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
+      cmd='cluster %s %s 25 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
       print cmd
       os.system(cmd)
 
@@ -85,7 +86,7 @@ def selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options):
    if (options.applyonly):
       solutions=options.applyonly
       #apply solutions
-      cmd='aprun -n 1 applysolutions %s %s ' % (concat_vis_name,solutions)
+      cmd='applysolutions %s %s ' % (concat_vis_name,solutions)
       print cmd
       os.system(cmd)
    
@@ -93,27 +94,27 @@ def selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options):
       if (options.ionpeel):
          peeled_ms_name=data_dir+concat_vis_base+'_peeled.ms'
          #remove any previous attempt
-         cmd='aprun -n 1 rm -rf %s' % (peeled_ms_name)
+         cmd='rm -rf %s' % (peeled_ms_name)
          print cmd
          os.system(cmd)
          #make a copy of the unpeeled ms just in case
-         cmd='aprun -n 1 cp -r %s %s' % (concat_vis_name,peeled_ms_name)
+         cmd='cp -r %s %s' % (concat_vis_name,peeled_ms_name)
          print cmd
          os.system(cmd) 
 
          #run andres ionpeel 
-         cmd='aprun -n 1 ionpeel -t 8 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
+         cmd='ionpeel -t 8 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
          print cmd
          os.system(cmd) 
    
       else:
          #run andres calibrate 
-         cmd='aprun -n 1 calibrate -minuv 60  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         cmd='calibrate -minuv 60  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
          #apply solutions
-         cmd='aprun -n 1 applysolutions %s %s ' % (concat_vis_name,solutions_name)
+         cmd='applysolutions %s %s ' % (concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
@@ -140,14 +141,13 @@ parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help
 
 (options, args) = parser.parse_args()
 
-obsid_string = args[0]
-list_index = args[1]
+obsid = args[0]
 if (options.track_off_moon):
-   track_off_moon_string= args[2]
+   track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
 
-mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
+mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
 
-selfcal_concat_ms(obsid_string,list_index,track_off_moon_string,options)
+selfcal_concat_ms(obsid,track_off_moon_string,options)
 
