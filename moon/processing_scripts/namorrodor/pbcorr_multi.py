@@ -97,7 +97,7 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
    print MFS_beam_base_name_loop
 
    if not (options.havebeam):
-      cmd='beam -2014i -proto '+ MFS_image_base_name_loop+'-XX-image.fits -name '+ MFS_beam_base_name_loop+ ' -ms '+ms_name+ ' -m ' +metafits_name
+      cmd='beam -2016 -proto '+ MFS_image_base_name_loop+'-XX-image.fits -name '+ MFS_beam_base_name_loop+ ' -ms '+ms_name+ ' -m ' +metafits_name
       print cmd
       os.system(cmd)
           

@@ -1,4 +1,4 @@
-#script to crop  Moon images to sacve disk space
+#script to crop  Moon images to save disk space
 
 from astropy.io import fits
 from astropy import wcs
@@ -8,17 +8,21 @@ import os
 import os.path
 
 #set if processing on Galaxy
-galaxy=True
+galaxy=False
+namorrodor=True
 
 #final_image_size=520
-band_centre_chans=[69,93,121,145,169]
-#band_centre_chans=[69]
+#band_centre_chans=[69,93,121,145,169]
+band_centre_chans=[69]
 
 for centre_chan in band_centre_chans:
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
    if (galaxy):
      on_moon_filename="20150926_moon1/%s/20150926_moon_%s.txt" % (str(centre_chan),str(centre_chan))
      off_moon_filename="20150929_off_moon1/%s/20150929_off_moon1_%s.txt" % (str(centre_chan),str(centre_chan))   
+   elif (namorrodor):
+     on_moon_filename="/data/moon/2017/20150926_moon_%s_test2.txt" % (str(centre_chan))
+     off_moon_filename="/data/moon/2017/20150929_off_moon1_%s_test2.txt" % (str(centre_chan))
    else:
      on_moon_filename="20150926_moon_%s_test.txt" % (str(centre_chan))
      off_moon_filename="20150929_off_moon1_%s_test.txt" % (str(centre_chan))
@@ -41,13 +45,18 @@ for centre_chan in band_centre_chans:
    n_obs=len(on_moon_obsid_list)
    n_chans=24 
    
-   #need to do all this stuff for each frequency channel and each obsid
+   #need to do all this stuff for each frequency channel (and MFS) and each obsid
    #sort out filenames 
-   for chan in range(n_chans):
+   channel_list=range(n_chans)
+   channel_list.append('MFS')
+   for chan in channel_list:
       for obsid_index in range(n_obs):
          on_moon_obsid=on_moon_obsid_list[obsid_index]
          off_moon_obsid=off_moon_obsid_list[obsid_index] 
-         chan_string='%.04d' % chan
+         if (chan != 'MFS'):
+            chan_string='%.04d' % chan
+         else:
+            chan_string='MFS'
          if (galaxy):
             large_on_moon_image_name="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
             cropped_on_moon_outname="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
@@ -55,6 +64,13 @@ for centre_chan in band_centre_chans:
             cropped_off_moon_outname="20150929_off_moon1/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
             large_psf_image_name="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
             cropped_psf_outname="20150926_moon1/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+         elif (namorrodor):
+            large_on_moon_image_name="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            cropped_on_moon_outname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            large_off_moon_image_name="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            cropped_off_moon_outname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I_cropped.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            large_psf_image_name="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            cropped_psf_outname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
          else:
             large_on_moon_image_name="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             cropped_on_moon_outname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
@@ -143,6 +159,7 @@ for centre_chan in band_centre_chans:
  
          fits.writeto(cropped_psf_outname,newf.data,clobber=True)
          fits.update(cropped_psf_outname, newf.data, newf.header)
+         print "wrote cropped psf fits file %s " % cropped_psf_outname
          f.close()
             
             
