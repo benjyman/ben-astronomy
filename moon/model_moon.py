@@ -91,7 +91,7 @@ if (not plot_only):
  for centre_chan in band_centre_chans:
    
    #set rms_thresholds for difference images
-   rms_threshold=0.5
+   rms_threshold=1.0
    
    #read the info files to find out how many observations there are and what the on and off-moon obsids are:
    on_moon_filename="20150926_moon_%s.txt" % (str(centre_chan))
@@ -237,10 +237,6 @@ if (not plot_only):
          #If the rms is too high then just put a nan in the arrays and move on to next obsid
          if (difference_rms>rms_threshold):
             print "rms of difference map %s is %s. Discarding difference image." % (moon_difference_fitsname,difference_rms)
-            #write out the difference image
-            pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
-            pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
-            print "wrote difference image %s" %  moon_difference_fitsname
             #place values in the arrays
             if (chan != 'MFS'):
                Smoon_spectrum_values[chan,obsid_index]=np.nan

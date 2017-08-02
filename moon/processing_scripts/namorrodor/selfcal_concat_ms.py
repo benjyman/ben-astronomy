@@ -54,10 +54,10 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    if (options.ionpeel):
       solutions_base_name=solutions_base_name+'_ionpeel'
       ionpeel_sourcelist=options.ionpeel
-      clustered_model_name="clustered_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
+      clustered_model_name="clustered_10dirs_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
     
       print "making %s " % clustered_model_name
-      cmd='cluster %s %s 25 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
+      cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
       print cmd
       os.system(cmd)
 
