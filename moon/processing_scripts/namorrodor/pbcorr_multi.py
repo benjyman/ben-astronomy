@@ -66,7 +66,8 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
    
    if (options.havebeam):
       if (options.track_off_moon):
-         beam_base_name=image_base_name+'_beam'
+         #beam_base_name=image_base_name+'_beam'
+         beam_base_name='%s_%s_%s_beam' % (obsid,options.havebeam,track_off_moon_paired_obsid)
       else:
          beam_base_name='%s_%s_beam' % (obsid,options.havebeam)
    else:
@@ -80,11 +81,13 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
          solutions_base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
       solutions_base_name=solutions_base_name+'_ionpeel'
       ionpeel_sourcelist=options.applyion
-      clustered_model="clustered_" + options.applyion.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
-
+      clustered_model="clustered_10dirs_" + options.applyion.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
+      print "clustered model is %s" % clustered_model
       ion_solutions=solutions_base_name+'.bin'
 
       #flag the bad ionsolutions so applyion doesn't crash
+      #Do we still need this bit? or is applyion fixed? Looks like we still need!!
+      ###flagged_ion_solutions=ion_solutions
       flagged_ion_solutions='flagged_%s' % (ion_solutions)
       cmd='ionsol -o %s -threshold-dl 4e-4 -threshold-dm 4e-4 -max-gain 2 -min-gain 0.2 -replace-unset %s %s ' % (flagged_ion_solutions,ion_solutions,clustered_model)
       print cmd

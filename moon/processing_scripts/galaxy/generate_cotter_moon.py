@@ -37,6 +37,11 @@ def generate_cotter_moon(obsid_infile,options):
     else:
        tagname_string=''
 
+    if (options.cleanup):
+       cleanup_string=' --cleanup ' 
+    else:
+       cleanup_string=''
+       
     if (options.flag_ants):
        flag_ants_string=' --flag_ants="%s" ' % (options.flag_ants)
     else:
@@ -58,7 +63,7 @@ def generate_cotter_moon(obsid_infile,options):
     sbatch_file.write('source /scratch2/mwaeor/bpindor/MWA_Python/bin/activate \n')
     sbatch_file.write('cd $SLURM_SUBMIT_DIR\n')
 
-    sbatch_file.write('python /group/mwaeor/CODE/MWA_Tools/scripts/cotter_moon.py '+obsid_list_string +' ${SLURM_ARRAY_TASK_ID} '+ track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + ' \n')
+    sbatch_file.write('python /group/mwaeor/bmckinley/git_repos/ben-astronomy/moon/processing_scripts/galaxy/cotter_moon.py '+obsid_list_string +' ${SLURM_ARRAY_TASK_ID} '+ track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + ' \n')
 
     sbatch_file.close()
    
@@ -75,6 +80,7 @@ parser.add_option('--track_moon',action='store_true',dest='track_moon',default=F
 parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
+parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]')
 
 
 (options, args) = parser.parse_args()

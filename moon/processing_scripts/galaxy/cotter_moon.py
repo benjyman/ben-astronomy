@@ -91,7 +91,8 @@ def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
       track_moon_string=' -centre %s %s ' % (off_moon_ra,off_moon_dec)
       print track_moon_string
 
-   cmd='aprun -n 1 cotter -flagfiles %s%s_%s.mwaf -norfi -o %s %s -m %s -timeres 8 -freqres 80 %s*gpubox*.fits' % (data_dir,obsid,"%%",ms_name,track_moon_string,metafits_filename,data_dir)
+   #cmd='aprun -n 1 cotter -flagfiles %s%s_%s.mwaf -norfi -o %s %s -m %s -timeres 8 -freqres 80 %s*gpubox*.fits' % (data_dir,obsid,"%%",ms_name,track_moon_string,metafits_filename,data_dir)
+   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres 8 -freqres 80 %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,data_dir)
    print cmd
    os.system(cmd)
 
@@ -99,7 +100,11 @@ def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
       flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
       print cmd
       os.system(cmd)
-   
+      
+   if (options.cleanup and os.path.exists(ms_name)):
+      cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
+      print cmd
+      os.system(cmd)
 
 import sys,os
 from optparse import OptionParser,OptionGroup
@@ -112,6 +117,8 @@ parser.add_option('--track_moon',action='store_true',dest='track_moon',default=F
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
+parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
+
 
 (options, args) = parser.parse_args()
 
