@@ -1,1 +1,1 @@
-python /group/mwaeor/CODE/MWA_Tools/scripts/generate_cotter_moon.py --tagname=20150926_moon_169 --track_moon --flag_ants=" 56 60 " 20150926_moon_169.txt  
+python /group/mwaeor/bmckinley/git_repos/ben-astronomy/moon/processing_scripts/galaxy/generate_cotter_moon.py --tagname=20150926_moon_169 --track_moon --flag_ants=" 56 60 " --cleanup 20150926_moon_169.txt  

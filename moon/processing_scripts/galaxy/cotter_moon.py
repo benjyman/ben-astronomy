@@ -90,6 +90,8 @@ def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
       off_moon_dec=track_off_moon_new_DEC
       track_moon_string=' -centre %s %s ' % (off_moon_ra,off_moon_dec)
       print track_moon_string
+   
+   flagfiles_string=" %s%s_%s.mwaf " % (data_dir,obsid,"%%")
 
    #cmd='aprun -n 1 cotter -flagfiles %s%s_%s.mwaf -norfi -o %s %s -m %s -timeres 8 -freqres 80 %s*gpubox*.fits' % (data_dir,obsid,"%%",ms_name,track_moon_string,metafits_filename,data_dir)
    cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres 8 -freqres 80 %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,data_dir)
@@ -98,8 +100,8 @@ def cotter_moon(obsid_string,list_index,track_off_moon_string,options):
 
    if (options.flag_ants):
       flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
-      print cmd
-      os.system(cmd)
+      print flag_ants_cmd_string
+      os.system(flag_ants_cmd_string)
       
    if (options.cleanup and os.path.exists(ms_name)):
       cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
