@@ -10,6 +10,7 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import os
 import os.path
+import math
 
 #set if you just want to plot already saved data
 plot_only=False
@@ -19,7 +20,7 @@ use_cropped_images=False
 
 #Set if using the small 500 px images from namorrodor
 small_images=True
-
+ionpeeled_images=True
 
 plot_images=False
 #speed of light
@@ -31,7 +32,7 @@ Omega=6.67*10.0**(-5)
 T_moon=230 #K
 #Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
 Tsky_150=245 #K (Landecker and wielebinski 1970)
-T_refl_gal_150=14.6 # temp of reflected galactic emisssion at 150 from refl;ection modelling (takes into account albedo of 0.07)
+T_refl_gal_150=14.6 # temp of reflected galactic emisssion at 150 from reflection modeling (takes into account albedo of 0.07)
 refl_gal_alpha=-2.50
 #RFI model mask radius in arcmin - limits the extent of the gausssian reflection model
 #rfi_model_mask_size=2.0
@@ -179,12 +180,20 @@ if (not plot_only):
             #psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
             #difference image filename
             #moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-            moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-            off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-            on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-            off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-            moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-            psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+            if (ionpeeled_images):
+               moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+               off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+               on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+               off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+               moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+               psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s_peeled-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string) 
+            else:
+               moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+               off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+               on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+               off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+               moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+               psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
 
          print "############################"
          print moon_fitsname  
@@ -193,14 +202,16 @@ if (not plot_only):
             moon_hdulist = pyfits.open(moon_fitsname)
          else:
             print "Either file %s is missing or is not readable" % moon_fitsname
-            continue         
+            continue        
          moon_data=moon_hdulist[0].data[0,0,:,:]
+         moon_data=np.nan_to_num(moon_data)
          moon_header=moon_hdulist[0].header
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          pix_size_deg = np.abs(float(moon_header['cdelt1']))
          moon_radius_pix = np.round(0.25/pix_size_deg)
 
          #print max value of moon image in Jy/beam to check against rfi + moon total flux
+         print "Max moon is %s Jy/beam" % (np.max(moon_data))
          print "Max moon is %s Jy/beam" % (np.max(moon_zoom))
    
          #Need to have the images in Jy per pixel for the equations to make sense
@@ -222,6 +233,7 @@ if (not plot_only):
              continue
          off_moon_hdulist = pyfits.open(off_moon_fitsname)
          off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
+         off_moon_data=np.nan_to_num(off_moon_data)
          off_moon_header=off_moon_hdulist[0].header
          off_moon_zoom=off_moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          
@@ -235,7 +247,7 @@ if (not plot_only):
          
 
          #If the rms is too high then just put a nan in the arrays and move on to next obsid
-         if (difference_rms>rms_threshold):
+         if (difference_rms>rms_threshold or math.isnan(difference_rms)==True):
             print "rms of difference map %s is %s. Discarding difference image." % (moon_difference_fitsname,difference_rms)
             #place values in the arrays
             if (chan != 'MFS'):
@@ -256,6 +268,7 @@ if (not plot_only):
             print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
             continue
          psf_data=psf_hdulist[0].data[0,0,:,:]
+         psf_data=np.nan_to_num(psf_data)
          psf_header=psf_hdulist[0].header
          psf_zoom=psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
          psf_zoom=np.require(psf_zoom, dtype=np.float32)

@@ -97,7 +97,7 @@ def generate_galaxy(infile,options):
     imaging_file.write('cd $SLURM_SUBMIT_DIR\n')
 
 
-    imaging_file.write('/group/mwaeor/CODE/MWA_Tools/scripts/selfcal_concat_ms.py '+obsid_list_string+' ${SLURM_ARRAY_TASK_ID} ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+tagname_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
+    imaging_file.write('/group/mwaeor/bmckinley/git_repos/ben-astronomy/moon/processing_scripts/galaxy/selfcal_concat_ms.py '+obsid_list_string+' ${SLURM_ARRAY_TASK_ID} ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+tagname_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
 
     imaging_file.close()
     print "wrote file q_selfcal_concat_ms_wrapper.sh"
