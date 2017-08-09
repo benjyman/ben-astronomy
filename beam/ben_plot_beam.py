@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from Python.Satpass    import Sateph
-from Python.Settings  import lb, obs_range, obs_range_test#, obs_range_test_rf0xx_01, obs_range_test_rf0xx_02, obs_range_test_rf0xx_03, obs_range_test_rf1xx,obs_range_all_rf1xx,obs_range_056xx_test
-from Python.TLE import TLE_config
-from Python.TimeMethods     import tm
-from Python.Obstile   import Obstile
+from BeamPlot.Satpass    import Sateph
+from BeamPlot.Settings  import lb, obs_range, obs_range_test#, obs_range_test_rf0xx_01, obs_range_test_rf0xx_02, obs_range_test_rf0xx_03, obs_range_test_rf1xx,obs_range_all_rf1xx,obs_range_056xx_test
+from BeamPlot.TLE import TLE_config
+from BeamPlot.TimeMethods     import tm
+from BeamPlot.Obstile   import Obstile
 from numpy            import rad2deg
 import numpy as np
 import healpy as hp
@@ -221,14 +221,14 @@ def generate_pb_map(AUT_tile_name_in,ref_tile_name_in,AUT_signal_threshold_in,re
    ###DATA
    
    #Get the data for the ref tile
-   ref_obs = Obstile([ref_tile_name])
+   ref_obs = Obstile([ref_tile_name],data_dir='/data/beam/Oct_16/Test_Obs/f-Rows_old')
    ref_obs.getdata()
    ref_dat = ref_obs.rdata(tile=ref_tile_name,tmin=t_min,tmax=t_max)
    
    #print ref_dat
    
    #select the AUT and get the data for that tile
-   obs = Obstile([AUT_tile_name])
+   obs = Obstile([AUT_tile_name],data_dir='/data/beam/Oct_16/Test_Obs/f-Rows_old')
    obs.getdata()
    AUT_dat = obs.rdata(tile=AUT_tile_name,tmin=t_min,tmax=t_max)
 
@@ -1299,14 +1299,14 @@ output_healpix_beam_filename_YY='healpix_beam_map_YY.fits'
 #reproject_beam_to_healpix(beam_filename_YY,output_healpix_beam_filename_YY)
 
 ###########data stuff:####################
-obs_start_time=1448335711
-obs_end_time=  1448851982
+obs_start_time=1448429025
+obs_end_time=1448447953
 
 
-#for ref_ant in ref_tile_list:
-#   for AUT in AUT_tile_list:
-#      generate_pb_map(AUT,ref_ant,AUT_signal_threshold,ref_signal_threshold)
-#      plot_pb_map(AUT,ref_ant)
+for ref_ant in ref_tile_list:
+   for AUT in AUT_tile_list:
+      generate_pb_map(AUT,ref_ant,AUT_signal_threshold,ref_signal_threshold)
+      plot_pb_map(AUT,ref_ant)
 #      plot_1D(AUT,ref_ant)
 #      #plot_chan_histogram(AUT_tile_name,ref_tile_name)
 
@@ -1315,7 +1315,7 @@ obs_end_time=  1448851982
 
 
 #Compare the maps to the model:
-compare_pb_maps()
+#compare_pb_maps()
 
 ################simulatey stuff###############
 #observatory='Greenbank'
