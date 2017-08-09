@@ -15,9 +15,9 @@ fault =  {1                : "TLE: %s\nin %s does not belong to satellite",
           5                : "Ops: Undefined operation"}
           
 # File locations
-floc =   {'satdata'        : '/data/beam/Oct_16/BeamPlot/Data/Sat_Data.csv',
-          'TLE'            : '/data/beam/Oct_16/BeamPlot/TLE',
-          'TLEpath'        : '/data/beam/Oct_16/BeamPlot/TLE/%s.txt',
+floc =   {'satdata'        : '/data/code/git/ben-astronomy/beam/BeamPlot/Data/Sat_Data.csv',
+          'TLE'            : '/data/code/git/ben-astronomy/beam/BeamPlot/TLE',
+          'TLEpath'        : '/data/code/git/ben-astronomy/beam/BeamPlot/TLE/%s.txt',
           'Nov2015'        : '/data/beam/Oct_16/Obs/Nov2015/satpasses.txt'}
           
 # Read from file
