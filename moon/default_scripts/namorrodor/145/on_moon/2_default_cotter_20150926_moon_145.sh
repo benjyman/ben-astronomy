@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_cotter_moon.py --tagname=20150926_moon_145 --track_moon --cleanup --flag_ants=" 56 60 " /data/moon/2017/20150926_moon_145.txt  

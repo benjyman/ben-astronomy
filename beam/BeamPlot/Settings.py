@@ -28,8 +28,8 @@ read =   {'head'           : lambda f: Popen(['head', '-1', f],
           
 # SpaceTrack Settings
 STrack = {'login'          : ('j.rasti@student.unimelb.edu.au','12monkeysunimelb'),
-          'cookies'        : '/data/beam/Oct_16/BeamPlot/Data/TLEcookies.txt',
-          'dload'          : '/data/beam/Oct_16/BeamPlot/Data/TLEdownload.txt',
+          'cookies'        : '/data/code/git/ben-astronomy/beam/BeamPlot/Data/TLEcookies.txt',
+          'dload'          : '/data/code/git/ben-astronomy/beam/BeamPlot/Data/TLEdownload.txt',
           'newTLE'         : 1420074000,
           'chunk'          : 1000*86400,
           'safety'         : 3*86400,

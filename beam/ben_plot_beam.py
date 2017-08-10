@@ -5,6 +5,7 @@ from BeamPlot.Settings  import lb, obs_range, obs_range_test#, obs_range_test_rf
 from BeamPlot.TLE import TLE_config
 from BeamPlot.TimeMethods     import tm
 from BeamPlot.Obstile   import Obstile
+from BeamPlot.convert_to_frows import distribute
 from numpy            import rad2deg
 import numpy as np
 import healpy as hp
@@ -14,6 +15,7 @@ import time, datetime
 import math
 from reproject import reproject_from_healpix, reproject_to_healpix
 from astropy.io import fits
+from glob import glob
 
 #Get info on each tile during the appropriate time period using the MWA metadata service on the web 
 #http://mwa-metadata01.pawsey.org.au/metadata/obs?obs_id=1132688872
@@ -29,6 +31,13 @@ freq=137000000.0
 vel_light=299792458.0
 #dipole height m
 height=0.3
+
+#Define the directory of the raw data
+raw_data_dir='/data/beam/Aug2017_test/data'
+converted_frow_data_dir='./Converted'
+
+#Set to false if data already converted
+convert_data_to_frows=True
 
 #function to find the nearest value in an array and its index
 def find_nearest(array,value):
@@ -211,8 +220,10 @@ def generate_pb_map(AUT_tile_name_in,ref_tile_name_in,AUT_signal_threshold_in,re
    #Set up time array, 
    #t_min=np.around(obs_range[0],0)
    #t_max=np.around(obs_range[1],0)
-   t_min=np.around(obs_range[0],0)
-   t_max=np.around(obs_range[1],0)
+   t_min=np.around(obs_start_time)
+   t_max=np.around(obs_end_time)
+   
+   
    
    #print t_min,t_max
    #predicted_time_array=np.arange(t_min,t_max)
@@ -220,15 +231,24 @@ def generate_pb_map(AUT_tile_name_in,ref_tile_name_in,AUT_signal_threshold_in,re
 
    ###DATA
    
+   #Convert to frows if not done already
+   if (convert_data_to_frows):
+       print 'Looking for files %s/%s*' %(raw_data_dir,ref_tile_name)
+       raw_ref_data_file_list=glob('%s/%s*' %(raw_data_dir,ref_tile_name))
+       distribute(raw_ref_data_file_list)             
+   
    #Get the data for the ref tile
-   ref_obs = Obstile([ref_tile_name],data_dir='/data/beam/Oct_16/Test_Obs/f-Rows_old')
+   ref_obs = Obstile([ref_tile_name],data_dir=converted_frow_data_dir)
    ref_obs.getdata()
    ref_dat = ref_obs.rdata(tile=ref_tile_name,tmin=t_min,tmax=t_max)
    
-   #print ref_dat
+   print ref_dat
    
+   if (convert_data_to_frows):
+      raw_AUT_data_file_list=glob('%s/%s*' %(raw_data_dir,AUT_tile_name))
+      distribute(raw_AUT_data_file_list) 
    #select the AUT and get the data for that tile
-   obs = Obstile([AUT_tile_name],data_dir='/data/beam/Oct_16/Test_Obs/f-Rows_old')
+   obs = Obstile([AUT_tile_name],data_dir=converted_frow_data_dir)
    obs.getdata()
    AUT_dat = obs.rdata(tile=AUT_tile_name,tmin=t_min,tmax=t_max)
 
@@ -1299,8 +1319,12 @@ output_healpix_beam_filename_YY='healpix_beam_map_YY.fits'
 #reproject_beam_to_healpix(beam_filename_YY,output_healpix_beam_filename_YY)
 
 ###########data stuff:####################
-obs_start_time=1448429025
-obs_end_time=1448447953
+##Jarryd 2015 Nov data:
+#obs_start_time=1448429025
+#obs_end_time=1448447953
+##Jack test data 4 Aug 2017 (start 1501833532?)
+obs_start_time=1501833532
+obs_end_time=1501833542
 
 
 for ref_ant in ref_tile_list:

@@ -31,7 +31,9 @@ class Obstile(object):
         for q in tiles:
             cls = 'mwa' if q[:2]!='rf' else 'ref'                 # type ref/mwa
             #frows = glob('./Obs/f-Rows/%s*'%q)[0]                 # file loc.
-            frows = glob('%s/%s*'%(self.data_dir,q))[0]   
+            frow_file_loc='%s/%s*'%(self.data_dir,q)
+            print 'searching for f-row data in %s' % frow_file_loc
+            frows = glob(frow_file_loc)[0]   
             #trows = glob('./Obs/t-Rows/%s*'%q)[0]                 # file loc.
             self.tiles[q] = Tile(q,q[:3],q[3:],cls,frows,'')   # tile dict.
     
@@ -53,10 +55,13 @@ class Obstile(object):
     
     def getdata(self, tmin=None, tmax=None, c=range(1,113)):
         for tile in self.tiles:
+            print self.tiles[tile].f_file
             with open(self.tiles[tile].f_file) as dfile:
                 d = dfile.readline().strip()
                 stamps = [float(d[i:i+13]) for i in range(0,len(d),13)]
+                print stamps
                 ti, tf = self.restrict(stamps, tmin, tmax)
+                print ti,tf
                 chan = [[-1*ord(d)/2. for d in dfile.readline().strip()[ti:tf]]
                         if i in c else dfile.readline()[0:0] for i in range(1,113)]
             self.data[tile] = np.array([stamps[ti:tf]]+chan)
