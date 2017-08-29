@@ -1,5 +1,6 @@
 #python code to model moon spectrum, remove rfi component ets.
-
+import matplotlib
+matplotlib.use('Agg')
 import pyfits
 import pylab as py
 import numpy as np
@@ -20,7 +21,14 @@ use_cropped_images=False
 
 #Set if using the small 500 px images from namorrodor
 small_images=True
-ionpeeled_images=True
+ionpeeled_images=False
+
+#Portion of difference image used to measure rms
+#[1100:1600,1100:1600]
+rms_start_x=1100
+rms_end_x=1600
+rms_start_y=1100
+rms_end_y=1600
 
 plot_images=False
 #speed of light
@@ -85,7 +93,7 @@ big_Tb_value_error=np.zeros([number_coarse_chans,2])
 
 
 band_centre_chans=[69,93,121,145,169]
-#band_centre_chans=[121]
+#band_centre_chans=[169]
 
 if (not plot_only):
 
@@ -140,6 +148,7 @@ if (not plot_only):
       else:
          xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
          xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
+   
    #initialise arrays of length n_chans to store Smoon and Srfi values
    Smoon_spectrum_values=np.empty([n_chans,n_obs])
    Smoon_spectrum_values[:]=np.nan 
@@ -209,11 +218,17 @@ if (not plot_only):
          moon_zoom=moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          pix_size_deg = np.abs(float(moon_header['cdelt1']))
          moon_radius_pix = np.round(0.25/pix_size_deg)
-
+        
+         max_moon_value=np.max(moon_zoom)
+         min_moon_value=np.min(moon_zoom)  
          #print max value of moon image in Jy/beam to check against rfi + moon total flux
-         print "Max moon is %s Jy/beam" % (np.max(moon_data))
-         print "Max moon is %s Jy/beam" % (np.max(moon_zoom))
+         #print "Max moon is %s Jy/beam" % (np.max(moon_data))
+         print "Max moon is %s Jy/beam" % max_moon_value
+         print "Min moon is %s Jy/beam" % min_moon_value
    
+         if (max_moon_value==min_moon_value):
+            print "Moon max and min are the same - something is wrong with the image, discarding."
+            continue
          #Need to have the images in Jy per pixel for the equations to make sense
          #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
          pix_area_deg_sq = pix_size_deg * pix_size_deg
@@ -237,13 +252,23 @@ if (not plot_only):
          off_moon_header=off_moon_hdulist[0].header
          off_moon_zoom=off_moon_data[xstart_moon:xend_moon,ystart_moon:yend_moon]
          
+         max_off_moon_value=np.max(off_moon_zoom)
+         min_off_moon_value=np.min(off_moon_zoom) 
+         
+         print "Max off_moon is %s Jy/beam" % max_off_moon_value
+         print "Min off_moon is %s Jy/beam" % min_off_moon_value
+   
+         if (max_off_moon_value==min_off_moon_value):
+            print "Off_moon max and min are the same - something is wrong with the image, discarding."
+            continue
+         
          #difference the images
          moon_minus_sky=moon_zoom-off_moon_zoom
          #convert to Jy per pix
          moon_minus_sky_jyppix=moon_minus_sky/n_pixels_per_beam
 
          #print out the rms of the difference image ( corner only )
-         difference_rms=np.sqrt(np.mean(np.square(moon_minus_sky[0:150,0:150])))
+         difference_rms=np.sqrt(np.mean(np.square(moon_minus_sky[rms_start_x:rms_end_x,rms_start_y:rms_end_y])))
          
 
          #If the rms is too high then just put a nan in the arrays and move on to next obsid
@@ -435,7 +460,7 @@ if (not plot_only):
          X2_const=sm.add_constant(X2)
          
          # Now do just with numpy:
-         beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
+         #beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
 
          #using vedantham MLE as above
          H2_matrix=np.column_stack((vec_G,vec_RFI))
