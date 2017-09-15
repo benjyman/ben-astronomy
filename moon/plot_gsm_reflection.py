@@ -7,17 +7,21 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import optimize
 
+date_time_string="2015_09_26_16_55_28"
 
 #load the data
-temp_data_filename="disk_av_temp_array_2015_09_26_16_55_28.npy"
-freq_points_filename="freq_array_2015_09_26_16_55_28.npy"
+temp_data_filename="disk_av_temp_array_%s.npy" % date_time_string
+freq_points_filename="freq_array_%s.npy" % date_time_string
 
-freq_array=np.load(freq_points_filename)
+#freq_array=np.load(freq_points_filename)
+#freq array didnt get saved for some reason...
+freq_array=np.arange(70,235,5)
+
 temp_data=np.load(temp_data_filename)
 
-temp_error=0.01*temp_data
+temp_error=0.1*temp_data
 
-date_time_string="2015_09_26_16_55_28"
+
 
 #fit line
 
@@ -70,16 +74,16 @@ ampErr = np.sqrt( covar[0][0] ) * amp
 #temp_plot.savefig(plot_filename)
 
 plt.clf()
-plot_filename="best_fit_powerlaw_%s.png" % date_time_string
+plot_filename="best_fit_powerlaw_reflection_%s.png" % date_time_string
 fit_plot=plt.figure(1)
 plt.subplot(2, 1, 1)
 plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index))     # Fit
 plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.')  # Data
-plt.text(150, 50, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
-plt.text(150, 40, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
-plt.title('Best Fit Power Law')
+plt.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
+plt.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
+plt.title('Best Fit Power Law Moon Reflection')
 plt.xlabel('Frequency (MHz)')
-plt.ylabel('Disk Avergaged Moon Temp (K)')
+plt.ylabel('Disk-Averaged Reflected Moon Temp (K)')
 plt.xlim(70, 240)
 
 plt.subplot(2, 1, 2)

@@ -11,9 +11,9 @@ from skyfield.api import Topos, load
 import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
-from pygsm import GlobalSkyModel
+#from pygsm import GlobalSkyModel2016
 
-from pygsm import GSMObserver
+from pygsm import GSMObserver2016
 from datetime import datetime
 
 #Set the time
@@ -30,8 +30,10 @@ second=float(date_time_string.split("_")[5])
 moon_radius_km=1738.1
 moon_radius_deg=0.25
 
-NSIDE_interim=512
-NSIDE_final=32
+#Don't degrade NSIDE
+#USE 512 FOR 2008 gsm AND 1024 FOR 2016 gsm
+NSIDE_interim=1024
+#NSIDE_final=32
 
 r2d = 180.0/np.pi
 d2r = np.pi/180.0
@@ -122,7 +124,7 @@ moon_observatory_lon=float(t_degrees[0])-float(earth_mwa_RA_deg)
 # Setup observatory location - in this case, MWA, Australia
 #latitude_degrees=-26.70331940, longitude_degrees=116.67081524 ,elevation_m=377.83
 (latitude, longitude, elevation) = (moon_observatory_lat, moon_observatory_lon, 0)
-ov = GSMObserver()
+ov = GSMObserver2016()
 ov.lon = longitude
 ov.lat = latitude
 ov.elev = elevation
@@ -200,12 +202,12 @@ for freq_index,freq_MHz in enumerate(freq_array):
       moon_map[moon_pixel_index]=gsm_pixel_temp_reflected
 
 
-   hp.ud_grade(moon_map, NSIDE_final)
+   #hp.ud_grade(moon_map, NSIDE_final)
 
    #mask the negative values
    moon_map[moon_map < 0] = np.nan
 
-   #Calculate the disk-averged temperature
+   #Calculate the disk-averaged temperature
    disk_averaged_temp=np.nanmean(moon_map)
    disk_averaged_temp_array[freq_index]=disk_averaged_temp
    print "disk_averaged_temp is %s K for datetime %s and freq %s MHz" % (disk_averaged_temp,date_time_string,freq_MHz)
