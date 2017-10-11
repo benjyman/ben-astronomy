@@ -14,14 +14,18 @@ import os.path
 import math
 from scipy import optimize
 from pygsm import GlobalSkyModel2016
+from pygsm import GlobalSkyModel
 import healpy as hp
 
 
-#Choose one or the other: LFSM or GSM (GSM2016)
+#Choose one only: LFSM or GSM ( or GSM2016)
 use_model_gsm=True
+use_model_gsm2016=False
 use_model_lfsm=False
 
 new_model_galaxy=False
+use_mwa_beams=True
+use_gaussian_beams=False
 generate_new_beam_maps=False
 #set if you just want to plot already saved data
 plot_only=True
@@ -29,18 +33,30 @@ plot_only=True
 do_RFI_broadening=True
 
 
-if use_model_gsm:
+if use_model_gsm2016:
    NSIDE=1024 #nside for healpix maps (pygsm default is 512 for pygsm and 1024 for pygsm2016 (checked))
-   beam_map_filename_base="/data/moon/primary_beam/gaussian_beam_gsm"
+   if use_gaussian_beams:
+      beam_map_filename_base="/data/moon/primary_beam/gaussian_beam_gsm2016"
+   if use_mwa_beams:
+      beam_map_filename_base="/data/moon/primary_beam/1443286527_antpat"
+if use_model_gsm:
+   NSIDE=512 #nside for healpix maps (pygsm default is 512 for pygsm and 1024 for pygsm2016 (checked))
+   if use_gaussian_beams:
+      beam_map_filename_base="/data/moon/primary_beam/gaussian_beam_gsm"
+   if use_mwa_beams:
+      beam_map_filename_base="/data/moon/primary_beam/1443286527_antpat"  
 if use_model_lfsm:
    NSIDE=128
-   beam_map_filename_base="/data/moon/primary_beam/gaussian_beam_lfsm"
-
+   if use_gaussian_beams:
+      beam_map_filename_base="/data/moon/primary_beam/gaussian_beam_lfsm"
+   if use_mwa_beams:
+      beam_map_filename_base="/data/moon/primary_beam/1443286527_antpat"
 #downloaded pixel transformation fits file from (https://lambda.gsfc.nasa.gov/toolbox/tb_pixelcoords.cfm)
 #for pygsm
 #pixel_coordinate_file="/data/code/healpix/pixel_coords_map_ring_celestial_res9.fits"
 #for pygsm2016:
 pixel_coordinate_file_gsm2016="/data/code/healpix/pixel_coords_map_ring_celestial_res10.fits"
+pixel_coordinate_file_gsm="/data/code/healpix/pixel_coords_map_ring_celestial_res9.fits"
 pixel_coordinate_file_lfsm="/data/code/healpix/pixel_coords_map_ring_celestial_res7.fits"
 
 #beamformer delays for obsid chan 69:1127321744 :  24,18,12,6,22,16,10,4,20,14,8,2,18,12,6,0
@@ -62,16 +78,19 @@ dec_max=dec_pointing+20.0
 if use_model_lfsm:
    average_temp_filename="average_lfsm_temp_for_moon_region.npy"
    gsm_fractional_error=0.15
+if use_model_gsm2016:
+   average_temp_filename="average_gsm2016_temp_for_moon_region.npy"
+   gsm_fractional_error=0.15
 if use_model_gsm:
    average_temp_filename="average_gsm_temp_for_moon_region.npy"
    gsm_fractional_error=0.15
-
+   
 #set if using already cropped images
 use_cropped_images=False
 
 #Set if using the small images. 'small images are 2048 x 20148' 
 #But still need to crop as especially at the higher freqs, the primary beam is a lot narrower and PB errors affect the difference images.
-small_images=True
+small_images=True #i.e. the standard 2048x2048 images I am using now
 ionpeeled_images=False
 
 #Portion of difference image used to measure rms (diff is from cropped image - middle quarter)
@@ -91,7 +110,7 @@ moon_radius_deg=0.2774
 #Omega=6.67*10.0**(-5)
 #For a 33.29 arcmin moon e.g.: 20150926: http://aa.usno.navy.mil/imagery/disk?body=moon&year=2015&month=9&day=26&hour=16&minute=00
 Omega=7.365*10.0**(-5)
-T_moon=230 #K
+T_moon=230. #K
 #Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
 
 T_refl_gal_150=25.26 # temp of reflected galactic emisssion at 150 from reflection modeling (GSM2016) (takes into account albedo of 0.07)
@@ -133,8 +152,10 @@ def makeGaussian(size, fwhm = 3, center=None):
 def generate_beam_maps(frequency_array):
    if use_model_lfsm:
          pixel_coordinate_file=pixel_coordinate_file_lfsm
-   if use_model_gsm:
+   if use_model_gsm2016:
          pixel_coordinate_file=pixel_coordinate_file_gsm2016
+   if use_model_gsm:
+         pixel_coordinate_file=pixel_coordinate_file_gsm
    #read in the coordinate transform file to convert pixel to ra dec (celestial)
    pixel_coordinate_transform_map_ra=hp.read_map(pixel_coordinate_file,field=0)
    pixel_coordinate_transform_map_dec=hp.read_map(pixel_coordinate_file,field=1)
@@ -155,7 +176,7 @@ def generate_beam_maps(frequency_array):
          beam_value=np.exp(-4*np.log(2) * ((pix_ra_deg-ra_pointing)**2 + (pix_dec_deg-dec_pointing)**2) / fwhm**2)
          beam_map[hpx_pixel]=beam_value
 
-      #save the  average temp array
+      #save the beam map array
       np.save(beam_map_filename,beam_map)
 
       ##save the beam map as png           
@@ -171,24 +192,92 @@ def generate_beam_maps(frequency_array):
 def model_galaxy(frequency_array, model_data):
    print "Doing Galaxy modeling with %s" % model_data
    average_temp_array=np.empty(len(frequency_array))
-   if (model_data=='gsm'):
+   if (model_data=='gsm2016'):
       gsm = GlobalSkyModel2016(freq_unit='MHz')
+   if (model_data=='gsm'):
+      gsm = GlobalSkyModel(freq_unit='MHz')
    for freq_index,freq_MHz in enumerate(frequency_array):
-      beam_map_filename="%s_%.0fMHz.npy" % (beam_map_filename_base,freq_MHz)
-      beam_map=np.load(beam_map_filename)
+      if use_gaussian_beams:
+         beam_map_filename="%s_%.0fMHz.npy" % (beam_map_filename_base,freq_MHz)
+         beam_map=np.load(beam_map_filename)
+      if use_mwa_beams:
+         beam_map_filename="%s_%07.2fMHz.fits" % (beam_map_filename_base,freq_MHz)
+         beam_map=hp.read_map(beam_map_filename)
+         if (NSIDE!=512):
+            beam_map=hp.ud_grade(beam_map,nside_out=NSIDE)
       if (model_data=='lfsm'):
          #Just read in maps already generated using realizelfsm.py
          lfsm_data_filename="/data/moon/low_freq_sky_model_lwa/output-%.0f.dat" % freq_MHz
          galaxy_map=np.loadtxt(lfsm_data_filename)      
-      if (model_data=='gsm'):
+      if (model_data=='gsm2016'):
          galaxy_map=gsm.generate(freq_MHz)
-      
-      mean_galaxy=np.mean(galaxy_map)
-      print "mean_galaxy %s" % mean_galaxy
-      #calculate the beam-weighted mean of the lfsm
-      beam_weighted_mean_galaxy=np.sum(galaxy_map*beam_map)/np.sum(beam_map)
-      print "beam_weighted_mean_galaxy %s freq %.0f MHz" % (beam_weighted_mean_galaxy,freq_MHz)
-      average_temp_array[freq_index]=beam_weighted_mean_galaxy
+      if (model_data=='gsm'):
+         #galaxy_map=gsm.generate(freq_MHz)
+         #try reading the angelica data gsm maps from Marcin
+         galaxy_map_filename="/data/moon/bighorns/sky_maps_angelica/1443286527_angelica_%07.2fMHz.fits" % freq_MHz
+         print "using angelica map %s" % galaxy_map_filename
+         galaxy_map=hp.read_map(galaxy_map_filename)
+        
+      #Do beam weighted average of sky
+      mean_sky=np.mean(galaxy_map)
+      print "mean_sky %s" % mean_sky
+      #calculate the beam-weighted mean of the sky
+      sky_seen_by_MWA=galaxy_map*beam_map
+      beam_weighted_mean_sky=np.sum(sky_seen_by_MWA)/np.sum(beam_map)
+      print "beam_weighted_mean_sky %s freq %.0f MHz" % (beam_weighted_mean_sky,freq_MHz)
+      average_temp_array[freq_index]=beam_weighted_mean_sky
+     
+      #for printing log
+      #stay positive!
+      galaxy_map=np.where(galaxy_map > 0.0, galaxy_map, np.nan)
+      sky_above_horizon=np.where(beam_map > 0.0, galaxy_map, np.nan)
+      sky_seen_by_MWA=np.where(sky_seen_by_MWA > 0.0, sky_seen_by_MWA, np.nan)   
+      beam_map=np.where(beam_map > 0.0, beam_map, np.nan)       
+
+      print min(galaxy_map)
+      print min(beam_map)
+      print min(sky_seen_by_MWA)
+ 
+      ##save the beam multiplied by the sky map as png           
+      plt.clf()
+      map_title="Sky multiplied by MWA beam %.0fMHz" % freq_MHz
+      sky_seen_by_MWA_figname="sky_multiplied_by_MWA_beam_%.0fMHz.png" % freq_MHz
+      #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+      hp.mollview(map=sky_seen_by_MWA,coord='G',xsize=400,title=map_title,norm='log',max=100000, min=0.5) #norm="log"
+      figmap = plt.gcf()
+      figmap.savefig(sky_seen_by_MWA_figname,dpi=100) 
+      plt.close()
+
+      ##save the sky above horizon  as png           
+      plt.clf()
+      map_title="Sky above horizon %.0fMHz" % freq_MHz
+      sky_above_horizon_figname="sky_above_horizon_%.0fMHz.png" % freq_MHz
+      #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+      hp.mollview(map=sky_above_horizon,coord='G',xsize=400,title=map_title,norm='log',max=100000) #norm="log"
+      figmap = plt.gcf()
+      figmap.savefig(sky_above_horizon_figname,dpi=100)
+      plt.close()
+
+      #save the beam
+      plt.clf()
+      map_title="MWA beam %.0fMHz" % freq_MHz
+      beam_MWA_figname="MWA_beam_%.0fMHz.png" % freq_MHz
+      #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+      hp.mollview(map=beam_map,coord='G',xsize=400,title=map_title,norm='log')
+      figmap = plt.gcf()
+      figmap.savefig(beam_MWA_figname,dpi=100)
+      plt.close()
+
+      #save the galaxy
+      plt.clf()
+      map_title="sky_%.0fMHz" % freq_MHz
+      sky_figname="sky_%.0fMHz.png" % freq_MHz
+      #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+      hp.mollview(map=galaxy_map,coord='G',xsize=400,title=map_title,norm='log')
+      figmap = plt.gcf()
+      figmap.savefig(sky_figname,dpi=100)
+      plt.close()
+
 
    #print average_temp_array
    #save the  average temp array
@@ -216,6 +305,7 @@ def model_gsm(frequency_array):
       average_temp=np.nanmean(gsm_map)
       average_temp_array[freq_index]=average_temp
 
+
    #print average_temp_array
    #save the  average temp array
    np.save(average_temp_filename,average_temp_array)
@@ -237,15 +327,15 @@ if generate_new_beam_maps:
     generate_beam_maps(big_freq_array)
 
 #initialise the other big arrays
-big_Smoon_average_stddev_spectrum=np.empty([number_coarse_chans,2])
+big_Smoon_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Srfi_average_stddev_spectrum=np.zeros([number_coarse_chans,2])
 big_Ssky_predicted_values=np.zeros(number_coarse_chans)
 big_Smoon_predicted_values=np.zeros(number_coarse_chans)
 big_Tb_value_error=np.zeros([number_coarse_chans,2])
 
 
-band_centre_chans=[69,93,121,145,169]
-#band_centre_chans=[169]
+#band_centre_chans=[69,93,121,145,169]
+band_centre_chans=[69,93,121]
 
 if (not plot_only):
 
@@ -306,9 +396,9 @@ if (not plot_only):
          xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
    
    #initialise arrays of length n_chans to store Smoon and Srfi values
-   Smoon_spectrum_values=np.empty([n_chans,n_obs])
+   Smoon_spectrum_values=np.zeros([n_chans,n_obs])
    Smoon_spectrum_values[:]=np.nan 
-   Srfi_spectrum_values=np.empty([n_chans,n_obs])
+   Srfi_spectrum_values=np.zeros([n_chans,n_obs])
    Srfi_spectrum_values[:]=np.nan
    Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
    Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
@@ -357,9 +447,15 @@ if (not plot_only):
                off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
                on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
                off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+               #output fitsnames:
                moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
                psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-
+               moon_zoom_fitsname="/data/moon/2017/moon_zoom_%s_%s-%s.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+               off_moon_zoom_fitsname="/data/moon/2017/off_moon_zoom_%s_paired_with_%s_%s-%s.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
+               rfi_modelled_fitsname="/data/moon/2017/rfi_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+               moon_modelled_fitsname="/data/moon/2017/moon_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+               residual_modelled_fitsname="/data/moon/2017/residual_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+               
          print "############################"
          print moon_fitsname  
          print off_moon_fitsname
@@ -432,18 +528,26 @@ if (not plot_only):
          
          #If the rms is too high then just put a nan in the arrays and move on to next obsid
          if (difference_rms>rms_threshold or math.isnan(difference_rms)==True):
-            print "rms of difference map %s is %s in Jy/beam. Discarding difference image." % (moon_difference_fitsname,difference_rms)
+            print "rms of difference map %s is %s in Jy/beam. Discarding images." % (moon_difference_fitsname,difference_rms)
             #place values in the arrays
             if (chan != 'MFS'):
                Smoon_spectrum_values[chan,obsid_index]=np.nan
                Srfi_spectrum_values[chan,obsid_index]=np.nan
             continue  
          else:
-            print "rms of difference map %s is %s in Jy/beam. Writing out difference image." % (moon_difference_fitsname,difference_rms)
+            print "rms of difference map %s is %s in Jy/beam. Writing out images." % (moon_difference_fitsname,difference_rms)
             #write out the difference image
             pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
             pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
-            print "wrote difference image %s" %  moon_difference_fitsname
+            print "wrote  image %s" %  moon_difference_fitsname
+            #write out the moon image
+            pyfits.writeto(moon_zoom_fitsname,moon_zoom,clobber=True)
+            pyfits.update(moon_zoom_fitsname,moon_zoom,header=moon_header)
+            print "wrote  image %s" %  moon_zoom_fitsname
+            #write out the off moon image
+            pyfits.writeto(off_moon_zoom_fitsname,off_moon_zoom,clobber=True)
+            pyfits.update(off_moon_zoom_fitsname,off_moon_zoom,header=moon_header)
+            print "wrote  image %s" %  off_moon_zoom_fitsname
 
          #read in psf images
          if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):         
@@ -691,14 +795,37 @@ if (not plot_only):
             print "Final total Moon flux density, with RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,on_moon_obsid,chan_string)
          #print "Final total Moon flux density, with RFI broadening: is %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy, RFI_alone2,on_moon_obsid,chan_string)
          
+
+         if do_RFI_broadening:
+            reconstructed_RFI=S_RFI2*RFI_convolved_shift_jyppix
+         else:
+            reconstructed_RFI=S_RFI2*PSF_zoom
+            
          reconstructed_moon2=S_moon2*G_image_shift
-         R2=moon_minus_sky_jyppix-reconstructed_moon2-RFI_alone2
+         #residual=moon_minus_sky_jyppix-reconstructed_moon2-RFI_alone2
+         residual=moon_minus_sky_jyppix-reconstructed_moon2-reconstructed_RFI
          
          #place values in the arrays
          if (chan != 'MFS'):
              Smoon_spectrum_values[chan,obsid_index]=S_moon2_tot_Jy
              Srfi_spectrum_values[chan,obsid_index]=RFI_alone2    
+         
+         #write out the modelled rfi image
+         pyfits.writeto(rfi_modelled_fitsname,reconstructed_RFI,clobber=True)
+         pyfits.update(rfi_modelled_fitsname,reconstructed_RFI,header=moon_header)
+         print "wrote image %s" %  rfi_modelled_fitsname
+         
+         pyfits.writeto(moon_modelled_fitsname,reconstructed_moon2,clobber=True)
+         pyfits.update(moon_modelled_fitsname,reconstructed_moon2,header=moon_header)
+         print "wrote image %s" %  moon_modelled_fitsname
 
+         pyfits.writeto(residual_modelled_fitsname,residual,clobber=True)
+         pyfits.update(residual_modelled_fitsname,residual,header=moon_header)
+         print "wrote image %s" %  residual_modelled_fitsname         
+         
+         
+         
+         
    #work out average values and standard deviations
    #Smoon_spectrum_values=np.empty([n_chans,n_obs])
    #Srfi_spectrum_values=np.empty([n_chans,n_obs])
@@ -742,14 +869,6 @@ if (not plot_only):
       freq_array=(np.arange(24)+57+24+24+24+4)*1.28
    if centre_chan==169:
       freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
-
-   #Now calculate the inferred background temperature in kilokelvin
-   #Tb = T_moon + 160.0*(freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   Tb = T_moon + T_refl_gal_150*(freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(freq_array*10**6)**2)
-   Tb_error=abs( (10.0**(-26)*c**2*Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
-   #print "Tb in K is"
-   #print Tb
-   #print Tb_error
    
    #put in to the big arrays:
    if (centre_chan==69):
@@ -780,41 +899,41 @@ if (not plot_only):
 
 
    ##now plot the  Smoon with std dev as error bars for each subband
-   plt.clf()
-   Smoon_plot=plt.figure(1)
-   plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
-   ##plt.plot(freq_array,Smoon_average_stddev_spectrum[:,0])
-   plt.title('Moon flux density vs frequency for MWA')
-   plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
-   plt.xlabel('Frequency (MHz)')
-   Smoon_plot.savefig('Smoon_plot.png')
+   #plt.clf()
+   #Smoon_plot=plt.figure(1)
+   #plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
+   ###plt.plot(freq_array,Smoon_average_stddev_spectrum[:,0])
+   #plt.title('Moon flux density vs frequency for MWA')
+   #plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
+   #plt.xlabel('Frequency (MHz)')
+   #Smoon_plot.savefig('Smoon_plot.png')
 
    
-   #Plot the inferred and predicted background temp
-   plt.clf()
-   Tb_plot=plt.figure(2)
-   plt.errorbar(freq_array,Tb,yerr=Tb_error)
-   plt.plot(freq_array,T_sky_predicted)
-   plt.title('Inferred backroud temperature vs frequency for MWA')
-   plt.ylabel('Inferred background temperature (Tb in K)')
-   plt.xlabel('Frequency (MHz)')
-   Tb_plot.savefig('Tb_plot.png')
+   ##Plot the inferred and predicted background temp
+   #plt.clf()
+   #Tb_plot=plt.figure(2)
+   #plt.errorbar(freq_array,Tb,yerr=Tb_error)
+   #plt.plot(freq_array,T_sky_predicted)
+   #plt.title('Inferred backroud temperature vs frequency for MWA')
+   #plt.ylabel('Inferred background temperature (Tb in K)')
+   #plt.xlabel('Frequency (MHz)')
+   #Tb_plot.savefig('Tb_plot.png')
 
-   print freq_array
-   print Smoon_average_stddev_spectrum[:,0]
+   #print freq_array
+   #print Smoon_average_stddev_spectrum[:,0]
 
  #save the big array for later use
  np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
  np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
- np.save(big_Smoon_predicted_npy_filename,big_Smoon_predicted_values)
- np.save(big_Ssky_predicted_npy_filename,big_Ssky_predicted_values)
 
 #Now plot the big array
 if (plot_only):
    big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
    big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
-   big_Ssky_predicted_values=np.load(big_Ssky_predicted_npy_filename)
-   big_Smoon_predicted_values=np.load(big_Smoon_predicted_npy_filename)
+   big_Srfi_average_stddev_spectrum[big_Srfi_average_stddev_spectrum < 1e-10] = 0.
+   big_Srfi_average_stddev_spectrum[big_Srfi_average_stddev_spectrum > 1e+10] = 0.
+   big_Smoon_average_stddev_spectrum[big_Smoon_average_stddev_spectrum < -1e+20] = 0.
+   big_Smoon_average_stddev_spectrum[big_Smoon_average_stddev_spectrum > 1e+20] = 0.
 else:
    pass
 
@@ -822,7 +941,7 @@ else:
 #Do all the fitting stuff first before plotting anything!
 #Now calculate the inferred background temperature in kilokelvin
 #Tb = T_moon + 160.0*(big_freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
-Tb = T_moon + T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
+Tb = T_moon + T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2) - 2.725 #remove Tcmb to get Galactic spectrum
 #Tb_error=abs(0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
 #Tb_error=abs(0.07*160*(big_freq_array/60.0)**(-2.24) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
 Tb_error=abs((10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(big_freq_array*10**6)**2))
@@ -836,8 +955,10 @@ Tb_error=abs((10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omeg
 logx=np.log10(big_freq_array/150.0)
 logy = np.log10(Tb)
 Tb_error[Tb_error == 0] = 200.
-print Tb
-print Tb_error
+Tb_error[Tb_error < 1e-10] = 200.
+Tb_error[Tb_error > 1e+10] = 200.
+#print Tb
+#print Tb_error
 logyerr = Tb_error / Tb
 
 powerlaw2 = lambda x, amp, index: amp * (x**index)
@@ -863,7 +984,18 @@ T_150_measured_err = np.sqrt( covar[0][0] ) * T_150_measured
 
 T_sky_measured_fit = powerlaw2(big_freq_array/150.0, T_150_measured, alpha_gal_measured)
 
-
+#work out the residuals - what is the rms?
+residuals = Tb - T_sky_measured_fit
+print len(residuals)
+residuals=residuals[48:]
+residual_rms=np.sqrt(np.mean(np.square(residuals)))
+#print Tb_error
+weights= np.reciprocal(Tb_error[48:].astype(np.float32))
+norm_weights=weights/np.sum(weights)
+#print weights
+weighted_residual_rms=np.sqrt(np.sum(norm_weights*np.square(residuals)))
+print residual_rms
+print weighted_residual_rms
 ################
 
 #Save and plot the inferred and predicted background temp
@@ -875,7 +1007,6 @@ np.save(tb_filename,big_Tb_value_error)
 plt.clf()
 Tb_plot=plt.figure(6)
 plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
-#plt.plot(big_freq_array,T_sky_predicted,label="Predicted")
 plt.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit")
 plt.title('Inferred background temperature vs frequency for MWA')
 plt.ylabel('Inferred background temperature (Tb in K)')
@@ -885,10 +1016,47 @@ plt.text(150, 400, 'Index = %5.2f +/- %5.3f' % (alpha_gal_measured, alpha_gal_me
 plt.legend(loc=1)
 Tb_plot.savefig('big_inferred_Tb_plot.png')
 
-#predicted sky temp - now using model GSM (pyGSM)
-#T_sky_predicted=Tsky_150*((big_freq_array/150.0)**(-2.5))
-### Could try out healpix_util (https://github.com/esheldon/healpix_util)...
-#for now just use what you did for gsm_reflection...
+#Plot subplot with log log space
+loglog_plot_filename='big_inferred_Tb_plot_loglog.png'
+plot_title='Inferred background temperature vs frequency for MWA'
+plot_ylabel='Inferred background \n temperature (Tb in K)'
+fit_plot=plt.figure(7)
+plt.subplot(2, 1, 1)
+plt.plot(big_freq_array, T_sky_measured_fit)     # Fit
+plt.errorbar(big_freq_array, Tb, yerr=Tb_error, fmt='k.')  # Data
+plt.text(150, 1000, 'Temp_150MHz = %5.2f +/- %5.2f' % (T_150_measured, T_150_measured_err))
+plt.text(150, 700, 'Index = %5.2f +/- %5.2f' % (alpha_gal_measured, alpha_gal_measured_err))
+plt.title(plot_title)
+plt.xlabel('Frequency (MHz)')
+plt.ylabel(plot_ylabel)
+plt.xlim(70, 240)
+plt.tight_layout()
+
+plt.subplot(2, 1, 2)
+plt.loglog(big_freq_array, T_sky_measured_fit)
+plt.errorbar(big_freq_array, Tb, yerr=Tb_error, fmt='k.')  # Data
+plt.xlabel('Frequency (log scale)')
+plt.ylabel('Temp (log scale)')
+plt.xlim(70, 240)
+plt.tight_layout()
+
+fit_plot.savefig(loglog_plot_filename)
+print "saved figure %s" % loglog_plot_filename
+
+plt.clf()
+plot_name="residual_plot.png"
+Tb_plot=plt.figure(8)
+#plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
+plt.plot(big_freq_array[48:],residuals,label="Residuals")
+plt.title('Fit residuals  vs frequency for MWA')
+plt.ylabel('Residual temperature (K)')
+plt.xlabel('Frequency (MHz)')
+plt.text(180, -40, 'Residual RMS = %5.2f ' % (residual_rms))
+plt.text(180, -50, 'Weighted Residual RMS = %5.2f' % (weighted_residual_rms))
+plt.legend(loc=1)
+Tb_plot.savefig(plot_name)
+print "saved figure %s" %  plot_name
+
 #FOR TESTING 
 ########test_freq_array=np.array([150,160])
 ########big_freq_array=test_freq_array
@@ -897,6 +1065,8 @@ Tb_plot.savefig('big_inferred_Tb_plot.png')
 #print pixel_coordinate_transform_map_ra[0]
 #print pixel_coordinate_transform_map_dec[0]
 if new_model_galaxy:
+   if use_model_gsm2016:   
+      model_galaxy(big_freq_array,'gsm2016') 
    if use_model_gsm:   
       model_galaxy(big_freq_array,'gsm') 
    if use_model_lfsm:
@@ -905,6 +1075,8 @@ if new_model_galaxy:
    
 #load the average temp file
 average_gsm_temp_data=np.load(average_temp_filename)
+#remove 2.727K for the CMB temp
+average_gsm_temp_data-=2.727
 temp_error=gsm_fractional_error*average_gsm_temp_data
 #We want the amplitude to be the amp at 150 MHz so use
 #logx = np.log10(freq_array)
@@ -940,8 +1112,12 @@ T_sky_fit = powerlaw(big_freq_array/150.0, T_150, alpha_gal)
 plt.clf()
 if use_model_gsm:
    plot_filename="best_fit_powerlaw_gsm.png"
-   plot_title='Best Fit Power Law GSM2016'
+   plot_title='Best Fit Power Law GSM'
    plot_ylabel='Average GSM Temp (K)'
+if use_model_gsm2016:
+   plot_filename="best_fit_powerlaw_gsm2016.png"
+   plot_title='Best Fit Power Law GSM2016'
+   plot_ylabel='Average GSM2016 Temp (K)'
 if use_model_lfsm:  
    plot_filename="best_fit_powerlaw_lfsm.png"
    plot_title='Best Fit Power Law LFSM'
@@ -956,6 +1132,7 @@ plt.title(plot_title)
 plt.xlabel('Frequency (MHz)')
 plt.ylabel(plot_ylabel)
 plt.xlim(70, 240)
+plt.tight_layout()
 
 plt.subplot(2, 1, 2)
 plt.loglog(big_freq_array, powerlaw(big_freq_array/150.0, T_150, alpha_gal))
@@ -963,9 +1140,10 @@ plt.errorbar(big_freq_array, average_gsm_temp_data, yerr=temp_error, fmt='k.')  
 plt.xlabel('Frequency (log scale)')
 plt.ylabel('Temp (log scale)')
 plt.xlim(70, 240)
+plt.tight_layout()
 
 fit_plot.savefig(plot_filename)
-
+print "saved figure %s" % plot_filename
 ##save the new gsm map            
 #plt.clf()
 #map_title="GSM map masked"
@@ -980,6 +1158,12 @@ fit_plot.savefig(plot_filename)
 #Now work out predicted values for stuff:
 ###Predicted values:
 ####predicted sky temp - now using model GSM
+##Predicted values of mine are wrong because I don't include the horizon and 
+#set an ambient temperature for below the horizon like Marcin does
+#So for this section use the old GSM model (pretty much the same) and Marcin's values eg:
+#alpha_gal=-2.5
+#T_150=278.
+#Actually, Marcin's is still wrong cause the GSM is wrong! (LFSM is worse!)
 big_T_sky_predicted=T_150*((big_freq_array/150.0)**(alpha_gal))
 #print "Predicted Tsky is:"
 #print T_sky_predicted
@@ -992,7 +1176,7 @@ big_Ssky_predicted_values=(2.0*k*big_T_sky_predicted*Omega)/((300.0/big_freq_arr
 big_T_moon_predicted=np.zeros(len(big_freq_array)) + T_moon +  (T_refl_gal_150)*(big_freq_array/150.0)**(refl_gal_alpha)
 
 #predicted sky flux density for moon-disk area on sky
-big_S_moon_predicted=(2.0*k*big_T_moon_predicted*Omega)/((300.0/big_freq_array)**(2)*10.0**(-26))
+big_Smoon_predicted_values=(2.0*k*big_T_moon_predicted*Omega)/((300.0/big_freq_array)**(2)*10.0**(-26))
 #print "Predicted Smoon is:"
 #print S_moon_predicted
 
@@ -1047,12 +1231,22 @@ big_Smoon_plot=plt.figure(5)
 plt.errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="Measured")
 #plt.errorbar(big_freq_array,big_predicted_moon_sky_difference,label="Predicted")
 plt.title('Reflected Moon RFI Flux Density vs Frequency for MWA')
-plt.ylabel('Mean ReflectedcRFI Flux Density (Jy)')
+plt.ylabel('Mean Reflected RFI Flux Density (Jy)')
 plt.xlabel('Frequency (MHz)')
 plt.legend(loc=1)
 big_Smoon_plot.savefig('big_Srfi.png')
 
-
+#Plot the RFI condensed scale
+plt.clf()
+big_Smoon_plot=plt.figure(5)
+plt.errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="Measured")
+#plt.errorbar(big_freq_array,big_predicted_moon_sky_difference,label="Predicted")
+axes.set_ylim([-2,10])
+plt.title('Reflected Moon RFI Flux Density vs Frequency for MWA')
+plt.ylabel('Mean Reflected RFI Flux Density (Jy)')
+plt.xlabel('Frequency (MHz)')
+plt.legend(loc=1)
+big_Smoon_plot.savefig('big_Srfi.png')
 
 
 #bask in glory
