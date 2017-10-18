@@ -4,6 +4,8 @@ import sys, getopt, string, os
 from ephem import *
 from time import *
 import cmd
+from astropy.time import Time
+import calendar
 
 sidereal_day_sec = 86164
 
@@ -36,7 +38,7 @@ def obsid_list_generator(options):
          exit("on_moon not set for project G0017, set --on_moon='on' or --on_moon='off' , exiting...")
    
    #convert to GPS time for MWA database queries
-   unix_start_time=mktime(start)
+   unix_start_time=calendar.timegm(start)
    gps_start_time= int(unix_start_time - 315964782)
    
    #work out end time in gps time
@@ -47,7 +49,7 @@ def obsid_list_generator(options):
    #look up all obsids for 
    cmd="obsinfo.py --from=%s --to=%s --projectid=%s > %s " % (gps_start_time,gps_end_time,project,obsid_list_all_text_filename)
    #print cmd
-   #os.system(cmd)
+   os.system(cmd)
    
    #clear directory of txt files first
    cmd = "rm -rf %s_%s_*.txt" % (start_date_underscore,duration_string)
@@ -57,17 +59,17 @@ def obsid_list_generator(options):
    chan_list=[]
    
    #Go through the file line by line and add the obsids to the appropriate lists by channel.
-   for line in open(obsid_list_all_text_filename).readlines()[1:]:
+   for line in open(obsid_list_all_text_filename).readlines():
       #print line
       obsid=line.split()[0][0:-1]
       obs_name=line.split()[1].split('(')[0]
       obs_name_prefix=obs_name.split('_')[0]
       chan=obs_name.split('_')[1]
-      if chan in chan_list:
-         pass
-      else:
-         chan_list.append(chan)
       if (project=="G0017" and obs_name_prefix=="EoRMoon"):
+         if chan in chan_list:
+            pass
+         else:
+            chan_list.append(chan)
          if (on_moon == "on"):
             obsid_output_filename="%s_%s_on_moon_obsids_%s.txt" % (start_date_underscore,duration_string,chan)
             #print "appending to file %s " % (obsid_output_filename)
@@ -79,7 +81,7 @@ def obsid_list_generator(options):
     
    
    #If it is off moon, now go through the two files, match up the on-moon and off-moon obsids and add in the rad dec of the moon
-   if (project=="G0017" and obs_name_prefix=="EoRMoon" and on_moon=="off"):
+   if (project=="G0017" and on_moon=="off"):
       print chan_list
       for chan in chan_list:
          track_off_moon_filename="track_off_moon_%s_%s_%s.txt" % (on_moon_date_underscore,start_date_underscore,chan)
@@ -101,14 +103,34 @@ def obsid_list_generator(options):
                      LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
                      LST_remainder = LST_difference % sidereal_day_sec
                      if (abs(LST_remainder/sidereal_day_sec) < 0.0001 or abs(1-LST_remainder/sidereal_day_sec) < 0.0001):
-                        print LST_remainder/sidereal_day_sec
+                        #print LST_remainder/sidereal_day_sec
                         print "LSTs match for obsids on_moon %s off_moon %s" % (on_moon_obsid,off_moon_obsid)
+                        #Find the Moon position  
+                        date = Time(int(on_moon_obsid), format='gps')
+                        print date
+                        new_date = Time(date, format='iso')
+                        print new_date
+                        #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
+                        #new_date=string.replace(string.replace(date,'-','/'),'T',' ')
+                        #print new_date
+                        #find position of moon
+                        src_file_name='src_file_moon_%s.txt' % on_moon_obsid 
+                        cmd="print_src.py --date='"+str(new_date)+"' > "+ src_file_name
+                        print cmd
+                        os.system(cmd)
+                        #read src_file.txt to get Moon ra and dec 
+                        with open(src_file_name, "r") as infile:
+                           lines=infile.readlines()
+                           moon_ra=lines[6].split()[3].split(',')[0]
+                           moon_dec=lines[6].split()[6].split(',')[0]
+                           #print moon_ra
+                           #print moon_dec
                         fileprint = open(track_off_moon_filename, 'a')
-                        print >> fileprint, '%s %s' %  (off_moon_obsid,on_moon_obsid)
+                        print >> fileprint, '%s %s %s %s ' %  (on_moon_obsid, moon_ra, moon_dec, off_moon_obsid)
                         continue_search=False
                         continue
                      else:
-                        print "LSTs do not match for obsids on_moon %s off_moon %s" % (on_moon_obsid,off_moon_obsid)
+                        #print "LSTs do not match for obsids on_moon %s off_moon %s" % (on_moon_obsid,off_moon_obsid)
                         pass
                   else:
                      continue
