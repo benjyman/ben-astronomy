@@ -1241,12 +1241,13 @@ plt.clf()
 big_Smoon_plot=plt.figure(5)
 plt.errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="Measured")
 #plt.errorbar(big_freq_array,big_predicted_moon_sky_difference,label="Predicted")
+axes = plt.gca()
 axes.set_ylim([-2,10])
 plt.title('Reflected Moon RFI Flux Density vs Frequency for MWA')
 plt.ylabel('Mean Reflected RFI Flux Density (Jy)')
 plt.xlabel('Frequency (MHz)')
 plt.legend(loc=1)
-big_Smoon_plot.savefig('big_Srfi.png')
+big_Smoon_plot.savefig('big_Srfi_zoom.png')
 
 
 #bask in glory
