@@ -4,6 +4,8 @@ import pylab as py
 import numpy as np
  
 def make_images(options):
+   stokes=options.stokes
+   image_dir=options.image_dir
    image_size=[1024,1024]
    centre_chan=options.centre_chan
    #sub_chan=options.sub_chan
@@ -27,19 +29,18 @@ def make_images(options):
        
       chan_string='%.04d' % float(sub_chan)
       
-      #make an empty array to form an average difference image
-      average_moon_image_fitsname="average_moon_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_off_moon_image_fitsname="average_off_moon_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_difference_image_fitsname="average_difference_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_rfi_modelled_image_fitsname="average_rfi_modelled_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_moon_modelled_image_fitsname="average_moon_modelled_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_residual_modelled_image_fitsname="average_residual_modelled_image_chan_%s_%s.fits" % (centre_chan,chan_string)
-      average_moon_image_figname="average_moon_image_chan_%s_%s.png" % (centre_chan,chan_string)
-      average_off_moon_image_figname="average_off_moon_image_chan_%s_%s.png" % (centre_chan,chan_string)
-      average_difference_image_figname="average_difference_image_chan_%s_%s.png" % (centre_chan,chan_string)
-      average_rfi_modelled_image_figname="average_rfi_modelled_image_chan_%s_%s.png" % (centre_chan,chan_string)
-      average_moon_modelled_image_figname="average_moon_modelled_image_chan_%s_%s.png" % (centre_chan,chan_string)
-      average_residual_modelled_image_figname="average_residual_modelled_image_chan_%s_%s.png" % (centre_chan,chan_string)
+      average_moon_image_fitsname="average_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_off_moon_image_fitsname="average_off_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_difference_image_fitsname="average_difference_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_rfi_modelled_image_fitsname="average_rfi_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_moon_modelled_image_fitsname="average_moon_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_residual_modelled_image_fitsname="average_residual_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_moon_image_figname="average_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_off_moon_image_figname="average_off_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_difference_image_figname="average_difference_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_rfi_modelled_image_figname="average_rfi_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_moon_modelled_image_figname="average_moon_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_residual_modelled_image_figname="average_residual_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_moon_image_array=np.zeros(image_size)
       average_off_moon_image_array=np.zeros(image_size)
       average_difference_image_array=np.zeros(image_size)
@@ -56,26 +57,26 @@ def make_images(options):
       
       for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list):
          off_moon_obsid=off_moon_obsid_list[obsid_index]
-         moon_fitsname="/data/moon/2017/moon_zoom_%s_%s-%s.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-         off_moon_fitsname="/data/moon/2017/off_moon_zoom_%s_paired_with_%s_%s-%s.fits" % (off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string)
-         moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-         modelled_moon_fitsname="/data/moon/2017/moon_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-         modelled_rfi_fitsname="/data/moon/2017/rfi_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-         modelled_residual_fitsname="/data/moon/2017/residual_modelled_%s_%s_on_off_moon_%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+         moon_fitsname="%s/moon_zoom_%s_%s-%s-%s.fits" % (image_dir,on_moon_obsid,str(centre_chan),chan_string)
+         off_moon_fitsname="%s/off_moon_zoom_%s_paired_with_%s_%s-%s-%s.fits" % (image_dir,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
+         moon_difference_fitsname="%s/difference_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_moon_fitsname="%s/moon_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_rfi_fitsname="%s/rfi_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_residual_fitsname="%s/residual_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
       
-         on_moon_title="Dirty Moon image obsid %s chan %s %s" % (on_moon_obsid,centre_chan,chan_string)
-         off_moon_title="Dirty off-Moon image obsid %s chan %s %s" % (off_moon_obsid,centre_chan,chan_string)
-         diff_moon_title="Difference image on-moon %s off-moon %s chan %s %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_moon_title="Modelled Moon image on-moon %s off-moon %s chan %s %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_rfi_title="Modelled RFI image on-moon %s off-moon %s chan %s %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_residual_title="Modelled Residual image on-moon %s off-moon %s chan %s %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
+         on_moon_title="Dirty Moon image obsid %s chan %s %s Stokes %s" % (on_moon_obsid,centre_chan,chan_string,stokes)
+         off_moon_title="Dirty off-Moon image obsid %s chan %s %s Stokes %s" % (off_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_title="Difference image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_moon_title="Modelled Moon image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_rfi_title="Modelled RFI image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_residual_title="Modelled Residual image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          
-         on_moon_figname="Dirty_Moon_image_obsid_%s_chan_%s_%s.png" % (on_moon_obsid,centre_chan,chan_string)      
-         off_moon_figname="Dirty_off_Moon_image_obsid_%s_chan_%s_%s.png" % (off_moon_obsid,centre_chan,chan_string)  
-         diff_moon_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_moon_figname="Modelled_moon_image_on_moon_%s_off_moon_%s chan_%s_%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_rfi_figname="Modelled_rfi_image_on_moon_%s_off_moon_%s chan_%s_%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
-         modelled_residual_figname="Modelled_residual_image_on_moon_%s_off_moon_%s chan_%s_%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string)
+         on_moon_figname="Dirty_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (on_moon_obsid,centre_chan,chan_string,stokes)      
+         off_moon_figname="Dirty_off_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (off_moon_obsid,centre_chan,chan_string,stokes)  
+         diff_moon_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_moon_figname="Modelled_moon_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_rfi_figname="Modelled_rfi_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_residual_figname="Modelled_residual_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          
          print moon_fitsname  
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
@@ -272,6 +273,8 @@ parser.add_option('--max_val',type='string', dest='max_val',default="22.0",help=
 parser.add_option('--on_moon_obsid_infile',type='string', dest='on_moon_obsid_infile',default=None,help='Name of file containing the on moon obsids to plot e.g. --on_moon_obsid_infile="/data/moon/20150926_69_moon.txt"')
 parser.add_option('--off_moon_obsid_infile',type='string', dest='off_moon_obsid_infile',default=None,help='Name of file containing the off moon obsids to plot e.g. --off_moon_obsid_infile="/data/moon/20150926_69_off_moon.txt"')
 parser.add_option('--plot_each_obsid',action='store_true',dest='plot_each_obsid',default=False,help='Make individual images for each obsid, rather than just the average [default=%default]')
+parser.add_option('--stokes',type='string', dest='stokes',default='I',help='stokes parameter of Moon images. Can be I,Q,U,V or "linear" (sqrt(Q^2+U^2)). e.g. --stokes="Q" [default=%default]')
+parser.add_option('--image_dir',type='string', dest='image_dir',default='/data/moon/2017',help='Directory where the Moon images from model_moon.py are stored. e.g. --image_dir="/md0/moon/2015/stokes_I" [default=%default]')
 
 
 

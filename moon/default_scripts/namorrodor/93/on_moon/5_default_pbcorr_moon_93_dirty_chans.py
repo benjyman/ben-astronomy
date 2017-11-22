@@ -1,1 +1,1 @@
-python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qpbcorr_multi.py  /data/moon/2017/20150926_moon_93.txt  --dirty  --track_moon --tagname=20150926_moon_93 --selfcal="0" --channelsout=24
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qpbcorr_multi.py  /data/moon/2017/20150926_moon_93.txt  --dirty --havebeam="cotter_20150926_moon_93_trackmoon" --track_moon --tagname=20150926_moon_93 --selfcal="0" --channelsout=24
