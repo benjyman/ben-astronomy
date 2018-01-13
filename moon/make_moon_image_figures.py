@@ -32,23 +32,27 @@ def make_images(options):
       average_moon_image_fitsname="average_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_off_moon_image_fitsname="average_off_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_difference_image_fitsname="average_difference_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
+      average_difference_jyperpix_image_fitsname="average_difference_jyperpix_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_rfi_modelled_image_fitsname="average_rfi_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_moon_modelled_image_fitsname="average_moon_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_residual_modelled_image_fitsname="average_residual_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
       average_moon_image_figname="average_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_off_moon_image_figname="average_off_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_difference_image_figname="average_difference_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_difference_jyperpix_image_figname="average_difference_jyperpix_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_rfi_modelled_image_figname="average_rfi_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_moon_modelled_image_figname="average_moon_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_residual_modelled_image_figname="average_residual_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
       average_moon_image_array=np.zeros(image_size)
       average_off_moon_image_array=np.zeros(image_size)
       average_difference_image_array=np.zeros(image_size)
+      average_difference_jyperpix_image_array=np.zeros(image_size)
       average_rfi_modelled_image_array=np.zeros(image_size)
       average_moon_modelled_image_array=np.zeros(image_size)
       average_residual_modelled_image_array=np.zeros(image_size)
       
       difference_image_counter=0
+      difference_jyperpix_image_counter=0
       moon_image_counter=0
       off_moon_image_counter=0
       modelled_moon_image_counter=0
@@ -57,9 +61,10 @@ def make_images(options):
       
       for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list):
          off_moon_obsid=off_moon_obsid_list[obsid_index]
-         moon_fitsname="%s/moon_zoom_%s_%s-%s-%s.fits" % (image_dir,on_moon_obsid,str(centre_chan),chan_string)
+         moon_fitsname="%s/moon_zoom_%s_%s-%s-%s.fits" % (image_dir,on_moon_obsid,str(centre_chan),chan_string,stokes)
          off_moon_fitsname="%s/off_moon_zoom_%s_paired_with_%s_%s-%s-%s.fits" % (image_dir,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
          moon_difference_fitsname="%s/difference_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         moon_difference_jyperpix_fitsname="%s/difference_%s_%s_on_off_moon_%s-%s-%s_jyperpix.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
          modelled_moon_fitsname="%s/moon_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
          modelled_rfi_fitsname="%s/rfi_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
          modelled_residual_fitsname="%s/residual_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
@@ -67,6 +72,7 @@ def make_images(options):
          on_moon_title="Dirty Moon image obsid %s chan %s %s Stokes %s" % (on_moon_obsid,centre_chan,chan_string,stokes)
          off_moon_title="Dirty off-Moon image obsid %s chan %s %s Stokes %s" % (off_moon_obsid,centre_chan,chan_string,stokes)
          diff_moon_title="Difference image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_jyperpix_title="Difference image Jy per pix on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_moon_title="Modelled Moon image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_rfi_title="Modelled RFI image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_residual_title="Modelled Residual image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
@@ -74,6 +80,7 @@ def make_images(options):
          on_moon_figname="Dirty_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (on_moon_obsid,centre_chan,chan_string,stokes)      
          off_moon_figname="Dirty_off_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (off_moon_obsid,centre_chan,chan_string,stokes)  
          diff_moon_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_jyperpix_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s_jyperpix.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_moon_figname="Modelled_moon_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_rfi_figname="Modelled_rfi_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          modelled_residual_figname="Modelled_residual_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
@@ -107,6 +114,16 @@ def make_images(options):
          moon_difference_data=moon_difference_hdulist[0].data
          average_difference_image_array+=moon_difference_data
          difference_image_counter+=1
+         
+         print moon_difference_jyperpix_fitsname  
+         if os.path.isfile(moon_difference_jyperpix_fitsname) and os.access(moon_difference_jyperpix_fitsname, os.R_OK):
+            moon_difference_jypepix_hdulist = pyfits.open(moon_difference_jyperpix_fitsname)
+         else:
+            print "Either file %s is missing or is not readable" % moon_difference_jyperpix_fitsname 
+            continue      
+         moon_difference_jyperpix_data=moon_difference_jypepix_hdulist[0].data
+         average_difference_jyperpix_image_array+=moon_difference_jyperpix_data
+         difference_jyperpix_image_counter+=1
          
          print modelled_moon_fitsname  
          if os.path.isfile(modelled_moon_fitsname) and os.access(modelled_moon_fitsname, os.R_OK):
@@ -222,14 +239,27 @@ def make_images(options):
       py.colorbar()
       py.savefig(average_difference_image_figname)
       py.close()
-      
+
+      #form the average difference image in jy per pix and plot
+      vmin_difference_jyperpix=-0.002
+      vmax_difference_jyperpix=0.002
+      average_difference_jyperpix_image=average_difference_jyperpix_image_array/difference_jyperpix_image_counter
+      pyfits.writeto(average_difference_jyperpix_image_fitsname,average_difference_jyperpix_image,clobber=True)
+      py.figure(3)
+      py.clf()
+      py.title("Average difference Jy per pix image from %s obsids chan %s %s" % (str(difference_jyperpix_image_counter),centre_chan,chan_string))
+      py.imshow( ( average_difference_jyperpix_image ), cmap=py.cm.Greys,origin='lower')
+      py.colorbar()
+      py.savefig(average_difference_jyperpix_image_figname)
+      py.close()
+            
       #form the average modelled moon image and plot
       average_moon_modelled_image=average_moon_modelled_image_array/modelled_moon_image_counter
       pyfits.writeto(average_moon_modelled_image_fitsname,average_moon_modelled_image,clobber=True)
       py.figure(4)
       py.clf()
       py.title("Average modelled moon image from %s obsids chan %s %s" % (str(modelled_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_modelled_image ), cmap=py.cm.Greys,origin='lower',vmin=min_val, vmax=max_val)
+      py.imshow( ( average_moon_modelled_image ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_moon_modelled_image_figname)
       py.close()
