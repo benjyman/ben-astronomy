@@ -2183,7 +2183,7 @@ def model_moon(options):
       print "saved figure %s" % plot_filename
    
       #Save chromaticity corrected background temp
-      corrected_tb_filename="chromatcity_corrected_sky_temp_and_error.npy"
+      corrected_tb_filename="chromaticity_corrected_sky_temp_and_error.npy"
       big_chrom_corrected_Tb_value_error[:,0]=T_sky_corrected
       big_chrom_corrected_Tb_value_error[:,1]=T_sky_corrected_error
       np.save(corrected_tb_filename,big_chrom_corrected_Tb_value_error)
