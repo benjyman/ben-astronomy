@@ -7,6 +7,8 @@ def make_images(options):
    stokes=options.stokes
    image_dir=options.image_dir
    image_size=[1024,1024]
+   #indexes for cropping
+   xstart,xend,ystart,yend=437,587,437,587
    centre_chan=options.centre_chan
    #sub_chan=options.sub_chan
    min_val=float(options.min_val)
@@ -205,24 +207,28 @@ def make_images(options):
             py.savefig(modelled_residual_figname)
             py.close()   
       
+      #crop the images to make smaller
+      
       #form the average Moon image and plot
       average_moon_image=average_moon_image_array/moon_image_counter
+      average_moon_image_crop = average_moon_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_moon_image_fitsname,average_moon_image,clobber=True)
       py.figure(1)
       py.clf()
       py.title("Average Moon image from %s obsids chan %s %s" % (str(moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_moon_image_figname)
       py.close()
       
       #form the average Off Moon image and plot
       average_off_moon_image=average_off_moon_image_array/off_moon_image_counter
+      average_off_moon_image_crop = average_off_moon_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_off_moon_image_fitsname,average_off_moon_image,clobber=True)
       py.figure(2)
       py.clf()
       py.title("Average Off Moon image from %s obsids chan %s %s" % (str(off_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_off_moon_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_off_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_off_moon_image_figname)
       py.close()
@@ -231,11 +237,12 @@ def make_images(options):
       vmin_difference=-2.0
       vmax_difference=2.0
       average_difference_image=average_difference_image_array/difference_image_counter
+      average_difference_image_crop = average_difference_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_difference_image_fitsname,average_difference_image,clobber=True)
       py.figure(3)
       py.clf()
       py.title("Average difference image from %s obsids chan %s %s" % (str(difference_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_difference_image ), cmap=py.cm.Greys,origin='lower',vmin=vmin_difference, vmax=vmax_difference)
+      py.imshow( ( average_difference_image_crop ), cmap=py.cm.Greys,origin='lower',vmin=vmin_difference, vmax=vmax_difference)
       py.colorbar()
       py.savefig(average_difference_image_figname)
       py.close()
@@ -244,44 +251,48 @@ def make_images(options):
       vmin_difference_jyperpix=-0.002
       vmax_difference_jyperpix=0.002
       average_difference_jyperpix_image=average_difference_jyperpix_image_array/difference_jyperpix_image_counter
+      average_difference_jyperpix_image_crop = average_difference_jyperpix_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_difference_jyperpix_image_fitsname,average_difference_jyperpix_image,clobber=True)
       py.figure(3)
       py.clf()
       py.title("Average difference Jy per pix image from %s obsids chan %s %s" % (str(difference_jyperpix_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_difference_jyperpix_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_difference_jyperpix_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_difference_jyperpix_image_figname)
       py.close()
             
       #form the average modelled moon image and plot
       average_moon_modelled_image=average_moon_modelled_image_array/modelled_moon_image_counter
+      average_moon_modelled_image_crop = average_moon_modelled_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_moon_modelled_image_fitsname,average_moon_modelled_image,clobber=True)
       py.figure(4)
       py.clf()
       py.title("Average modelled moon image from %s obsids chan %s %s" % (str(modelled_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_modelled_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_moon_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_moon_modelled_image_figname)
       py.close()
       
       #form the average modelled rfi image and plot
       average_rfi_modelled_image=average_rfi_modelled_image_array/modelled_rfi_image_counter
+      average_rfi_modelled_image_crop = average_rfi_modelled_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_rfi_modelled_image_fitsname,average_rfi_modelled_image,clobber=True)
       py.figure(5)
       py.clf()
       py.title("Average modelled rfi image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_rfi_modelled_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_rfi_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_rfi_modelled_image_figname)
       py.close()   
       
       #form the average modelled residual image and plot
       average_residual_modelled_image=average_residual_modelled_image_array/modelled_residual_image_counter
+      average_residual_modelled_image_crop = average_residual_modelled_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_residual_modelled_image_fitsname,average_residual_modelled_image,clobber=True)
       py.figure(6)
       py.clf()
       py.title("Average modelled residual image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_residual_modelled_image ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_residual_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
       py.colorbar()
       py.savefig(average_residual_modelled_image_figname)
       py.close() 
