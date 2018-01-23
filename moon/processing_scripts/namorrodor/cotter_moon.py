@@ -11,12 +11,16 @@ def cotter_moon(options):
    obsid=options.obsid
    sister_obsid=options.sister_obsid
    
+   time_res=(options.time_freq_res).split()[0]
+   freq_res=(options.time_freq_res).split()[1]
+   
+   
    if (options.track_off_moon):
       track_off_moon_string= options.track_off_moon_list
    else:
       track_off_moon_string=' '
    
-   print "cottering obsid %s paired with %s" % (obsid,sister_obsid)
+   print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
    
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
@@ -140,7 +144,10 @@ def cotter_moon(options):
          
    print mistake
    
-   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres 8 -freqres 80 %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,data_dir)
+   #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
+   #can probably get away with just halving each (double baselines)
+   
+   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,time_res,freq_res,data_dir)
    print cmd
    os.system(cmd)
 
@@ -169,6 +176,7 @@ parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,h
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 parser.add_option('--track_off_moon_list',type='string', dest='track_off_moon_list',default='',help='When track_off_moon is True. Details of on-moon pairing on_moon_obsid,RA,DEC of on_moon paired obs e.g. --track_off_moon_list="1199394880,13.0,0.56" [default=%default]')
+parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 
 
 

@@ -244,7 +244,7 @@ for dt in rrule.rrule(frequency,dtstart=start,until=end):
       #print >> fileprint, "UTC Date: %1s, start_LST: %8.3f, transit_ra = %8.3f, transit_dec = %8.3f, el = %8.3f, obs length = %8.1f hrs " % (dt, start_LST_decimal, ra_t_decimal, dec_t_decimal, el, sched_hours)
       print >> fileprint, '# On Moon for transit at %1s' %  (moon_transit_date) 
       print >> fileprint, 'radec="%1.2f,%1.2f"' % (ra_t_decimal, dec_t_decimal)
-      print >> fileprint, './track_a_source.py -s -e -d 240 -m 40_1 -C $radec -u BenMcKinley %1s %2.1f %2.1f EoRMoon G0017' % (str(moon_transit_date)[0:10], sched_hours,start_LST_decimal)
+      print >> fileprint, './track_a_source.py -s -e -d 120 -m 40_1 -C $radec -u BenMcKinley %1s %2.1f %2.1f EoRMoon G0017' % (str(moon_transit_date)[0:10], sched_hours,start_LST_decimal)
       print >> fileprint, "#Off Moon\n"
       previous_date = current_date
 

@@ -5,6 +5,7 @@ def generate_cotter_moon(options):
 
     obsid_infile=options.obsid_infile
     sister_obsid_infile=options.sister_obsid_infile
+    
     chunk_size=20
     obsid_list=[]
     sister_obsid_list=[]
@@ -52,6 +53,11 @@ def generate_cotter_moon(options):
     else:
        tagname_string=''
 
+    if (options.time_freq_res):
+       time_freq_res_string=' --time_freq_res=%s ' % (options.time_freq_res)
+    else:
+       time_freq_res_string=''
+       
     if (options.cleanup):
        cleanup_string=' --cleanup ' 
     else:
@@ -82,7 +88,7 @@ def generate_cotter_moon(options):
           sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list"+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + ' \n')
+          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + time_freq_res_string + ' \n')
 
        sbatch_file.close()
     
@@ -106,12 +112,13 @@ parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help=
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
+parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 
 
 (options, args) = parser.parse_args()
 
 #obsid_infile = args[0]
 
-mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
+mwa_dir = '/md0/moon/data/MWA/'
 
 generate_cotter_moon(options)
