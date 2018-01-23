@@ -23,7 +23,7 @@ def generate_namorrodor(infile,options):
    for obs_list_number in range(n_obs_lists):
 
       imaging_file = open('q_obsdownload_wrapper_chunk_%s.sh' % (str(obs_list_number)),'w+')
-      imaging_file.write('cd /data/MWA\n')
+      imaging_file.write('cd %s\n' % mwa_dir)
       
       start_obs_id_index=int(obs_list_number*chunk_size)
 
@@ -33,11 +33,11 @@ def generate_namorrodor(infile,options):
           end_obs_id_index=int(obs_list_number*chunk_size+last_list_length)
 
       for obsid in obsid_list[start_obs_id_index:end_obs_id_index]:
-         imaging_file.write('obsdownload.py -o %s\n' % obsid)
-         imaging_file.write('obsdownload.py -f -o %s\n' % obsid)
-         imaging_file.write('cd %s\n' % obsid)
-         imaging_file.write('make_metafits.py -g %s\n' % obsid)
-         imaging_file.write('cd ..\n')
+         imaging_file.write('%sobsdownload.py -f -m -o %s\n' % (code_dir,obsid))
+         #imaging_file.write('%sobsdownload.py -f -o %s\n' % (code_dir,obsid))
+         #imaging_file.write('cd %s\n' % obsid)
+         #imaging_file.write('make_metafits.py -g %s\n' % (obsid))
+         #imaging_file.write('cd ..\n')
 
       imaging_file.close()
       print "wrote file q_obsdownload_wrapper_chunk_%s.sh " % (str(obs_list_number)) 
@@ -50,7 +50,8 @@ def generate_namorrodor(infile,options):
 import sys,os, glob
 from optparse import OptionParser,OptionGroup
 
-mwa_dir = "/data/MWA/"
+mwa_dir = "/md0/moon/data/MWA/"
+code_dir="/data/code/git/MWA_Tools/scripts/"
 
 usage = 'Usage: generate_obs_download.py [text file of obsIDs]'
 

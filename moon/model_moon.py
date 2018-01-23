@@ -464,7 +464,30 @@ def model_moon(options):
       fit_line=func(freq_array,popt[0],popt[1])
       return {'line':fit_line,'a':popt[0],'b':popt[1]}
   
-  
+   def make_spectral_index_map(low_chan,high_chan,model_data='gsm',saveplot=True):
+      #makes a spectral index map between two freqs (given by MWA coarse chans) using the GSM
+      low_freq_MHz=low_chan*1.28
+      high_freq_MHz=high_chan*1.28
+      if (model_data=='gsm'):
+         gsm = GlobalSkyModel(freq_unit='MHz')
+      galaxy_map_low=gsm.generate(low_freq_MHz)
+      galaxy_map_high=gsm.generate(high_freq_MHz)
+      spectral_index_map=np.log(galaxy_map_high/galaxy_map_low)/np.log(high_freq_MHz/low_freq_MHz)
+      if saveplot:
+         ##save the spectral index map            
+         plt.clf()
+         map_title="Spectral index map %s-%s MHz" % (str(low_freq_MHz),str(high_freq_MHz))
+         fig_name="spectral_index_map_%s-%s_MHz.png" % (str(low_freq_MHz),str(high_freq_MHz))
+         #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
+         hp.mollview(map=spectral_index_map,coord='C',xsize=400,title=map_title)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name,dpi=400)
+         print "saved spectral index map %s" % fig_name
+      return spectral_index_map
+   
+   #Make a spectral index map between xx and xx MHz
+   spectral_index_map=make_spectral_index_map(58,178)
+   
    #To get a spectrum across the whole MWA observing band, we need to repeat this for all 5 bands observed
    
    #make one big freaking array to cover each 1.28 MHz subband
@@ -477,7 +500,10 @@ def model_moon(options):
    big_chan_array=np.arange(number_coarse_chans)+57
    big_freq_array=big_chan_array*1.28
    
-    
+   #Save the big freq array
+   big_freq_array_filename="frequencies_array.npy"
+   np.save(big_freq_array_filename,big_freq_array)
+   
    if generate_new_beam_maps:
        generate_beam_maps(big_freq_array)
    
@@ -1265,7 +1291,7 @@ def model_moon(options):
    #S_moon_error_total=np.sqrt(big_rms_residual_images**2+big_Smoon_average_stddev_spectrum[:,1]**2+big_Srfi_error_total_for_Smoon**2)
    #S_moon_error_total=np.sqrt(big_rms_residual_images**2+big_Smoon_average_stddev_spectrum[:,1]**2+big_Srfi_average_stddev_spectrum[:,1]**2)*big_RFI_line_fit
    #Use powerlaw fit to scale error instead
-   print big_rms_residual_images
+   #print big_rms_residual_images
    #The rms of the residual images is in Jy per pixel so in order to convert this to an uncertainty on Smoon, 
    #you need to convert to (got this from the mwa magellenic cloud paper):
    #1. convert residual image units back to Jy/beam. 

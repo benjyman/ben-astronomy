@@ -4,10 +4,19 @@ from astropy.io import fits
 import string
 import os.path
 import cmd
+import datetime
 
-def cotter_moon(obsid,track_off_moon_string,options):
+def cotter_moon(options):
 
-   print obsid
+   obsid=options.obsid
+   sister_obsid=options.sister_obsid
+   
+   if (options.track_off_moon):
+      track_off_moon_string= options.track_off_moon_list
+   else:
+      track_off_moon_string=' '
+   
+   print "cottering obsid %s paired with %s" % (obsid,sister_obsid)
    
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
@@ -35,12 +44,15 @@ def cotter_moon(obsid,track_off_moon_string,options):
 
    ms_name=data_dir+base_name+'.ms'
    
-   metafits_filename=data_dir+obsid+'.metafits'
+   #metafits_filename=data_dir+obsid+'.metafits'
+   metafits_filename="%s_metafits.fits" % (obsid)
+   
    flag_file_name=data_dir+obsid+'_flags.zip'
 
    #check if metafits file exists, if not, download it
    if not os.path.isfile(metafits_filename):
-      cmd="make_metafits.py -o %s -g %s" % (metafits_filename,obsid)
+      #cmd="make_metafits.py -o %s -g %s" % (metafits_filename,obsid)
+      cmd="wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (metafits_filename,obsid)
       print cmd
       os.system(cmd)
    else:
@@ -59,10 +71,24 @@ def cotter_moon(obsid,track_off_moon_string,options):
       except IOError, err:
          'Cannot open metadata file %s\n' % str(options.input_file)
       header=HDU_list[0].header 
-      date = (header)['DATESTRT']
-      print date
+      date_unix_utc_string = (header)['GOODTIME']
+      #datetime.datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ')
+      date_unix_utc=datetime.datetime.utcfromtimestamp(date_unix_utc_string)
+      print "start time (GOODTIME) of observation is %s" % (date_unix_utc)
+      
+      #Get the observation length
+      obslength=float((header)['EXPOSURE'])
+      print "EXPOSURE is %s s" % obslength
+      half_obslength=obslength/2.
+      half_obslength_timedelta=datetime.timedelta(seconds=half_obslength)
+      middle_of_observation=date_unix_utc+half_obslength_timedelta
+      print "middle_of_observation is %s" % middle_of_observation
+      
+      middle_of_observation_formatted=middle_of_observation.strftime('%Y-%m-%dT%H:%M:%S')
+      print "middle_of_observation_formatted %s " % middle_of_observation_formatted
+      
       #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
-      new_date=string.replace(string.replace(date,'-','/'),'T',' ')
+      new_date=string.replace(string.replace(middle_of_observation_formatted,'-','/'),'T',' ')
       print new_date
       #find position of moon
       src_file_name='src_file_moon_%s.txt' % obsid 
@@ -93,9 +119,26 @@ def cotter_moon(obsid,track_off_moon_string,options):
    flagfiles_string= " %s%s_%s.mwaf " % (data_dir,obsid,"%%")
    print flagfiles_string
 
-   ##flagfiles for paired observation
-   #flagfiles_string2= " %s%s/%s_%s.mwaf " % (mwa_dir,track_off_moon_paired_obsid,track_off_moon_paired_obsid,"%%")
-   #print flagfiles_string2
+   ##flagfiles for paired sister observation
+   flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
+   print flagfiles_string_sister
+   
+   #combine the flagfiles - for each flag_file (coarse chan):
+   for coarse_chan in range(1,2):
+      flag_file_1_name="%s%s/%s_%02d.mwaf" % (mwa_dir,obsid,obsid,coarse_chan)
+      print flag_file_1_name
+      flag_file_1_HDU_list=fits.open(flag_file_1_name)
+      flag_file_1_HDU_list.info()
+      header1=flag_file_1_HDU_list[0].header
+      print header1
+      data1=flag_file_1_HDU_list[0].data
+      print data1
+      header2=flag_file_1_HDU_list[1].header
+      print header2
+      data2=flag_file_1_HDU_list[1].data
+      #print data2
+         
+   print mistake
    
    cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres 8 -freqres 80 %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,data_dir)
    print cmd
@@ -123,17 +166,22 @@ parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',d
 parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
+parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
+parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
+parser.add_option('--track_off_moon_list',type='string', dest='track_off_moon_list',default='',help='When track_off_moon is True. Details of on-moon pairing on_moon_obsid,RA,DEC of on_moon paired obs e.g. --track_off_moon_list="1199394880,13.0,0.56" [default=%default]')
+
+
 
 (options, args) = parser.parse_args()
 
-obsid = args[0]
-if (options.track_off_moon):
-   track_off_moon_string= args[1]
-else:
-   track_off_moon_string=' '
+#obsid = args[0]
+#if (options.track_off_moon):
+#   track_off_moon_string= args[1]
+#else:
+#   track_off_moon_string=' '
 
-mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
+mwa_dir = '/md0/moon/data/MWA/'
 
-cotter_moon(obsid,track_off_moon_string,options)
+cotter_moon(options)
 
 

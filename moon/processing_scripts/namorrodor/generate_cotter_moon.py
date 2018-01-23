@@ -1,13 +1,19 @@
 #python script to generate the submission script to cotter a bunch of moon obs
 
 
-def generate_cotter_moon(obsid_infile,options):
+def generate_cotter_moon(options):
 
+    obsid_infile=options.obsid_infile
+    sister_obsid_infile=options.sister_obsid_infile
     chunk_size=20
     obsid_list=[]
+    sister_obsid_list=[]
     for line in open(obsid_infile):
        obsid_list.append(line.strip()) 
+    for line in open(sister_obsid_infile):
+       sister_obsid_list.append(line.strip()) 
     n_obs = sum(1 for line in open(obsid_infile))
+    
     
     #split into chunks of 20 obsids
     if (n_obs > chunk_size):
@@ -71,9 +77,12 @@ def generate_cotter_moon(obsid_infile,options):
        sbatch_file.write('#!/bin/bash -l\n')
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
+          sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
+          obsid_string=' --obsid=%s ' % obsid
+          sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
-             track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ str(obsid) + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + ' \n')
+             track_off_moon_list_string="--track_off_moon_list"+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
+          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + ' \n')
 
        sbatch_file.close()
     
@@ -95,12 +104,14 @@ parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='T
 parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]')
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
+parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 
 
 (options, args) = parser.parse_args()
 
-obsid_infile = args[0]
+#obsid_infile = args[0]
 
 mwa_dir = os.getenv('MWA_DIR','/scratch2/mwaeor/MWA/')
 
-generate_cotter_moon(obsid_infile,options)
+generate_cotter_moon(options)
