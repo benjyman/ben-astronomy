@@ -37,13 +37,14 @@ Aeff = 14.5 # Eff tile area in m2
 Tsky = 3000 * (freq/60e6)**(-2.5) # Tsky is 3000K at 60 MHz with index of -2.5
 SEFD = 2.0* 1380 * Tsky / Aeff #; % Sys eq flux density in Jy
 df = 1.28e6 # Channel width in Hz
-tint = 8 * 3600 # Exposure time in Hrs --> sec
+tint_hr = 15 + 3 + 14  # integration time in Hrs 
 Tmoon = 230.0 # Moon temp in Kelvin
 Smoon = (2.0 * 1380 * (Tmoon-Tsky) * (0.5*np.pi/180.0)**2) / (wavelength**2)  # Moon flux density in Jy
 
 #%
 #%	No need to change parameters below this line
 #%
+tint= tint_hr * 3600 # integration time in sec
 pos = read_mwa_tile_pos() #; % Tile position in meter (on a local tangent plane)
 baselines = make_baselines(pos) # Baselines in meter (snapshot, zenith target)
 [um, vm, wm] = baselines
@@ -84,7 +85,7 @@ plt.grid(True,which="both")
 #plt.title("Global EoR Temperature Uncertainy for MWA")
 plt.ylabel('Temperature Uncertainty (K)')
 plt.xlabel('Frequency (MHz)')
-T_sensitivity_plot.savefig('temp_uncertainty.png')
+T_sensitivity_plot.savefig('temp_uncertainty_%s_hrs.png' % str(tint_hr))
 
 #figure()
 #[hAx,hLine1,hLine2]=plotyy(freq/1e6,flux_std*1e3,freq/1e6,temp_std);

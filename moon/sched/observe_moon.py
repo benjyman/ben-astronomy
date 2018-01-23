@@ -48,6 +48,7 @@ Options: --startdate=str  -- Optional. Date string (UTC) for start of search, e.
          --radec=str -- Optional. Add an additional location to track (in J2000),
                                   e.g., --radec='05:19:49.7,-45:46:44'.,
          --schedule=str  -- Optional. Number of hours to observe at transit. Prints the transit RA and the start LST in decimal hours (sets duration to 1), Default is 6 hours e.g. --schedule='6'
+         --mode=str --Optional. Correlator mode e.g. --mode='40_1' or --mode='10_0.5', default is '40_1'
     '''
     sys.exit(0)
 
@@ -69,6 +70,7 @@ moon_elev=60
 gal_sep=50
 sun_elev=-5
 sched_hours=6
+mode='40_1'
 
 add_radec='';
 print_type='l';
@@ -77,7 +79,7 @@ print_type='l';
 # read command-line arguments
 
 try:
-    options, xarguments = getopt.getopt(sys.argv[1:], '', ['startdate=','duration=','frequency=','moon_elev=','gal_sep=','sun_elev=','epoch=','radec=','schedule='])
+    options, xarguments = getopt.getopt(sys.argv[1:], '', ['startdate=','duration=','frequency=','moon_elev=','gal_sep=','sun_elev=','epoch=','radec=','schedule=','mode='])
 except getopt.error:
     help_message()
 
@@ -154,6 +156,15 @@ for a in options[:]:
     elif a[0] == '--schedule' and a[1] == '':
         print '--schedule expects an argument'
         sys.exit(0)
+for a in options[:]:
+    if a[0] == '--mode' and a[1] != '':
+        print_type = 't'
+        mode=a[1]
+        options.remove(a)
+        break
+    elif a[0] == '--mode' and a[1] == '':
+        print '--mode expects an argument'
+        sys.exit(0)
 
 #----------------------------------------------------------------------------------------------------------------------#
 
@@ -162,10 +173,10 @@ for a in options[:]:
 #setup file to write for observations
 
 #outfile="G0017_2015_schedule_obs_test.txt"
-outfile="G0017_2017B_schedule_obs.txt"
+outfile="G0017_2018A_schedule_obs.txt"
 fileprint = open(outfile, 'w')
 #print >> fileprint, "# set of commands to schedule G0017 (moon EoR global signal) for 2015-A"
-print >> fileprint, "# set of commands to schedule G0017 (moon EoR global signal) for 2015-B"
+print >> fileprint, "# set of commands to schedule G0017 (moon EoR global signal)"
 
 # Create an observer
 MRO = Observer()
@@ -244,7 +255,11 @@ for dt in rrule.rrule(frequency,dtstart=start,until=end):
       #print >> fileprint, "UTC Date: %1s, start_LST: %8.3f, transit_ra = %8.3f, transit_dec = %8.3f, el = %8.3f, obs length = %8.1f hrs " % (dt, start_LST_decimal, ra_t_decimal, dec_t_decimal, el, sched_hours)
       print >> fileprint, '# On Moon for transit at %1s' %  (moon_transit_date) 
       print >> fileprint, 'radec="%1.2f,%1.2f"' % (ra_t_decimal, dec_t_decimal)
+<<<<<<< Updated upstream
       print >> fileprint, './track_a_source.py -s -e -d 120 -m 40_1 -C $radec -u BenMcKinley %1s %2.1f %2.1f EoRMoon G0017' % (str(moon_transit_date)[0:10], sched_hours,start_LST_decimal)
+=======
+      print >> fileprint, './track_a_source.py -s -e -d 120 -m %s -C $radec -u BenMcKinley %1s %2.1f %2.1f EoRMoon G0017' % (mode,str(moon_transit_date)[0:10], sched_hours,start_LST_decimal)
+>>>>>>> Stashed changes
       print >> fileprint, "#Off Moon\n"
       previous_date = current_date
 
