@@ -33,7 +33,9 @@ def generate_namorrodor(infile,options):
           end_obs_id_index=int(obs_list_number*chunk_size+last_list_length)
 
       for obsid in obsid_list[start_obs_id_index:end_obs_id_index]:
-         imaging_file.write('%sobsdownload.py -f -m -o %s\n' % (code_dir,obsid))
+         imaging_file.write('%sobsdownload.py -o %s\n' % (code_dir,obsid))
+         imaging_file.write('%sobsdownload.py -f -o %s\n' % (code_dir,obsid))
+         #imaging_file.write('%sobsdownload.py -f -m -o %s\n' % (code_dir,obsid))
          #imaging_file.write('%sobsdownload.py -f -o %s\n' % (code_dir,obsid))
          #imaging_file.write('cd %s\n' % obsid)
          #imaging_file.write('make_metafits.py -g %s\n' % (obsid))

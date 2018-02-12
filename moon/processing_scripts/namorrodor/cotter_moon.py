@@ -11,8 +11,8 @@ def cotter_moon(options):
    obsid=options.obsid
    sister_obsid=options.sister_obsid
    
-   time_res=(options.time_freq_res).split()[0]
-   freq_res=(options.time_freq_res).split()[1]
+   time_res=(options.time_freq_res).split(',')[0]
+   freq_res=(options.time_freq_res).split(',')[1]
    
    
    if (options.track_off_moon):
@@ -36,9 +36,11 @@ def cotter_moon(options):
 
    data_dir='%s%s/' % (mwa_dir,obsid)
    
-   tagname=options.tagname
-   base_name=obsid+'_cotter_'+tagname
-
+   #tagname=options.tagname
+   epoch_ID=options.epoch_ID
+   #base_name=obsid+'_cotter_'+tagname
+   base_name= "%s_%s" % (obsid,epoch_ID)
+   
    track_moon_string=' '
    if (options.track_moon):
       base_name+='_trackmoon'
@@ -49,7 +51,7 @@ def cotter_moon(options):
    ms_name=data_dir+base_name+'.ms'
    
    #metafits_filename=data_dir+obsid+'.metafits'
-   metafits_filename="%s_metafits.fits" % (obsid)
+   metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
    flag_file_name=data_dir+obsid+'_flags.zip'
 
@@ -170,7 +172,8 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
