@@ -20,6 +20,8 @@ import healpy as hp
 
 def model_moon(options):
    stokes=options.stokes
+   epoch_ID=options.epoch_ID.strip()
+   base_dir='/mnt/md0/moon/'
    #Choose one only: LFSM or GSM ( or GSM2016)
    use_model_gsm=True
    use_model_gsm2016=False
@@ -518,7 +520,7 @@ def model_moon(options):
    
    
    band_centre_chans=[69,93,121,145,169]
-   #band_centre_chans=[69,93,121]
+   #band_centre_chans=[93,121]
    
    if (not plot_only):
    
@@ -528,10 +530,13 @@ def model_moon(options):
       rms_threshold=1.0
       
       #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-      on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
-      off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+      #on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+      #off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+      on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+      off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
       
       print on_moon_filename
+      print off_moon_filename
       
       on_moon_obsid_list=[]
       off_moon_obsid_list=[]
@@ -607,11 +612,16 @@ def model_moon(options):
                chan_string='%.04d' % chan
             else:
                chan_string='MFS'
-            moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
-            off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
-            on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-            off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-            #output fitsnames:
+            #moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
+            #off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
+            #on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            #off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            moon_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)
+            off_moon_fitsname="%sepochs/%s/off_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,chan_string)
+            on_moon_psf_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)
+            off_moon_psf_fitsname="%sepochs/%s/off_moon/%s/%s-%s-XX-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,chan_string)
+             
+            ##output fitsnames:
             moon_difference_fitsname="difference_%s_%s_on_off_moon_%s-%s-%s.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
             psf_difference_fitsname="difference_%s_%s_psf_%s-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
             moon_zoom_fitsname="moon_zoom_%s_%s-%s-%s.fits" % (on_moon_obsid,str(centre_chan),chan_string,stokes)
@@ -1283,7 +1293,159 @@ def model_moon(options):
    #Use the powerlaw fit instead (even though it makes no difference whatsoever to the final result)
    #S_moon_RFI_subtracted=big_Smoon_average_stddev_spectrum[:,0]-(ratio_fit_big*big_Srfi_average_stddev_spectrum[:,0])
    #Nope, use the evans fit, with measured ratio taken to be correct at 100 MHz
-   S_moon_RFI_subtracted=big_Smoon_average_stddev_spectrum[:,0]-(ratio_evans_normalised*big_Srfi_average_stddev_spectrum[:,0])
+   diffuse_RFI_array=ratio_evans_normalised*big_Srfi_average_stddev_spectrum[:,0]
+   S_moon_RFI_subtracted=big_Smoon_average_stddev_spectrum[:,0]-diffuse_RFI_array
+
+   for centre_chan_index,centre_chan in enumerate(band_centre_chans):
+      on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+      off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+      #on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+      #off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+
+      print on_moon_filename
+      print off_moon_filename
+
+      on_moon_obsid_list=[]
+      off_moon_obsid_list=[]
+
+      with open(on_moon_filename,'r') as on_moon_file:
+         on_moon_lines = on_moon_file.readlines()
+      for line in on_moon_lines:
+         on_moon_obsid_list.append(line.strip())
+
+      with open(off_moon_filename,'r') as off_moon_file:
+         off_moon_lines = off_moon_file.readlines()
+      for line in off_moon_lines:
+         off_moon_obsid_list.append(line.strip())
+
+      n_obs=len(on_moon_obsid_list)
+      n_chans=24
+
+      channel_list=range(n_chans)
+      channel_list.append('MFS')
+     
+      on_moon_obsid=on_moon_obsid_list[5]
+      off_moon_obsid=off_moon_obsid_list[5] 
+      for chan_index,chan in enumerate(channel_list):
+         #Crop to only use the inner quarter of the images
+         xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_small,xend_moon_small,ystart_moon_small,yend_moon_small
+         xstart_psf,xend_psf,ystart_psf,yend_psf=512,1536,512,1536
+
+         #sort out filenames 
+         if (chan != 'MFS'):
+            chan_string='%.04d' % chan
+         else:
+            chan_string='MFS'
+         #moon_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)   
+         #on_moon_psf_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)
+         moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)  
+         on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string) 
+         #output fits names
+         new_rfi_modelled_fitsname="new_rfi_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
+         new_moon_modelled_fitsname="new_moon_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
+
+         if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
+            moon_hdulist = pyfits.open(moon_fitsname)
+         else:
+            print "Either file %s is missing or is not readable" % moon_fitsname
+            continue
+         moon_data=moon_hdulist[0].data[0,0,:,:]
+         moon_data=np.nan_to_num(moon_data)
+         moon_header=moon_hdulist[0].header
+         moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+         pix_size_deg = np.abs(float(moon_header['cdelt1']))
+         moon_radius_pix = np.round(moon_radius_deg/pix_size_deg)
+
+         max_moon_value=np.max(moon_zoom)
+         min_moon_value=np.min(moon_zoom)
+         if (max_moon_value==min_moon_value):
+            print "Moon max and min are the same - something is wrong with the image, discarding."
+            continue
+
+         #psf
+         #read in psf images
+         if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):
+            psf_hdulist = pyfits.open(on_moon_psf_fitsname)
+         else:
+            print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
+            continue
+         psf_data=psf_hdulist[0].data[0,0,:,:]
+         psf_data=np.nan_to_num(psf_data)
+         psf_header=psf_hdulist[0].header
+         psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
+         psf_zoom=np.require(psf_zoom, dtype=np.float32)
+
+
+
+         #make the moon disk mask and rfi specular template
+         image_length=moon_zoom.shape[0]
+         image_height=moon_zoom.shape[1]
+         moon_mask = np.zeros((image_length,image_height))
+
+         #define the centre of the disk (moon position)
+         a,b = (image_length/2)-1, (image_height/2)-1
+
+         y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
+         mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
+         moon_mask[mask]=1
+
+
+         #Need to have the images in Jy per pixel for the equations to make sense
+         #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
+         pix_area_deg_sq = pix_size_deg * pix_size_deg
+         #beam area (gaussian restoring beam)
+         bmaj_deg=np.abs(float(moon_header['bmaj']))
+         bmin_deg=np.abs(float(moon_header['bmin']))
+         #beam area for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
+         beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
+         n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
+         n_pixels_per_moon=moon_area_deg_sq/pix_area_deg_sq
+         #to convert from Jy to Jy per pix, divide by n_pixels_per_moon
+
+         #convert to Jy per pix
+         psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
+
+         #make rfi model mask
+         rfi_radius_deg=rfi_model_mask_size/60.0
+         rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
+         print "rfi radius in pix is %s " % rfi_radius_pix
+         rfi_model_mask = np.zeros((image_length,image_height))
+         rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
+         rfi_model_mask[rfi_mask]=1
+
+         if do_RFI_broadening:
+            RFI_broadening=rfi_model_mask
+            RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
+            RFI_convolved_shift=RFI_convolved_image
+            #convert Jy per pix
+            RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam
+
+            reconstructed_RFI=big_Srfi_average_stddev_spectrum[chan_index,0]*RFI_convolved_shift_jyppix
+
+         #what is the diffuse component of RFI for this channel?
+         big_index=(centre_chan_index*24)+chan_index
+         diffuse_RFI=diffuse_RFI_array[big_index]
+         diffuse_RFI_Jy_per_pix=diffuse_RFI/n_pixels_per_moon
+
+         Sm_RFI_subtracted_chan_Jy=S_moon_RFI_subtracted[big_index]
+         Sm_RFI_subtracted_chan_Jy_per_pix=Sm_RFI_subtracted_chan_Jy/n_pixels_per_moon
+
+         G_image_shift=signal.fftconvolve(moon_mask,psf_zoom_jyppix,mode='same')
+
+         new_reconstructed_moon=G_image_shift*Sm_RFI_subtracted_chan_Jy_per_pix
+
+         diffuse_RFI_disk_convolved=diffuse_RFI_Jy_per_pix*G_image_shift
+
+         new_reconstructed_RFI=diffuse_RFI_disk_convolved+reconstructed_RFI
+
+         #write out the modelled rfi image
+         pyfits.writeto(new_rfi_modelled_fitsname,new_reconstructed_RFI,clobber=True)
+         pyfits.update(new_rfi_modelled_fitsname,new_reconstructed_RFI,header=moon_header)
+         print "wrote image %s" %  new_rfi_modelled_fitsname
+
+         pyfits.writeto(new_moon_modelled_fitsname,new_reconstructed_moon,clobber=True)
+         pyfits.update(new_moon_modelled_fitsname,new_reconstructed_moon,header=moon_header)
+         print "wrote image %s" %  new_moon_modelled_fitsname
 
    #add in the residual image rms (this is small, makes no difference) and the RFI rms (actually I think this is wrong, double dipping - plus makes the spectrum flatter!
    #Aha - need to also multiply the rfi error by the linear fit used for the subtracftion I think
@@ -2278,6 +2440,7 @@ usage = 'Usage: model_moon.py [options]'
 parser = OptionParser(usage=usage)
 
 parser.add_option('--stokes',type='string', dest='stokes',default='I',help='Stokes parameter of Moon images. I,Q,U,V or linear (sqrt(Q^2+U^2)) e.g. --stokes="Q" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='2018A_01',help='Epoch ID is a unique identifier for a set of paired of Moon/off Moon observations e.g.epoch)ID="2018A_01" [default=%default]')
 
 (options, args) = parser.parse_args()
 
