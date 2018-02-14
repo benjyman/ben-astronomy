@@ -5,6 +5,7 @@ import string
 import os.path
 import cmd
 import datetime
+from casacore.tables import table,tablecolumn,tablerow
 
 def cotter_moon(options):
 
@@ -42,14 +43,29 @@ def cotter_moon(options):
    base_name= "%s_%s" % (obsid,epoch_ID)
    
    track_moon_string=' '
-   if (options.track_moon):
-      base_name+='_trackmoon'
-
-   if (options.track_off_moon):
-      base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
-
-   ms_name=data_dir+base_name+'.ms'
    
+   #if (options.track_moon):
+   #   base_name+='_trackmoon'
+   #
+   #if (options.track_off_moon):
+   #   base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
+   #
+   #ms_name=data_dir+base_name+'.ms'
+   
+   if (options.track_moon):
+      on_moon_basename=base_name + '_trackmoon'
+      on_moon_ms_name=data_dir+on_moon_basename+'.ms'
+      off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
+      off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
+      ms_name=on_moon_ms_name
+   
+   if (options.track_off_moon):
+      on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
+      on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
+      off_moon_base_name=base_name+'_track_off_moon_paired_' + sister_obsid
+      off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
+      ms_name=off_moon_ms_name
+      
    #metafits_filename=data_dir+obsid+'.metafits'
    metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
@@ -126,25 +142,24 @@ def cotter_moon(options):
    print flagfiles_string
 
    ##flagfiles for paired sister observation
-   flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
-   print flagfiles_string_sister
+   #flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
+   #print flagfiles_string_sister
    
-   #combine the flagfiles - for each flag_file (coarse chan):
-   for coarse_chan in range(1,2):
-      flag_file_1_name="%s%s/%s_%02d.mwaf" % (mwa_dir,obsid,obsid,coarse_chan)
-      print flag_file_1_name
-      flag_file_1_HDU_list=fits.open(flag_file_1_name)
-      flag_file_1_HDU_list.info()
-      header1=flag_file_1_HDU_list[0].header
-      print header1
-      data1=flag_file_1_HDU_list[0].data
-      print data1
-      header2=flag_file_1_HDU_list[1].header
-      print header2
-      data2=flag_file_1_HDU_list[1].data
+   #Don't do this. Instead, make the cotter file then merge the flag columns of the ms s later....
+   ##combine the flagfiles - for each flag_file (coarse chan):
+   #for coarse_chan in range(1,2):
+   #   flag_file_1_name="%s%s/%s_%02d.mwaf" % (mwa_dir,obsid,obsid,coarse_chan)
+   #   print flag_file_1_name
+   #   flag_file_1_HDU_list=fits.open(flag_file_1_name)
+   #   flag_file_1_HDU_list.info()
+   #   header1=flag_file_1_HDU_list[0].header
+   #   print header1
+   #   data1=flag_file_1_HDU_list[0].data
+   #   print data1
+   #   header2=flag_file_1_HDU_list[1].header
+   #   print header2
+   #   data2=flag_file_1_HDU_list[1].data
       #print data2
-         
-   print mistake
    
    #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
    #can probably get away with just halving each (double baselines)
@@ -163,6 +178,17 @@ def cotter_moon(options):
       print cmd
       os.system(cmd)
 
+   #here merge the flag columns for both the on_moon and off_moon ms
+   on_moon_table=table(on_moon_ms_name)
+   print on_moon_table
+   on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
+   print on_moon_table_UVW[0:10]
+   
+   off_moon_table=table(off_moon_ms_name)
+   print off_moon_table
+   off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
+   print off_moon_table_UVW[0:10]
+   
 import sys,os
 from optparse import OptionParser,OptionGroup
 

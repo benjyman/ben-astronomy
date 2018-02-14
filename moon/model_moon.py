@@ -33,6 +33,7 @@ def model_moon(options):
    generate_new_beam_maps=False
    #set if you just want to plot already saved data
    plot_only=True
+   write_new_reconstructed_moon_rfi=False
    #RFI broadening or not:
    do_RFI_broadening=True
    #Set true to force Srfi to always be positive (or should we just set it to zero if found negative?)
@@ -455,7 +456,15 @@ def model_moon(options):
    
       T_sky_fit = powerlaw(freq_array/150.0, T_150, alpha)
    
-      return {'T_sky_fit':T_sky_fit,'alpha':alpha,'alpha_err':alpha_err,'T_150':T_150,'T_150_err':T_150_err}
+      #calculate residuals
+      residuals=temp_data-T_sky_fit
+      #calculate reduced chi sq
+      #degrees of freedom:
+      dof=len(freq_array)-len(pfinal)
+      chi_sq=np.sum(np.square(residuals/temp_data_error))
+      red_chi_sq=chi_sq/dof
+   
+      return {'T_sky_fit':T_sky_fit,'alpha':alpha,'alpha_err':alpha_err,'T_150':T_150,'T_150_err':T_150_err,'residuals':residuals,'dof':dof,'red_chi_sq':red_chi_sq}
    
    def fit_line(data, data_error, freq_array):
       #returns a fit to y=ax +b
@@ -501,6 +510,8 @@ def model_moon(options):
    number_coarse_chans=int(5*24+4)
    big_chan_array=np.arange(number_coarse_chans)+57
    big_freq_array=big_chan_array*1.28
+   #print big_freq_array
+   
    
    #Save the big freq array
    big_freq_array_filename="frequencies_array.npy"
@@ -1295,157 +1306,158 @@ def model_moon(options):
    #Nope, use the evans fit, with measured ratio taken to be correct at 100 MHz
    diffuse_RFI_array=ratio_evans_normalised*big_Srfi_average_stddev_spectrum[:,0]
    S_moon_RFI_subtracted=big_Smoon_average_stddev_spectrum[:,0]-diffuse_RFI_array
+   
+   if write_new_reconstructed_moon_rfi:
+      for centre_chan_index,centre_chan in enumerate(band_centre_chans):
+         on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+         off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+         #on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+         #off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
 
-   for centre_chan_index,centre_chan in enumerate(band_centre_chans):
-      on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
-      off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
-      #on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-      #off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+         print on_moon_filename
+         print off_moon_filename
 
-      print on_moon_filename
-      print off_moon_filename
+         on_moon_obsid_list=[]
+         off_moon_obsid_list=[]
 
-      on_moon_obsid_list=[]
-      off_moon_obsid_list=[]
+         with open(on_moon_filename,'r') as on_moon_file:
+            on_moon_lines = on_moon_file.readlines()
+         for line in on_moon_lines:
+            on_moon_obsid_list.append(line.strip())
 
-      with open(on_moon_filename,'r') as on_moon_file:
-         on_moon_lines = on_moon_file.readlines()
-      for line in on_moon_lines:
-         on_moon_obsid_list.append(line.strip())
+         with open(off_moon_filename,'r') as off_moon_file:
+            off_moon_lines = off_moon_file.readlines()
+         for line in off_moon_lines:
+            off_moon_obsid_list.append(line.strip())
 
-      with open(off_moon_filename,'r') as off_moon_file:
-         off_moon_lines = off_moon_file.readlines()
-      for line in off_moon_lines:
-         off_moon_obsid_list.append(line.strip())
+         n_obs=len(on_moon_obsid_list)
+         n_chans=24
 
-      n_obs=len(on_moon_obsid_list)
-      n_chans=24
-
-      channel_list=range(n_chans)
-      channel_list.append('MFS')
+         channel_list=range(n_chans)
+         channel_list.append('MFS')
      
-      on_moon_obsid=on_moon_obsid_list[5]
-      off_moon_obsid=off_moon_obsid_list[5] 
-      for chan_index,chan in enumerate(channel_list):
-         #Crop to only use the inner quarter of the images
-         xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_small,xend_moon_small,ystart_moon_small,yend_moon_small
-         xstart_psf,xend_psf,ystart_psf,yend_psf=512,1536,512,1536
+         on_moon_obsid=on_moon_obsid_list[5]
+         off_moon_obsid=off_moon_obsid_list[5] 
+         for chan_index,chan in enumerate(channel_list):
+            #Crop to only use the inner quarter of the images
+            xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_small,xend_moon_small,ystart_moon_small,yend_moon_small
+            xstart_psf,xend_psf,ystart_psf,yend_psf=512,1536,512,1536
 
-         #sort out filenames 
-         if (chan != 'MFS'):
-            chan_string='%.04d' % chan
-         else:
-            chan_string='MFS'
-         #moon_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)   
-         #on_moon_psf_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)
-         moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)  
-         on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string) 
-         #output fits names
-         new_rfi_modelled_fitsname="new_rfi_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
-         new_moon_modelled_fitsname="new_moon_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
+            #sort out filenames 
+            if (chan != 'MFS'):
+               chan_string='%.04d' % chan
+            else:
+               chan_string='MFS'
+            #moon_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)   
+            #on_moon_psf_fitsname="%sepochs/%s/on_moon/%s/%s-%s-XX-image.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,chan_string)
+            moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)  
+            on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string) 
+            #output fits names
+            new_rfi_modelled_fitsname="new_rfi_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
+            new_moon_modelled_fitsname="new_moon_modelled_%s-%s-%s.fits" % (str(centre_chan),chan_string,stokes)
 
-         if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
-            moon_hdulist = pyfits.open(moon_fitsname)
-         else:
-            print "Either file %s is missing or is not readable" % moon_fitsname
-            continue
-         moon_data=moon_hdulist[0].data[0,0,:,:]
-         moon_data=np.nan_to_num(moon_data)
-         moon_header=moon_hdulist[0].header
-         moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
-         pix_size_deg = np.abs(float(moon_header['cdelt1']))
-         moon_radius_pix = np.round(moon_radius_deg/pix_size_deg)
+            if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
+               moon_hdulist = pyfits.open(moon_fitsname)
+            else:
+               print "Either file %s is missing or is not readable" % moon_fitsname
+               continue
+            moon_data=moon_hdulist[0].data[0,0,:,:]
+            moon_data=np.nan_to_num(moon_data)
+            moon_header=moon_hdulist[0].header
+            moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+            pix_size_deg = np.abs(float(moon_header['cdelt1']))
+            moon_radius_pix = np.round(moon_radius_deg/pix_size_deg)
 
-         max_moon_value=np.max(moon_zoom)
-         min_moon_value=np.min(moon_zoom)
-         if (max_moon_value==min_moon_value):
-            print "Moon max and min are the same - something is wrong with the image, discarding."
-            continue
+            max_moon_value=np.max(moon_zoom)
+            min_moon_value=np.min(moon_zoom)
+            if (max_moon_value==min_moon_value):
+               print "Moon max and min are the same - something is wrong with the image, discarding."
+               continue
 
-         #psf
-         #read in psf images
-         if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):
-            psf_hdulist = pyfits.open(on_moon_psf_fitsname)
-         else:
-            print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
-            continue
-         psf_data=psf_hdulist[0].data[0,0,:,:]
-         psf_data=np.nan_to_num(psf_data)
-         psf_header=psf_hdulist[0].header
-         psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
-         psf_zoom=np.require(psf_zoom, dtype=np.float32)
-
-
-
-         #make the moon disk mask and rfi specular template
-         image_length=moon_zoom.shape[0]
-         image_height=moon_zoom.shape[1]
-         moon_mask = np.zeros((image_length,image_height))
-
-         #define the centre of the disk (moon position)
-         a,b = (image_length/2)-1, (image_height/2)-1
-
-         y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
-         mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
-         moon_mask[mask]=1
+            #psf
+            #read in psf images
+            if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):
+               psf_hdulist = pyfits.open(on_moon_psf_fitsname)
+            else:
+               print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
+               continue
+            psf_data=psf_hdulist[0].data[0,0,:,:]
+            psf_data=np.nan_to_num(psf_data)
+            psf_header=psf_hdulist[0].header
+            psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
+            psf_zoom=np.require(psf_zoom, dtype=np.float32)
 
 
-         #Need to have the images in Jy per pixel for the equations to make sense
-         #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
-         pix_area_deg_sq = pix_size_deg * pix_size_deg
-         #beam area (gaussian restoring beam)
-         bmaj_deg=np.abs(float(moon_header['bmaj']))
-         bmin_deg=np.abs(float(moon_header['bmin']))
-         #beam area for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
-         beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
-         n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
-         n_pixels_per_moon=moon_area_deg_sq/pix_area_deg_sq
-         #to convert from Jy to Jy per pix, divide by n_pixels_per_moon
 
-         #convert to Jy per pix
-         psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
+            #make the moon disk mask and rfi specular template
+            image_length=moon_zoom.shape[0]
+            image_height=moon_zoom.shape[1]
+            moon_mask = np.zeros((image_length,image_height))
+ 
+            #define the centre of the disk (moon position)
+            a,b = (image_length/2)-1, (image_height/2)-1
 
-         #make rfi model mask
-         rfi_radius_deg=rfi_model_mask_size/60.0
-         rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
-         print "rfi radius in pix is %s " % rfi_radius_pix
-         rfi_model_mask = np.zeros((image_length,image_height))
-         rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
-         rfi_model_mask[rfi_mask]=1
+            y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
+            mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
+            moon_mask[mask]=1
 
-         if do_RFI_broadening:
-            RFI_broadening=rfi_model_mask
-            RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
-            RFI_convolved_shift=RFI_convolved_image
-            #convert Jy per pix
-            RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam
 
-            reconstructed_RFI=big_Srfi_average_stddev_spectrum[chan_index,0]*RFI_convolved_shift_jyppix
+            #Need to have the images in Jy per pixel for the equations to make sense
+            #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
+            pix_area_deg_sq = pix_size_deg * pix_size_deg
+            #beam area (gaussian restoring beam)
+            bmaj_deg=np.abs(float(moon_header['bmaj']))
+            bmin_deg=np.abs(float(moon_header['bmin']))
+            #beam area for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
+            beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
+            n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
+            n_pixels_per_moon=moon_area_deg_sq/pix_area_deg_sq
+            #to convert from Jy to Jy per pix, divide by n_pixels_per_moon
 
-         #what is the diffuse component of RFI for this channel?
-         big_index=(centre_chan_index*24)+chan_index
-         diffuse_RFI=diffuse_RFI_array[big_index]
-         diffuse_RFI_Jy_per_pix=diffuse_RFI/n_pixels_per_moon
+            #convert to Jy per pix
+            psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
 
-         Sm_RFI_subtracted_chan_Jy=S_moon_RFI_subtracted[big_index]
-         Sm_RFI_subtracted_chan_Jy_per_pix=Sm_RFI_subtracted_chan_Jy/n_pixels_per_moon
+            #make rfi model mask
+            rfi_radius_deg=rfi_model_mask_size/60.0
+            rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
+            print "rfi radius in pix is %s " % rfi_radius_pix
+            rfi_model_mask = np.zeros((image_length,image_height))
+            rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
+            rfi_model_mask[rfi_mask]=1
 
-         G_image_shift=signal.fftconvolve(moon_mask,psf_zoom_jyppix,mode='same')
+            if do_RFI_broadening:
+               RFI_broadening=rfi_model_mask
+               RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
+               RFI_convolved_shift=RFI_convolved_image
+               #convert Jy per pix
+               RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam
 
-         new_reconstructed_moon=G_image_shift*Sm_RFI_subtracted_chan_Jy_per_pix
+               reconstructed_RFI=big_Srfi_average_stddev_spectrum[chan_index,0]*RFI_convolved_shift_jyppix
 
-         diffuse_RFI_disk_convolved=diffuse_RFI_Jy_per_pix*G_image_shift
+            #what is the diffuse component of RFI for this channel?
+            big_index=(centre_chan_index*24)+chan_index
+            diffuse_RFI=diffuse_RFI_array[big_index]
+            diffuse_RFI_Jy_per_pix=diffuse_RFI/n_pixels_per_moon
 
-         new_reconstructed_RFI=diffuse_RFI_disk_convolved+reconstructed_RFI
+            Sm_RFI_subtracted_chan_Jy=S_moon_RFI_subtracted[big_index]
+            Sm_RFI_subtracted_chan_Jy_per_pix=Sm_RFI_subtracted_chan_Jy/n_pixels_per_moon
 
-         #write out the modelled rfi image
-         pyfits.writeto(new_rfi_modelled_fitsname,new_reconstructed_RFI,clobber=True)
-         pyfits.update(new_rfi_modelled_fitsname,new_reconstructed_RFI,header=moon_header)
-         print "wrote image %s" %  new_rfi_modelled_fitsname
+            G_image_shift=signal.fftconvolve(moon_mask,psf_zoom_jyppix,mode='same')
 
-         pyfits.writeto(new_moon_modelled_fitsname,new_reconstructed_moon,clobber=True)
-         pyfits.update(new_moon_modelled_fitsname,new_reconstructed_moon,header=moon_header)
-         print "wrote image %s" %  new_moon_modelled_fitsname
+            new_reconstructed_moon=G_image_shift*Sm_RFI_subtracted_chan_Jy_per_pix
+ 
+            diffuse_RFI_disk_convolved=diffuse_RFI_Jy_per_pix*G_image_shift
+
+            new_reconstructed_RFI=diffuse_RFI_disk_convolved+reconstructed_RFI
+
+            #write out the modelled rfi image
+            pyfits.writeto(new_rfi_modelled_fitsname,new_reconstructed_RFI,clobber=True)
+            pyfits.update(new_rfi_modelled_fitsname,new_reconstructed_RFI,header=moon_header)
+            print "wrote image %s" %  new_rfi_modelled_fitsname
+
+            pyfits.writeto(new_moon_modelled_fitsname,new_reconstructed_moon,clobber=True)
+            pyfits.update(new_moon_modelled_fitsname,new_reconstructed_moon,header=moon_header)
+            print "wrote image %s" %  new_moon_modelled_fitsname
 
    #add in the residual image rms (this is small, makes no difference) and the RFI rms (actually I think this is wrong, double dipping - plus makes the spectrum flatter!
    #Aha - need to also multiply the rfi error by the linear fit used for the subtracftion I think
@@ -1559,45 +1571,27 @@ def model_moon(options):
    if any(t < 0 for t in Tb):
       print "Tb has negative elements, skipping power law fit"
    else:
-      logx=np.log10(big_freq_array/150.0)
-      logy = np.log10(Tb)
       Tb_error[Tb_error == 0] = 200.
       Tb_error[Tb_error < 1e-10] = 200.
       Tb_error[Tb_error > 1e+10] = 200.
-      #print Tb
-      #print Tb_error
-      logyerr = Tb_error / Tb
-   
-      powerlaw2 = lambda x, amp, index: amp * (x**index)
-   
-      # define our (line) fitting function
-      fitfunc = lambda p, x: p[0] + p[1] * x
-      errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
-   
-      pinit = [1.0, -1.0]
-      out = optimize.leastsq(errfunc, pinit,
-                             args=(logx, logy, logyerr), full_output=1)
-   
-      pfinal = out[0]
-      covar = out[1]
-      #print pfinal
-      #print covar
-   
-      alpha_gal_measured = pfinal[1]
-      T_150_measured = 10.0**pfinal[0]
-   
-      alpha_gal_measured_err = np.sqrt( covar[1][1] )
-      T_150_measured_err = np.sqrt( covar[0][0] ) * T_150_measured
-   
-      T_sky_measured_fit = powerlaw2(big_freq_array/150.0, T_150_measured, alpha_gal_measured)
-   
+      
+      powerlaw_fit_result = fit_powerlaw(Tb,Tb_error,big_freq_array)
+      
+      T_sky_measured_fit=powerlaw_fit_result['T_sky_fit']
+      T_150_measured=powerlaw_fit_result['T_150']
+      T_150_measured_err=powerlaw_fit_result['T_150_err']
+      alpha_gal_measured=powerlaw_fit_result['alpha']
+      alpha_gal_measured_err=powerlaw_fit_result['alpha_err']
+      residuals_big = powerlaw_fit_result['residuals']
+      dof=powerlaw_fit_result['dof']
+      red_chi_sq=powerlaw_fit_result['red_chi_sq']
+      
       #work out the residuals - what is the rms?
-      residuals_big = Tb - T_sky_measured_fit
       #print len(residuals)
-      residuals=residuals_big[48:]
+      residuals=residuals_big
       residual_rms=np.sqrt(np.mean(np.square(residuals)))
       #print Tb_error
-      weights= np.reciprocal(Tb_error[48:].astype(np.float32))
+      weights= np.reciprocal(Tb_error.astype(np.float32))
       norm_weights=weights/np.sum(weights)
       #print weights
       weighted_residual_rms=np.sqrt(np.sum(norm_weights*np.square(residuals)))
@@ -1605,6 +1599,104 @@ def model_moon(options):
       #print weighted_residual_rms
       ################
    
+      #Okay, we know from the chromaticity plots that things start to go haywire at about 150 MHz 
+      #So lets split the band up and just examine two 40 MHz subbands, avoiding FM
+      # i.e. 110-150 MHz and 160-200 MHz
+      #110 MHz = big_freq_array[29], 150 MHz = big_freq_array[61],160 MHz = big_freq_array[68],200 MHz = big_freq_array[100]
+      freq_array_band_1=big_freq_array[29:61]
+      freq_array_band_2=big_freq_array[68:100]
+      Tb_band_1=Tb[29:61]
+      Tb_band_2=Tb[68:100]
+      Tb_error_band_1=Tb_error[29:61]
+      Tb_error_band_2=Tb_error[68:100]      
+      
+   
+      #band1 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_1,Tb_error_band_1,freq_array_band_1)
+      
+      residuals_band_1=powerlaw_fit_result['residuals']
+      residual_rms=np.sqrt(np.mean(np.square(residuals_band_1)))
+      #print Tb_error
+      weights= np.reciprocal(Tb_error_band_1.astype(np.float32))
+      norm_weights=weights/np.sum(weights)
+      #print weights
+      weighted_residual_rms=np.sqrt(np.sum(norm_weights*np.square(residuals_band_1)))
+      
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_1,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
+      plt.plot(freq_array_band_1,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 1 Inferred background temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(112, 200, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(112, 100, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(112, 0, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_1_inferred_Tb_plot.png')
+      print "saved figure band_1_inferred_Tb_plot.png"
+      plt.close()
+   
+      #band 1 residuals
+      plt.clf()
+      plot_name="band_1_residual_plot.png"
+      Tb_plot=plt.figure()
+      #plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
+      plt.plot(freq_array_band_1,residuals_band_1,label="Residuals")
+      plt.title('Fit residuals band 1 vs frequency for MWA')
+      plt.ylabel('Residual temperature (K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(115, -30, 'Residual RMS = %5.2f ' % (residual_rms))
+      plt.text(115, -40, 'Weighted Residual RMS = %5.2f' % (weighted_residual_rms))
+      plt.legend(loc=1)
+      Tb_plot.savefig(plot_name)
+      print "saved figure %s" %  plot_name
+      plt.close()
+      
+      #band2 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_2,Tb_error_band_2,freq_array_band_2)
+      
+      residuals_band_2=powerlaw_fit_result['residuals']
+      residual_rms=np.sqrt(np.mean(np.square(residuals_band_2)))
+      #print Tb_error
+      weights= np.reciprocal(Tb_error_band_2.astype(np.float32))
+      norm_weights=weights/np.sum(weights)
+      #print weights
+      weighted_residual_rms=np.sqrt(np.sum(norm_weights*np.square(residuals_band_2)))
+      
+      #band 2 residuals
+      plt.clf()
+      plot_name="band_2_residual_plot.png"
+      Tb_plot=plt.figure()
+      #plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
+      plt.plot(freq_array_band_2,residuals_band_2,label="Residuals")
+      plt.title('Fit residuals band 2 vs frequency for MWA')
+      plt.ylabel('Residual temperature (K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(162, 23, 'Residual RMS = %5.2f ' % (residual_rms))
+      plt.text(162, 20, 'Weighted Residual RMS = %5.2f' % (weighted_residual_rms))
+      plt.legend(loc=1)
+      Tb_plot.savefig(plot_name)
+      print "saved figure %s" %  plot_name
+      plt.close()
+      
+      
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_2,Tb_band_2,yerr=Tb_error_band_2,label="Measured")
+      plt.plot(freq_array_band_2,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 2 Inferred background temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(162, 75, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(162, 50, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(162, 25, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_2_inferred_Tb_plot.png')
+      print "saved figure band_2_inferred_Tb_plot.png"
+      plt.close()
+      
+        
       #Save and plot the inferred and predicted background temp
       tb_filename="inferred_sky_background_temp_and_error.npy"
       big_Tb_value_error[:,0]=Tb
@@ -1620,10 +1712,12 @@ def model_moon(options):
       plt.xlabel('Frequency (MHz)')
       plt.text(150, 1500, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
       plt.text(150, 1300, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
+      plt.text(150, 1100, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (red_chi_sq, dof))
       plt.legend(loc=1)
       Tb_plot.savefig('big_inferred_Tb_plot.png')
       print "saved figure big_inferred_Tb_plot.png"
- 
+      plt.close()
+      
       #Plot subplot with log log space
       loglog_plot_filename='big_inferred_Tb_plot_loglog.png'
       plot_title='Inferred background temperature vs frequency for MWA'
@@ -1650,12 +1744,13 @@ def model_moon(options):
    
       fit_plot.savefig(loglog_plot_filename)
       print "saved figure %s" % loglog_plot_filename
-   
+      plt.close()
+      
       plt.clf()
-      plot_name="residual_plot.png"
+      plot_name="big_residual_plot.png"
       Tb_plot=plt.figure(8)
       #plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
-      plt.plot(big_freq_array[48:],residuals,label="Residuals")
+      plt.plot(big_freq_array,residuals,label="Residuals")
       plt.title('Fit residuals  vs frequency for MWA')
       plt.ylabel('Residual temperature (K)')
       plt.xlabel('Frequency (MHz)')
@@ -1664,7 +1759,7 @@ def model_moon(options):
       plt.legend(loc=1)
       Tb_plot.savefig(plot_name)
       print "saved figure %s" %  plot_name
-   
+      plt.close()
    
    
    
@@ -2329,8 +2424,14 @@ def model_moon(options):
       print "Tb has negative elements - skipping chromaticity correction"
    else:
       T_sky_corrected=Tb/chromaticity_correction
-   
+      
+      Tb_error[Tb_error == 0] = 200.
+      Tb_error[Tb_error < 1e-10] = 200.
+      Tb_error[Tb_error > 1e+10] = 200.
+      
       T_sky_corrected_error=Tb_error/chromaticity_correction 
+      
+      
       #T_sky_corrected_error=np.sqrt(Tb_error**2+temp_error**2)   
       #T_sky_corrected_error=Tb_error*chromaticity_correction                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
       powerlaw_fit_result = fit_powerlaw(T_sky_corrected,T_sky_corrected_error,big_freq_array)
@@ -2343,7 +2444,7 @@ def model_moon(options):
       f,a = plt.subplots(2, sharex=True, gridspec_kw={'hspace':0})
 
       #plt.subplot(2,1,1)
-      T_sky_corrected_error=T_sky_corrected*0.15
+      #T_sky_corrected_error=T_sky_corrected*0.15
       a[0].errorbar(big_freq_array,T_sky_corrected,yerr=T_sky_corrected_error*0,label="T_sky corrected ")
       a[0].plot(big_freq_array,powerlaw_fit_result['T_sky_fit'],label="Power law fit",linestyle='dashed')
       #plt.title('Global Diff vs frequency for MWA')
@@ -2375,6 +2476,53 @@ def model_moon(options):
       big_chrom_corrected_Tb_value_error[:,0]=T_sky_corrected
       big_chrom_corrected_Tb_value_error[:,1]=T_sky_corrected_error
       np.save(corrected_tb_filename,big_chrom_corrected_Tb_value_error)
+   
+      #Split up the chromaticity correct data into two bands:
+            #Okay, we know from the chromaticity plots that things start to go haywire at about 150 MHz 
+      #So lets split the band up and just examine two 40 MHz subbands, avoiding FM
+      # i.e. 110-150 MHz and 160-200 MHz
+      #110 MHz = big_freq_array[29], 150 MHz = big_freq_array[61],160 MHz = big_freq_array[68],200 MHz = big_freq_array[100]
+      Tb_band_1_corrected=T_sky_corrected[29:61]
+      Tb_band_2_corrected=T_sky_corrected[68:100]
+      Tb_corrected_error_band_1=T_sky_corrected_error[29:61]
+      Tb_corrected_error_band_2=T_sky_corrected_error[68:100]      
+   
+      #band1 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_1_corrected,Tb_corrected_error_band_1,freq_array_band_1)
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_1,Tb_band_1_corrected,yerr=Tb_corrected_error_band_1,label="Corrected Tb")
+      plt.plot(freq_array_band_1,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 1 chromaticity corrected temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(112, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(112, 250, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(112, 200, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_1_corrected_Tb_plot.png')
+      print "saved figure band_1_corrected_Tb_plot.png"
+      plt.close()
+   
+      #band2 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_2_corrected,Tb_corrected_error_band_2,freq_array_band_2)
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_2,Tb_band_2_corrected,yerr=Tb_corrected_error_band_2,label="Corrected Tb")
+      plt.plot(freq_array_band_2,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 2 chromaticity corrected temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(162, 100, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(162, 75, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(162, 50, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_2_corrected_Tb_plot.png')
+      print "saved figure band_2_corrected_Tb_plot.png"
+      plt.close()
+      
+   
+   
    
    ####################################################################
    ######
