@@ -5,7 +5,9 @@ import string
 import os.path
 import cmd
 import datetime
+import numpy as np
 from casacore.tables import table,tablecolumn,tablerow
+
 
 def cotter_moon(options):
 
@@ -179,15 +181,37 @@ def cotter_moon(options):
       os.system(cmd)
 
    #here merge the flag columns for both the on_moon and off_moon ms
-   on_moon_table=table(on_moon_ms_name)
-   print on_moon_table
-   on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
-   print on_moon_table_UVW[0:10]
+   on_moon_table=table(on_moon_ms_name,readonly=False)
+   #print on_moon_table
+   #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
+   #on_moon_table_time=tablecolumn(on_moon_table,'TIME')
+   on_moon_table_flag=tablecolumn(on_moon_table,'FLAG')
    
-   off_moon_table=table(off_moon_ms_name)
-   print off_moon_table
-   off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
-   print off_moon_table_UVW[0:10]
+   
+   off_moon_table=table(off_moon_ms_name,readonly=False)
+   #print off_moon_table
+   #off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
+   #off_moon_table_time=tablecolumn(off_moon_table,'TIME')
+   off_moon_table_flag=tablecolumn(off_moon_table,'FLAG')
+   
+   new_off_moon_table_flag=np.logical_not(off_moon_table_flag)
+
+   
+   #look in obs_list_generator.py for how to compare LSTs
+   
+   #Not sure if 2018A obs are well enough LST matched
+   #Continue anyway (come back and look at 2015A) 
+   
+   #OR the two flag columns
+   new_flag_column=np.logical_or(on_moon_table_flag,off_moon_table_flag)
+   #print new_flag_column[20100:20101]
+   
+   on_moon_table.putcol('FLAG',new_flag_column)
+   off_moon_table.putcol('FLAG',new_flag_column)
+   
+   on_moon_table.close()
+   off_moon_table.close()
+
    
 import sys,os
 from optparse import OptionParser,OptionGroup
