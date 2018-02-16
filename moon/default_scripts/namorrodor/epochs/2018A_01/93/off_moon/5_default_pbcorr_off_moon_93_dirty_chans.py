@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qpbcorr_multi.py  /data/moon/2017/20150929_off_moon1_93.txt  --dirty --track_off_moon=/data/moon/2017/track_off_moon_20150926_93.txt  --tagname=20150929_moon_93  --channelsout=24 --havebeam="cotter_20150929_moon_93_track_off_moon_paired" 
