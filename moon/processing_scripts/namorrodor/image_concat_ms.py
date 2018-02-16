@@ -23,11 +23,12 @@ def image_concat_ms(obsid,track_off_moon_string,options):
    data_dir='%s%s/' % (mwa_dir,obsid)
    
    imsize=options.imsize
+   epoch_ID=options.epoch_ID
    #wsclean, beam correct
-   if (options.tagname):
-      tagname=options.tagname
-   else:
-      tagname='uvdump'
+   #if (options.tagname):
+   #   tagname=options.tagname
+   #else:
+   #   tagname='uvdump'
 
    if (options.corrected_data):
       data_column=' CORRECTED_DATA '
@@ -63,11 +64,13 @@ def image_concat_ms(obsid,track_off_moon_string,options):
 
    if not (options.concat6):
       #concat_vis_base='%s_%s_concat' % (obsid,tagname)
-      if (options.cotter):
-         concat_vis_base='%s_cotter_%s' % (obsid,tagname)
-      else:
-         #need to image the transformed ms
-         concat_vis_base='%s_%s_concat_transform' % (obsid,tagname)
+      #if (options.cotter):
+      #   concat_vis_base='%s_cotter_%s' % (obsid,tagname)
+      #else:
+      #   #need to image the transformed ms
+      
+      
+      concat_vis_base='%s_%s' % (obsid,epoch_ID)
       concat_image_base=concat_vis_base
       
       if (options.selfcal):
@@ -251,7 +254,8 @@ parser.add_option('--track_moon',action='store_true',dest='track_moon',default=F
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--imsize',dest='imsize',default='1024',help='Image size string in pixels for wsclean e.g. imsize="4096" [default=%default]')
 parser.add_option('--no_pbcorr',action='store_true',dest='no_pbcorr',default=False,help='Dont generate beam and do pbcorrection at this stage (choose this if doing mosaicking later on). [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to image  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to image  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations  e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--corrected_data',action='store_true',dest='corrected_data',default=False,help='If doing self-cal, use the CORRECTED_DATA column instead of the DATA column. [default=%default]')
 parser.add_option('--pol',dest='pol',default='xx,yy',help='Polarisations to image with wsclean e.g. pol="xx,yy,xy,yx" [default=%default]')
 parser.add_option('--concat6',action='store_true',dest='concat6',default=False,help='Only image concatenated ms of 7.68 MHz (6 coarse chans) [default=%default]')
@@ -273,7 +277,7 @@ else:
    track_off_moon_string=' '
 
 
-mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
+mwa_dir = '/md0/moon/data/MWA/'
 
 image_concat_ms(obsid,track_off_moon_string,options)
 

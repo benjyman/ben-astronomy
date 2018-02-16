@@ -47,11 +47,16 @@ def generate_namorrodor(infile,options):
     else:
        minw_string=''
        
-    if (options.tagname):
-       tagname_string=' --tagname=%s ' % (options.tagname)
-    else:
-       tagname_string=''
+    #if (options.tagname):
+    #   tagname_string=' --tagname=%s ' % (options.tagname)
+    #else:
+    #   tagname_string=''
 
+    if (options.epoch_ID):
+       epoch_ID_string=' --epoch_ID=%s ' % (options.epoch_ID)
+    else:
+       epoch_ID_string=''
+    
     if (options.ionpeel):
        ionpeel_string=' --ionpeel=%s ' % (options.ionpeel)
     else:
@@ -89,7 +94,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/selfcal_concat_ms.py '+str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+tagname_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
+       imaging_file.write('/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/selfcal_concat_ms.py '+str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+epoch_ID_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
 
     imaging_file.close()
     print "wrote file %s" % q_filename
@@ -108,7 +113,8 @@ usage = 'Usage: generate_selfcal_concat_ms.py [text file of obsIDs] [options]'
 parser = OptionParser(usage=usage)
 
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations  e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--ionpeel',type='string', dest='ionpeel',default='',help='Use this to specify a clustered model and run ionpeel e.g.ionpeel="clustered_model.txt" [default=%default]')
 parser.add_option('--chgcentre',action='store_true',dest='chgcentre',default=False,help='Calibrate the ms that has had a phase centre shift  e.g. --chgcentre   [default=%default]')
 parser.add_option('--minw',action='store_true',dest='minw',default=False,help='Calibrate the ms that has had a phase centre shift to minw e.g. --minw   [default=%default]')

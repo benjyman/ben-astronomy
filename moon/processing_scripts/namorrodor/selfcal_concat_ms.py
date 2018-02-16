@@ -21,10 +21,11 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       print "obs paired with %s centering at RA:%s DEC:%s" % (track_off_moon_paired_obsid,track_off_moon_new_RA,track_off_moon_new_DEC)
    
    data_dir='%s%s/' % (mwa_dir,obsid)
-   metafits_file_name = data_dir+obsid+".metafits"
+   metafits_file_name = "%s%s_metafits_ppds.fits" % (data_dir,obsid)
 
 
-   tagname=options.tagname
+   #tagname=options.tagname
+   epoch_ID=options.epoch_ID
 
    if (options.model):
       model_string=' -m %s -applybeam ' % options.model
@@ -44,7 +45,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    else:
       model_string=' '  
 
-   solutions_base_name='%s_%s_selfcal_%s_concat_solutions' % (obsid,tagname,options.selfcal) 
+   solutions_base_name='%s_%s_selfcal_%s_concat_solutions' % (obsid,epoch_ID,options.selfcal) 
    if (options.chgcentre):
       solutions_base_name+='_newcentre'
    if (options.track_moon):
@@ -65,7 +66,8 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    solutions_name=solutions_base_name+'.bin'
 
    if(options.cotter):
-      concat_vis_base='%s_cotter_%s' % (obsid,tagname)
+      #concat_vis_base='%s_cotter_%s' % (obsid,tagname)
+      concat_vis_base='%s_%s' % (obsid,epoch_ID)
    else:
       concat_vis_base='%s_%s_concat_transform' % (obsid,tagname)
 
@@ -129,7 +131,8 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to calbrate  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to calbrate  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations  e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--chgcentre',action='store_true',dest='chgcentre',default=False,help='Calibrate the ms that has had a phase centre shift  e.g. --chgcentre   [default=%default]')
 parser.add_option('--ionpeel',type='string', dest='ionpeel',default='',help='Use this to specify a base sourcelist from which a clustered model will be made for each obsid and then run ionpeel e.g. ionpeel="sourcelist_PUMA1.txt" [default=%default]')
 parser.add_option('--minw',action='store_true',dest='minw',default=False,help='Calibrate the ms that has had a phase centre shift to minw e.g. --minw   [default=%default]')
@@ -147,7 +150,7 @@ if (options.track_off_moon):
 else:
    track_off_moon_string=' '
 
-mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
+mwa_dir = '/md0/moon/data/MWA/'
 
 selfcal_concat_ms(obsid,track_off_moon_string,options)
 

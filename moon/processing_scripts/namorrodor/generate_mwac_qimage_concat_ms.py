@@ -67,12 +67,18 @@ def generate_namorrodor(infile,options):
     else:
        cotter_string=''
 
-    if (options.tagname):
-       tagname=options.tagname
-       tagname_string=' --tagname=%s ' % (tagname)
-    else:
-       tagname_string=''
+    #if (options.tagname):
+    #   tagname=options.tagname
+    #   tagname_string=' --tagname=%s ' % (tagname)
+    #else:
+    #   tagname_string=''
 
+    if (options.epoch_ID):
+       epoch_ID=options.epoch_ID
+       epoch_ID_string=' --epoch_ID=%s ' % (epoch_ID)
+    else:
+       epoch_ID_string=''
+       
     if (options.pol):
        pol_string = ' --pol='+options.pol
     else:
@@ -110,7 +116,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+tagname_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
+       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+epoch_ID_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
     
     imaging_file.close()
     print "wrote %s" %  q_script_name
@@ -130,7 +136,8 @@ parser.add_option('--track_moon',action='store_true',dest='track_moon',default=F
 parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--imsize',type='string', dest='imsize',default='1024',help='Image size string in pixels for wsclean e.g. --imsize="4096" [default=%default]')
 parser.add_option('--no_pbcorr',action='store_true',dest='no_pbcorr',default=False,help='Dont generate beam and do pbcorrection at this stage (choose this if doing mosaicking later on). [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to image  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to image  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations  e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--corrected_data',action='store_true',dest='corrected_data',default=False,help='If doing self-cal, use the CORRECTED_DATA column instead of the DATA column. [default=%default]')
 parser.add_option('--pol',dest='pol',default='xx,yy',help='Polarisations to image with wsclean e.g. pol="xx,yy,xy,yx" [default=%default]')
 parser.add_option('--concat6',action='store_true',dest='concat6',default=False,help='Image ms with 6 coarse chans concatenated together (7.68 MHz) [default=%default]')
