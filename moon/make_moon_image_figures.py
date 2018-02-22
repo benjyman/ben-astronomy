@@ -7,6 +7,7 @@ import numpy as np
  
 def make_images(options):
    stokes=options.stokes
+   epoch_ID=options.epoch_ID
    image_dir=options.image_dir
    image_size=[1024,1024]
    #indexes for cropping
@@ -32,26 +33,26 @@ def make_images(options):
        off_moon_obsid_list.append(line.strip()) 
  
    #Do all this stuff for each of the 24 sub-bands
-   for sub_chan in range(0,24):
+   for sub_chan in range(23,24):
        
       chan_string='%.04d' % float(sub_chan)
       
-      average_moon_image_fitsname="average_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_off_moon_image_fitsname="average_off_moon_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_difference_image_fitsname="average_difference_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_difference_jyperpix_image_fitsname="average_difference_jyperpix_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_rfi_modelled_image_fitsname="average_rfi_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_moon_modelled_image_fitsname="average_moon_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      new_cropped_moon_modelled_image_fitsname="new_moon_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_residual_modelled_image_fitsname="average_residual_modelled_image_chan_%s_%s_%s.fits" % (centre_chan,chan_string,stokes)
-      average_moon_image_figname="average_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_off_moon_image_figname="average_off_moon_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_difference_image_figname="average_difference_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_difference_jyperpix_image_figname="average_difference_jyperpix_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_rfi_modelled_image_figname="average_rfi_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_moon_modelled_image_figname="average_moon_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      new_moon_modelled_image_figname="new_moon_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
-      average_residual_modelled_image_figname="average_residual_modelled_image_chan_%s_%s_%s.png" % (centre_chan,chan_string,stokes)
+      average_moon_image_fitsname="average_moon_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_off_moon_image_fitsname="average_off_moon_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_difference_image_fitsname="average_difference_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_difference_jyperpix_image_fitsname="average_difference_jyperpix_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_rfi_modelled_image_fitsname="average_rfi_modelled_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_moon_modelled_image_fitsname="average_moon_modelled_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      new_cropped_moon_modelled_image_fitsname="new_moon_modelled_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_residual_modelled_image_fitsname="average_residual_modelled_image_%s_chan_%s_%s_%s.fits" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_moon_image_figname="average_moon_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_off_moon_image_figname="average_off_moon_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_difference_image_figname="average_difference_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_difference_jyperpix_image_figname="average_difference_jyperpix_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_rfi_modelled_image_figname="average_rfi_modelled_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_moon_modelled_image_figname="average_moon_modelled_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      new_moon_modelled_image_figname="new_moon_modelled_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
+      average_residual_modelled_image_figname="average_residual_modelled_image_%s_chan_%s_%s_%s.png" % (epoch_ID,centre_chan,chan_string,stokes)
       average_moon_image_array=np.zeros(image_size)
       average_off_moon_image_array=np.zeros(image_size)
       average_difference_image_array=np.zeros(image_size)
@@ -91,29 +92,29 @@ def make_images(options):
 
       for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list):
          off_moon_obsid=off_moon_obsid_list[obsid_index]
-         moon_fitsname="%s/moon_zoom_%s_%s-%s-%s.fits" % (image_dir,on_moon_obsid,str(centre_chan),chan_string,stokes)
-         off_moon_fitsname="%s/off_moon_zoom_%s_paired_with_%s_%s-%s-%s.fits" % (image_dir,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
-         moon_difference_fitsname="%s/difference_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-         moon_difference_jyperpix_fitsname="%s/difference_%s_%s_on_off_moon_%s-%s-%s_jyperpix.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-         modelled_moon_fitsname="%s/moon_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-         modelled_rfi_fitsname="%s/rfi_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-         modelled_residual_fitsname="%s/residual_modelled_%s_%s_on_off_moon_%s-%s-%s.fits" % (image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         moon_fitsname="%s/moon_zoom_%s_%s_%s-%s-%s.fits" % (image_dir,on_moon_obsid,str(centre_chan),chan_string,stokes)
+         off_moon_fitsname="%s/off_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID,image_dir,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
+         moon_difference_fitsname="%s/difference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         moon_difference_jyperpix_fitsname="%s/difference_%s_%s_%s_on_off_moon_%s-%s-%s_jyperpix.fits" % (epoch_ID,image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_moon_fitsname="%s/moon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_rfi_fitsname="%s/rfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+         modelled_residual_fitsname="%s/residual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,image_dir,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
       
-         on_moon_title="Dirty Moon image obsid %s chan %s %s Stokes %s" % (on_moon_obsid,centre_chan,chan_string,stokes)
-         off_moon_title="Dirty off-Moon image obsid %s chan %s %s Stokes %s" % (off_moon_obsid,centre_chan,chan_string,stokes)
-         diff_moon_title="Difference image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         diff_moon_jyperpix_title="Difference image Jy per pix on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_moon_title="Modelled Moon image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_rfi_title="Modelled RFI image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_residual_title="Modelled Residual image on-moon %s off-moon %s chan %s %s Stokes %s" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         on_moon_title="Dirty Moon image %s obsid %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,centre_chan,chan_string,stokes)
+         off_moon_title="Dirty off-Moon image %s obsid %s chan %s %s Stokes %s" % (epoch_ID,off_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_title="Difference image %s on-moon %s off-moon %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_jyperpix_title="Difference image %s Jy per pix on-moon %s off-moon %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_moon_title="Modelled Moon image %s on-moon %s off-moon %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_rfi_title="Modelled RFI image %s on-moon %s off-moon %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_residual_title="Modelled Residual image %s on-moon %s off-moon %s chan %s %s Stokes %s" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          
-         on_moon_figname="Dirty_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (on_moon_obsid,centre_chan,chan_string,stokes)      
-         off_moon_figname="Dirty_off_Moon_image_obsid_%s_chan_%s_%s_stokes%s.png" % (off_moon_obsid,centre_chan,chan_string,stokes)  
-         diff_moon_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         diff_moon_jyperpix_figname="Difference_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s_jyperpix.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_moon_figname="Modelled_moon_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_rfi_figname="Modelled_rfi_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
-         modelled_residual_figname="Modelled_residual_image_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         on_moon_figname="Dirty_Moon_image_%s_obsid_%s_chan_%s_%s_stokes%s.png" % (epoch_ID,on_moon_obsid,centre_chan,chan_string,stokes)      
+         off_moon_figname="Dirty_off_Moon_image_%s_obsid_%s_chan_%s_%s_stokes%s.png" % (epoch_ID,off_moon_obsid,centre_chan,chan_string,stokes)  
+         diff_moon_figname="Difference_image_%s_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         diff_moon_jyperpix_figname="Difference_image_%s_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s_jyperpix.png" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_moon_figname="Modelled_moon_image_%s_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_rfi_figname="Modelled_rfi_image_%s_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
+         modelled_residual_figname="Modelled_residual_image_%s_on_moon_%s_off_moon_%s chan_%s_%s_stokes%s.png" % (epoch_ID,on_moon_obsid,on_moon_obsid,centre_chan,chan_string,stokes)
          
          print moon_fitsname  
          if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
@@ -291,13 +292,15 @@ def make_images(options):
       py.close()
             
       #form the average modelled moon image and plot
+      moon_modelled_vmax=0.01
+      moon_modelled_vmin=0.00
       average_moon_modelled_image=average_moon_modelled_image_array/modelled_moon_image_counter
       average_moon_modelled_image_crop = average_moon_modelled_image[ystart:yend,xstart:xend]
       pyfits.writeto(average_moon_modelled_image_fitsname,average_moon_modelled_image,clobber=True)
       py.figure(5)
       py.clf()
       py.title("Average modelled moon image from %s obsids chan %s %s" % (str(modelled_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
+      py.imshow( ( average_moon_modelled_image_crop ), cmap=py.cm.Greys,origin='lower',vmax=moon_modelled_vmax, vmin=moon_modelled_vmin)
       py.colorbar()
       py.savefig(average_moon_modelled_image_figname)
       py.close()
@@ -346,6 +349,7 @@ parser.add_option('--plot_each_obsid',action='store_true',dest='plot_each_obsid'
 parser.add_option('--stokes',type='string', dest='stokes',default='I',help='stokes parameter of Moon images. Can be I,Q,U,V or "linear" (sqrt(Q^2+U^2)). e.g. --stokes="Q" [default=%default]')
 parser.add_option('--image_dir',type='string', dest='image_dir',default='/data/moon/2017',help='Directory where the Moon images from model_moon.py are stored. e.g. --image_dir="/md0/moon/2015/stokes_I" [default=%default]')
 parser.add_option('--new_modelled_only',action='store_true',dest='new_modelled_only',default=False,help='Only make the new modelled moon images [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='2018A_01',help='Epoch ID is a unique identifier for a set of paired of Moon/off Moon observations e.g.epoch)ID="2018A_01" [default=%default]')
 
 
 

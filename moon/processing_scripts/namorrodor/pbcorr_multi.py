@@ -25,15 +25,16 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
    
    data_dir='%s%s/' % (mwa_dir,obsid)
 
-   if (options.tagname):
-      tagname=options.tagname
-   else:
-      tagname='uvdump'
+   #if (options.tagname):
+   #   tagname=options.tagname
+   #else:
+   #   tagname='uvdump'
+   epoch_ID=options.epoch_ID
 
    if (options.ms_base_name):
       ms_name='%s%s_%s.ms' % (data_dir,obsid,options.ms_base_name)
    else:
-      ms_base_name='%s_cotter_%s' % (obsid,tagname)
+      ms_base_name='%s_%s' % (obsid,epoch_ID)
       if (options.track_moon):
          ms_base_name+='_trackmoon'
       if (options.track_off_moon):
@@ -46,7 +47,7 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
       image_base=options.image_base_name
       image_base_name='%s_%s' % (obsid,image_base)
    else:
-      image_base_name='%s_cotter_%s' % (obsid,tagname)
+      image_base_name='%s_%s' % (obsid,epoch_ID)
 
       if (options.chgcentre):
          image_base_name+='_newcentre'
@@ -62,7 +63,7 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
    if (options.metafits_name):
       metafits_name=options.metafits_name
    else:
-      metafits_name=' %s%s_metafits.fits ' % (data_dir,obsid)
+      metafits_name=' %s%s_metafits_ppds.fits ' % (data_dir,obsid)
    
    if (options.havebeam):
       if (options.track_off_moon):
@@ -74,7 +75,7 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
       beam_base_name=image_base_name+'_beam'
 
    if (options.applyion):
-      solutions_base_name='%s_%s_selfcal_%s_concat_solutions' % (obsid,tagname,options.selfcal)
+      solutions_base_name='%s_%s_selfcal_%s_concat_solutions' % (obsid,epoch_ID,options.selfcal)
       if (options.track_moon):
          solutions_base_name+='_trackmoon'
       if (options.track_off_moon):
@@ -168,7 +169,7 @@ usage = 'Usage: pbcorr_multi.py [options]'
 
 parser = OptionParser(usage=usage)
 
-parser.add_option('--image_base_name',type='string', dest='image_base_name',default='',help='image_base_name to be pb corrected, not required if using standard names based on tagname (i.e. leave it out unless you are doing something special)  e.g. --image_base_name="" [default=%default]')
+parser.add_option('--image_base_name',type='string', dest='image_base_name',default='',help='image_base_name to be pb corrected, not required if using standard names based on epoch_ID (i.e. leave it out unless you are doing something special)  e.g. --image_base_name="" [default=%default]')
 parser.add_option('--havebeam', type='string', dest='havebeam', default=None,help='Set this if you already have downloaded the right beam model and give the beam prefix, not inclusing the leading obsid  e.g. --havebeam=tagname (ie without the _beam at the end) [default=%default]')
 parser.add_option('--ms_base_name',type='string', dest='ms_base_name',default='',help='name of ms to be used to generate beam, not including the leading obsid or the .ms (not needed if havebeam=True, not required if using standard names based on tagname (i.e. leave it out unless you are doing something special)  e.g. --ms_name="blah.ms" [default=%default]')
 parser.add_option('--metafits_name',type='string', dest='metafits_name',default=None,help='name of metafits file to be used to generate beam (not needed if havebeam=True, should be same obsid as ms_name) only specify if correcting an image made from several obsids - for single obs images leave blank  e.g. --metafits_name="blah.metafits" [default=%default]')
@@ -176,7 +177,8 @@ parser.add_option('--applyion',type='string', dest='applyion',default=None,help=
 parser.add_option('--clustered_model',type='string', dest='clustered_model',default=None,help='If applying ionsolutions, or rendering, specify the clustered model e.g. clustered_model="555_ionpeel.bin" [default=%default]')
 parser.add_option('--render',action='store_true', dest='render',default=False,help='Render the clustered model to the ion-applied image e.g. clustered_model="555_ionpeel.bin" [default=%default]')
 parser.add_option('--pbuncorrect',action='store_true', dest='pbuncorrect',default=False,help='pbuncorrect the rendered, ion-applied image so you can pbaddimage them together! e.g. clustered_model="555_ionpeel.bin" [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to calbrate  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files to calbrate  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
 parser.add_option('--selfcal',type='string', dest='selfcal',default="0",help='Specify how many times the image has been through selfcal, labels the solutions so that you can revert to an older calibration e.g. selfcal=2 [default=%default]')

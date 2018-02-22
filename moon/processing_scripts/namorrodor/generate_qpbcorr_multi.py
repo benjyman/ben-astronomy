@@ -41,10 +41,16 @@ def generate_namorrodor(infile,options):
     else:
        dirty_string=''
 
-    if (options.tagname):
-       tagname_string=' --tagname=%s ' % (options.tagname)
+    #if (options.tagname):
+    #   tagname_string=' --tagname=%s ' % (options.tagname)
+    #else:
+    #   tagname_string=''
+
+    if (options.epoch_ID):
+       epoch_ID_string=' --epoch_ID=%s ' % (options.epoch_ID)
     else:
-       tagname_string=''
+       epoch_ID_string=''
+
 
     if (options.image_base_name):
        image_base_name=options.image_base_name
@@ -119,7 +125,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/pbcorr_multi.py ' +str(obsid) + ' ' + track_off_moon_list_string+image_base_name_string +havebeam_string+ms_name_string+metafits_name_string+applyion_string+clustered_model_string+render_string+pbuncorrect_string+selfcal_string+track_moon_string+track_off_moon_string+tagname_string+ionpeeled_string+chgcentre_string+minw_string+dirty_string+channelsout_string+' \n')
+       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/pbcorr_multi.py ' +str(obsid) + ' ' + track_off_moon_list_string+image_base_name_string +havebeam_string+ms_name_string+metafits_name_string+applyion_string+clustered_model_string+render_string+pbuncorrect_string+selfcal_string+track_moon_string+track_off_moon_string+epoch_ID_string+ionpeeled_string+chgcentre_string+minw_string+dirty_string+channelsout_string+' \n')
 
     imaging_file.close()
     print "wrote file %s " %  (q_script_name)
@@ -138,7 +144,8 @@ usage = 'Usage: generate_qpbcorr_multi.py [list of obsids] [options]'
 parser = OptionParser(usage=usage)
 
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--image_base_name',type='string', dest='image_base_name',default='',help='image_base_name to be pb corrected  e.g. --image_base_name="" [default=%default]')
 parser.add_option('--havebeam', type='string', dest='havebeam', default=None,help='Set this if you already have downloaded the right beam model and give the beam prefix  e.g. --havebeam=tagname (without the _beam at the end) [default=%default]')
