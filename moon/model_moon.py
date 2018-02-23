@@ -45,7 +45,7 @@ def model_moon(options):
    use_gaussian_beams=False
    generate_new_beam_maps=False
    #set if you just want to plot already saved data
-   plot_only=False
+   plot_only=True
    write_new_reconstructed_moon_rfi=False
    #RFI broadening or not:
    do_RFI_broadening=True
@@ -555,7 +555,7 @@ def model_moon(options):
    
    
    band_centre_chans=[69,93,121,145,169]
-   #band_centre_chans=[93]
+   #band_centre_chans=[145]
    
    if (not plot_only):
    
@@ -674,6 +674,7 @@ def model_moon(options):
             moon_zoom_fitsname="moon_zoom_%s_%s_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,str(centre_chan),chan_string,stokes)
             off_moon_zoom_fitsname="off_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
             rfi_modelled_fitsname="rfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+            rfi_mask_fitsname="rfi_mask_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
             moon_modelled_fitsname="moon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
             residual_modelled_fitsname="residual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
    
@@ -882,11 +883,12 @@ def model_moon(options):
    
             #instead, just make a mask that is 4 (dec) x 8 (ra)(for 2015 pix size .0085 to account for 6.8 deg rms (daniels 1963a revised)n = 4 pix)
             #and movement of 4 pix in 4 min snapshot
+            #I keep the pixle size the same for all freqs so the mask can be defined like this
             rfi_model_mask = np.zeros((image_length,image_height))
             if (epoch_ID_year <= 2015):
-               rfi_model_mask[a-2:a+2,b-4:a+4]=np.ones([4,8])
+               rfi_model_mask[b-2:b+3,a-3:a+5]=np.ones([5,8])
             elif (epoch_ID_year == 2018):
-               rfi_model_mask[a-4:a+4,b-8:a+8]=np.ones([8,16])
+               rfi_model_mask[b-4:b+6,a-6:a+10]=np.ones([10,16])
             #do some maths
             #following Harish's notation:
             #D = moon_zoom
@@ -1137,6 +1139,11 @@ def model_moon(options):
             pyfits.writeto(rfi_modelled_fitsname,reconstructed_RFI,clobber=True)
             pyfits.update(rfi_modelled_fitsname,reconstructed_RFI,header=moon_header)
             print "wrote image %s" %  rfi_modelled_fitsname
+            
+            #write out the rfi mask image
+            pyfits.writeto(rfi_mask_fitsname,rfi_model_mask,clobber=True)
+            pyfits.update(rfi_mask_fitsname,rfi_model_mask,header=moon_header)
+            print "wrote image %s" %  rfi_mask_fitsname
             
             pyfits.writeto(moon_modelled_fitsname,reconstructed_moon2,clobber=True)
             pyfits.update(moon_modelled_fitsname,reconstructed_moon2,header=moon_header)
@@ -1513,10 +1520,9 @@ def model_moon(options):
             
             rfi_model_mask = np.zeros((image_length,image_height))
             if (epoch_ID_year <= 2015):
-               #rfi_model_mask[a-2:a+2,b-4:a+4]=np.ones([4,8])
-               rfi_model_mask[a-20:a+20,b-40:a+40]=np.ones([40,80])
+               rfi_model_mask[b-2:b+3,a-3:a+5]=np.ones([5,8])
             elif (epoch_ID_year == 2018):
-               rfi_model_mask[a-4:a+4,b-8:a+8]=np.ones([8,16])
+               rfi_model_mask[b-4:b+6,a-6:a+10]=np.ones([10,16])
                
 
             if do_RFI_broadening:
@@ -1589,17 +1595,20 @@ def model_moon(options):
       f,a = plt.subplots(3, sharex=True, gridspec_kw={'hspace':0})
 
 
-      a[0].plot(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],label="S_moon")
+      #a[0].plot(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],label="S_moon")
+      a[0].errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon")
       a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed')
 
       #a[0].text(150, 100, 'y=%5.2fx +%5.2f ' % (line_fit_result['a'],line_fit_result['a'])) 
-      a[0].legend(loc=4)
+      a[0].legend(loc=1)
 
-      a[1].plot(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],label="reflected RFI")
+      #a[1].plot(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],label="reflected RFI")
+      a[1].errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Srfi_average_stddev_spectrum[:,1],label="reflected RFI")
       a[1].legend(loc=1)
    
       #a[2].plot(big_freq_array,S_moon_minus_linear_fit,label="S_moon-linear fit")
-      a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
+      #a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
+      a[2].errorbar(big_freq_array,S_moon_RFI_subtracted,yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon RFI excised")
       a[2].legend(loc=4)
    
       #a[3].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon_minus_linear_fit_RFI_subtracted")
@@ -2656,7 +2665,7 @@ def model_moon(options):
       T_moon_measured_new = Tb_EDGES - T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
       T_moon_measured_new_chrom_corr=T_moon_measured_new*chromaticity_correction
       T_moon_measured_error=Tb_error*chromaticity_correction
-      print T_moon_measured_new_chrom_corr
+      #print T_moon_measured_new_chrom_corr
       
       plt.clf()
       plot=plt.figure()
