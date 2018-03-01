@@ -45,7 +45,7 @@ def model_moon(options):
    use_gaussian_beams=False
    generate_new_beam_maps=False
    #set if you just want to plot already saved data
-   plot_only=True
+   plot_only=False
    write_new_reconstructed_moon_rfi=False
    #RFI broadening or not:
    do_RFI_broadening=True
@@ -162,17 +162,25 @@ def model_moon(options):
    Omega=moon_area_deg_sq/steradian_in_sq_deg
    print "Omega is %s" % Omega
    
-   T_moon=230. #K
+   #T_moon=250. #K highest
+   T_moon=230. #K  consistent with mckinley et al and vedantham et al
+   #T_moon=210. #K lowest
    #Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
    
-   T_refl_gal_150=25.26 # temp of reflected galactic emisssion at 150 from reflection modeling (GSM2016) (takes into account albedo of 0.07)
-   refl_gal_alpha=-2.50
+   #T_refl_gal_150=25.26 # temp of reflected galactic emisssion at 150 from reflection modeling (GSM2016) (takes into account albedo of 0.07)
+   #T_refl_gal_150=300*0.07
+   T_refl_gal_150=25.26
+   #refl_gal_alpha=-2.50
+   refl_gal_alpha=-2.55 #.05 higher than the gsm prediction as per mozdzen et al 2019
+   Tb_150_EDGES=300.0
+   alpha_EDGES=-2.62
    #RFI model mask radius in arcmin - limits the extent of the gausssian reflection model
    #rfi_model_mask_size=2.0
    rfi_model_mask_size=(3.75/2)
    
    #filename for big numpy arrays
    big_Smoon_average_stddev_spectrum_npy_filename="big_Smoon_average_stddev_spectrum.npy"
+   big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename="big_Smoon_average_stddev_spectrum_diffuse_on_fly.npy"
    big_Srfi_average_stddev_spectrum_npy_filename="big_Srfi_average_stddev_spectrum.npy"
    big_rms_residual_images_npy_filename="big_rms_residual_images.npy"
    
@@ -180,6 +188,8 @@ def model_moon(options):
    big_Ssky_predicted_npy_filename="big_Ssky_predicted.npy"
    
    evans_ratio_normalised_filename="evans_ratio_normalised_%s.npy" % epoch_ID
+
+   big_RFI_vs_time_freq_npy_filename="big_RFI_vs_time_freq.npy"
    
    #functions
    def makeGaussian(size, fwhm = 3, center=None):
@@ -553,7 +563,8 @@ def model_moon(options):
    big_Tb_value_error=np.zeros([number_coarse_chans,2])
    big_chrom_corrected_Tb_value_error=np.zeros([number_coarse_chans,2])
    
-   
+   big_RFI_vs_time_freq_array=np.zeros([number_coarse_chans,50,3]) #[values for each chan, number of obs, one each for specular,diffuse,obsid]    
+   big_RFI_vs_time_freq_array[:]=np.nan
    band_centre_chans=[69,93,121,145,169]
    #band_centre_chans=[145]
    
@@ -641,10 +652,12 @@ def model_moon(options):
       Srfi_spectrum_values[:]=np.nan
       Srfi_error_values=np.zeros([n_chans,n_obs])
       Srfi_error_values[:]=np.nan
+      diffuse_rfi_values=np.zeros([n_chans,n_obs])
+      diffuse_rfi_values[:]=np.nan
       Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
       Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
-      rms_residual_images_average=np.zeros(n_chans)
-      
+      rms_residual_images_average=np.zeros(n_chans) 
+
       #need to do all this stuff for each frequency channel (and MF) and each obsid
       channel_list=range(n_chans)
       channel_list.append('MFS')
@@ -1097,7 +1110,8 @@ def model_moon(options):
             if (options.remove_diffuse_rfi_on_fly):
                evans_ratio_normalised=np.load(evans_ratio_normalised_filename)
                big_index=(centre_chan_index*24)+chan_index
-               S_moon2_tot_Jy=S_moon2_tot_Jy-(evans_ratio_normalised[big_index]*RFI_alone2)
+               diffuse_RFI_Jy=evans_ratio_normalised[big_index]*RFI_alone2
+               S_moon2_tot_Jy=S_moon2_tot_Jy-diffuse_RFI_Jy
             
                #print the diffuse subtracted values
                if not do_RFI_broadening:
@@ -1132,6 +1146,8 @@ def model_moon(options):
                 Smoon_spectrum_values[chan,obsid_index]=S_moon2_tot_Jy
                 Smoon_error_values[chan,obsid_index]=S_moon2_tot_Jy_error
                 Srfi_spectrum_values[chan,obsid_index]=RFI_alone2 
+                if options.remove_diffuse_rfi_on_fly:
+                   diffuse_rfi_values[chan,obsid_index]=diffuse_RFI_Jy
                 rms_residual_images[chan,obsid_index]=residual_rms
                 synth_beam_area_values[chan]=beam_area_deg_sq
             
@@ -1220,30 +1236,50 @@ def model_moon(options):
          big_Srfi_average_stddev_spectrum[57-57:57-57+24,0]=Srfi_average_stddev_spectrum[:,0]
          big_Srfi_average_stddev_spectrum[57-57:57-57+24,1]=Srfi_average_stddev_spectrum[:,1]
          big_rms_residual_images[57-57:57-57+24]=rms_residual_images_average
+         big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,0]=Srfi_spectrum_values
+         if options.remove_diffuse_rfi_on_fly:
+            big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,1]=diffuse_rfi_values
+         big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,2]=on_moon_obsid_list
       if (centre_chan==93):
          big_Smoon_average_stddev_spectrum[81-57:81-57+24,0]=Smoon_average_stddev_spectrum[:,0]
          big_Smoon_average_stddev_spectrum[81-57:81-57+24,1]=Smoon_average_stddev_spectrum[:,1]
          big_Srfi_average_stddev_spectrum[81-57:81-57+24,0]=Srfi_average_stddev_spectrum[:,0]
          big_Srfi_average_stddev_spectrum[81-57:81-57+24,1]=Srfi_average_stddev_spectrum[:,1]
          big_rms_residual_images[81-57:81-57+24]=rms_residual_images_average
+         big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,0]=Srfi_spectrum_values
+         if options.remove_diffuse_rfi_on_fly:
+            big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,1]=diffuse_rfi_values
+         big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,2]=on_moon_obsid_list
       if (centre_chan==121):
          big_Smoon_average_stddev_spectrum[109-57:109-57+24,0]=Smoon_average_stddev_spectrum[:,0]
          big_Smoon_average_stddev_spectrum[109-57:109-57+24,1]=Smoon_average_stddev_spectrum[:,1]
          big_Srfi_average_stddev_spectrum[109-57:109-57+24,0]=Srfi_average_stddev_spectrum[:,0]
          big_Srfi_average_stddev_spectrum[109-57:109-57+24,1]=Srfi_average_stddev_spectrum[:,1]
          big_rms_residual_images[109-57:109-57+24]=rms_residual_images_average
+         big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,0]=Srfi_spectrum_values
+         if options.remove_diffuse_rfi_on_fly:       
+            big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,1]=diffuse_rfi_values
+         big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,2]=on_moon_obsid_list
       if (centre_chan==145):
          big_Smoon_average_stddev_spectrum[133-57:133-57+24,0]=Smoon_average_stddev_spectrum[:,0]
          big_Smoon_average_stddev_spectrum[133-57:133-57+24,1]=Smoon_average_stddev_spectrum[:,1]
          big_Srfi_average_stddev_spectrum[133-57:133-57+24,0]=Srfi_average_stddev_spectrum[:,0]
          big_Srfi_average_stddev_spectrum[133-57:133-57+24,1]=Srfi_average_stddev_spectrum[:,1]
          big_rms_residual_images[133-57:133-57+24]=rms_residual_images_average
+         big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,0]=Srfi_spectrum_values
+         if options.remove_diffuse_rfi_on_fly:       
+            big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,1]=diffuse_rfi_values
+         big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,2]=on_moon_obsid_list
       if (centre_chan==169):
          big_Smoon_average_stddev_spectrum[157-57:157-57+24,0]=Smoon_average_stddev_spectrum[:,0]
          big_Smoon_average_stddev_spectrum[157-57:157-57+24,1]=Smoon_average_stddev_spectrum[:,1]
          big_Srfi_average_stddev_spectrum[157-57:157-57+24,0]=Srfi_average_stddev_spectrum[:,0]
          big_Srfi_average_stddev_spectrum[157-57:157-57+24,1]=Srfi_average_stddev_spectrum[:,1]
          big_rms_residual_images[157-57:157-57+24]=rms_residual_images_average
+         big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,0]=Srfi_spectrum_values
+         if options.remove_diffuse_rfi_on_fly:
+            big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,1]=diffuse_rfi_values
+         big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,2]=on_moon_obsid_list
    
    
       ##now plot the  Smoon with std dev as error bars for each subband
@@ -1271,24 +1307,75 @@ def model_moon(options):
       #print Smoon_average_stddev_spectrum[:,0]
    
     #save the big array for later use
-    np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
+    if not options.remove_diffuse_rfi_on_fly:
+       np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
+    else:
+       np.save(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename, big_Smoon_average_stddev_spectrum)
     np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
     np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
     np.save(big_rms_residual_images_npy_filename,big_rms_residual_images)
-   
+    np.save(big_RFI_vs_time_freq_npy_filename,big_RFI_vs_time_freq_array)  
+ 
    #Now plot the big array
    if (plot_only):
       big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
-      big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
+      if not options.remove_diffuse_rfi_on_fly:
+         big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
+      else:
+         big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename)
       big_Srfi_average_stddev_spectrum[big_Srfi_average_stddev_spectrum < 1e-10] = 0.
       big_Srfi_average_stddev_spectrum[big_Srfi_average_stddev_spectrum > 1e+10] = 0.
       big_Smoon_average_stddev_spectrum[big_Smoon_average_stddev_spectrum < -1e+20] = 0.
       big_Smoon_average_stddev_spectrum[big_Smoon_average_stddev_spectrum > 1e+20] = 0.
       big_rms_residual_images=np.load(big_rms_residual_images_npy_filename)
+      big_RFI_vs_time_freq_array=np.load(big_RFI_vs_time_freq_npy_filename)
    else:
       pass
-   
-   
+  
+
+   #make the rfi plots if needed:
+   if options.plot_rfi_channel:
+      rfi_channel=options.plot_rfi_channel
+      rfi_freq_MHz=1.28*np.float(rfi_channel)
+      rfi_channel_index=int(rfi_channel)-57
+      specular_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,0]
+      diffuse_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,1] 
+      rfi_obsid_array=big_RFI_vs_time_freq_array[rfi_channel_index,:,2]
+
+      #specular
+      plt.clf()
+      plot=plt.figure()
+      plot_title="big specular rfi vs time %s MHz %s epoch %s" % str(rfi_freq_MHz)  
+      plot_figname="big_specular_rfi_vs_time_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
+      #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
+      plt.plot(rfi_obsid_array,specular_rfi_chan_spectrum,label="Specular RFI vs Time")
+      plt.title(plot_title)
+      plt.ylabel('Specular RFI (Jy)')
+      plt.xlabel('obsid)')
+      plt.legend(loc=1)
+      plot.savefig('%s' % plot_figname)
+      print "saved %s" % plot_figname
+      plt.close()
+
+      #diffues
+      plt.clf()
+      plot=plt.figure()
+      plot_title="big diffuse rfi vs time %s MHz %s epoch %s" % str(rfi_freq_MHz)
+      plot_figname="big_diffuse_rfi_vs_time_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
+      #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
+      plt.plot(rfi_obsid_array,diffuse_rfi_chan_spectrum,label="Diffuse RFI vs Time")
+      plt.title(plot_title)
+      plt.ylabel('Diffuse RFI (Jy)')
+      plt.xlabel('obsid)')
+      plt.legend(loc=1)
+      plot.savefig('%s' % plot_figname)
+      print "saved %s" % plot_figname
+      plt.close()
+
+      #total RFI?
+
+
+
    #work out how to incorporate the addtional rms errors from the residual images - what units are they in?
 
    #the averages are v small - must be in Jy/ per pix - what uncertainty in moon flux density does this translate too? Multiply by how many pix there are in a Moon!
@@ -1690,7 +1777,17 @@ def model_moon(options):
    #Use the RFI subtracted S_moon!!!
    #Now calculate the inferred background temperature 
    #Tb = T_moon + 160.0*(big_freq_array/60.0)**(-2.24) - ((10.0**(-26))*(c**2)*big_Smoon_average_stddev_spectrum[:,0])/(2*k*Omega*(big_freq_array*10**6)**2)
-   Tb = T_moon + T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) - (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) - Tcmb #remove Tcmb to get Galactic spectrum
+   
+   #The reflected Galactic emission will have a diffuse component that accompanies the specular component that we have modelled
+   #The diffuse component should abey the same specular to diffuse ratio as the earthshine
+   evans_ratio_normalised=np.load(evans_ratio_normalised_filename) 
+   #lambda dependence on specular component is lambda^(0.32) -> nu^-.32
+   Tb_refl_gal_specular=(T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha))/evans_ratio_normalised
+   #Tb_refl_gal_diffuse=evans_ratio_normalised*Tb_refl_gal_specular
+   Tb_refl_gal_diffuse=0
+   
+   Tb = T_moon + Tb_refl_gal_specular + Tb_refl_gal_diffuse - (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) - Tcmb #remove Tcmb to get Galactic spectrum
+
    #Tb_error=abs(0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    #Tb_error=abs(0.07*160*(big_freq_array/60.0)**(-2.24) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    Tb_error=abs((10.0**(-26)*c**2*S_moon_error_total)/(2*k*Omega*(big_freq_array*10**6)**2))
@@ -1698,7 +1795,7 @@ def model_moon(options):
    #print Tb
    #print Tb_error
    
-   
+   #print Tb
    #Now we have worked out the Tb and error we want to model it as power law
    #We want the amplitude to be the amp at 150 MHz so use
    #logx = np.log10(freq_array)
@@ -2658,11 +2755,11 @@ def model_moon(options):
       plt.close()
       
       #Alternatively - assume EDGES (Mozdzen2017) Galaxy and compute T_moon
-      Tb_EDGES=300*(big_freq_array/150)**(-2.62)
-      refl_gal_alpha_for_moon=-2.6
-      T_refl_gal_150_for_moon=400*0.07
+      Tb_EDGES=Tb_150_EDGES*(big_freq_array/150)**(alpha_EDGES)
+      ##refl_gal_alpha_for_moon=-2.6
+      ##T_refl_gal_150_for_moon=400*0.07
       #T_moon_measured_new = Tb_EDGES - T_refl_gal_150_for_moon*(big_freq_array/150.0)**(refl_gal_alpha_for_moon) + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
-      T_moon_measured_new = Tb_EDGES - T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha) + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
+      T_moon_measured_new = Tb_EDGES - Tb_refl_gal_specular + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
       T_moon_measured_new_chrom_corr=T_moon_measured_new*chromaticity_correction
       T_moon_measured_error=Tb_error*chromaticity_correction
       #print T_moon_measured_new_chrom_corr
@@ -2744,7 +2841,7 @@ parser = OptionParser(usage=usage)
 parser.add_option('--stokes',type='string', dest='stokes',default='I',help='Stokes parameter of Moon images. I,Q,U,V or linear (sqrt(Q^2+U^2)) e.g. --stokes="Q" [default=%default]')
 parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='2018A_01',help='Epoch ID is a unique identifier for a set of paired of Moon/off Moon observations e.g.epoch)ID="2018A_01" [default=%default]')
 parser.add_option('--remove_diffuse_rfi_on_fly',action='store_true',dest='remove_diffuse_rfi_on_fly',default=False,help='Remove the diffuse RFI on the fly by using an Evans ratio file saved from a previous run  [default=%default]')
-
+parser.add_option('--plot_rfi_channel',type='string', dest='plot_rfi_channel',default='',help='Plot the rfi (specular and diffuse) as a function of time for the specified coarse channel e.g. --plot_rfi_channel="100" [default=%default]')
 
 
 (options, args) = parser.parse_args()
