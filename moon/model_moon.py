@@ -2,6 +2,7 @@
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import gridspec
+import matplotlib.dates as mdates
 import pyfits
 import pylab as py
 import numpy as np
@@ -17,8 +18,13 @@ from scipy import optimize
 from pygsm import GlobalSkyModel2016
 from pygsm import GlobalSkyModel
 import healpy as hp
+from datetime import datetime, timedelta, date, time
 
 def model_moon(options):
+   if options.plot_only:
+      plot_only=True
+   else:
+      plot_only=False
    stokes=options.stokes
    epoch_ID=options.epoch_ID.strip()
    
@@ -45,7 +51,7 @@ def model_moon(options):
    use_gaussian_beams=False
    generate_new_beam_maps=False
    #set if you just want to plot already saved data
-   plot_only=False
+
    write_new_reconstructed_moon_rfi=False
    #RFI broadening or not:
    do_RFI_broadening=True
@@ -574,6 +580,7 @@ def model_moon(options):
       
       #set rms_thresholds for difference images
       if epoch_ID=="2015B_05":
+         #rms_threshold=1.0
          rms_threshold=1.0
       elif epoch_ID=="2018A_01":
          rms_threshold=10.0
@@ -1340,42 +1347,131 @@ def model_moon(options):
       rfi_channel_index=int(rfi_channel)-57
       specular_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,0]
       diffuse_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,1] 
+      #total RFI?
+      total_earthshine=specular_rfi_chan_spectrum+diffuse_rfi_chan_spectrum
       rfi_obsid_array=big_RFI_vs_time_freq_array[rfi_channel_index,:,2]
+      #work out the UT time of the gps time stamps
+      rfi_time_list=[]
+      rfi_HA_list=[]
+      for gps_time in rfi_obsid_array:
+         #utc = 1980-01-06UTC + (gps - (leap_count(2014) - leap_count(1980)))
+         #from http://maia.usno.navy.mil/ser7/tai-utc.dat
+         leap_count_1980=19
+         leap_count_2015=36
+         if not np.isnan(gps_time):
+            utc = datetime(1980, 1, 6) + timedelta(seconds=gps_time - (leap_count_2015 - leap_count_1980))
+            rfi_time_list.append(utc)
+            utc_for_print_src=utc.strftime('%d/%m/%Y %H:%M:%S')
+            #get the LST and Moon RA
+            print_source_filename='print_src_output_gps_%s.txt' % str(gps_time)
+            cmd = 'print_src.py --date="%s" > %s' %(utc_for_print_src,print_source_filename)
+            print cmd
+            os.system(cmd)
+            with open(print_source_filename) as f:
+               content=f.readlines()
+               for line in content:
+                  line=line.lstrip()
+                  #print line
+                  if line[0:2]=='At':
+                     #print line
+                     LST_string_list = line.split()
+                     LST_string = LST_string_list[6]
+                     LST_string=''.join(LST_string.split())[:-3]
+                     LST_time=datetime.strptime(LST_string, '%H:%M:%S').time()
+                  if line[0:4]=='Moon':
+                     print line
+                     RA_string_list = line.split()
+                     RA_string = RA_string_list[3]
+                     RA_string=''.join(RA_string.split())[:-4]
+                     RA_time=datetime.strptime(RA_string, '%H:%M:%S').time() 
+                  
+               #HA_time=LST_time-RA_time 
+               HA_time_delta = datetime.combine(date.min, LST_time) - datetime.combine(date.min, RA_time)
+               HA_time=HA_time_delta + datetime.combine(utc.date(), time())
+               #print HA_time                  
+               rfi_HA_list.append(HA_time)      
+               print LST_time
+               print RA_time
+               print HA_time_delta
+               print HA_time
+         else:
+            rfi_time_list.append(gps_time)
+            rfi_HA_list.append(gps_time)
+            
+      #What we need is actually hour angle = LST -RA
+      
+      
 
+      print rfi_HA_list
+      print total_earthshine
+      
       #specular
       plt.clf()
       plot=plt.figure()
-      plot_title="big specular rfi vs time %s MHz %s epoch %s" % str(rfi_freq_MHz)  
+      plot_title="Specular Earthshine from Moon vs Time %s MHz" % (str(rfi_freq_MHz))  
       plot_figname="big_specular_rfi_vs_time_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
       #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
-      plt.plot(rfi_obsid_array,specular_rfi_chan_spectrum,label="Specular RFI vs Time")
+      plt.plot(rfi_time_list,specular_rfi_chan_spectrum,label="specular earthshine")
       plt.title(plot_title)
-      plt.ylabel('Specular RFI (Jy)')
-      plt.xlabel('obsid)')
+      plt.ylabel('Specular Earthshine (Jy)')
+      plt.xlabel('Time (UTC))')
       plt.legend(loc=1)
+      plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+      plt.gcf().autofmt_xdate()
       plot.savefig('%s' % plot_figname)
       print "saved %s" % plot_figname
       plt.close()
 
-      #diffues
+      #diffuse
       plt.clf()
       plot=plt.figure()
-      plot_title="big diffuse rfi vs time %s MHz %s epoch %s" % str(rfi_freq_MHz)
+      plot_title="Diffuse Earthshine from Moon vs time %s MHz" % (str(rfi_freq_MHz))
       plot_figname="big_diffuse_rfi_vs_time_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
       #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
-      plt.plot(rfi_obsid_array,diffuse_rfi_chan_spectrum,label="Diffuse RFI vs Time")
+      plt.plot(rfi_time_list,diffuse_rfi_chan_spectrum,label="diffuse earthshine")
       plt.title(plot_title)
-      plt.ylabel('Diffuse RFI (Jy)')
-      plt.xlabel('obsid)')
+      plt.ylabel('Diffuse Earthshine (Jy)')
+      plt.xlabel('Time (UTC))')
       plt.legend(loc=1)
+      plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+      plt.gcf().autofmt_xdate()
       plot.savefig('%s' % plot_figname)
       print "saved %s" % plot_figname
       plt.close()
 
-      #total RFI?
 
+      plt.clf()
+      plot=plt.figure()
+      plot_title="Total Earthshine from Moon vs time %s MHz epoch %s" % (str(rfi_freq_MHz),epoch_ID)
+      plot_figname="big_total_earthshine_vs_time_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
+      #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
+      plt.plot(rfi_time_list,total_earthshine,label="Total earthshine")
+      plt.title(plot_title)
+      plt.ylabel('Earthshine (Jy)')
+      plt.xlabel('Time (UTC))')
+      plt.legend(loc=1)
+      plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+      plt.gcf().autofmt_xdate()
+      plot.savefig('%s' % plot_figname)
+      print "saved %s" % plot_figname
+      plt.close()
 
-
+      #total RFI against HA
+      total_earthshine=specular_rfi_chan_spectrum+diffuse_rfi_chan_spectrum
+      plt.clf()
+      plot=plt.figure()
+      plot_title="Total Earthshine from Moon vs HA %s MHz epoch %s" % (str(rfi_freq_MHz),epoch_ID)
+      plot_figname="big_total_earthshine_vs_HA_freq_%s_MHz_%s.png" % (str(rfi_freq_MHz),epoch_ID)
+      plt.plot(rfi_HA_list,total_earthshine,label="Total earthshine")
+      plt.title(plot_title)
+      plt.ylabel('Earthshine (Jy)')
+      plt.xlabel('Hour Angle (hrs))')
+      plt.legend(loc=1)
+      plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+      plt.gcf().autofmt_xdate()
+      plot.savefig('%s' % plot_figname)
+      print "saved %s" % plot_figname
+      plt.close()
    #work out how to incorporate the addtional rms errors from the residual images - what units are they in?
 
    #the averages are v small - must be in Jy/ per pix - what uncertainty in moon flux density does this translate too? Multiply by how many pix there are in a Moon!
@@ -1405,8 +1501,9 @@ def model_moon(options):
    
    if not options.remove_diffuse_rfi_on_fly:
    
+      big_Smoon_average_stddev_spectrum=np.nan_to_num(big_Smoon_average_stddev_spectrum) 
       big_Smoon_average_stddev_spectrum[:,1][big_Smoon_average_stddev_spectrum[:,1] == 0] = 20.
-
+      #print big_Smoon_average_stddev_spectrum
       line_fit_result=fit_line(big_Smoon_average_stddev_spectrum[:,0],big_Smoon_average_stddev_spectrum[:,1],big_freq_array)
    
       S_moon_minus_linear_fit=big_Smoon_average_stddev_spectrum[:,0]-line_fit_result['line']
@@ -1415,7 +1512,13 @@ def model_moon(options):
       #try doing on the whole band and see if there is a freq dependence
       #RFI_peak_frac_in_disk=big_Smoon_average_stddev_spectrum[:,0]/big_Srfi_average_stddev_spectrum[:,0]
       #just use FM band and extrapolate a linear fit!
+      big_Srfi_average_stddev_spectrum=np.nan_to_num(big_Srfi_average_stddev_spectrum)
       RFI_peak_frac_in_disk_fm_band=S_moon_minus_linear_fit[12:27]/big_Srfi_average_stddev_spectrum[12:27,0]
+      #had a prob with a zero/inf value:
+      for rfi_index,rfi_value in enumerate(RFI_peak_frac_in_disk_fm_band):
+         if np.isinf(rfi_value):
+            RFI_peak_frac_in_disk_fm_band[rfi_index]=(RFI_peak_frac_in_disk_fm_band[rfi_index-1]+RFI_peak_frac_in_disk_fm_band[rfi_index+1])/2
+      print RFI_peak_frac_in_disk_fm_band
       line_fit_result_RFI=fit_line(RFI_peak_frac_in_disk_fm_band,RFI_peak_frac_in_disk_fm_band*.1,big_freq_array[12:27])
       big_RFI_line_fit=big_freq_array*line_fit_result_RFI['a']+line_fit_result_RFI['b']
       av_RFI_peak_frac_in_disk_fm_band=np.mean(RFI_peak_frac_in_disk_fm_band)
@@ -2842,7 +2945,7 @@ parser.add_option('--stokes',type='string', dest='stokes',default='I',help='Stok
 parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='2018A_01',help='Epoch ID is a unique identifier for a set of paired of Moon/off Moon observations e.g.epoch)ID="2018A_01" [default=%default]')
 parser.add_option('--remove_diffuse_rfi_on_fly',action='store_true',dest='remove_diffuse_rfi_on_fly',default=False,help='Remove the diffuse RFI on the fly by using an Evans ratio file saved from a previous run  [default=%default]')
 parser.add_option('--plot_rfi_channel',type='string', dest='plot_rfi_channel',default='',help='Plot the rfi (specular and diffuse) as a function of time for the specified coarse channel e.g. --plot_rfi_channel="100" [default=%default]')
-
+parser.add_option('--plot_only',action='store_true',dest='plot_only',default=False,help='set if you want to only plot saved data e.g. --plot_only')
 
 (options, args) = parser.parse_args()
 

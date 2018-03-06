@@ -116,7 +116,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+epoch_ID_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
+       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+epoch_ID_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
     
     imaging_file.close()
     print "wrote %s" %  q_script_name
@@ -153,7 +153,4 @@ parser.add_option('--cotter',action='store_true',dest='cotter',default=False,hel
 
 infile = args[0]
 
-mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
-
-if(mwa_dir == '/data/MWA/'):
-    generate_namorrodor(infile,options)
+generate_namorrodor(infile,options)

@@ -9,6 +9,13 @@ def image_concat_ms(obsid,track_off_moon_string,options):
 
    print obsid
    
+   epoch_ID=options.epoch_ID
+   
+   if epoch_ID=='2015B_05':
+      mwa_dir='/data/MWA/'
+   else:
+      mwa_dir = '/md0/moon/data/MWA/'
+   
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
 
@@ -23,7 +30,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
    data_dir='%s%s/' % (mwa_dir,obsid)
    
    imsize=options.imsize
-   epoch_ID=options.epoch_ID
+
    #wsclean, beam correct
    #if (options.tagname):
    #   tagname=options.tagname
@@ -69,8 +76,13 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       #else:
       #   #need to image the transformed ms
       
-      
-      concat_vis_base='%s_%s' % (obsid,epoch_ID)
+      if epoch_ID=='2015B_05':
+         if options.track_off_moon:
+            concat_vis_base='%s_cotter_%s' % (obsid,'20150929_moon_69')
+         else:
+            concat_vis_base='%s_cotter_%s' % (obsid,'20150926_moon_69')
+      else:
+         concat_vis_base='%s_%s' % (obsid,epoch_ID)
       concat_image_base=concat_vis_base
       
       if (options.selfcal):
@@ -275,9 +287,6 @@ if (options.track_off_moon):
    track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
-
-
-mwa_dir = '/md0/moon/data/MWA/'
 
 image_concat_ms(obsid,track_off_moon_string,options)
 

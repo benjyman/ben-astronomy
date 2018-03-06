@@ -94,7 +94,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/selfcal_concat_ms.py '+str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+epoch_ID_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
+       imaging_file.write('/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py '+str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + track_moon_string+epoch_ID_string +ionpeel_string+chgcentre_string+minw_string+cotter_string+model_string+selfcal_string+applyonly_string+sourcelist_string+' \n')
 
     imaging_file.close()
     print "wrote file %s" % q_filename

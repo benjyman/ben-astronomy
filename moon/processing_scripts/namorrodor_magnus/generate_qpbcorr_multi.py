@@ -125,7 +125,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/pbcorr_multi.py ' +str(obsid) + ' ' + track_off_moon_list_string+image_base_name_string +havebeam_string+ms_name_string+metafits_name_string+applyion_string+clustered_model_string+render_string+pbuncorrect_string+selfcal_string+track_moon_string+track_off_moon_string+epoch_ID_string+ionpeeled_string+chgcentre_string+minw_string+dirty_string+channelsout_string+' \n')
+       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py ' +str(obsid) + ' ' + track_off_moon_list_string+image_base_name_string +havebeam_string+ms_name_string+metafits_name_string+applyion_string+clustered_model_string+render_string+pbuncorrect_string+selfcal_string+track_moon_string+track_off_moon_string+epoch_ID_string+ionpeeled_string+chgcentre_string+minw_string+dirty_string+channelsout_string+' \n')
 
     imaging_file.close()
     print "wrote file %s " %  (q_script_name)

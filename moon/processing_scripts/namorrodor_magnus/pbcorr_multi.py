@@ -5,6 +5,11 @@
 import numpy as np
 
 def pbcorr_multi(obsid,track_off_moon_string,options):
+   epoch_ID=options.epoch_ID
+   if epoch_ID=="2015B_05":
+      mwa_dir='/data/MWA/'
+   else:
+      mwa_dir = '/md0/moon/data/MWA/'
 
    #do all the next steps for each chan
    number_images=int(options.channelsout)
@@ -29,7 +34,6 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
    #   tagname=options.tagname
    #else:
    #   tagname='uvdump'
-   epoch_ID=options.epoch_ID
 
    if (options.ms_base_name):
       ms_name='%s%s_%s.ms' % (data_dir,obsid,options.ms_base_name)
@@ -45,7 +49,10 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
 
    if (options.image_base_name):
       image_base=options.image_base_name
-      image_base_name='%s_%s' % (obsid,image_base)
+      if options.track_off_moon:
+         image_base_name='%s_%s_%s' % (obsid,image_base,track_off_moon_paired_obsid)
+      else:
+         image_base_name='%s_%s' % (obsid,image_base)
    else:
       image_base_name='%s_%s' % (obsid,epoch_ID)
 
@@ -195,8 +202,6 @@ if (options.track_off_moon):
    track_off_moon_string= args[1]
 else:
    track_off_moon_string=' '
-
-mwa_dir = '/md0/moon/data/MWA/'
 
 pbcorr_multi(obsid,track_off_moon_string,options)
 
