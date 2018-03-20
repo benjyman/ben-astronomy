@@ -5,14 +5,17 @@ import string
 import os.path
 import cmd
 import datetime
+import numpy as np
+from casacore.tables import table,tablecolumn,tablerow
+
 
 def cotter_moon(options):
 
    obsid=options.obsid
    sister_obsid=options.sister_obsid
    
-   time_res=(options.time_freq_res).split()[0]
-   freq_res=(options.time_freq_res).split()[1]
+   time_res=(options.time_freq_res).split(',')[0]
+   freq_res=(options.time_freq_res).split(',')[1]
    
    
    if (options.track_off_moon):
@@ -36,20 +39,37 @@ def cotter_moon(options):
 
    data_dir='%s%s/' % (mwa_dir,obsid)
    
-   tagname=options.tagname
-   base_name=obsid+'_cotter_'+tagname
-
-   track_moon_string=' '
-   if (options.track_moon):
-      base_name+='_trackmoon'
-
-   if (options.track_off_moon):
-      base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
-
-   ms_name=data_dir+base_name+'.ms'
+   #tagname=options.tagname
+   epoch_ID=options.epoch_ID
+   #base_name=obsid+'_cotter_'+tagname
+   base_name= "%s_%s" % (obsid,epoch_ID)
    
+   track_moon_string=' '
+   
+   #if (options.track_moon):
+   #   base_name+='_trackmoon'
+   #
+   #if (options.track_off_moon):
+   #   base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
+   #
+   #ms_name=data_dir+base_name+'.ms'
+   
+   if (options.track_moon):
+      on_moon_basename=base_name + '_trackmoon'
+      on_moon_ms_name=data_dir+on_moon_basename+'.ms'
+      off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
+      off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
+      ms_name=on_moon_ms_name
+   
+   if (options.track_off_moon):
+      on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
+      on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
+      off_moon_base_name=base_name+'_track_off_moon_paired_' + sister_obsid
+      off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
+      ms_name=off_moon_ms_name
+      
    #metafits_filename=data_dir+obsid+'.metafits'
-   metafits_filename="%s_metafits.fits" % (obsid)
+   metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
    flag_file_name=data_dir+obsid+'_flags.zip'
 
@@ -124,25 +144,24 @@ def cotter_moon(options):
    print flagfiles_string
 
    ##flagfiles for paired sister observation
-   flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
-   print flagfiles_string_sister
+   #flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
+   #print flagfiles_string_sister
    
-   #combine the flagfiles - for each flag_file (coarse chan):
-   for coarse_chan in range(1,2):
-      flag_file_1_name="%s%s/%s_%02d.mwaf" % (mwa_dir,obsid,obsid,coarse_chan)
-      print flag_file_1_name
-      flag_file_1_HDU_list=fits.open(flag_file_1_name)
-      flag_file_1_HDU_list.info()
-      header1=flag_file_1_HDU_list[0].header
-      print header1
-      data1=flag_file_1_HDU_list[0].data
-      print data1
-      header2=flag_file_1_HDU_list[1].header
-      print header2
-      data2=flag_file_1_HDU_list[1].data
+   #Don't do this. Instead, make the cotter file then merge the flag columns of the ms s later....
+   ##combine the flagfiles - for each flag_file (coarse chan):
+   #for coarse_chan in range(1,2):
+   #   flag_file_1_name="%s%s/%s_%02d.mwaf" % (mwa_dir,obsid,obsid,coarse_chan)
+   #   print flag_file_1_name
+   #   flag_file_1_HDU_list=fits.open(flag_file_1_name)
+   #   flag_file_1_HDU_list.info()
+   #   header1=flag_file_1_HDU_list[0].header
+   #   print header1
+   #   data1=flag_file_1_HDU_list[0].data
+   #   print data1
+   #   header2=flag_file_1_HDU_list[1].header
+   #   print header2
+   #   data2=flag_file_1_HDU_list[1].data
       #print data2
-         
-   print mistake
    
    #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
    #can probably get away with just halving each (double baselines)
@@ -161,6 +180,40 @@ def cotter_moon(options):
       print cmd
       os.system(cmd)
 
+   #here merge the flag columns for both the on_moon and off_moon ms
+   #only do this step for track_off_moon, (always need to make on_moon ms first)
+   if (options.track_off_moon):
+      on_moon_table=table(on_moon_ms_name,readonly=False)
+      #print on_moon_table
+      #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
+      #on_moon_table_time=tablecolumn(on_moon_table,'TIME')
+      on_moon_table_flag=tablecolumn(on_moon_table,'FLAG')
+   
+      off_moon_table=table(off_moon_ms_name,readonly=False)
+      #print off_moon_table
+      #off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
+      #off_moon_table_time=tablecolumn(off_moon_table,'TIME')
+      off_moon_table_flag=tablecolumn(off_moon_table,'FLAG')
+   
+      new_off_moon_table_flag=np.logical_not(off_moon_table_flag)
+
+   
+      #look in obs_list_generator.py for how to compare LSTs
+   
+      #Not sure if 2018A obs are well enough LST matched
+      #Continue anyway (come back and look at 2015A) 
+   
+      #OR the two flag columns
+      new_flag_column=np.logical_or(on_moon_table_flag,off_moon_table_flag)
+      #print new_flag_column[20100:20101]
+   
+      on_moon_table.putcol('FLAG',new_flag_column)
+      off_moon_table.putcol('FLAG',new_flag_column)
+   
+      on_moon_table.close()
+      off_moon_table.close()
+
+   
 import sys,os
 from optparse import OptionParser,OptionGroup
 
@@ -170,7 +223,8 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
 parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',default=False,help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')

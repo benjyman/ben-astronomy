@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qselfcal_concat_ms.py --epoch_ID=2018A_01 --cotter --track_moon --sourcelist=/md0/sourcelists/srclist_puma-v3_complete.txt  --selfcal=0 /md0/moon/epochs/2018A_01/93/on_moon/1199392480.txt 

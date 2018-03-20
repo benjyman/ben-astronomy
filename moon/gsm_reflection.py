@@ -171,7 +171,7 @@ for freq_index,freq_MHz in enumerate(freq_array):
 
       #print incident_vector
 
-      #Neeed to normalise the incident vector
+      #Need to normalise the incident vector
       incident_vector_unit=normalise(incident_vector)
       #print incident_vector_unit
 

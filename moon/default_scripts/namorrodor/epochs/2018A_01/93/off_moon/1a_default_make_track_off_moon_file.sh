@@ -1,0 +1,2 @@
+#make the track off moon file
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/make_track_off_moon_txt.py --centre_chan="93"  --on_moon_dir="/md0/moon/epochs/2018A_01/93/on_moon" --epoch_ID="2018A_01"

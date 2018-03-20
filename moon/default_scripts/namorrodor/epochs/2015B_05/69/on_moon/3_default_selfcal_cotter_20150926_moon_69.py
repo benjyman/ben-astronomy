@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qselfcal_concat_ms.py --epoch_ID='2015B_05' --sourcelist=/data/moon/2017/sourcelists/srclist_IDR2deep_puma-noextended_HydAGuas.txt --cotter --track_moon --selfcal=0 /data/moon/2017/20150926_moon_69.txt 

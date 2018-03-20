@@ -1,0 +1,1 @@
+python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_qpbcorr_multi.py  /md0/moon/epochs/2018A_01/93/on_moon/1199392480.txt   --dirty --track_moon --epoch_ID=2018A_01 --selfcal="0" --channelsout=24

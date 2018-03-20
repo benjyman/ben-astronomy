@@ -48,13 +48,28 @@ def generate_cotter_moon(options):
     else:
        track_moon_string=''
 
-    if (options.tagname):
-       tagname_string=' --tagname=%s ' % (options.tagname)
-    else:
-       tagname_string=''
+    #if (options.tagname):
+    #   tagname_string=' --tagname=%s ' % (options.tagname)
+    #else:
+    #   tagname_string=''
 
-    if (options.time_freq_res):
-       time_freq_res_string=' --time_freq_res=%s ' % (options.time_freq_res)
+    if (options.epoch_ID):
+       epoch_ID_string=' --epoch_ID=%s ' % (options.epoch_ID)
+    else:
+       epoch_ID_string=''
+
+    if (options.epoch_ID):
+       epoch_semester=options.epoch_ID[0:5]
+       print epoch_semester
+       if (epoch_semester=="2015A"):
+          time_freq_res="8,80"
+       elif (epoch_semester=="2015B"):
+          time_freq_res="8,80" 
+       elif (epoch_semester=="2017B"):
+          time_freq_res="4,40"         
+       elif (epoch_semester=="2018A"):
+          time_freq_res="4,40"
+       time_freq_res_string=' --time_freq_res=%s ' % (time_freq_res)
     else:
        time_freq_res_string=''
        
@@ -87,8 +102,8 @@ def generate_cotter_moon(options):
           obsid_string=' --obsid=%s ' % obsid
           sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
-             track_off_moon_list_string="--track_off_moon_list"+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ tagname_string + flag_ants_string + cleanup_string + time_freq_res_string + ' \n')
+             track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
+          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ epoch_ID_string + flag_ants_string + cleanup_string + time_freq_res_string + ' \n')
 
        sbatch_file.close()
     
@@ -107,12 +122,13 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--track_moon',action='store_true',dest='track_moon',default=False,help='Track the Moon by shifting centre of each image to Moon position on sky [default=%default]')
 parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
-parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+#parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms files  e.g. --tagname="" [default=%default]')
+parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
-parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
+#parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 
 
 (options, args) = parser.parse_args()
