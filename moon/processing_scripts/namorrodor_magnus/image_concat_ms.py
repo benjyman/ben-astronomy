@@ -154,8 +154,26 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       concat_vis_name = concat_vis_base+".ms"
    
    if not (options.concat6):
-      #remove any old images before re-imaging:
-      cmd='rm -f '+concat_image_base+'*.fits'
+      #remove any old images (except beam images) before re-imaging:
+      cmd='rm -f '+concat_image_base+'*image.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*dirty.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*psf.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*I.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*Q.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*U.fits'
+      print cmd
+      os.system(cmd)
+      cmd='rm -f '+concat_image_base+'*V.fits'
       print cmd
       os.system(cmd)
       cmd='rm -f '+concat_image_base+'*.tmp'

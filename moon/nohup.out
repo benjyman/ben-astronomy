@@ -1,0 +1,12 @@
+/usr/local/lib/python2.7/dist-packages/statsmodels/compat/pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
+  from pandas.core import datetools
+Omega is 7.36494835999e-05
+saved spectral index map spectral_index_map_74.24-227.84_MHz.png
+Traceback (most recent call last):
+  File "/data/code/git/ben-astronomy/moon/model_moon.py", line 2952, in <module>
+    model_moon(options)
+  File "/data/code/git/ben-astronomy/moon/model_moon.py", line 1330, in model_moon
+    big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
+  File "/usr/local/lib/python2.7/dist-packages/numpy/lib/npyio.py", line 370, in load
+    fid = open(file, "rb")
+IOError: [Errno 2] No such file or directory: 'big_Srfi_average_stddev_spectrum.npy'

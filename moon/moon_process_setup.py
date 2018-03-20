@@ -4,7 +4,7 @@ import sys,os
 import cmd
 from datetime import datetime, timedelta, date, time
 
-def write_obs_lists(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
+def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    print on_off_moon_string
    if on_off_moon_string=='on_moon':
@@ -42,7 +42,7 @@ def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
 def setup_moon_process(options):
    machine='magnus'
    base_dir=options.base_dir
-   directory_of_epochs="%sepochs/" % base_dir
+   directory_of_epochs="%s/epochs/" % base_dir
    moon_exp_filename=options.infile
    #get the epoch_IDs and on_moon_dat off_moon_date
    chan_list=[69,93,121,145,169]
@@ -93,7 +93,8 @@ def setup_moon_process(options):
                cmd = "mkdir %s " % on_off_moon_dir
                print cmd
                os.system(cmd)
-            write_obs_lists(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
+            if not options.have_obs_lists
+               write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
 
 
 from optparse import OptionParser,OptionGroup
@@ -104,6 +105,8 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--infile',type='string', dest='infile',default='',help='Just give it a txt file with three columns: epoch_ID on_moon_date off_moon_date (dates as YYYY-MM-DD) e.g. --infile="moon_experiment.txt" [default=%default]')
 parser.add_option('--base_dir',type='string', dest='base_dir',default='/md0/moon/magnus_setup_tests/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
+parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
+
 
 (options, args) = parser.parse_args()
 
