@@ -30,7 +30,7 @@ def model_moon(options):
    epoch_ID_year=int(epoch_ID.split('_')[0][0:4])
    
    sky_model_label=options.sky_model.strip()
-   sky_model_list=['gsm','gsm2016','lfsm']
+   sky_model_list=['lfsm','gsm2016','gsm']
    
    if (epoch_ID_year==2015):
       phase_1_MWA_images=True #i.e.  2048x2048 images 
@@ -1831,44 +1831,51 @@ def model_moon(options):
    #S_moon_error_total=big_Smoon_average_stddev_spectrum[:,1] 
    #print S_moon_error_total
 
-   ##Only do these plots if not removing diffuse RFI on the fly:
+   #This is fig 2 of paper!
+   plot_filename='big_S_moon_and_rfi_%s.png' % epoch_ID
+   plot_title='S_moon and RFI'
+   plt.clf()
+
+   f,a = plt.subplots(3, sharex=True, gridspec_kw={'hspace':0})
+
+
+   #a[0].plot(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],label="S_moon")
+   Smoon_no_diffuse_rfi_removal=np.load(big_Smoon_average_stddev_spectrum_npy_filename)
+   Smoon_no_diffuse_rfi_removal[:,1][Smoon_no_diffuse_rfi_removal[:,1] == 0] = 20.
+   line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal[:,0],Smoon_no_diffuse_rfi_removal[:,1],big_freq_array)
+   a[0].errorbar(big_freq_array,Smoon_no_diffuse_rfi_removal[:,0],yerr=Smoon_no_diffuse_rfi_removal[:,1],label="S_moon",elinewidth=0.5)
+   a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed',linewidth=1)
+
+   #a[0].text(150, 100, 'y=%5.2fx +%5.2f ' % (line_fit_result['a'],line_fit_result['a'])) 
+   a[0].legend(loc=1)
+
+   #a[1].plot(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],label="reflected RFI")
+   a[1].errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Srfi_average_stddev_spectrum[:,1],label="reflected RFI",elinewidth=0.5)
+   a[1].legend(loc=1)
+   
+   #a[2].plot(big_freq_array,S_moon_minus_linear_fit,label="S_moon-linear fit")
+   #a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
    if not options.remove_diffuse_rfi_on_fly:
-      plot_filename='big_S_moon_and_rfi.png'
-      plot_title='S_moon and RFI'
-      plt.clf()
-
-      f,a = plt.subplots(3, sharex=True, gridspec_kw={'hspace':0})
-
-
-      #a[0].plot(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],label="S_moon")
-      a[0].errorbar(big_freq_array,big_Smoon_average_stddev_spectrum[:,0],yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon")
-      a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed')
-
-      #a[0].text(150, 100, 'y=%5.2fx +%5.2f ' % (line_fit_result['a'],line_fit_result['a'])) 
-      a[0].legend(loc=1)
-
-      #a[1].plot(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],label="reflected RFI")
-      a[1].errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Srfi_average_stddev_spectrum[:,1],label="reflected RFI")
-      a[1].legend(loc=1)
+      a[2].errorbar(big_freq_array,S_moon_RFI_subtracted,yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon RFI excised",elinewidth=0.5)
+   else:
+      Smoon_remove_RFI_on_fly=np.load(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename)
+      a[2].errorbar(big_freq_array,Smoon_remove_RFI_on_fly[:,0],yerr=Smoon_remove_RFI_on_fly[:,1],label="S_moon RFI excised",elinewidth=0.5)      
+   a[2].legend(loc=4)
    
-      #a[2].plot(big_freq_array,S_moon_minus_linear_fit,label="S_moon-linear fit")
-      #a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
-      a[2].errorbar(big_freq_array,S_moon_RFI_subtracted,yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon RFI excised")
-      a[2].legend(loc=4)
-   
-      #a[3].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon_minus_linear_fit_RFI_subtracted")
-      ##a[3].set_ylim([0,5])
-      #a[3].legend(loc=2)
-      plt.xlabel('Frequency (MHz)')
+   #a[3].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon_minus_linear_fit_RFI_subtracted")
+   ##a[3].set_ylim([0,5])
+   #a[3].legend(loc=2)
+   plt.xlabel('Frequency (MHz)')
   
    
-      set_shared_ylabel(a, 'Flux density (Jy)')
+   set_shared_ylabel(a, 'Flux density (Jy)')
    
-      f.savefig(plot_filename)
-      print "saved figure %s" % plot_filename
-      plt.close()
+   f.savefig(plot_filename, format='png', dpi=900)
+   print "saved figure %s" % plot_filename
+   plt.close()
 
-
+   ##Only do these plots if not removing diffuse RFI on the fly:
+   if not options.remove_diffuse_rfi_on_fly:
       #####
       ####Plot the theoretical lambda dependence (evans 1969, p223, eqns 31,32, power law) on top of the linear dependence from FM band
       plot_filename='big_specular_vs_diffuse_refl_ratio.png'
@@ -2095,23 +2102,25 @@ def model_moon(options):
       big_Tb_value_error[:,1]=Tb_error
       np.save(tb_filename,big_Tb_value_error)
    
-      plt.clf()
-      Tb_plot=plt.figure(6)
-      plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured")
-      plt.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit")
-      axes = plt.gca()
+      
+      py.clf()
+      Tb_plot=py.figure()
+      Tb_plot_figname="big_inferred_Tb_plot_%s.png" % epoch_ID
+      py.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured",elinewidth=0.5)
+      py.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit",linewidth=1,linestyle='--')
+      axes = py.gca()
       #axes.set_xlim([xmin,xmax])
-      axes.set_ylim([0,1850])
-      plt.title('Inferred background temperature vs frequency for MWA')
-      plt.ylabel('Inferred background temperature (Tb in K)')
-      plt.xlabel('Frequency (MHz)')
-      plt.text(150, 1500, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
-      plt.text(150, 1300, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
-      plt.text(150, 1100, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (red_chi_sq, dof))
-      plt.legend(loc=1)
-      Tb_plot.savefig('big_inferred_Tb_plot.png')
-      print "saved figure big_inferred_Tb_plot.png"
-      plt.close()
+      axes.set_ylim([0,2000])
+      py.title('Inferred background temperature vs frequency for MWA')
+      py.ylabel('Inferred background temperature (Tb in K)')
+      py.xlabel('Frequency (MHz)')
+      py.text(150, 1500, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
+      py.text(150, 1300, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
+      py.text(150, 1100, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (red_chi_sq, dof))
+      py.legend(loc=1)
+      Tb_plot.savefig(Tb_plot_figname, format='png', dpi=900)
+      print "saved figure %s" % Tb_plot_figname
+      py.close()
       
       #Plot subplot with log log space
       loglog_plot_filename='big_inferred_Tb_plot_loglog.png'
@@ -2658,27 +2667,36 @@ def model_moon(options):
    
    occulted_sky_figname="occulted_sky_temp_modelled_%s_3models.png" % (epoch_ID)
    fractional_error=0.15
-   plt.clf()
-   plot=plt.figure()
-   for sky_model in sky_model_list:
+   py.clf()
+   #plot=py.figure(figsize=(16, 9))
+   plot=py.figure()
+   color_list=['r','g','b','lightgrey']
+   linestyle_list=['-.',':','--']
+   py.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Lunar occultation",color=color_list[3],zorder=0,elinewidth=0.5)
+   for sky_model_index,sky_model in enumerate(sky_model_list):
       occulted_sky_temp_filename="occulted_sky_temp_for_moon_%s_%s.npy" % (epoch_ID,sky_model)
       occulted_sky_temp_data=np.load(occulted_sky_temp_filename)
       occulted_sky_temp_data_error=occulted_sky_temp_data*fractional_error
       powerlaw_fit_result = fit_powerlaw(occulted_sky_temp_data,occulted_sky_temp_data_error,big_freq_array)
-      plt.errorbar(big_freq_array, occulted_sky_temp_data, yerr=occulted_sky_temp_data_error,label=sky_model) 
+      py.plot(big_freq_array, occulted_sky_temp_data,label=sky_model.upper(),linestyle=linestyle_list[sky_model_index],color=color_list[sky_model_index],zorder=sky_model_index*5) 
       if sky_model=='gsm':
-         plt.text(160, 1000, 'T_150_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
-         plt.text(160, 900, 'Alpha_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
-   plt.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Lunar occultation")
-   axes = plt.gca()
+         py.text(150, 1250, 'T_150_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+         py.text(150, 1150, 'Alpha_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      if sky_model=='gsm2016':
+         py.text(150, 950, 'T_150_gsm2016 = %5.2f +/- %5.2f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+         py.text(150, 850, 'Alpha_gsm2016 = %5.2f +/- %5.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      if sky_model=='lfsm':
+         py.text(150, 650, 'T_150_lfsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+         py.text(150, 550, 'Alpha_lfsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+   axes = py.gca()
    #axes.set_xlim([xmin,xmax])
-   axes.set_ylim([0,1850])
-   plt.title('Occulted Patch Temperature vs Frequency for MWA')
-   plt.ylabel('Occulted Sky Temperature (K)')
-   plt.xlabel('Frequency (MHz)')
-   plt.legend(loc=1)
-   plot.savefig(occulted_sky_figname)   
-   plt.close()
+   axes.set_ylim([0,2000])
+   py.title('Occulted Patch Temperature vs Frequency for MWA')
+   py.ylabel('Occulted Sky Temperature (K)')
+   py.xlabel('Frequency (MHz)')
+   py.legend(loc=1)
+   py.savefig(occulted_sky_figname,format='png', dpi=900)   
+   py.close()
    print "saved figure %s " % occulted_sky_figname
 
    
@@ -2850,120 +2868,139 @@ def model_moon(options):
       
       #only do if Tb all positive
       if any(t < 0 for t in Tb):
-	 print "Tb has negative elements - skipping chromaticity correction"
+	      print "Tb has negative elements - skipping chromaticity correction"
       else:
-	 T_sky_corrected=Tb/chromaticity_correction
+	      T_sky_corrected=Tb/chromaticity_correction
 	 
-	 Tb_error[Tb_error == 0] = 200.
-	 Tb_error[Tb_error < 1e-10] = 200.
-	 Tb_error[Tb_error > 1e+10] = 200.
-	 
-	 T_sky_corrected_error=Tb_error/chromaticity_correction 
-	   
-	 plot_filename='chromaticity_correction_Tb_2panel.png'
-	 plot_title='T_sky corrected for beam chromaticity'
-	 plt.clf()
-	 #fit_plot=plt.figure()
-
-	 f,a = plt.subplots(2, sharex=True, gridspec_kw={'hspace':0})
-
-	 #plt.subplot(2,1,1)
-	 #T_sky_corrected_error=T_sky_corrected*0.15
-	 a[0].errorbar(big_freq_array,T_sky_corrected,yerr=T_sky_corrected_error*0,label="T_sky corrected ")
-	 a[0].plot(big_freq_array,powerlaw_fit_result['T_sky_fit'],label="Power law fit",linestyle='dashed')
-	 #plt.title('Global Diff vs frequency for MWA')
-	 #plt.ylabel('Global diff temperature (Tb in K)')
-	 #plt.xlabel('Frequency (MHz)')
-	 a[0].text(150, 1100, 'T_150 = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
-	 a[0].text(150, 800, 'Alpha = %4.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
-	 a[0].legend(loc=1)
-	 a[0].set_ylabel("Temperature (K)")
-	 #plt.tight_layout()
+      Tb_error[Tb_error == 0] = 200.
+      Tb_error[Tb_error < 1e-10] = 200.
+      Tb_error[Tb_error > 1e+10] = 200.
       
-	 #plt.subplot(2,1,2)
-	 a[1].plot(big_freq_array,chromaticity_correction,label="chromaticity factor")
-	 #plt.title('Global Diff Fit residuals vs frequency for MWA')
-	 #plt.ylabel('Residual temperature (K)')
-	 plt.xlabel('Frequency (MHz)')
-	 #a[1].text(175, -5, 'Residual RMS = %5.2f K' % (residual_rms))
-	 a[1].legend(loc=1)
-	 a[1].set_ylabel("Chromaticity factor")
-	 #plt.tight_layout()
+      T_sky_corrected_error=Tb_error/chromaticity_correction 
       
-	 #set_shared_ylabel(a, 'Temperature (K)')
-      
-	 f.savefig(plot_filename)
-	 print "saved figure %s" % plot_filename
-      
-	 #Save chromaticity corrected background temp
-	 corrected_tb_filename="chromaticity_corrected_sky_temp_and_error.npy"
-	 big_chrom_corrected_Tb_value_error[:,0]=T_sky_corrected
-	 big_chrom_corrected_Tb_value_error[:,1]=T_sky_corrected_error
-	 np.save(corrected_tb_filename,big_chrom_corrected_Tb_value_error)
-   
-	 #Split up the chromaticity correct data into two bands:
-	       #Okay, we know from the chromaticity plots that things start to go haywire at about 150 MHz 
-	 #So lets split the band up and just examine two 40 MHz subbands, avoiding FM
-	 # i.e. 110-150 MHz and 160-200 MHz
-	 #110 MHz = big_freq_array[29], 150 MHz = big_freq_array[61],160 MHz = big_freq_array[68],200 MHz = big_freq_array[100]
-	 Tb_band_1_corrected=T_sky_corrected[29:61]
-	 Tb_band_2_corrected=T_sky_corrected[68:100]
-	 Tb_corrected_error_band_1=T_sky_corrected_error[29:61]
-	 Tb_corrected_error_band_2=T_sky_corrected_error[68:100]      
-      
-	 #band1 plot
-	 powerlaw_fit_result = fit_powerlaw(Tb_band_1_corrected,Tb_corrected_error_band_1,freq_array_band_1)
-	 plt.clf()
-	 Tb_plot=plt.figure()
-	 plt.errorbar(freq_array_band_1,Tb_band_1_corrected,yerr=Tb_corrected_error_band_1,label="Corrected Tb")
-	 plt.plot(freq_array_band_1,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
-	 plt.title('Band 1 chromaticity corrected temperature vs frequency for MWA')
-	 plt.ylabel('Inferred background temperature (Tb in K)')
-	 plt.xlabel('Frequency (MHz)')
-	 plt.text(112, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
-	 plt.text(112, 250, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
-	 plt.text(112, 200, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
-	 plt.legend(loc=1)
-	 Tb_plot.savefig('band_1_corrected_Tb_plot.png')
-	 print "saved figure band_1_corrected_Tb_plot.png"
-	 plt.close()
-      
-	 #band2 plot
-	 powerlaw_fit_result = fit_powerlaw(Tb_band_2_corrected,Tb_corrected_error_band_2,freq_array_band_2)
-	 plt.clf()
-	 Tb_plot=plt.figure()
-	 plt.errorbar(freq_array_band_2,Tb_band_2_corrected,yerr=Tb_corrected_error_band_2,label="Corrected Tb")
-	 plt.plot(freq_array_band_2,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
-	 plt.title('Band 2 chromaticity corrected temperature vs frequency for MWA')
-	 plt.ylabel('Inferred background temperature (Tb in K)')
-	 plt.xlabel('Frequency (MHz)')
-	 plt.text(162, 100, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
-	 plt.text(162, 75, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
-	 plt.text(162, 50, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
-	 plt.legend(loc=1)
-         Tb_plot.savefig('band_2_corrected_Tb_plot.png')
-         print "saved figure band_2_corrected_Tb_plot.png"
-         plt.close()
-      
-      #Alternatively - assume EDGES (Mozdzen2017) Galaxy and compute T_moon
-      Tb_EDGES=Tb_150_EDGES*(big_freq_array/150)**(alpha_EDGES)
-      ##refl_gal_alpha_for_moon=-2.6
-      ##T_refl_gal_150_for_moon=400*0.07
-      #T_moon_measured_new = Tb_EDGES - T_refl_gal_150_for_moon*(big_freq_array/150.0)**(refl_gal_alpha_for_moon) + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
-      T_moon_measured_new = Tb_EDGES - Tb_refl_gal_specular + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
-      #T_moon_measured_new_chrom_corr=T_moon_measured_new*chromaticity_correction
-      T_moon_measured_error=Tb_error
-      #print T_moon_measured_new_chrom_corr
-      
+      plot_filename='chromaticity_correction_Tb_2panel.png'
+      plot_title='T_sky corrected for beam chromaticity'
       plt.clf()
-      plot=plt.figure()
-      plt.errorbar(big_freq_array,T_moon_measured_new,yerr=T_moon_measured_error,label="Moon Temp")
-      plt.title('Moon Brightness Temperature vs Frequency for MWA')
-      plt.ylabel('Measured Mean Moon Brightness Temperature (K)')
+      #fit_plot=plt.figure()
+      
+      f,a = plt.subplots(2, sharex=True, gridspec_kw={'hspace':0})
+      
+      #plt.subplot(2,1,1)
+      #T_sky_corrected_error=T_sky_corrected*0.15
+      a[0].errorbar(big_freq_array,T_sky_corrected,yerr=T_sky_corrected_error*0,label="T_sky corrected ")
+      a[0].plot(big_freq_array,powerlaw_fit_result['T_sky_fit'],label="Power law fit",linestyle='dashed')
+      #plt.title('Global Diff vs frequency for MWA')
+      #plt.ylabel('Global diff temperature (Tb in K)')
+      #plt.xlabel('Frequency (MHz)')
+      a[0].text(150, 1100, 'T_150 = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      a[0].text(150, 800, 'Alpha = %4.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      a[0].legend(loc=1)
+      a[0].set_ylabel("Temperature (K)")
+      #plt.tight_layout()
+      
+      #plt.subplot(2,1,2)
+      a[1].plot(big_freq_array,chromaticity_correction,label="chromaticity factor")
+      #plt.title('Global Diff Fit residuals vs frequency for MWA')
+      #plt.ylabel('Residual temperature (K)')
       plt.xlabel('Frequency (MHz)')
-      plt.legend(loc=4)
-      plot.savefig('big_Tmoon_assuming_EDGES_galaxy_with_chrom_corr.png')
+      #a[1].text(175, -5, 'Residual RMS = %5.2f K' % (residual_rms))
+      a[1].legend(loc=1)
+      a[1].set_ylabel("Chromaticity factor")
+      #plt.tight_layout()
+      
+      #set_shared_ylabel(a, 'Temperature (K)')
+      
+      f.savefig(plot_filename)
+      print "saved figure %s" % plot_filename
+      
+      #Save chromaticity corrected background temp
+      corrected_tb_filename="chromaticity_corrected_sky_temp_and_error.npy"
+      big_chrom_corrected_Tb_value_error[:,0]=T_sky_corrected
+      big_chrom_corrected_Tb_value_error[:,1]=T_sky_corrected_error
+      np.save(corrected_tb_filename,big_chrom_corrected_Tb_value_error)
+      
+      #Split up the chromaticity correct data into two bands:
+      #Okay, we know from the chromaticity plots that things start to go haywire at about 150 MHz 
+      #So lets split the band up and just examine two 40 MHz subbands, avoiding FM
+      # i.e. 110-150 MHz and 160-200 MHz
+      #110 MHz = big_freq_array[29], 150 MHz = big_freq_array[61],160 MHz = big_freq_array[68],200 MHz = big_freq_array[100]
+      Tb_band_1_corrected=T_sky_corrected[29:61]
+      Tb_band_2_corrected=T_sky_corrected[68:100]
+      Tb_corrected_error_band_1=T_sky_corrected_error[29:61]
+      Tb_corrected_error_band_2=T_sky_corrected_error[68:100]      
+      
+      #band1 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_1_corrected,Tb_corrected_error_band_1,freq_array_band_1)
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_1,Tb_band_1_corrected,yerr=Tb_corrected_error_band_1,label="Corrected Tb")
+      plt.plot(freq_array_band_1,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 1 chromaticity corrected temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(112, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(112, 250, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(112, 200, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_1_corrected_Tb_plot.png')
+      print "saved figure band_1_corrected_Tb_plot.png"
       plt.close()
+      
+      #band2 plot
+      powerlaw_fit_result = fit_powerlaw(Tb_band_2_corrected,Tb_corrected_error_band_2,freq_array_band_2)
+      plt.clf()
+      Tb_plot=plt.figure()
+      plt.errorbar(freq_array_band_2,Tb_band_2_corrected,yerr=Tb_corrected_error_band_2,label="Corrected Tb")
+      plt.plot(freq_array_band_2,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+      plt.title('Band 2 chromaticity corrected temperature vs frequency for MWA')
+      plt.ylabel('Inferred background temperature (Tb in K)')
+      plt.xlabel('Frequency (MHz)')
+      plt.text(162, 100, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+      plt.text(162, 75, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+      plt.text(162, 50, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+      plt.legend(loc=1)
+      Tb_plot.savefig('band_2_corrected_Tb_plot.png')
+      print "saved figure band_2_corrected_Tb_plot.png"
+      plt.close()
+      
+   #Alternatively - assume EDGES (Mozdzen2017) Galaxy and compute T_moon
+   #Tb_EDGES=Tb_150_EDGES*(big_freq_array/150)**(alpha_EDGES)
+      
+   #Alternatively - assume GSM is right Galaxy and compute T_moon
+   ##refl_gal_alpha_for_moon=-2.6
+   ##T_refl_gal_150_for_moon=400*0.07
+   #T_moon_measured_new = Tb_EDGES - T_refl_gal_150_for_moon*(big_freq_array/150.0)**(refl_gal_alpha_for_moon) + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
+   #T_moon_measured_new = Tb_EDGES - Tb_refl_gal_specular + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
+      
+   occulted_sky_temp_filename="occulted_sky_temp_for_moon_%s_%s.npy" % (epoch_ID,sky_model_label)
+   occulted_sky_temp_data=np.load(occulted_sky_temp_filename)
+   occulted_sky_temp_data_error=occulted_sky_temp_data*fractional_error
+   powerlaw_fit_result = fit_powerlaw(occulted_sky_temp_data,occulted_sky_temp_data_error,big_freq_array)
+   Tb_gsm=powerlaw_fit_result['T_sky_fit']
+
+   T_moon_measured_new = Tb_gsm - Tb_refl_gal_specular + (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) + Tcmb  #remove Tcmb to get Galactic spectrum
+      
+   #T_moon_measured_new_chrom_corr=T_moon_measured_new*chromaticity_correction
+   T_moon_measured_error=Tb_error
+   #print T_moon_measured_new_chrom_corr
+   
+   #Also plot the T = 230 K line for reference:
+   T_equals_230 = 230.0*np.ones(len(big_freq_array))
+   
+   plt.clf()
+   plot_figname='big_Tmoon_assuming_gsm_galaxy_%s.png' % epoch_ID
+   plot=plt.figure()
+   plt.errorbar(big_freq_array,T_moon_measured_new,yerr=T_moon_measured_error,label="Moon Temp",elinewidth=0.5)
+   plt.plot(big_freq_array,T_equals_230,label='T=230 K', linestyle='--',linewidth=1)
+   plt.title('Moon Brightness Temperature vs Frequency for MWA')
+   plt.ylabel('Measured Mean Moon Brightness Temperature (K)')
+   plt.xlabel('Frequency (MHz)')
+   plt.legend(loc=4)
+   plot.savefig(plot_figname, format='png', dpi=900)
+   plt.close()
+   print "saved figure %s" % plot_figname
+   
+   
    
 
    if options.do_beam_stuff:
