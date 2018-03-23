@@ -1947,6 +1947,8 @@ def model_moon(options):
    #The diffuse component should abey the same specular to diffuse ratio as the earthshine
    evans_ratio_normalised=np.load(evans_ratio_normalised_filename) 
    #lambda dependence on specular component is lambda^(0.32) -> nu^-.32
+   #Tb_refl_gal_specular=(T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha))/evans_ratio_normalised
+   #or not - since the total albedo stays at 0.07 (evans 1969) despite the ratio of specular to diffuse changing
    Tb_refl_gal_specular=(T_refl_gal_150*(big_freq_array/150.0)**(refl_gal_alpha))/evans_ratio_normalised
    #Tb_refl_gal_diffuse=evans_ratio_normalised*Tb_refl_gal_specular
    Tb_refl_gal_diffuse=0
@@ -2111,8 +2113,8 @@ def model_moon(options):
       axes = py.gca()
       #axes.set_xlim([xmin,xmax])
       axes.set_ylim([0,2000])
-      py.title('Inferred background temperature vs frequency for MWA')
-      py.ylabel('Inferred background temperature (Tb in K)')
+      py.title('Galactic brightness temperature vs frequency for MWA')
+      py.ylabel('Galactic brightness temperature (K)')
       py.xlabel('Frequency (MHz)')
       py.text(150, 1500, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
       py.text(150, 1300, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
@@ -2124,8 +2126,8 @@ def model_moon(options):
       
       #Plot subplot with log log space
       loglog_plot_filename='big_inferred_Tb_plot_loglog.png'
-      plot_title='Inferred background temperature vs frequency for MWA'
-      plot_ylabel='Inferred background \n temperature (Tb in K)'
+      plot_title='Galactic brightness temperature vs frequency for MWA'
+      plot_ylabel='Galactic brightness temperature (K)'
       fit_plot=plt.figure(7)
       plt.subplot(2, 1, 1)
       plt.plot(big_freq_array, T_sky_measured_fit)     # Fit
@@ -2678,7 +2680,10 @@ def model_moon(options):
       occulted_sky_temp_data=np.load(occulted_sky_temp_filename)
       occulted_sky_temp_data_error=occulted_sky_temp_data*fractional_error
       powerlaw_fit_result = fit_powerlaw(occulted_sky_temp_data,occulted_sky_temp_data_error,big_freq_array)
-      py.plot(big_freq_array, occulted_sky_temp_data,label=sky_model.upper(),linestyle=linestyle_list[sky_model_index],color=color_list[sky_model_index],zorder=sky_model_index*5) 
+      if sky_model=='gsm2016':
+         py.plot(big_freq_array, occulted_sky_temp_data,label='GSM2017',linestyle=linestyle_list[sky_model_index],color=color_list[sky_model_index],zorder=sky_model_index*5) 
+      else:
+         py.plot(big_freq_array, occulted_sky_temp_data,label=sky_model.upper(),linestyle=linestyle_list[sky_model_index],color=color_list[sky_model_index],zorder=sky_model_index*5)          
       if sky_model=='gsm':
          py.text(150, 1250, 'T_150_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
          py.text(150, 1150, 'Alpha_gsm = %5.2f +/- %5.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
@@ -2692,7 +2697,7 @@ def model_moon(options):
    #axes.set_xlim([xmin,xmax])
    axes.set_ylim([0,2000])
    py.title('Occulted Patch Temperature vs Frequency for MWA')
-   py.ylabel('Occulted Sky Temperature (K)')
+   py.ylabel('Occulted sky temperature (K)')
    py.xlabel('Frequency (MHz)')
    py.legend(loc=1)
    py.savefig(occulted_sky_figname,format='png', dpi=900)   
@@ -2990,10 +2995,10 @@ def model_moon(options):
    plt.clf()
    plot_figname='big_Tmoon_assuming_gsm_galaxy_%s.png' % epoch_ID
    plot=plt.figure()
-   plt.errorbar(big_freq_array,T_moon_measured_new,yerr=T_moon_measured_error,label="Moon Temp",elinewidth=0.5)
+   plt.errorbar(big_freq_array,T_moon_measured_new,yerr=T_moon_measured_error,label="Moon temp",elinewidth=0.5)
    plt.plot(big_freq_array,T_equals_230,label='T=230 K', linestyle='--',linewidth=1)
    plt.title('Moon Brightness Temperature vs Frequency for MWA')
-   plt.ylabel('Measured Mean Moon Brightness Temperature (K)')
+   plt.ylabel('Moon brightness temperature (K)')
    plt.xlabel('Frequency (MHz)')
    plt.legend(loc=4)
    plot.savefig(plot_figname, format='png', dpi=900)
