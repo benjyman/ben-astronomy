@@ -68,7 +68,7 @@ def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       ben_code_base='/data/code/git/'
       srclist_code_base='/data/code/git/srclists/'
    else:
-      ben_code_base='/astro/mwaeor/bmckinley/code/ben-astronomy/'
+      ben_code_base='/astro/mwaeor/bmckinley/code/'
       srclist_code_base='/group/mwa/software/srclists/master/'
    #1. download
    default_download_script_name="%s1_default_download_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
