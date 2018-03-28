@@ -7,7 +7,7 @@ from astropy.io import fits
 import string
 
 sidereal_day_sec = 86164
-sourcelist='/data/code/git/srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
+sourcelist='srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
 havebeam_string = ''
 
 #Functions
@@ -65,37 +65,39 @@ def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    
    
    if machine=='namorrodor':
-      code_base='/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/'
+      ben_code_base='/data/code/git/'
+      srclist_code_base='/data/code/git/srclists/'
    else:
-      code_base=''
-   
+      ben_code_base='/astro/mwaeor/bmckinley/code/ben-astronomy/'
+      srclist_code_base='/group/mwa/software/srclists/master/'
    #1. download
    default_download_script_name="%s1_default_download_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_download_string='python %sgenerate_obs_download.py --machine=%s %s' % (code_base,machine,observations_filename)
+   generate_download_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_obs_download.py --machine=%s %s' % (ben_code_base,machine,observations_filename)
    with open(default_download_script_name,'w+') as f:
       f.write(generate_download_string)
 
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_cotter_string='python %sgenerate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup %s' % (code_base,epoch_ID,track_moon_string,observations_filename)
+   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup %s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename)
    with open(default_cotter_script_name,'w+') as f:
       f.write(generate_cotter_string)
       
    #3. selfcal
+   sourcelist_filepath='%s%s' % (srclist_code_base,sourcelist)
    default_selfcal_script_name="%s3_default_selfcal_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_selfcal_string='python %sgenerate_qselfcal_concat_ms.py --epoch_ID=%s --sourcelist=%s --cotter %s  --selfcal=0 %s' % (code_base,epoch_ID,sourcelist,track_moon_string,observations_filename) 
+   generate_selfcal_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qselfcal_concat_ms.py --epoch_ID=%s --sourcelist=%s --cotter %s  --selfcal=0 %s' % (ben_code_base,epoch_ID,sourcelist_filepath,track_moon_string,observations_filename) 
    with open(default_selfcal_script_name,'w+') as f:
       f.write(generate_selfcal_string)
    
    #4. image
    default_image_script_name="%s4_default_image_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_image_string='python %sgenerate_mwac_qimage_concat_ms.py --cotter --no_pbcorr --epoch_ID=%s  %s %s  --pol="xx,xy,yx,yy"  %s %s  ' % (code_base,epoch_ID,track_moon_string,imsize_string, wsclean_options_string,observations_filename) 
+   generate_image_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_mwac_qimage_concat_ms.py --cotter --no_pbcorr --epoch_ID=%s  %s %s  --pol="xx,xy,yx,yy"  %s %s  ' % (ben_code_base,epoch_ID,track_moon_string,imsize_string, wsclean_options_string,observations_filename) 
    with open(default_image_script_name,'w+') as f:
       f.write(generate_image_string)
       
    #5. pbcorr
    default_pbcorr_script_name="%s5_default_pbcorr_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_pbcorr_string='python %sgenerate_qpbcorr_multi.py  --epoch_ID=%s %s %s --dirty  --channelsout=24 %s   ' % (code_base,epoch_ID,track_moon_string,observations_filename, havebeam_string) 
+   generate_pbcorr_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qpbcorr_multi.py  --epoch_ID=%s %s %s --dirty  --channelsout=24 %s   ' % (ben_code_base,epoch_ID,track_moon_string,observations_filename, havebeam_string) 
    with open(default_pbcorr_script_name,'w+') as f:
       f.write(generate_pbcorr_string)
         
