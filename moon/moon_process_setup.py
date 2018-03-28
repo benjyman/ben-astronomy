@@ -240,6 +240,15 @@ def setup_moon_process(options):
             
             
             write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
+            if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
+               #run script to generate the download script
+               default_download_script_name="%s1_default_download_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+               cmd = "./%s" % default_download_script_name
+               print cmd
+               os.system(cmd)
+              
+                  
+            
 
 from optparse import OptionParser,OptionGroup
 
@@ -251,6 +260,8 @@ parser.add_option('--infile',type='string', dest='infile',default='',help='Just 
 parser.add_option('--base_dir',type='string', dest='base_dir',default='/md0/moon/magnus_setup_tests/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='namorrodor',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+parser.add_option('--launch',action='store_true',dest='launch',default=False,help='Actually launch the jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 
 
 (options, args) = parser.parse_args()
