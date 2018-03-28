@@ -247,7 +247,7 @@ def setup_moon_process(options):
             write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
                #run script to generate the download script
-               default_download_script_name="%s1_default_download_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+               default_download_script_name="%s1_default_download_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
                cmd = "chmod +x %s" % default_download_script_name
                print cmd
                os.system(cmd)
