@@ -3,7 +3,14 @@
 import sys,os
 import cmd
 from datetime import datetime, timedelta, date, time
+from astropy.io import fits
+import string
 
+sidereal_day_sec = 86164
+sourcelist='/data/code/git/srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
+havebeam_string = ''
+
+#Functions
 def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    print on_off_moon_string
@@ -25,24 +32,151 @@ def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    cmd="find_observations.py --proj='G0017' --chan=%s --start=%s --stop=%s --obsname=EoRMoon_%s -q > %s" % (chan,start_time_string,stop_time_string,chan,find_observations_filename)
    print cmd
    os.system(cmd)
-   
+   return find_observations_filename
    
 def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #function to write the default scripts: download, cotter, calibrate, image, pbcorr
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
+   if on_off_moon_string=='on_moon':
+      observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)     
+      track_moon_string='--track_moon'     
+   elif on_off_moon_string=='off_moon':
+      observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
+      track_off_moon_filename='%strack_off_moon_%s' % (on_off_moon_dir,observations_filename_no_path)
+      track_moon_string='--track_off_moon=%s' % track_off_moon_filename
+   else:
+      print "Bad values for on/off moon of %s" % on_off_moon_string
+   
+   #things that depend on obs semester
+   obs_semester=epoch_ID[0:5]
+   if (obs_semester=='2015A' or obs_semester=='2015B'):
+       time_averaging='8'
+       freq_averaging='80'
+       imsize_string='--imsize=2048'
+       wsclean_options_string='--wsclean_options=" -niter 0 -datacolumn CORRECTED_DATA  -scale 0.0085 -weight uniform  -smallinversion  -channelsout 24 -make-psf  "'
+   elif (obs_semester=='2017B' or obs_semester=='2018A'):
+       time_averaging='4'
+       freq_averaging='40'  
+       imsize_string='--imsize=4096'
+       wsclean_options_string='" -niter 0  -datacolumn CORRECTED_DATA  -scale 0.0042 -weight natural  -smallinversion -channelsout 24 -make-psf "'
+   else:
+       print "observing semester %s not known" % obs_semester
+   
+   
+   if machine=='namorrodor':
+      code_base='/data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/'
+   else:
+      code_base=''
+   
+   #1. download
    default_download_script_name="%s1_default_download_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   default_download_file = open(default_download_script_name,'w+')
-   generate_download_string='python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/generate_obs_download.py /md0/moon/epochs/2018A_01/93/on_moon/1199392480.txt'
-   default_download_file.write(generate_download_string)
+   generate_download_string='python %sgenerate_obs_download.py --machine=%s %s' % (code_base,machine,observations_filename)
+   with open(default_download_script_name,'w+') as f:
+      f.write(generate_download_string)
+
+   #2. cotter
+   default_cotter_script_name="%s2_default_cotter_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+   generate_cotter_string='python %sgenerate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup %s' % (code_base,epoch_ID,track_moon_string,observations_filename)
+   with open(default_cotter_script_name,'w+') as f:
+      f.write(generate_cotter_string)
+      
+   #3. selfcal
+   default_selfcal_script_name="%s3_default_selfcal_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+   generate_selfcal_string='python %sgenerate_qselfcal_concat_ms.py --epoch_ID=%s --sourcelist=%s --cotter %s  --selfcal=0 %s' % (code_base,epoch_ID,sourcelist,track_moon_string,observations_filename) 
+   with open(default_selfcal_script_name,'w+') as f:
+      f.write(generate_selfcal_string)
    
+   #4. image
+   default_image_script_name="%s4_default_image_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+   generate_image_string='python %sgenerate_mwac_qimage_concat_ms.py --cotter --no_pbcorr --epoch_ID=%s  %s %s  --pol="xx,xy,yx,yy"  %s %s  ' % (code_base,epoch_ID,track_moon_string,imsize_string, wsclean_options_string,observations_filename) 
+   with open(default_image_script_name,'w+') as f:
+      f.write(generate_image_string)
+      
+   #5. pbcorr
+   default_pbcorr_script_name="%s5_default_pbcorr_%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
+   generate_pbcorr_string='python %sgenerate_qpbcorr_multi.py  --epoch_ID=%s %s %s --dirty  --channelsout=24 %s   ' % (code_base,epoch_ID,track_moon_string,observations_filename, havebeam_string) 
+   with open(default_pbcorr_script_name,'w+') as f:
+      f.write(generate_pbcorr_string)
+        
+      
+def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
+   #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
+   on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
+   off_moon_directory=os.path.dirname(off_moon_obsid_filename)+'/'
+   off_moon_obsid_filename_no_path=off_moon_obsid_filename.split(off_moon_directory)[1]
+   on_moon_obsid_list=[]
+   off_moon_obsid_list=[]
+   track_off_moon_string_list=[]
+   track_off_moon_filename='%strack_off_moon_%s' % (off_moon_directory,off_moon_obsid_filename_no_path)
+   for line in open(on_moon_obsid_filename):
+      on_moon_obsid_list.append(line.strip()) 
+   for line in open(off_moon_obsid_filename):
+      off_moon_obsid_list.append(line.strip()) 
+   n_obs = sum(1 for line in open(on_moon_obsid_filename))
    
-   
-   
-   
+   for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
+      off_moon_obsid=off_moon_obsid_list[obsid_index]
+      #Check LSTs
+      LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
+      LST_remainder = LST_difference % sidereal_day_sec
+      LST_difference_in_sidereal_days=abs(LST_remainder/sidereal_day_sec)
+      print "LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
+      
+      metafits_filename='%s%s_metafits_ppds.fits' % (on_moon_directory,on_moon_obsid)
+      #download the metafits file
+      cmd='wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s' % (metafits_filename,on_moon_obsid)
+      print cmd
+      os.system(cmd)
+      #get the date and time of the observation from the metafits file
+
+      HDU_list = fits.open(metafits_filename)
+      header=HDU_list[0].header 
+      date_unix_utc_string = (header)['GOODTIME']
+      #datetime.datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ')
+      date_unix_utc=datetime.utcfromtimestamp(date_unix_utc_string)
+      print "start time (GOODTIME) of observation is %s" % (date_unix_utc)
+      
+      #Get the observation length
+      obslength=float((header)['EXPOSURE'])
+      print "EXPOSURE is %s s" % obslength
+      half_obslength=obslength/2.
+      half_obslength_timedelta=timedelta(seconds=half_obslength)
+      middle_of_observation=date_unix_utc+half_obslength_timedelta
+      print "middle_of_observation is %s" % middle_of_observation
+      
+      middle_of_observation_formatted=middle_of_observation.strftime('%Y-%m-%dT%H:%M:%S')
+      print "middle_of_observation_formatted %s " % middle_of_observation_formatted
+      
+      #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
+      new_date=string.replace(string.replace(middle_of_observation_formatted,'-','/'),'T',' ')
+      print new_date
+      #find position of moon
+      src_file_name='%ssrc_file_moon_%s.txt' % (on_moon_directory,on_moon_obsid)
+      cmd="print_src.py --date='"+new_date+"' > "+ src_file_name
+      print cmd
+      os.system(cmd)
+      #read src_file.txt to get Moon ra and dec 
+      with open(src_file_name, "r") as infile:
+         lines=infile.readlines()
+         moon_ra=lines[6].split()[3].split(',')[0]
+         moon_dec=lines[6].split()[6].split(',')[0]
+         #print moon_ra
+         #print moon_dec
+      #get ra and dec in right format for cotter
+      new_moon_dec=string.replace(moon_dec,":",".")
+      track_off_moon_string='%s %s %s %s %s' % (on_moon_obsid,moon_ra,new_moon_dec,off_moon_obsid,LST_difference_in_sidereal_days)
+      track_off_moon_string_list.append(track_off_moon_string)
+      with open(track_off_moon_filename, 'w') as f:
+         f.write("\n".join(track_off_moon_string_list))
+      
+      
+
+#Main function:
 def setup_moon_process(options):
-   machine='magnus'
+   machine=options.machine
    base_dir=options.base_dir
-   directory_of_epochs="%s/epochs/" % base_dir
+   directory_of_epochs="%sepochs/" % base_dir
    moon_exp_filename=options.infile
    #get the epoch_IDs and on_moon_dat off_moon_date
    chan_list=[69,93,121,145,169]
@@ -93,9 +227,17 @@ def setup_moon_process(options):
                cmd = "mkdir %s " % on_off_moon_dir
                print cmd
                os.system(cmd)
-            if not options.have_obs_lists
+            if not options.have_obs_lists:
                write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
-
+            
+               #if it is an off moon then write the track_off_moon txt file
+               if (on_off_moon_string=='off_moon'):
+                  on_moon_obsid_filename="%s%s%s_on_moon_%s.txt" % (chan_dir,'on_moon/',epoch_ID,chan) 
+                  off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
+                  make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename)
+            
+            
+            write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
 
 from optparse import OptionParser,OptionGroup
 
@@ -106,6 +248,7 @@ parser = OptionParser(usage=usage)
 parser.add_option('--infile',type='string', dest='infile',default='',help='Just give it a txt file with three columns: epoch_ID on_moon_date off_moon_date (dates as YYYY-MM-DD) e.g. --infile="moon_experiment.txt" [default=%default]')
 parser.add_option('--base_dir',type='string', dest='base_dir',default='/md0/moon/magnus_setup_tests/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='namorrodor',help=' e.g. --machine="magnus" [default=%default]')
 
 
 (options, args) = parser.parse_args()
