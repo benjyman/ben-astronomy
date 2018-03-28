@@ -254,6 +254,13 @@ def setup_moon_process(options):
                cmd = "%s" % default_download_script_name
                print cmd
                os.system(cmd)
+               queue_download_script_name='%sq_obsdownload_wrapper.sh' % (on_off_moon_dir)
+               cmd = "chmod +x %s" % queue_download_script_name
+               print cmd
+               os.system(cmd)
+               cmd = "%s" % queue_download_script_name
+               print cmd
+               os.system(cmd)              
               
                   
             
