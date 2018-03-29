@@ -112,7 +112,7 @@ def generate_namorrodor(infile,options):
     q_filename_path=os.path.dirname(infile)+'/'        
     q_filename='%sq_image_moon.sh' % (q_filename_path)
 
-    imaging_file = open(q_script_name,'w+')
+    imaging_file = open(q_filename,'w+')
     imaging_file.write('#!/bin/bash -l\n')
     if (machine=='magnus' or machine=='galaxy'):          
        #sbatch_file.write('#!/bin/bash -l\n')
@@ -132,9 +132,9 @@ def generate_namorrodor(infile,options):
        imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+epoch_ID_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
     
     imaging_file.close()
-    print "wrote %s" %  q_script_name
+    print "wrote %s" %  q_filename
 
-    command="chmod +x %s " % (q_script_name) 
+    command="chmod +x %s " % (q_filename) 
     print command
     os.system(command)
 
