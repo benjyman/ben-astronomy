@@ -125,7 +125,7 @@ def generate_cotter_moon(options):
              #sbatch_file.write('module use /group/mwa/software/modulefiles\n')
              #sbatch_file.write('module load MWA_Tools/mwa-sci\n')
              #sbatch_file.write('module load setuptools\n')
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string) )
+          sbatch_file.write('srun python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string) )
 
        sbatch_file.close()
     
