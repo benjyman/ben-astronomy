@@ -109,10 +109,23 @@ def generate_namorrodor(infile,options):
 
     wsclean_options_string=' --wsclean_options="'+options.wsclean_options+'" '
 
-    q_script_name='q_image_concat_ms_wrapper.sh'
+    q_filename_path=os.path.dirname(obsid_infile)+'/'        
+    q_filename='%sq_image_moon_%s.sh' % (q_filename_path,str(obs_list_number))
 
     imaging_file = open(q_script_name,'w+')
     imaging_file.write('#!/bin/bash -l\n')
+    if (machine=='magnus' or machine=='galaxy'):          
+       #sbatch_file.write('#!/bin/bash -l\n')
+       sbatch_file.write('#SBATCH -o image-%A.out\n' )
+       sbatch_file.write('##SBATCH --ntasks=1\n')
+       sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
+       sbatch_file.write('#SBATCH --time=12:00:00\n')
+       sbatch_file.write('#SBATCH -J image_%s\n' % (options.epoch_ID))
+       #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
+       #sbatch_file.write('#SBATCH --clusters=magnus\n')
+       sbatch_file.write('#SBATCH --partition=workq\n')
+       sbatch_file.write('#SBATCH --account=mwaeor\n')
+       sbatch_file.write('#SBATCH --export=NONE\n')
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])

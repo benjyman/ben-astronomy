@@ -118,6 +118,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_image_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_image_string)
+   cmd = "%s" % default_image_script_name
+   print cmd
+   os.system(cmd)
       
    #5. pbcorr
    default_pbcorr_script_name="%s5_default_pbcorr_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
@@ -125,6 +128,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_pbcorr_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_pbcorr_string)
+   cmd = "%s" % default_pbcorr_script_name
+   print cmd
+   os.system(cmd)
         
       
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
