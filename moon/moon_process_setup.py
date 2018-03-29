@@ -34,7 +34,7 @@ def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    os.system(cmd)
    return find_observations_filename
    
-def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
+def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #function to write the default scripts: download, cotter, calibrate, image, pbcorr
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    if on_off_moon_string=='on_moon':
@@ -76,6 +76,13 @@ def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_download_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_download_string)
+   #run script to generate the download script
+   cmd = "chmod +x %s" % default_download_script_name
+   print cmd
+   os.system(cmd)
+   cmd = "%s" % default_download_script_name
+   print cmd
+   os.system(cmd)
 
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
@@ -83,6 +90,12 @@ def write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_cotter_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)
+   cmd = "chmod +x %s" % default_cotter_script_name
+   print cmd
+   os.system(cmd)
+   cmd = "%s" % default_cotter_script_name
+   print cmd
+   os.system(cmd)
       
    #3. selfcal
    sourcelist_filepath='%s%s' % (srclist_code_base,sourcelist)
@@ -244,16 +257,8 @@ def setup_moon_process(options):
                   make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename)
             
             
-            write_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
+            write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
-               #run script to generate the download script
-               default_download_script_name="%s1_default_download_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-               cmd = "chmod +x %s" % default_download_script_name
-               print cmd
-               os.system(cmd)
-               cmd = "%s" % default_download_script_name
-               print cmd
-               os.system(cmd)
                download_script_directory=os.path.dirname(default_download_script_name)+'/'
                queue_download_script_name='q_obsdownload_wrapper.sh' 
                cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
@@ -277,10 +282,10 @@ usage = 'Usage: setup_moon_process.py [options]'
 parser = OptionParser(usage=usage)
 
 parser.add_option('--infile',type='string', dest='infile',default='',help='Just give it a txt file with three columns: epoch_ID on_moon_date off_moon_date (dates as YYYY-MM-DD) e.g. --infile="moon_experiment.txt" [default=%default]')
-parser.add_option('--base_dir',type='string', dest='base_dir',default='/md0/moon/magnus_setup_tests/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
+parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mwaeor/bmckinley/moon/test_setup/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
-parser.add_option('--machine',type='string', dest='machine',default='namorrodor',help=' e.g. --machine="magnus" [default=%default]')
-parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=True,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 parser.add_option('--launch',action='store_true',dest='launch',default=False,help='Actually launch the jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 
 

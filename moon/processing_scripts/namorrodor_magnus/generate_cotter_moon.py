@@ -2,7 +2,12 @@
 
 
 def generate_cotter_moon(options):
-
+    machine=options.machine
+    if machine=='namorrodor':
+       ben_code_base='/data/code/git/'
+    else:
+      ben_code_base='/astro/mwaeor/bmckinley/code/'
+      
     obsid_infile=options.obsid_infile
     sister_obsid_infile=options.sister_obsid_infile
     
@@ -103,7 +108,7 @@ def generate_cotter_moon(options):
           sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py '+ obsid_string + sister_obsid_string + ' ' + track_off_moon_list_string + '  ' + track_moon_string + ' ' + track_off_moon_string + ' '+ epoch_ID_string + flag_ants_string + cleanup_string + time_freq_res_string + ' \n')
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s\n ' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string) )
 
        sbatch_file.close()
     
@@ -129,7 +134,7 @@ parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,h
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 #parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
-parser.add_option('--machine',type='string', dest='machine',default='namorrodor',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 
 
 (options, args) = parser.parse_args()
