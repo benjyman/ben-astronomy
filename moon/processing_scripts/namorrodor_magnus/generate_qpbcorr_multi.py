@@ -118,7 +118,7 @@ def generate_namorrodor(infile,options):
     else:
        channelsout_string=' --channelsout="1" '
  
-    q_filename_path=os.path.dirname(obsid_infile)+'/'        
+    q_filename_path=os.path.dirname(infile)+'/'        
     q_filename='%sq_pbcorr_moon_%s.sh' % (q_filename_path,str(obs_list_number))
      
     imaging_file = open(q_script_name,'w+')
