@@ -38,12 +38,16 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #function to write the default scripts: download, cotter, calibrate, image, pbcorr
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    if on_off_moon_string=='on_moon':
-      observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)     
+      observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)   
+      off_moon_dir=os.path.dirname(on_off_moon_dir)+'/on_moon/'
+      sister_observations_filename="%s%s_off_moon_%s.txt" % (off_moon_dir,epoch_ID,chan)    
       track_moon_string='--track_moon'     
    elif on_off_moon_string=='off_moon':
       observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
       observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
       track_off_moon_filename='%strack_off_moon_%s' % (on_off_moon_dir,observations_filename_no_path)
+      on_moon_dir=os.path.dirname(on_off_moon_dir)+'/on_moon/'
+      sister_observations_filename="%s%s_on_moon_%s.txt" % (on_moon_dir,epoch_ID,chan) 
       track_moon_string='--track_off_moon=%s' % track_off_moon_filename
    else:
       print "Bad values for on/off moon of %s" % on_off_moon_string
@@ -86,7 +90,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
 
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup %s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename)
+   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
    with open(default_cotter_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)

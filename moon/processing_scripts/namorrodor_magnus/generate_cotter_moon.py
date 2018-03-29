@@ -139,8 +139,5 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 
 (options, args) = parser.parse_args()
 
-#obsid_infile = args[0]
-
-mwa_dir = '/md0/moon/data/MWA/'
 
 generate_cotter_moon(options)
