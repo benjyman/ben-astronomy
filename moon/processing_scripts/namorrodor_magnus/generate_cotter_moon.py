@@ -102,6 +102,22 @@ def generate_cotter_moon(options):
     
        sbatch_file = open(q_filename,'w+')
        sbatch_file.write('#!/bin/bash -l\n')
+       if (machine=='magnus' or machine=='galaxy'):          
+          #sbatch_file.write('#!/bin/bash -l\n')
+          sbatch_file.write('#SBATCH -o cotter-%A.out\n' )
+          sbatch_file.write('##SBATCH --ntasks=1\n')
+          sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
+          sbatch_file.write('#SBATCH --time=12:00:00\n')
+          sbatch_file.write('#SBATCH -J cotter_%s\n' % (options.epoch_ID))
+          #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
+          #sbatch_file.write('#SBATCH --clusters=magnus\n')
+          sbatch_file.write('#SBATCH --partition=workq\n')
+          sbatch_file.write('#SBATCH --account=mwaeor\n')
+          sbatch_file.write('#SBATCH --export=NONE\n')
+          #sbatch_file.write('module swap PrgEnv-cray/6.0.4 PrgEnv-gnu && module swap gcc gcc/5.3.0\n')
+          #sbatch_file.write('module use /group/mwa/software/modulefiles\n')
+          #sbatch_file.write('module load MWA_Tools/mwa-sci\n')
+          #sbatch_file.write('module load setuptools\n')
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
           sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
@@ -109,22 +125,6 @@ def generate_cotter_moon(options):
           sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          if (machine=='magnus' or machine=='galaxy'):          
-             #sbatch_file.write('#!/bin/bash -l\n')
-             sbatch_file.write('#SBATCH -o cotter-%A.out\n' )
-             sbatch_file.write('##SBATCH --ntasks=1\n')
-             sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-             sbatch_file.write('#SBATCH --time=12:00:00\n')
-             sbatch_file.write('#SBATCH -J cotter_%s\n' % (options.epoch_ID))
-             #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
-             #sbatch_file.write('#SBATCH --clusters=magnus\n')
-             sbatch_file.write('#SBATCH --partition=workq\n')
-             sbatch_file.write('#SBATCH --account=mwaeor\n')
-             sbatch_file.write('#SBATCH --export=NONE\n')
-             #sbatch_file.write('module swap PrgEnv-cray/6.0.4 PrgEnv-gnu && module swap gcc gcc/5.3.0\n')
-             #sbatch_file.write('module use /group/mwa/software/modulefiles\n')
-             #sbatch_file.write('module load MWA_Tools/mwa-sci\n')
-             #sbatch_file.write('module load setuptools\n')
           sbatch_file.write('srun python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string) )
 
        sbatch_file.close()
