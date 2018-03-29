@@ -110,7 +110,7 @@ def generate_namorrodor(infile,options):
     wsclean_options_string=' --wsclean_options="'+options.wsclean_options+'" '
 
     q_filename_path=os.path.dirname(infile)+'/'        
-    q_filename='%sq_image_moon_%s.sh' % (q_filename_path,str(obs_list_number))
+    q_filename='%sq_image_moon.sh' % (q_filename_path)
 
     imaging_file = open(q_script_name,'w+')
     imaging_file.write('#!/bin/bash -l\n')

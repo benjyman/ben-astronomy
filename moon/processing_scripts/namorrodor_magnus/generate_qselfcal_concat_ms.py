@@ -88,7 +88,7 @@ def generate_namorrodor(infile,options):
        applyonly_string=''
    
     q_filename_path=os.path.dirname(infile)+'/'        
-    q_filename='%sq_selfcal_moon_%s.sh' % (q_filename_path,str(obs_list_number))
+    q_filename='%sq_selfcal_moon.sh' % (q_filename_path)
     
        
     imaging_file = open(q_filename,'w+')
