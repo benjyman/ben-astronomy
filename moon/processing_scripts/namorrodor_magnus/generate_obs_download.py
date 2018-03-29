@@ -78,7 +78,8 @@ def generate_download_obs(infile,options):
          print command
          os.system(command)
    else:
-      download_filename='q_obsdownload_wrapper.sh'
+      download_filename_path=os.path.dirname(infile)+'/'
+      download_filename='%sq_obsdownload_wrapper.sh' % download_filename_path
       database='/group/mwaeor/bmckinley/moon_downloads.sqlite'
       #use gator
       with open(download_filename,'w') as f:
