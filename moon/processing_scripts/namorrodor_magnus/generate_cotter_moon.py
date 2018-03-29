@@ -111,7 +111,7 @@ def generate_cotter_moon(options):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
           if (machine=='magnus' or machine=='galaxy'):          
              #sbatch_file.write('#!/bin/bash -l\n')
-             sbatch_file.write('#SBATCH -o cotter_%s-%A.out\n' % (options.epoch_ID))
+             sbatch_file.write('#SBATCH -o cotter-%A.out\n' )
              sbatch_file.write('##SBATCH --ntasks=1\n')
              sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
              sbatch_file.write('#SBATCH --time=12:00:00\n')
