@@ -108,6 +108,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_selfcal_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_selfcal_string)
+   cmd = "chmod +x %s" % default_selfcal_script_name
+   print cmd
+   os.system(cmd)
    cmd = "%s" % default_selfcal_script_name
    print cmd
    os.system(cmd)
@@ -118,6 +121,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_image_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_image_string)
+   cmd = "chmod +x %s" % default_image_script_name
+   print cmd
+   os.system(cmd)
    cmd = "%s" % default_image_script_name
    print cmd
    os.system(cmd)
@@ -128,6 +134,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    with open(default_pbcorr_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_pbcorr_string)
+   cmd = "chmod +x %s" % default_pbcorr_script_name
+   print cmd
+   os.system(cmd)
    cmd = "%s" % default_pbcorr_script_name
    print cmd
    os.system(cmd)
