@@ -82,7 +82,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       f.write(generate_download_string)
    #run script to generate the download script
    cmd = "chmod +x %s" % default_download_script_name
-   print cmd
+   #print cmd
    os.system(cmd)
    cmd = "%s" % default_download_script_name
    print cmd
@@ -95,7 +95,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)
    cmd = "chmod +x %s" % default_cotter_script_name
-   print cmd
+   #print cmd
    os.system(cmd)
    cmd = "%s" % default_cotter_script_name
    print cmd
@@ -109,7 +109,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       f.write('#!/bin/bash -l\n')
       f.write(generate_selfcal_string)
    cmd = "chmod +x %s" % default_selfcal_script_name
-   print cmd
+   #print cmd
    os.system(cmd)
    cmd = "%s" % default_selfcal_script_name
    print cmd
@@ -122,7 +122,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       f.write('#!/bin/bash -l\n')
       f.write(generate_image_string)
    cmd = "chmod +x %s" % default_image_script_name
-   print cmd
+   #print cmd
    os.system(cmd)
    cmd = "%s" % default_image_script_name
    print cmd
@@ -135,7 +135,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       f.write('#!/bin/bash -l\n')
       f.write(generate_pbcorr_string)
    cmd = "chmod +x %s" % default_pbcorr_script_name
-   print cmd
+   #print cmd
    os.system(cmd)
    cmd = "%s" % default_pbcorr_script_name
    print cmd
