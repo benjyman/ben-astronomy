@@ -150,7 +150,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
          number_of_q_cotter_files=len(glob.glob('%s/q_cotter_moon*'%on_off_moon_dir))
          print 'number_of_q_cotter_files is %s ' % number_of_q_cotter_files
          if number_of_q_cotter_files==1:
-            cmd1="jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`" % on_off_moon_dir
+            cmd1='jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`' % on_off_moon_dir
             #print cmd1
             #os.system(cmd1)
             f.write(cmd1)
