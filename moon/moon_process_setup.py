@@ -149,10 +149,15 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
                cmd1="jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`" % on_off_moon_dir
                print cmd1
                os.system(cmd1)
-               cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_.sh | cut -d " " -f 4`" % on_off_moon_dir
-               cmd3=jobid=`sbatch --dependency=afterok:$jobid third_job.sh | cut -d " " -f 4`
-               cmd4=sbatch --dependency=afterok:$jobid fourth_job.sh
-               
+               cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+               print cmd2
+               os.system(cmd2)
+               cmd3="jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+               print cmd3
+               os.system(cmd3)
+               cmd4="sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh" % on_off_moon_dir
+               print cmd4
+               os.system(cmd4)
    
       
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
