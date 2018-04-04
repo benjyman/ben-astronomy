@@ -6,7 +6,7 @@ def generate_cotter_moon(options):
     if machine=='namorrodor':
        ben_code_base='/data/code/git/'
     else:
-      ben_code_base='/astro/mwaeor/bmckinley/code/'
+       ben_code_base='/astro/mwaeor/bmckinley/code/'
       
     obsid_infile=options.obsid_infile
     sister_obsid_infile=options.sister_obsid_infile
