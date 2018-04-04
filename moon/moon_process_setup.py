@@ -140,7 +140,20 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    cmd = "%s" % default_pbcorr_script_name
    print cmd
    os.system(cmd)
-        
+   
+   #launch the jobs if requested
+   if options.launch_pbcorr:
+      if options.launch_image:
+         if options.launch_selfcal:
+            if options.launch_cotter:
+               cmd1="jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`" % on_off_moon_dir
+               print cmd1
+               os.system(cmd1)
+               cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_.sh | cut -d " " -f 4`" % on_off_moon_dir
+               cmd3=jobid=`sbatch --dependency=afterok:$jobid third_job.sh | cut -d " " -f 4`
+               cmd4=sbatch --dependency=afterok:$jobid fourth_job.sh
+               
+   
       
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
@@ -308,7 +321,10 @@ parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mw
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
-parser.add_option('--launch',action='store_true',dest='launch',default=False,help='Actually launch the jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+parser.add_option('--launch_pbcorr',action='store_true',dest='launch_pbcorr',default=False,help='Actually launch the pbcorr jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 
 
 (options, args) = parser.parse_args()
