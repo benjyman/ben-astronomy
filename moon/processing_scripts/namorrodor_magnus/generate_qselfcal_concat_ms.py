@@ -159,9 +159,4 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 
 infile = args[0]
 
-
-
-mwa_dir = os.getenv('MWA_DIR','/data/MWA/')
-
-if(mwa_dir == '/data/MWA/'):
-    generate_namorrodor(infile,options)
+generate_namorrodor(infile,options)
