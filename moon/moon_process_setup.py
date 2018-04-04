@@ -142,24 +142,37 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    os.system(cmd)
    
    #launch the jobs if requested
+   if options.launch_cotter:
+      cmd1="jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`" % on_off_moon_dir
+      print cmd1
+      os.system(cmd1)
+   if options.launch_selfcal:
+      if options.launch_cotter:
+         cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+      else:
+         cmd2="jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+      print cmd2
+      os.system(cmd2)
+   if options.launch_image:
+      if options.launch_selfcal:
+         cmd3="jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+      else:
+         cmd3="jobid=`sbatch %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+      print cmd3
+      os.system(cmd3)
    if options.launch_pbcorr:
       if options.launch_image:
-         if options.launch_selfcal:
-            if options.launch_cotter:
-               cmd1="jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`" % on_off_moon_dir
-               print cmd1
-               os.system(cmd1)
-               cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
-               print cmd2
-               os.system(cmd2)
-               cmd3="jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
-               print cmd3
-               os.system(cmd3)
-               cmd4="sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh" % on_off_moon_dir
-               print cmd4
-               os.system(cmd4)
+         cmd4="sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh" % on_off_moon_dir
+      else:
+         cmd4="sbatch %sq_pbcorr_moon.sh" % on_off_moon_dir
+      print cmd4
+      os.system(cmd4)
    
-      
+
+   
+            
+              
+            
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
    on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
@@ -306,7 +319,7 @@ def setup_moon_process(options):
                os.system(cmd)
                
                cmd = "chmod +x %s%s" % (download_script_directory,queue_download_script_name)
-               print cmd
+               #print cmd
                os.system(cmd)
                cmd = "%s%s" % (download_script_directory,queue_download_script_name)
                print cmd
