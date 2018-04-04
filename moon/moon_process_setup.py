@@ -159,27 +159,27 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       if options.launch_selfcal:
          if options.launch_cotter:
             if number_of_q_cotter_files==1:
-               cmd2="jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+               cmd2='jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
             else:
                print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
          else:
-            cmd2="jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+            cmd2='jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
          #print cmd2
          #os.system(cmd2)
          f.write(cmd2)
       if options.launch_image:
          if options.launch_selfcal:
-            cmd3="jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+            cmd3='jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
          else:
-            cmd3="jobid=`sbatch %sq_image_moon.sh | cut -d " " -f 4`" % on_off_moon_dir
+            cmd3='jobid=`sbatch %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
          #print cmd3
          #os.system(cmd3)
          f.write(cmd3)
       if options.launch_pbcorr:
          if options.launch_image:
-            cmd4="sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh" % on_off_moon_dir
+            cmd4='sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh' % on_off_moon_dir
          else:
-            cmd4="sbatch %sq_pbcorr_moon.sh" % on_off_moon_dir
+            cmd4='sbatch %sq_pbcorr_moon.sh' % on_off_moon_dir
          #print cmd4
          #os.system(cmd4)
          f.write(cmd4)
@@ -188,7 +188,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    os.system(cmd)
    cmd='%s' % launch_job_filename
    print cmd
-   #os.system(cmd)   
+   os.system(cmd)   
    
 
    
