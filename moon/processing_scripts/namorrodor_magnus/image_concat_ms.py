@@ -10,11 +10,16 @@ def image_concat_ms(obsid,track_off_moon_string,options):
    print obsid
    
    epoch_ID=options.epoch_ID
-   
-   if epoch_ID=='2015B_05':
-      mwa_dir='/data/MWA/'
+
+   machine=options.machine
+   if machine=='namorrodor':
+      if epoch_ID=='2015B_05':
+         mwa_dir='/data/MWA/'
+      else:
+         mwa_dir = '/md0/moon/data/MWA/'
    else:
-      mwa_dir = '/md0/moon/data/MWA/'
+      mwa_dir = '/astro/mwaeor/MWA/data/'
+      
    
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
@@ -296,6 +301,7 @@ parser.add_option('--selfcal',dest='selfcal',default=None,help='Set if this is a
 parser.add_option('--ionpeeled',action='store_true',dest='ionpeeled',default=False,help='Set if this is a subsequent imaging run after ionpeeling e.g. --ionpeeled [default=%default]')
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms"  [default=%default]')
 parser.add_option('--cotter',action='store_true',dest='cotter',default=False,help='Use an ms from cotter, not imported from RTS e.g. --cotter   [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 
 
 (options, args) = parser.parse_args()

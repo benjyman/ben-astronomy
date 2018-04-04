@@ -10,7 +10,12 @@ from casacore.tables import table,tablecolumn,tablerow
 
 
 def cotter_moon(options):
-
+   machine=options.machine
+   if machine=='namorrodor':
+      mwa_dir = '/md0/moon/data/MWA/'
+   else:
+      mwa_dir = '/astro/mwaeor/MWA/data/'
+       
    obsid=options.obsid
    sister_obsid=options.sister_obsid
    
@@ -231,6 +236,7 @@ parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid t
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 parser.add_option('--track_off_moon_list',type='string', dest='track_off_moon_list',default='',help='When track_off_moon is True. Details of on-moon pairing on_moon_obsid,RA,DEC of on_moon paired obs e.g. --track_off_moon_list="1199394880,13.0,0.56" [default=%default]')
 parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 
 
 
@@ -241,8 +247,6 @@ parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default=
 #   track_off_moon_string= args[1]
 #else:
 #   track_off_moon_string=' '
-
-mwa_dir = '/md0/moon/data/MWA/'
 
 cotter_moon(options)
 

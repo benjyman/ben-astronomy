@@ -63,6 +63,11 @@ def generate_cotter_moon(options):
     else:
        epoch_ID_string=''
 
+    if (options.machine):
+       machine_string=' --machine=%s ' % (options.machine)
+    else:
+       machine_string=''
+       
     if (options.epoch_ID):
        epoch_semester=options.epoch_ID[0:5]
        print epoch_semester
@@ -125,7 +130,7 @@ def generate_cotter_moon(options):
           sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string) )
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor/cotter_moon.py %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string,machine_string) )
 
        sbatch_file.close()
     

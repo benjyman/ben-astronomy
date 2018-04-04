@@ -83,7 +83,12 @@ def generate_namorrodor(infile,options):
        epoch_ID_string=' --epoch_ID=%s ' % (epoch_ID)
     else:
        epoch_ID_string=''
-       
+      
+    if (options.machine):
+       machine_string=' --machine=%s ' % (options.machine)
+    else:
+       machine_string=''
+
     if (options.pol):
        pol_string = ' --pol='+options.pol
     else:
@@ -134,7 +139,7 @@ def generate_namorrodor(infile,options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string, no_pbcorr_string, track_moon_string,chgcentre_string,minw_string,imsize_string,epoch_ID_string, pol_string,concat6_string,wsclean_options_string,cotter_string,selfcal_string,ionpeeled_string) )
+       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string, no_pbcorr_string, track_moon_string,chgcentre_string,minw_string,imsize_string,epoch_ID_string, pol_string,concat6_string,wsclean_options_string,cotter_string,selfcal_string,ionpeeled_string,machine_string) )
     
     sbatch_file.close()
     print "wrote %s" %  q_filename

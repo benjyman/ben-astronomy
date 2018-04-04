@@ -6,16 +6,20 @@
 import string 
 
 def selfcal_concat_ms(obsid,track_off_moon_string,options):
-
-   print obsid
-   
    #tagname=options.tagname
    epoch_ID=options.epoch_ID
-
-   if epoch_ID=='2015B_05':
-      mwa_dir='/data/MWA/'
+   
+   machine=options.machine
+   if machine=='namorrodor':
+      if epoch_ID=='2015B_05':
+         mwa_dir='/data/MWA/'
+      else:
+         mwa_dir = '/md0/moon/data/MWA/'
    else:
-      mwa_dir = '/md0/moon/data/MWA/'
+      mwa_dir = '/astro/mwaeor/MWA/data/'
+  
+   print obsid
+   
       
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
@@ -149,6 +153,8 @@ parser.add_option('--model',type='string', dest='model',default=None,help='Speci
 parser.add_option('--selfcal',type='string', dest='selfcal',default="0",help='Specify how many times the image has been through selfcal, labels the solutions so that you can revert to an older calibration e.g. selfcal=2 [default=%default]')
 parser.add_option('--applyonly',type='string', dest='applyonly',default=None,help='Just apply the specified calibration solutions to the measurements set e.g. applyonly=new_solutions.bin [default=%default]')
 parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help='Specify the base catalog to be used to generate the dynamic sourcelist (specify this instead of model and an ao model will be made from the sourclist), overidden by --model=')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
+
 
 (options, args) = parser.parse_args()
 
