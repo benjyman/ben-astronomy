@@ -92,7 +92,10 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
 
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   #with cleanup
+   #generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   #no cleanup
+   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
    with open(default_cotter_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)
@@ -348,7 +351,8 @@ def setup_moon_process(options):
             
             write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
-               download_script_directory=os.path.dirname(default_download_script_name)+'/'
+               #download_script_directory=os.path.dirname(default_download_script_name)+'/'
+               download_script_directory=on_off_moon_dir
                queue_download_script_name='q_obsdownload_wrapper.sh' 
                cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
                print cmd
