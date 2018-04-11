@@ -15,11 +15,16 @@ def generate_namorrodor(infile,options):
        ben_code_base='/astro/mwaeor/bmckinley/code/'
 
     obsid_list=[]
+    sister_obsid_list=[]
     for line in open(infile):
        obsid_list.append(line.strip())
-  
+    for line in open(sister_obsid_infile):
+       sister_obsid_list.append(line.strip()) 
     n_obs = sum(1 for line in open(infile))
 
+    sister_obsid_infile=options.sister_obsid_infile
+    
+    
     if (options.track_off_moon):
        track_off_moon_list=[]
        track_off_moon_infile=options.track_off_moon
@@ -120,9 +125,11 @@ def generate_namorrodor(infile,options):
       #sbatch_file.write('module load setuptools\n')
           
     for obsid_index,obsid in enumerate(obsid_list):
+       sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
+       sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string,track_moon_string,epoch_ID_string,ionpeel_string,chgcentre_string,minw_string,cotter_string,model_string,selfcal_string,applyonly_string,sourcelist_string,machine_string))
+       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string,track_moon_string,epoch_ID_string,ionpeel_string,chgcentre_string,minw_string,cotter_string,model_string,selfcal_string,applyonly_string,sourcelist_string,machine_string,sister_obsid_string))
 
     sbatch_file.close()
     print "wrote file %s" % q_filename
@@ -153,6 +160,7 @@ parser.add_option('--applyonly',type='string', dest='applyonly',default=None,hel
 parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help='Specify the base catalog to be used to generate the dynamic sourcelist (specify this instead of model and an ao model will be made from the sourclist), overidden by --model=')
 parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='Track the Moons position on a previous night. Provide the name of a text file with two columns (obsid_from_previous_night cotter_ms_phase_centre  [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 
 
 (options, args) = parser.parse_args()

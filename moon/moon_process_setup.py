@@ -109,7 +109,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #3. selfcal
    sourcelist_filepath='%s%s' % (srclist_code_base,sourcelist)
    default_selfcal_script_name="%s3_default_selfcal_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_selfcal_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qselfcal_concat_ms.py --epoch_ID=%s --sourcelist=%s --cotter %s  --selfcal=0 %s' % (ben_code_base,epoch_ID,sourcelist_filepath,track_moon_string,observations_filename) 
+   generate_selfcal_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qselfcal_concat_ms.py --epoch_ID=%s --sourcelist=%s --cotter %s  --selfcal=0 --sister_obsid_infile=%s %s' % (ben_code_base,epoch_ID,sourcelist_filepath,track_moon_string,sister_observations_filename,observations_filename) 
    with open(default_selfcal_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_selfcal_string)

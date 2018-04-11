@@ -20,6 +20,8 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
   
    print obsid
    
+   sister_obsid=options.sister_obsid
+   
       
    if (options.track_off_moon):
       track_off_moon_list=track_off_moon_string.split(',')
@@ -97,6 +99,57 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    else:
       concat_vis_name=data_dir+concat_vis_base+'.ms'
    
+   #do all this stuff in the selfcal stage instead - so you are sure that both ms have already meen created
+   #here merge the flag columns for both the on_moon and off_moon ms
+   #only do this step for track_off_moon, (always need to make on_moon ms first)
+   if (options.track_moon):
+      base_name='%s_%s' % (obsid,epoch_ID)
+      on_moon_basename=base_name + '_trackmoon'
+      on_moon_ms_name=data_dir+on_moon_basename+'.ms'
+      off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
+      off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
+      ms_name=on_moon_ms_name
+   
+   if (options.track_off_moon):
+      on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
+      on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
+      off_moon_base_name=base_name+'_track_off_moon_paired_' + sister_obsid
+      off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
+      ms_name=off_moon_ms_name
+      
+   if (options.track_off_moon):
+      
+      on_moon_table=table(on_moon_ms_name,readonly=False)
+      #print on_moon_table
+      #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
+      #on_moon_table_time=tablecolumn(on_moon_table,'TIME')
+      on_moon_table_flag=tablecolumn(on_moon_table,'FLAG')
+   
+      off_moon_table=table(off_moon_ms_name,readonly=False)
+      #print off_moon_table
+      #off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
+      #off_moon_table_time=tablecolumn(off_moon_table,'TIME')
+      off_moon_table_flag=tablecolumn(off_moon_table,'FLAG')
+   
+      new_off_moon_table_flag=np.logical_not(off_moon_table_flag)
+
+   
+      #look in obs_list_generator.py for how to compare LSTs
+   
+      #Not sure if 2018A obs are well enough LST matched
+      #Continue anyway (come back and look at 2015A) 
+   
+      #OR the two flag columns
+      new_flag_column=np.logical_or(on_moon_table_flag,off_moon_table_flag)
+      #print new_flag_column[20100:20101]
+   
+      on_moon_table.putcol('FLAG',new_flag_column)
+      off_moon_table.putcol('FLAG',new_flag_column)
+   
+      on_moon_table.close()
+      off_moon_table.close()
+   
+   
    if (options.applyonly):
       solutions=options.applyonly
       #apply solutions
@@ -154,6 +207,7 @@ parser.add_option('--selfcal',type='string', dest='selfcal',default="0",help='Sp
 parser.add_option('--applyonly',type='string', dest='applyonly',default=None,help='Just apply the specified calibration solutions to the measurements set e.g. applyonly=new_solutions.bin [default=%default]')
 parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help='Specify the base catalog to be used to generate the dynamic sourcelist (specify this instead of model and an ao model will be made from the sourclist), overidden by --model=')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
+parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 
 
 (options, args) = parser.parse_args()
