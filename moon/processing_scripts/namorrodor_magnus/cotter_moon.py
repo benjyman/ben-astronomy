@@ -79,13 +79,12 @@ def cotter_moon(options):
    flag_file_name=data_dir+obsid+'_flags.zip'
 
    #check if metafits file exists, if not, download it
-   if not os.path.isfile(metafits_filename):
-      #cmd="make_metafits.py -o %s -g %s" % (metafits_filename,obsid)
-      cmd="wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (metafits_filename,obsid)
-      print cmd
-      os.system(cmd)
-   else:
-      pass
+   #No always download new fits file
+   #if not os.path.isfile(metafits_filename):
+   #   #cmd="make_metafits.py -o %s -g %s" % (metafits_filename,obsid)
+   cmd="wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (metafits_filename,obsid)
+   print cmd
+   os.system(cmd)
 
    #unpack the flagfile
    cmd="unzip %s -d %s " % (flag_file_name,data_dir)
