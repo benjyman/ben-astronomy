@@ -147,26 +147,40 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    launch_job_filename='%slaunch_jobs.sh'%on_off_moon_dir
    with open(launch_job_filename,'w') as f:
       if options.launch_cotter:
-         number_of_q_cotter_files=len(glob.glob('%s/q_cotter_moon*'%on_off_moon_dir))
+         q_cotter_files_list=glob.glob('%s/q_cotter_moon*'%on_off_moon_dir)
+         number_of_q_cotter_files=len(q_cotter_files_list)
          print 'number_of_q_cotter_files is %s ' % number_of_q_cotter_files
-         if number_of_q_cotter_files==1:
+         if number_of_q_cotter_files==0:
+            print 'No q_cotter files '
+         elif number_of_q_cotter_files==1:
             cmd1='jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`' % on_off_moon_dir
             #print cmd1
             #os.system(cmd1)
             f.write(cmd1)
          else:
-            print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
+            for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
+               cmd1='jobid_%s=`sbatch %s | cut -d " " -f 4`' % (str(q_cotter_file_index),q_cotter_file)
+               f.write(cmd1)
+         #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
       if options.launch_selfcal:
          if options.launch_cotter:
-            if number_of_q_cotter_files==1:
+            if number_of_q_cotter_files==0:
+               print 'No q_cotter files '
+            elif number_of_q_cotter_files==1:
                cmd2='jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
+               f.write(cmd2)
             else:
-               print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
+               dependency_string='--dependency=afterok'
+               for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
+                  dependency_string+=':jobid_%s' % (str(q_cotter_file_index))
+               cmd2='jobid=`sbatch %s %sq_selfcal_moon.sh | cut -d " " -f 4`' % (dependency_string,on_off_moon_dir)
+               f.write(cmd2)          
+               #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
          else:
             cmd2='jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
          #print cmd2
          #os.system(cmd2)
-         f.write(cmd2)
+         
       if options.launch_image:
          if options.launch_selfcal:
             cmd3='jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
