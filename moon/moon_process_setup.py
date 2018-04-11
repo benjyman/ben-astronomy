@@ -353,7 +353,7 @@ def setup_moon_process(options):
             if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
                #download_script_directory=os.path.dirname(default_download_script_name)+'/'
                download_script_directory=on_off_moon_dir
-               #queue_download_script_name='q_obsdownload_wrapper.sh' 
+               queue_download_script_name='q_obsdownload_wrapper.sh' 
                #cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
                #print cmd
                #os.system(cmd)
