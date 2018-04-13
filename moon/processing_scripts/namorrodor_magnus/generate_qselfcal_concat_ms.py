@@ -127,7 +127,7 @@ def generate_namorrodor(infile,options):
       #sbatch_file.write('module load setuptools\n')
           
     for obsid_index,obsid in enumerate(obsid_list):
-       sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
+       sister_obsid=sister_obsid_list[obsid_index]
        sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
