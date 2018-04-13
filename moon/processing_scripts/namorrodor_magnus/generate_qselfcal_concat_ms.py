@@ -14,6 +14,8 @@ def generate_namorrodor(infile,options):
     else:
        ben_code_base='/astro/mwaeor/bmckinley/code/'
 
+    sister_obsid_infile=options.sister_obsid_infile
+    
     obsid_list=[]
     sister_obsid_list=[]
     for line in open(infile):
