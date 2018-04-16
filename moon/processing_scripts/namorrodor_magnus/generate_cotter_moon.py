@@ -9,15 +9,17 @@ def generate_cotter_moon(options):
        ben_code_base='/astro/mwaeor/bmckinley/code/'
       
     obsid_infile=options.obsid_infile
-    sister_obsid_infile=options.sister_obsid_infile
+    if (options.track_moon or options.track_off_moon):
+       sister_obsid_infile=options.sister_obsid_infile
     
     chunk_size=20
     obsid_list=[]
     sister_obsid_list=[]
     for line in open(obsid_infile):
        obsid_list.append(line.strip()) 
-    for line in open(sister_obsid_infile):
-       sister_obsid_list.append(line.strip()) 
+    if (options.track_moon or options.track_off_moon):
+       for line in open(sister_obsid_infile):
+          sister_obsid_list.append(line.strip()) 
     n_obs = sum(1 for line in open(obsid_infile))
     
     
@@ -125,9 +127,12 @@ def generate_cotter_moon(options):
           #sbatch_file.write('module load setuptools\n')
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
-          sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
           obsid_string=' --obsid=%s ' % obsid
-          sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
+          if (options.track_off_moon or options.track_moon):
+             sister_obsid=sister_obsid_list[start_obs_id_index+obsid_index]
+             sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
+          else:
+             sister_obsid_string=''
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
           sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/cotter_moon.py %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string,machine_string) )
