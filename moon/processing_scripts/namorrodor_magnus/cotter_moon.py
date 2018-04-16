@@ -17,7 +17,8 @@ def cotter_moon(options):
       mwa_dir = '/astro/mwaeor/MWA/data/'
        
    obsid=options.obsid
-   sister_obsid=options.sister_obsid
+   if options.sister_obsid:
+      sister_obsid=options.sister_obsid
    
    time_res=(options.time_freq_res).split(',')[0]
    freq_res=(options.time_freq_res).split(',')[1]
@@ -28,8 +29,11 @@ def cotter_moon(options):
    else:
       track_off_moon_string=' '
    
-   print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
-   
+   if options.sister_obsid:   
+      print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
+   else:
+      print "cottering obsid %s with time resolution %s and freq resolution %s" % (obsid,time_res,freq_res)
+
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
 
