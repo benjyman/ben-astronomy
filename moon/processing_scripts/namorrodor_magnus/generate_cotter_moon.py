@@ -76,6 +76,10 @@ def generate_cotter_moon(options):
        if (epoch_semester=="2015A"):
           time_freq_res="8,80"
        elif (epoch_semester=="2015B"):
+          time_freq_res="8,80"
+       elif (epoch_semester=="2014A"):
+          time_freq_res="8,80"
+       elif (epoch_semester=="2014B"):
           time_freq_res="8,80" 
        elif (epoch_semester=="2017B"):
           time_freq_res="4,40"         
