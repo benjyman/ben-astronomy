@@ -106,7 +106,7 @@ def generate_namorrodor(infile,options):
        applyonly_string=''
    
     q_filename_path=os.path.dirname(infile)+'/'        
-    if option.ionpeel:
+    if options.ionpeel:
        q_filename='%sq_ionpeel_moon.sh' % (q_filename_path)
     else:
        q_filename='%sq_selfcal_moon.sh' % (q_filename_path)
