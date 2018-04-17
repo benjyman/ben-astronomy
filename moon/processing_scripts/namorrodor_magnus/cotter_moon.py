@@ -29,7 +29,7 @@ def cotter_moon(options):
    else:
       track_off_moon_string=' '
 
-   if option.no_dysco:
+   if options.no_dysco:
       dysco_string=''
    else:
       dysco_string='-use-dysco'
