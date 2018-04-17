@@ -74,7 +74,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
     
       print "making %s " % clustered_model_name
       #cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
-      cmd='cluster %s %s 10 ' % (options.ionpeel,clustered_model_name)
+      cmd='cluster %s %s 10 ' % (ao_model_name,clustered_model_name)
       print cmd
       os.system(cmd)
 
