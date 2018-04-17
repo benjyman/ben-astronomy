@@ -116,7 +116,10 @@ def generate_namorrodor(infile,options):
     sbatch_file.write('#!/bin/bash -l\n')
     if (machine=='magnus' or machine=='galaxy'):          
       #sbatch_file.write('#!/bin/bash -l\n')
-      sbatch_file.write('#SBATCH -o selfcal-%A.out\n' )
+      if options.ionpeel:
+         sbatch_file.write('#SBATCH -o ionpeel-%A.out\n' )
+      else:
+         sbatch_file.write('#SBATCH -o selfcal-%A.out\n' )
       sbatch_file.write('##SBATCH --ntasks=1\n')
       sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
       sbatch_file.write('#SBATCH --time=12:00:00\n')
