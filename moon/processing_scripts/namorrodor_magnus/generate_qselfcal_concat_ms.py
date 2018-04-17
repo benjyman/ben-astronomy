@@ -14,14 +14,16 @@ def generate_namorrodor(infile,options):
     else:
        ben_code_base='/astro/mwaeor/bmckinley/code/'
 
-    sister_obsid_infile=options.sister_obsid_infile
+    if (options.track_moon or options.track_off_moon):
+       sister_obsid_infile=options.sister_obsid_infile
     
     obsid_list=[]
     sister_obsid_list=[]
     for line in open(infile):
        obsid_list.append(line.strip())
-    for line in open(sister_obsid_infile):
-       sister_obsid_list.append(line.strip()) 
+    if (options.track_moon or options.track_off_moon):
+       for line in open(sister_obsid_infile):
+          sister_obsid_list.append(line.strip()) 
     n_obs = sum(1 for line in open(infile))
 
     sister_obsid_infile=options.sister_obsid_infile
@@ -127,8 +129,11 @@ def generate_namorrodor(infile,options):
       #sbatch_file.write('module load setuptools\n')
           
     for obsid_index,obsid in enumerate(obsid_list):
-       sister_obsid=sister_obsid_list[obsid_index]
-       sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
+       if (options.track_off_moon or options.track_moon):
+          sister_obsid=sister_obsid_list[obsid_index]
+          sister_obsid_string=' --sister_obsid=%s ' % sister_obsid
+       else:
+          sister_obsid_string=''
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
        sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string,track_moon_string,epoch_ID_string,ionpeel_string,chgcentre_string,minw_string,cotter_string,model_string,selfcal_string,applyonly_string,sourcelist_string,machine_string,sister_obsid_string))
