@@ -19,8 +19,9 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       mwa_dir = '/astro/mwaeor/MWA/data/'
   
    print obsid
-   
-   sister_obsid=options.sister_obsid
+
+   if options.sister_obsid:   
+      sister_obsid=options.sister_obsid
    
       
    if (options.track_off_moon):
@@ -87,38 +88,31 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
 
    if (options.chgcentre):
       concat_vis_base+='_newcentre'
-   if (options.track_moon):
-      concat_vis_base=concat_vis_base+'_trackmoon'
-   if (options.track_off_moon):
-      concat_vis_base+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
    if (options.minw):
       concat_vis_base+='_minw'
-    
-   if (options.chgcentre  or options.minw):
-      concat_vis_name=concat_vis_base+'.ms'
-   else:
-      concat_vis_name=data_dir+concat_vis_base+'.ms'
    
    #do all this stuff in the selfcal stage instead - so you are sure that both ms have already meen created
    #here merge the flag columns for both the on_moon and off_moon ms
    #only do this step for track_off_moon, (always need to make on_moon ms first)
    if (options.track_moon):
-      base_name='%s_%s' % (obsid,epoch_ID)
-      on_moon_basename=base_name + '_trackmoon'
+      #base_name='%s_%s' % (obsid,epoch_ID)
+      on_moon_basename=concat_vis_base + '_trackmoon'
       on_moon_ms_name=data_dir+on_moon_basename+'.ms'
       off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
       off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
-      ms_name=on_moon_ms_name
-   
-   if (options.track_off_moon):
+      concat_vis_name=on_moon_ms_name 
+   elif (options.track_off_moon):
       on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
       on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
-      off_moon_base_name=base_name+'_track_off_moon_paired_' + sister_obsid
+      off_moon_base_name=concat_vis_base+'_track_off_moon_paired_' + sister_obsid
       off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
-      ms_name=off_moon_ms_name
-      
+      concat_vis_name=off_moon_ms_name
+   else:
+      if (options.chgcentre  or options.minw):
+         concat_vis_name=concat_vis_base+'.ms'
+      else:
+         concat_vis_name=data_dir+concat_vis_base+'.ms'
    if (options.track_off_moon):
-      
       on_moon_table=table(on_moon_ms_name,readonly=False)
       #print on_moon_table
       #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
