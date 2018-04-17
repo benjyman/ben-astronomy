@@ -4,6 +4,7 @@
 #can also be run to use a model in Andre format to calibrate, or just to apply solutions already made.
 #option to track the moon.
 import string 
+from casacore.tables import table,tablecolumn,tablerow
 
 def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #tagname=options.tagname
@@ -72,7 +73,8 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       clustered_model_name=data_dir+"clustered_10dirs_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
     
       print "making %s " % clustered_model_name
-      cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
+      #cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
+      cmd='cluster %s %s 10 ' % (options.ionpeel,clustered_model_name)
       print cmd
       os.system(cmd)
 
