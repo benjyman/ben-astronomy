@@ -11,6 +11,11 @@ def generate_cotter_moon(options):
     obsid_infile=options.obsid_infile
     if (options.track_moon or options.track_off_moon):
        sister_obsid_infile=options.sister_obsid_infile
+
+    if options.no_dysco:
+       dysco_string='--no_dysco'
+    else:
+       dysco_string=''
     
     chunk_size=20
     obsid_list=[]
@@ -139,7 +144,7 @@ def generate_cotter_moon(options):
              sister_obsid_string=''
           if (options.track_off_moon):
              track_off_moon_list_string="--track_off_moon_list="+",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/cotter_moon.py %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string,machine_string) )
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/cotter_moon.py %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,obsid_string,sister_obsid_string,track_off_moon_list_string,track_moon_string,track_off_moon_string,epoch_ID_string,flag_ants_string,cleanup_string,time_freq_res_string,machine_string,dysco_string) )
 
        sbatch_file.close()
     
@@ -166,7 +171,7 @@ parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default=''
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 #parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
-
+parser.add_option('--no_dysco',action='store_true',dest='no_dysco',default=False,help='Do not use Dysco compression [default=%default]')
 
 (options, args) = parser.parse_args()
 
