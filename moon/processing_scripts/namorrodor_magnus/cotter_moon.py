@@ -17,7 +17,8 @@ def cotter_moon(options):
       mwa_dir = '/astro/mwaeor/MWA/data/'
        
    obsid=options.obsid
-   sister_obsid=options.sister_obsid
+   if options.sister_obsid:
+      sister_obsid=options.sister_obsid
    
    time_res=(options.time_freq_res).split(',')[0]
    freq_res=(options.time_freq_res).split(',')[1]
@@ -27,9 +28,17 @@ def cotter_moon(options):
       track_off_moon_string= options.track_off_moon_list
    else:
       track_off_moon_string=' '
+
+   if options.no_dysco:
+      dysco_string=''
+   else:
+      dysco_string='-use-dysco'
    
-   print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
-   
+   if options.sister_obsid:   
+      print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
+   else:
+      print "cottering obsid %s with time resolution %s and freq resolution %s" % (obsid,time_res,freq_res)
+
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
 
@@ -65,14 +74,15 @@ def cotter_moon(options):
       off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
       off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
       ms_name=on_moon_ms_name
-   
-   if (options.track_off_moon):
+   elif (options.track_off_moon):
       on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
       on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
       off_moon_base_name=base_name+'_track_off_moon_paired_' + sister_obsid
       off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
       ms_name=off_moon_ms_name
-      
+   else:
+      ms_name=data_dir+base_name+'.ms'
+
    #metafits_filename=data_dir+obsid+'.metafits'
    metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
@@ -171,7 +181,7 @@ def cotter_moon(options):
    #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
    #can probably get away with just halving each (double baselines)
    
-   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s -use-dysco -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,time_res,freq_res,data_dir)
+   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,dysco_string,time_res,freq_res,data_dir)
    print cmd
    os.system(cmd)
 
@@ -238,7 +248,7 @@ parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default=''
 parser.add_option('--track_off_moon_list',type='string', dest='track_off_moon_list',default='',help='When track_off_moon is True. Details of on-moon pairing on_moon_obsid,RA,DEC of on_moon paired obs e.g. --track_off_moon_list="1199394880,13.0,0.56" [default=%default]')
 parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
-
+parser.add_option('--no_dysco',action='store_true',dest='no_dysco',default=False,help='Do not use Dysco compression [default=%default]')
 
 
 (options, args) = parser.parse_args()
