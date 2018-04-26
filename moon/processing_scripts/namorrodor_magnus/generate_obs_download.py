@@ -84,7 +84,7 @@ def generate_download_obs(infile,options):
       #use gator
       with open(download_filename,'w') as f:
          f.write('#!/bin/bash -l\n')
-         f.write('gator_add_to_downloads_table.rb -d %s %s\n' % (database,infile))
+         f.write('gator_add_to_rts_table.rb -d %s %s\n' % (database,infile))
          ##f.write('nohup gator_download_daemon.rb -d %s &\n' % (database))
       
       
