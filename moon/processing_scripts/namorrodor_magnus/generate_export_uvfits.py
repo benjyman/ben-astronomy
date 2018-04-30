@@ -63,15 +63,10 @@ def generate_export_uvfits(options):
           sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
           sbatch_file.write('#SBATCH --time=12:00:00\n')
           sbatch_file.write('#SBATCH -J cotter_%s\n' % (options.epoch_ID))
-          #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
-          #sbatch_file.write('#SBATCH --clusters=magnus\n')
           sbatch_file.write('#SBATCH --partition=workq\n')
           sbatch_file.write('#SBATCH --account=mwaeor\n')
           sbatch_file.write('#SBATCH --export=NONE\n')
-          #sbatch_file.write('module swap PrgEnv-cray/6.0.4 PrgEnv-gnu && module swap gcc gcc/5.3.0\n')
-          #sbatch_file.write('module use /group/mwa/software/modulefiles\n')
-          #sbatch_file.write('module load MWA_Tools/mwa-sci\n')
-          #sbatch_file.write('module load setuptools\n')
+
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
           obsid_string=' --obsid=%s ' % obsid

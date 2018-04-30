@@ -22,12 +22,26 @@ def export_uvfits(options):
    base_name= "%s_%s" % (obsid,epoch_ID)
 
    ms_name=data_dir+base_name+'.ms'
-   uvfits_name=data_dir+base_name+'.uvfits'
+   uvdata_name_base=ms_name.split('.')[0]
  
    UV=UVData()
    UV.read_ms(ms_name)
-   UV.write_uvfits('uvfits_name',sppof_nonessential=True)
-   
+
+   number_input_chans=UV.Nfreqs
+   number_input_chans_in_ouput_chan=number_input_chans/number_output_chans
+   print "number of frequency channels in ms is %s" % number_input_chans
+
+   for chan in range(1,number_output_chans+1):
+      uvfits_name="%s_%02d.uvfits" % (uvdata_name_base,chan)
+      #select the data from the ms
+      
+      channel_start=(chan*number_input_chans_in_ouput_chan)
+      channel_end=channel_start+number_input_chans_in_ouput_chan
+
+      print "selecting channel %s to %s from %s for %s" % (channel_start,channel_end,ms_name,uvfits_name)         
+      uvout=copy.deepcopy(UV)
+      uvout.select(freq_chans=np.arange(channel_start, channel_end))
+      uvout.write_uvfits(uvfits_name, spoof_nonessential=True)
 
 import sys,os
 from optparse import OptionParser,OptionGroup
