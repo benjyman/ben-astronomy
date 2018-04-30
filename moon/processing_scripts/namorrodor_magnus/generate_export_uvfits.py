@@ -52,7 +52,7 @@ def generate_export_uvfits(options):
           end_obs_id_index=int(obs_list_number*chunk_size+last_list_length)
        
        q_filename_path=os.path.dirname(obsid_infile)+'/'        
-       q_filename='%sq_cotter_moon_%s.sh' % (q_filename_path,str(obs_list_number))
+       q_filename='%sq_export_uvfits_%s.sh' % (q_filename_path,str(obs_list_number))
     
        sbatch_file = open(q_filename,'w+')
        sbatch_file.write('#!/bin/bash -l\n')
