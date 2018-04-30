@@ -7,7 +7,8 @@ Generates a qsub scripts to qa, and image a list of obsIDs that have already bee
 """
 import os.path
 
-def generate_namorrodor(infile,options):
+def generate_namorrodor(options):
+    infile = options.obsid_infile
     machine=options.machine
     if machine=='namorrodor':
        ben_code_base='/data/code/git/'
@@ -172,10 +173,10 @@ parser.add_option('--ionpeeled',dest='ionpeeled',action='store_true',default=Fal
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms" or minw="self" will use the minw of the observation  [default=%default]')
 parser.add_option('--cotter',action='store_true',dest='cotter',default=False,help='Use an ms from cotter, not imported from RTS e.g. --cotter   [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 
 
 (options, args) = parser.parse_args()
 
-infile = args[0]
 
-generate_namorrodor(infile,options)
+generate_namorrodor(options)
