@@ -10,26 +10,24 @@ from pyuvdata import UVData
 
 def export_uvfits(options):
    machine=options.machine
+   obsid=options.obsid
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
-      ben_code_base='/data/code/git/'
    else:
       mwa_dir = '/astro/mwaeor/MWA/data/'
-      ben_code_base='/astro/mwaeor/bmckinley/code/'
       
-
    data_dir='%s%s/' % (mwa_dir,obsid)
-   
-   #tagname=options.tagname
+
    epoch_ID=options.epoch_ID
-   #base_name=obsid+'_cotter_'+tagname
    base_name= "%s_%s" % (obsid,epoch_ID)
 
    ms_name=data_dir+base_name+'.ms'
+   uvfits_name=data_dir+base_name+'.uvfits'
  
-   cmd='cotter4 -flagfiles %s -norfi -o %s %s -m %s %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,dysco_string,time_res,freq_res,data_dir)
-   print cmd
-   os.system(cmd)
+   UV=UVData()
+   UV.read_ms(ms_name)
+   UV.write_uvfits('uvfits_name',sppof_nonessential=True)
+   
 
 import sys,os
 from optparse import OptionParser,OptionGroup
