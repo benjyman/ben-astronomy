@@ -4,7 +4,8 @@ pbcorr a bunch of images at different chans
 """
 import os.path
 
-def generate_namorrodor(infile,options):
+def generate_namorrodor(options):
+    infile = options.obsid_infile
     machine=options.machine
     if machine=='namorrodor':
        ben_code_base='/data/code/git/'
@@ -188,5 +189,4 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 
 (options, args) = parser.parse_args()
 
-infile = args[0]
-generate_namorrodor(infile,options)
+generate_namorrodor(options)
