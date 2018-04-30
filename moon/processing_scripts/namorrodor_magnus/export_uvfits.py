@@ -21,6 +21,9 @@ def export_uvfits(options):
    epoch_ID=options.epoch_ID
    base_name= "%s_%s" % (obsid,epoch_ID)
 
+   if options.ionpeeled:
+      base_name+='_peeled'
+
    ms_name=data_dir+base_name+'.ms'
    uvdata_name_base=ms_name.split('.')[0]
  
@@ -53,6 +56,7 @@ parser = OptionParser(usage=usage)
 parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
+parser.add_option('--ionpeeled',action='store_true',dest='ionpeeled',default=False,help='Set if the data have been ionpeeled e.g. --ionpeeled [default=%default]')
 
 
 (options, args) = parser.parse_args()
