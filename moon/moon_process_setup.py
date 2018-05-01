@@ -36,6 +36,33 @@ def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    os.system(cmd)
    return find_observations_filename
    
+def write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
+   on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
+   paired_obs_list=[]
+   obsid_list=[]
+   sister_obsid_list=[]
+   if on_off_moon_string=='on_moon':
+      obsid_list_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
+      sister_obsid_list_filename="../off_moon/%s_off_moon_%s.txt" % (epoch_ID,chan) 
+      paired_obs_list_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
+   elif on_off_moon_string=='off_moon':
+      obsid_list_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
+      sister_obsid_list_filename="../on_moon/%s_on_moon_%s.txt" % (epoch_ID,chan) 
+      paired_obs_list_filename="%s%s_off_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
+   else:
+      print "Bad values for on/off moon"      
+   for line in open(obsid_list_filename):
+      obsid_list.append(line.strip()) 
+   for line in open(sister_obsid_list_filename):
+      sister_obsid_list.append(line.strip())    
+   for item_index,item in enumerate(obsid_list):
+      paired_obs_string="%s_%s" % (str(obsid_list[item_index]),str(sister_obsid_list[item_index]))
+      paired_obs_list.append(paired_obs_string)
+   with open(paired_obs_list_filename,'w') as f:
+      f.write('\n'.join(paired_obs_list)) 
+   return paired_obs_list_filename
+    
+         
 def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #function to write the default scripts: download, cotter, calibrate, image, pbcorr
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
@@ -348,6 +375,7 @@ def setup_moon_process(options):
                   off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
                   make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename)
             
+            write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
             
             write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
