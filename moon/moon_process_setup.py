@@ -43,11 +43,13 @@ def write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_di
    sister_obsid_list=[]
    if on_off_moon_string=='on_moon':
       obsid_list_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
-      sister_obsid_list_filename="../off_moon/%s_off_moon_%s.txt" % (epoch_ID,chan) 
+      off_moon_dir=os.path.dirname(os.path.dirname(on_off_moon_dir))+'/off_moon/'
+      sister_obsid_list_filename="%s%s_off_moon_%s.txt" % (off_moon_dir,epoch_ID,chan) 
       paired_obs_list_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
    elif on_off_moon_string=='off_moon':
       obsid_list_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
-      sister_obsid_list_filename="../on_moon/%s_on_moon_%s.txt" % (epoch_ID,chan) 
+      on_moon_dir=os.path.dirname(os.path.dirname(on_off_moon_dir))+'/on_moon/'
+      sister_obsid_list_filename="%s%s_on_moon_%s.txt" % (on_moon_dir,epoch_ID,chan)
       paired_obs_list_filename="%s%s_off_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan) 
    else:
       print "Bad values for on/off moon"      
