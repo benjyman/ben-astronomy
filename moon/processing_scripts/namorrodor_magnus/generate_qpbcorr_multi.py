@@ -185,6 +185,7 @@ parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to
 parser.add_option('--dirty',action='store_true',dest='dirty',default=False,help='perform all operations on the dirty images, not the cleaned images [default=%default]')
 parser.add_option('--channelsout',type='string', dest='channelsout',default='1',help='Specify how many channels were output from wsclean e.g.channelsout=24 [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 
 
 (options, args) = parser.parse_args()
