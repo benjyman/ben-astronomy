@@ -123,7 +123,7 @@ def generate_namorrodor(options):
          sbatch_file.write('#SBATCH -o selfcal-%A.out\n' )
       sbatch_file.write('##SBATCH --ntasks=1\n')
       sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-      sbatch_file.write('#SBATCH --time=12:00:00\n')
+      sbatch_file.write('#SBATCH --time=01:00:00\n')
       if options.ionpeel:
          sbatch_file.write('#SBATCH -J iopeel_%s\n' % (options.epoch_ID))
       else:
