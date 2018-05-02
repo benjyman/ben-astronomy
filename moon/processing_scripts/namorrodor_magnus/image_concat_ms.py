@@ -105,9 +105,14 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       if (options.ionpeeled):
          concat_image_base+='_peeled'
          concat_vis_base+='_peeled'
-         
-      concat_vis_name=data_dir+concat_vis_base+'.ms'
-
+      
+      if (machine=="magnus" or machine=="galaxy"):
+         if (options.track_moon or options.track_off_moon):
+            concat_vis_name=data_dir+concat_vis_base+'.ms'
+         else:
+            concat_vis_name=concat_vis_base+'.ms'
+      else:
+         concat_vis_name=data_dir+concat_vis_base+'.ms'
  
    if (options.chgcentre and not options.multi):
       #make a copy of the ms to change phase centre of

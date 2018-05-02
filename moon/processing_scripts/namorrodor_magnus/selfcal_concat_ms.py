@@ -118,6 +118,10 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       if (options.chgcentre  or options.minw):
          concat_vis_name=concat_vis_base+'.ms'
       else:
+         if (machine == "magnus" or machine == "galaxy"):
+            concat_vis_name=base_name+'.ms'
+         else:
+            concat_vis_name=data_dir+base_name+'.ms'
          concat_vis_name=data_dir+concat_vis_base+'.ms'
    if (options.track_off_moon):
       on_moon_table=table(on_moon_ms_name,readonly=False)
@@ -160,7 +164,13 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    
    else:
       if (options.ionpeel):
-         peeled_ms_name=data_dir+concat_vis_base+'_peeled.ms'
+         if (machine == "magnus" or machine == "galaxy"): 
+            if (options.track_moon or options.track_off_moon):
+               peeled_ms_name=data_dir + concat_vis_base+'_peeled.ms'
+            else:
+               peeled_ms_name=concat_vis_base+'_peeled.ms'
+         else:
+            peeled_ms_name=data_dir+concat_vis_base+'_peeled.ms'
          #remove any previous attempt
          cmd='rm -rf %s' % (peeled_ms_name)
          print cmd
