@@ -1,6 +1,7 @@
 #python script to cotter moon obs
 
 from astropy.io import fits
+import copy
 import string
 import os.path
 import cmd
