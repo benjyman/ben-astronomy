@@ -72,9 +72,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)   
       off_moon_dir=os.path.dirname(os.path.dirname(on_off_moon_dir))+'/off_moon/'
       sister_observations_filename="%s%s_off_moon_%s.txt" % (off_moon_dir,epoch_ID,chan)    
-      track_moon_string='--track_moon'     
+      track_moon_string='--track_moon'
    elif on_off_moon_string=='off_moon':
-      observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      observationsdatabase_name,_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
       observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
       track_off_moon_filename='%strack_off_moon_%s' % (on_off_moon_dir,observations_filename_no_path)
       on_moon_dir=os.path.dirname(os.path.dirname(on_off_moon_dir))+'/on_moon/'
@@ -82,7 +82,9 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       track_moon_string='--track_off_moon=%s' % track_off_moon_filename
    else:
       print "Bad values for on/off moon of %s" % on_off_moon_string
-   
+
+   database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
+
    #things that depend on obs semester
    obs_semester=epoch_ID[0:5]
    if (obs_semester=='2015A' or obs_semester=='2015B'):
@@ -107,7 +109,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       srclist_code_base='/group/mwa/software/srclists/master/'
    #1. download
    default_download_script_name="%s1_default_download_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_download_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_obs_download.py --machine=%s %s' % (ben_code_base,machine,observations_filename)
+   generate_download_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_obs_download.py --machine=%s --obsid_infile=%s --database=%s' % (ben_code_base,machine,observations_filename,database_name)
    with open(default_download_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_download_string)
@@ -174,73 +176,87 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    cmd = "%s" % default_pbcorr_script_name
    print cmd
    os.system(cmd)
-   
-   #launch the jobs if requested
-   launch_job_filename='%slaunch_jobs.sh'%on_off_moon_dir
-   with open(launch_job_filename,'w') as f:
-      if options.launch_cotter:
-         q_cotter_files_list=glob.glob('%s/q_cotter_moon*'%on_off_moon_dir)
-         number_of_q_cotter_files=len(q_cotter_files_list)
-         print 'number_of_q_cotter_files is %s ' % number_of_q_cotter_files
-         if number_of_q_cotter_files==0:
-            print 'No q_cotter files '
-         elif number_of_q_cotter_files==1:
-            cmd1='jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`' % on_off_moon_dir
-            #print cmd1
-            #os.system(cmd1)
-            f.write(cmd1)
-         else:
-            for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
-               cmd1='jobid_%s=`sbatch %s | cut -d " " -f 4`' % (str(q_cotter_file_index),q_cotter_file)
-               f.write(cmd1)
-         #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
-      if options.launch_selfcal:
-         if options.launch_cotter:
-            if number_of_q_cotter_files==0:
-               print 'No q_cotter files '
-            elif number_of_q_cotter_files==1:
-               cmd2='jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
-               f.write(cmd2)
-            else:
-               dependency_string='--dependency=afterok'
-               for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
-                  dependency_string+=':jobid_%s' % (str(q_cotter_file_index))
-               cmd2='jobid=`sbatch %s %sq_selfcal_moon.sh | cut -d " " -f 4`' % (dependency_string,on_off_moon_dir)
-               f.write(cmd2)          
-               #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
-         else:
-            cmd2='jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
-         #print cmd2
-         #os.system(cmd2)
-         
-      if options.launch_image:
-         if options.launch_selfcal:
-            cmd3='jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
-         else:
-            cmd3='jobid=`sbatch %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
-         #print cmd3
-         #os.system(cmd3)
-         f.write(cmd3)
-      if options.launch_pbcorr:
-         if options.launch_image:
-            cmd4='sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh' % on_off_moon_dir
-         else:
-            cmd4='sbatch %sq_pbcorr_moon.sh' % on_off_moon_dir
-         #print cmd4
-         #os.system(cmd4)
-         f.write(cmd4)
-   cmd='chmod +x %s' % launch_job_filename
+
+   #Don't need this anymore - gator handles the sbatching   
+   ##launch the jobs if requested
+   #launch_job_filename='%slaunch_jobs.sh'%on_off_moon_dir
+   #with open(launch_job_filename,'w') as f:
+   #   if options.launch_cotter:
+   #      q_cotter_files_list=glob.glob('%s/q_cotter_moon*'%on_off_moon_dir)
+   #      number_of_q_cotter_files=len(q_cotter_files_list)
+   #      print 'number_of_q_cotter_files is %s ' % number_of_q_cotter_files
+   #      if number_of_q_cotter_files==0:
+   #         print 'No q_cotter files '
+   #      elif number_of_q_cotter_files==1:
+   #         cmd1='jobid=`sbatch %sq_cotter_moon_0.sh | cut -d " " -f 4`' % on_off_moon_dir
+   #         #print cmd1
+   #         #os.system(cmd1)
+   #         f.write(cmd1)
+   #      else:
+   #         for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
+   #            cmd1='jobid_%s=`sbatch %s | cut -d " " -f 4`' % (str(q_cotter_file_index),q_cotter_file)
+   #            f.write(cmd1)
+   #      #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
+   #   if options.launch_selfcal:
+   #      if options.launch_cotter:
+   #         if number_of_q_cotter_files==0:
+   #            print 'No q_cotter files '
+   #         elif number_of_q_cotter_files==1:
+   #            cmd2='jobid=`sbatch --dependency=afterok:$jobid %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
+   #            f.write(cmd2)
+   #         else:
+   #            dependency_string='--dependency=afterok'
+   #            for q_cotter_file_index,q_cotter_file in enumerate(q_cotter_files_list):
+   #               dependency_string+=':jobid_%s' % (str(q_cotter_file_index))
+   #            cmd2='jobid=`sbatch %s %sq_selfcal_moon.sh | cut -d " " -f 4`' % (dependency_string,on_off_moon_dir)
+   #            f.write(cmd2)          
+   #            #print 'WARNING! Too many q_cotter files - now you need to write this bit of code!'
+   #      else:
+   #         cmd2='jobid=`sbatch %sq_selfcal_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
+   #      #print cmd2
+   #      #os.system(cmd2)
+   #      
+   #   if options.launch_image:
+   #      if options.launch_selfcal:
+   #         cmd3='jobid=`sbatch --dependency=afterok:$jobid %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
+   #      else:
+   #         cmd3='jobid=`sbatch %sq_image_moon.sh | cut -d " " -f 4`' % on_off_moon_dir
+   #      #print cmd3
+   #      #os.system(cmd3)
+   #      f.write(cmd3)
+   #   if options.launch_pbcorr:
+   #      if options.launch_image:
+   #         cmd4='sbatch --dependency=afterok:$jobid %sq_pbcorr_moon.sh' % on_off_moon_dir
+   #      else:
+   #         cmd4='sbatch %sq_pbcorr_moon.sh' % on_off_moon_dir
+   #      #print cmd4
+   #      #os.system(cmd4)
+   #      f.write(cmd4)
+   #cmd='chmod +x %s' % launch_job_filename
+   #print cmd
+   #os.system(cmd)
+   #cmd='%s' % launch_job_filename
+   #print cmd
+   #os.system(cmd)
+
+def launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
+   database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
+   if on_off_moon_string=='on_moon':
+      observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+   elif on_off_moon_string=='off_moon':
+      observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      #observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
+   else:
+      print "Bad values for on/off moon of %s" % on_off_moon_string
+
+   cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,observations_filename)
    print cmd
    os.system(cmd)
-   cmd='%s' % launch_job_filename
-   print cmd
-   os.system(cmd)   
-   
 
-   
-            
-              
-            
+   cmd='nohup gator_rts_daemon.rb -d %s &' % (database_name)
+   print cmd
+   os.system(cmd)
+         
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
    on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
@@ -310,8 +326,6 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
       track_off_moon_string_list.append(track_off_moon_string)
       with open(track_off_moon_filename, 'w') as f:
          f.write("\n".join(track_off_moon_string_list))
-      
-      
 
 #Main function:
 def setup_moon_process(options):
@@ -378,22 +392,29 @@ def setup_moon_process(options):
                   make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename)
             
             write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
-            
-            write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
-            if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
-               #download_script_directory=os.path.dirname(default_download_script_name)+'/'
-               download_script_directory=on_off_moon_dir
-               queue_download_script_name='q_obsdownload_wrapper.sh' 
-               #cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
-               #print cmd
-               #os.system(cmd)
-               
-               cmd = "chmod +x %s%s" % (download_script_directory,queue_download_script_name)
-               #print cmd
-               os.system(cmd)
-               cmd = "%s%s" % (download_script_directory,queue_download_script_name)
-               print cmd
-               os.system(cmd)              
+
+            if not (machine=='magnus' or machine=='galaxy'):
+               write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
+            elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
+               launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
+            else:
+               print "Don't know machine, doing nothing"
+
+            ###Don't need this anymore: gator should handle the data downloading  
+            #if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
+            #   #download_script_directory=os.path.dirname(default_download_script_name)+'/'
+            #   download_script_directory=on_off_moon_dir
+            #   queue_download_script_name='q_obsdownload_wrapper.sh' 
+            #   #cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
+            #   #print cmd
+            #   #os.system(cmd)
+            #   
+            #   cmd = "chmod +x %s%s" % (download_script_directory,queue_download_script_name)
+            #   #print cmd
+            #   os.system(cmd)
+            #   cmd = "%s%s" % (download_script_directory,queue_download_script_name)
+            #   print cmd
+            #   os.system(cmd)              
               
                   
             
@@ -408,11 +429,12 @@ parser.add_option('--infile',type='string', dest='infile',default='',help='Just 
 parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mwaeor/bmckinley/moon/test_setup/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
-parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
-parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
-parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
-parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
-parser.add_option('--launch_pbcorr',action='store_true',dest='launch_pbcorr',default=False,help='Actually launch the pbcorr jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
+#parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+#parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+#parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+#parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
+#parser.add_option('--launch_pbcorr',action='store_true',dest='launch_pbcorr',default=False,help='Actually launch the pbcorr jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 
 
 (options, args) = parser.parse_args()
