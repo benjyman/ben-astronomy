@@ -66,7 +66,7 @@ def generate_export_uvfits(options):
           sbatch_file.write('#SBATCH -o export_uvfits-%A.out\n')
           sbatch_file.write('##SBATCH --ntasks=1\n')
           sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-          sbatch_file.write('#SBATCH --time=12:00:00\n')
+          sbatch_file.write('#SBATCH --time=00:30:00\n')
           sbatch_file.write('#SBATCH -J export_uvfits_%s\n' % (options.epoch_ID))
           sbatch_file.write('#SBATCH --partition=workq\n')
           sbatch_file.write('#SBATCH --account=mwaeor\n')
