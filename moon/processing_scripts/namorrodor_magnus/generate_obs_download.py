@@ -4,9 +4,10 @@ import os
 import numpy as np
 from distutils import command
 
-def generate_download_obs(infile,options): 
+def generate_download_obs(options): 
    machine=options.machine.strip()
    database=options.database
+   infile=options.obsid_infile
    if machine=="namorrodor":
       mwa_dir = "/md0/moon/data/MWA/"
       code_dir="/data/code/git/MWA_Tools/scripts/"
@@ -100,13 +101,11 @@ parser = OptionParser(usage=usage)
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine being used for processing, current options are namorrodor and magnus [default=%default]')
 parser.add_option('--gator',action='store_true',dest='gator',default=True,help='Use gator for downloading on galaxy and magnus [default=%default]')
 parser.add_option('--database',type='string', dest='database',default='/group/mwaeor/bmckinley/mwa_downloads.sqlite',help='name of database to be used for downloads if using gator [default=%default]')
-
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 
 (options, args) = parser.parse_args()
-
-infile = args[0]
   
-generate_download_obs(infile,options)
+generate_download_obs(options)
 
 
 
