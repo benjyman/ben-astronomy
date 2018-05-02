@@ -6,6 +6,7 @@ from distutils import command
 
 def generate_download_obs(infile,options): 
    machine=options.machine.strip()
+   database=options.database
    if machine=="namorrodor":
       mwa_dir = "/md0/moon/data/MWA/"
       code_dir="/data/code/git/MWA_Tools/scripts/"
@@ -80,7 +81,7 @@ def generate_download_obs(infile,options):
    else:
       download_filename_path=os.path.dirname(infile)+'/'
       download_filename='%sq_obsdownload_wrapper.sh' % download_filename_path
-      database='/group/mwaeor/bmckinley/moon_downloads.sqlite'
+      #database='/group/mwaeor/bmckinley/%s_05_93_on_moon.sqlite' % (epoch_)
       #use gator
       with open(download_filename,'w') as f:
          f.write('#!/bin/bash -l\n')
@@ -98,6 +99,7 @@ parser = OptionParser(usage=usage)
 
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine being used for processing, current options are namorrodor and magnus [default=%default]')
 parser.add_option('--gator',action='store_true',dest='gator',default=True,help='Use gator for downloading on galaxy and magnus [default=%default]')
+parser.add_option('--database',type='string', dest='database',default='/group/mwaeor/bmckinley/mwa_downloads.sqlite',help='name of database to be used for downloads if using gator [default=%default]')
 
 
 (options, args) = parser.parse_args()
