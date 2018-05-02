@@ -243,14 +243,14 @@ def launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
    if on_off_moon_string=='on_moon':
-      observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
    elif on_off_moon_string=='off_moon':
-      observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      paired_observations_filename="%s%s_off_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
       #observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
    else:
       print "Bad values for on/off moon of %s" % on_off_moon_string
 
-   cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,observations_filename)
+   cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
    print cmd
    os.system(cmd)
 
