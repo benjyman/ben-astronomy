@@ -119,10 +119,13 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          concat_vis_name=concat_vis_base+'.ms'
       else:
          if (machine == "magnus" or machine == "galaxy"):
-            concat_vis_name=base_name+'.ms'
+            if (options.track_moon or options.track_off_moon):
+               concat_vis_name=data_dir+concat_vis_base+'.ms'
+            else:
+               concat_vis_name=concat_vis_base+'.ms'
          else:
-            concat_vis_name=data_dir+base_name+'.ms'
-         concat_vis_name=data_dir+concat_vis_base+'.ms'
+            concat_vis_name=data_dir+concat_vis_base+'.ms'
+
    if (options.track_off_moon):
       on_moon_table=table(on_moon_ms_name,readonly=False)
       #print on_moon_table
