@@ -81,8 +81,8 @@ def cotter_moon(options):
       off_moon_ms_name=data_dir+off_moon_base_name+'.ms'
       ms_name=off_moon_ms_name
    else:
+      #ms_name=data_dir+base_name+'.ms'
       ms_name=data_dir+base_name+'.ms'
-
    #metafits_filename=data_dir+obsid+'.metafits'
    metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    

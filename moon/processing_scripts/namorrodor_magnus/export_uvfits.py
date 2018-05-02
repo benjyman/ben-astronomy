@@ -24,7 +24,8 @@ def export_uvfits(options):
    if options.ionpeeled:
       base_name+='_peeled'
 
-   ms_name=data_dir+base_name+'.ms'
+   #ms_name=data_dir+base_name+'.ms'
+   ms_name=base_name+'.ms'
    uvdata_name_base=ms_name.split('.')[0]
  
    UV=UVData()
