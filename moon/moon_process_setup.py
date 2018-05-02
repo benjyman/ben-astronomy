@@ -240,6 +240,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #os.system(cmd)
 
 def launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
+   on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
    database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
    if on_off_moon_string=='on_moon':
       observations_filename="%s%s_on_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
