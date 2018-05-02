@@ -42,7 +42,7 @@ def generate_export_uvfits(options):
     else:
        machine_string=''
  
-     if (options.ionpeeled):
+    if (options.ionpeeled):
        ionpeeled_string=' --ionpeeled'
     else:
        ionpeeled_string=''
