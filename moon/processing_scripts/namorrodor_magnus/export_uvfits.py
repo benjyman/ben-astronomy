@@ -11,6 +11,7 @@ from pyuvdata import UVData
 def export_uvfits(options):
    machine=options.machine
    obsid=options.obsid
+   number_output_chans=int(options.channels_out)
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
    else:
@@ -61,7 +62,7 @@ parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='e
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 parser.add_option('--ionpeeled',action='store_true',dest='ionpeeled',default=False,help='Set if the data have been ionpeeled e.g. --ionpeeled [default=%default]')
-
+parser.add_option('--channels_out',type='string', dest='channels_out',default='1',help='Number of channels to split ms into and output seperate uvfits files e.g. --channels_out=24 [default=%default]')
 
 (options, args) = parser.parse_args()
 

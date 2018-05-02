@@ -37,6 +37,8 @@ def generate_export_uvfits(options):
     else:
        epoch_ID_string=''
 
+    channels_out_string = '--channels_out=%s' % (options.channels_out)
+
     if (options.machine):
        machine_string=' --machine=%s ' % (options.machine)
     else:
@@ -75,7 +77,7 @@ def generate_export_uvfits(options):
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
           obsid_string=' --obsid=%s ' % obsid
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/export_uvfits.py  %s %s %s %s\n' % (ben_code_base,obsid_string,epoch_ID_string,machine_string,ionpeeled_string) )
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/export_uvfits.py  %s %s %s %s %s\n' % (ben_code_base,obsid_string,epoch_ID_string,machine_string,ionpeeled_string,channels_out_string))
        sbatch_file.close()
     
     command="chmod +x %s " % (q_filename) 
@@ -95,6 +97,7 @@ parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='e
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 parser.add_option('--ionpeeled',action='store_true',dest='ionpeeled',default=False,help='Set if the data have been ionpeeled e.g. --ionpeeled [default=%default]')
+parser.add_option('--channels_out',type='string', dest='channels_out',default='1',help='Number of channels to split ms into and output seperate uvfits files e.g. --channels_out=24 [default=%default]')
 
 (options, args) = parser.parse_args()
 
