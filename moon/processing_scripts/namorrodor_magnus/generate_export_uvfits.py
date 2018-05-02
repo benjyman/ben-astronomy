@@ -42,10 +42,10 @@ def generate_export_uvfits(options):
     else:
        machine_string=''
  
-     if (options.iopeeled):
-       iopeeled_string=' --ionpeeled
+     if (options.ionpeeled):
+       ionpeeled_string=' --ionpeeled'
     else:
-       iopeeled_string=''
+       ionpeeled_string=''
        
     for obs_list_number in range(n_obs_lists):
  
