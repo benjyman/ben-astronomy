@@ -132,7 +132,7 @@ def generate_namorrodor(options):
 
     if options.track_moon:
        q_filename='%sq_pbcorr_on_moon.sh' % (q_filename_path)
-    elif: options.track_off_moon:
+    elif options.track_off_moon:
        q_filename='%sq_pbcorr_off_moon.sh' % (q_filename_path)
     else:
        q_filename='%sq_pbcorr_moon.sh' % (q_filename_path)

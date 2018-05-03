@@ -116,7 +116,7 @@ def generate_cotter_moon(options):
        q_filename_path=os.path.dirname(obsid_infile)+'/'        
        if options.track_moon:
           q_filename='%sq_cotter_on_moon_%s.sh' % (q_filename_path,str(obs_list_number))
-       elif: options.track_off_moon:
+       elif options.track_off_moon:
           q_filename='%sq_cotter_off_moon_%s.sh' % (q_filename_path,str(obs_list_number))
        else:
           q_filename='%sq_cotter_moon_%s.sh' % (q_filename_path,str(obs_list_number))
