@@ -129,7 +129,13 @@ def generate_namorrodor(options):
        channelsout_string=' --channelsout="1" '
  
     q_filename_path=os.path.dirname(infile)+'/'        
-    q_filename='%sq_pbcorr_moon.sh' % (q_filename_path)
+
+    if options.track_moon:
+       q_filename='%sq_pbcorr_on_moon.sh' % (q_filename_path)
+    elif: options.track_off_moon:
+       q_filename='%sq_pbcorr_off_moon.sh' % (q_filename_path)
+    else:
+       q_filename='%sq_pbcorr_moon.sh' % (q_filename_path)
      
     sbatch_file = open(q_filename,'w+')
     sbatch_file.write('#!/bin/bash -l\n')

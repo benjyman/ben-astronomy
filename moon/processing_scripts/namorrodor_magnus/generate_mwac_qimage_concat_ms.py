@@ -120,8 +120,13 @@ def generate_namorrodor(options):
 
     wsclean_options_string=' --wsclean_options="'+options.wsclean_options+'" '
 
-    q_filename_path=os.path.dirname(infile)+'/'        
-    q_filename='%sq_image_moon.sh' % (q_filename_path)
+    q_filename_path=os.path.dirname(infile)+'/'   
+    if options.track_moon:
+       q_filename='%sq_image_on_moon.sh' % (q_filename_path)     
+    elif: options.track_off_moon:
+       q_filename='%sq_image_off_moon.sh' % (q_filename_path)
+    else:
+       q_filename='%sq_image_moon.sh' % (q_filename_path)
 
     sbatch_file = open(q_filename,'w+')
     sbatch_file.write('#!/bin/bash -l\n')

@@ -108,9 +108,19 @@ def generate_namorrodor(options):
    
     q_filename_path=os.path.dirname(infile)+'/'        
     if options.ionpeel:
-       q_filename='%sq_ionpeel_moon.sh' % (q_filename_path)
+       if options.track_moon:
+          q_filename='%sq_ionpeel_on_moon.sh' % (q_filename_path) 
+       elif options.track_off_moon:
+          q_filename='%sq_ionpeel_off_moon.sh' % (q_filename_path)
+       else:
+          q_filename='%sq_ionpeel_moon.sh' % (q_filename_path)
     else:
-       q_filename='%sq_selfcal_moon.sh' % (q_filename_path)
+       if options.track_moon:
+          q_filename='%sq_selfcal_on_moon.sh' % (q_filename_path)
+       elif options.track_off_moon:
+          q_filename='%sq_selfcal_off_moon.sh' % (q_filename_path)
+       else:
+          q_filename='%sq_selfcal_moon.sh' % (q_filename_path)
     
        
     sbatch_file = open(q_filename,'w+')

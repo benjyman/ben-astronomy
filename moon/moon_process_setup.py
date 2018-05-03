@@ -239,16 +239,10 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #print cmd
    #os.system(cmd)
 
-def launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
-   on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
-   database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
-   if on_off_moon_string=='on_moon':
-      paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
-   elif on_off_moon_string=='off_moon':
-      paired_observations_filename="%s%s_off_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
-      #observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
-   else:
-      print "Bad values for on/off moon of %s" % on_off_moon_string
+def launch_gator(epoch_ID,chan):
+   database_name='/group/mwaeor/bmckinley/%s_%s.sqlite' % (epoch_ID,chan)
+   #we only use the on_moon paired observsations filename - gator takes care of the off moon
+   paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
 
    cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
    print cmd
@@ -256,7 +250,7 @@ def launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
 
    cmd='nohup gator_rts_daemon.rb -d %s &' % (database_name)
    print cmd
-   os.system(cmd)
+   #os.system(cmd)
          
 def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
@@ -397,7 +391,7 @@ def setup_moon_process(options):
             if not (machine=='magnus' or machine=='galaxy'):
                write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
-               launch_gator(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
+               launch_gator(epoch_ID,chan)
             else:
                print "Don't know machine, doing nothing"
 
