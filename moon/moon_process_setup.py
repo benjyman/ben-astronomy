@@ -248,7 +248,7 @@ def launch_gator(epoch_ID,chan):
    print cmd
    os.system(cmd)
 
-   cmd='nohup gator_rts_daemon.rb -d %s &' % (database_name)
+   cmd='nohup gator_rts_daemon.rb -d %s --cotter &' % (database_name)
    print cmd
    #os.system(cmd)
          
