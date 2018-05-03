@@ -239,10 +239,10 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #print cmd
    #os.system(cmd)
 
-def launch_gator(epoch_ID,chan):
+def launch_gator(epoch_ID,chan,chan_dir):
    database_name='/group/mwaeor/bmckinley/%s_%s.sqlite' % (epoch_ID,chan)
    #we only use the on_moon paired observsations filename - gator takes care of the off moon
-   paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+   paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
 
    cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
    print cmd
@@ -391,7 +391,7 @@ def setup_moon_process(options):
             if not (machine=='magnus' or machine=='galaxy'):
                write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
-               launch_gator(epoch_ID,chan)
+               launch_gator(epoch_ID,chan,chan_dir)
             else:
                print "Don't know machine, doing nothing"
 
