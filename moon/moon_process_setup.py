@@ -242,7 +242,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
 def launch_gator(epoch_ID,chan,chan_dir):
    database_name='/group/mwaeor/bmckinley/%s_%s.sqlite' % (epoch_ID,chan)
    #we only use the on_moon paired observsations filename - gator takes care of the off moon
-   paired_observations_filename="%s%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
+   paired_observations_filename="%son_moon/%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
 
    cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
    print cmd
@@ -252,9 +252,12 @@ def launch_gator(epoch_ID,chan,chan_dir):
    print cmd
    #os.system(cmd)
          
-def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
+def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
-   on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
+   if machine=='namorrodor':
+      mwa_dir = '/md0/moon/data/MWA/'
+   else:
+      mwa_dir = '/astro/mwaeor/MWA/data/'   on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
    off_moon_directory=os.path.dirname(off_moon_obsid_filename)+'/'
    off_moon_obsid_filename_no_path=off_moon_obsid_filename.split(off_moon_directory)[1]
    on_moon_obsid_list=[]
@@ -268,6 +271,7 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
    n_obs = sum(1 for line in open(on_moon_obsid_filename))
    
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
+      on_moon_data_dir = "%s%s" % (mwa_dir,on_moon_obsid)
       off_moon_obsid=off_moon_obsid_list[obsid_index]
       #Check LSTs
       LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
@@ -321,10 +325,17 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename):
       track_off_moon_string_list.append(track_off_moon_string)
       with open(track_off_moon_filename, 'w') as f:
          f.write("\n".join(track_off_moon_string_list))
-
+      #also write the track off moon file to the on_moon obsid data dir
+      track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s' % (on_moon_data_dir,off_moon_obsid_filename_no_path)
+      with open(track_off_moon_filename_on_moon_data_dir, 'w') as f:
+         f.write("\n".join(track_off_moon_string_list))
 #Main function:
 def setup_moon_process(options):
    machine=options.machine
+   if machine=='namorrodor':
+      mwa_dir = '/md0/moon/data/MWA/'
+   else:
+      mwa_dir = '/astro/mwaeor/MWA/data/'
    base_dir=options.base_dir
    directory_of_epochs="%sepochs/" % base_dir
    moon_exp_filename=options.infile
