@@ -323,12 +323,13 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       new_moon_dec=string.replace(moon_dec,":",".")
       track_off_moon_string='%s %s %s %s %s' % (on_moon_obsid,moon_ra,new_moon_dec,off_moon_obsid,LST_difference_in_sidereal_days)
       track_off_moon_string_list.append(track_off_moon_string)
-      with open(track_off_moon_filename, 'w') as f:
-         f.write("\n".join(track_off_moon_string_list))
-      #also write the track off moon file to the on_moon obsid data dir
-      track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s' % (on_moon_data_dir,off_moon_obsid_filename_no_path)
+      #write the track off moon string to a file in the on_moon obsid data dir where gator can find it
+      track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s_%s.txt' % (on_moon_data_dir,on_moon_obsid,off_moon_obsid)
       with open(track_off_moon_filename_on_moon_data_dir, 'w') as f:
-         f.write("\n".join(track_off_moon_string_list))
+         f.write(track_off_moon_string)
+   with open(track_off_moon_filename, 'w') as f:
+      f.write("\n".join(track_off_moon_string_list))
+
 #Main function:
 def setup_moon_process(options):
    machine=options.machine
