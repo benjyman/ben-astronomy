@@ -13,8 +13,8 @@ def convert(options):
    number_input_chans_in_ouput_chan=number_input_chans/number_output_chans
    print "number of frequency channels in ms is %s" % number_input_chans
 
-   for chan in range(1,number_output_chans+1):
-      uvfits_name="%s_%02d.uvfits" % (uvdata_name_base,chan)
+   for chan in range(0,number_output_chans):
+      uvfits_name="%s_%02d.uvfits" % (uvdata_name_base,chan+1)
       #select the data from the ms
       
       channel_start=(chan*number_input_chans_in_ouput_chan)
