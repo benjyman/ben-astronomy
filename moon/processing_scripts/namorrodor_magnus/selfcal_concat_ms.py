@@ -5,6 +5,7 @@
 #option to track the moon.
 import string 
 from casacore.tables import table,tablecolumn,tablerow
+import numpy as np
 
 def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #tagname=options.tagname

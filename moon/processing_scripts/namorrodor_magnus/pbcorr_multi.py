@@ -49,8 +49,14 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
          ms_base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
       if (options.ionpeeled):
          ms_base_name+='_peeled'
-      ms_name=data_dir+ms_base_name+'.ms'
-
+      
+      if (options.track_moon or options.track_off_moon):
+         ms_name=data_dir+ms_base_name+'.ms'
+      else:
+         if (machine=="magnus" or machine=="galaxy"):
+            ms_name=ms_base_name+'.ms'
+         else:
+            ms_name=data_dir + ms_base_name+'.ms'
    if (options.image_base_name):
       image_base=options.image_base_name
       if options.track_off_moon:

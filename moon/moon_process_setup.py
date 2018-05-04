@@ -58,7 +58,7 @@ def write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_di
    for line in open(sister_obsid_list_filename):
       sister_obsid_list.append(line.strip())    
    for item_index,item in enumerate(obsid_list):
-      paired_obs_string="%s_%s" % (str(obsid_list[item_index]),str(sister_obsid_list[item_index]))
+      paired_obs_string="%s%s" % (str(obsid_list[item_index]),str(sister_obsid_list[item_index]))
       paired_obs_list.append(paired_obs_string)
    with open(paired_obs_list_filename,'w') as f:
       f.write('\n'.join(paired_obs_list)) 
@@ -272,7 +272,7 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    n_obs = sum(1 for line in open(on_moon_obsid_filename))
    
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
-      on_moon_data_dir = "%s%s" % (mwa_dir,on_moon_obsid)
+      on_moon_data_dir = "%s%s/" % (mwa_dir,on_moon_obsid)
       off_moon_obsid=off_moon_obsid_list[obsid_index]
       #Check LSTs
       LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
@@ -328,8 +328,10 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s_%s.txt' % (on_moon_data_dir,on_moon_obsid,off_moon_obsid)
       with open(track_off_moon_filename_on_moon_data_dir, 'w') as f:
          f.write(track_off_moon_string)
+      print "wrote track_off_moon file %s" % (track_off_moon_filename_on_moon_data_dir)
    with open(track_off_moon_filename, 'w') as f:
       f.write("\n".join(track_off_moon_string_list))
+   print "wrote track_off_moon file %s" % (track_off_moon_filename)
 
 #Main function:
 def setup_moon_process(options):
@@ -393,38 +395,22 @@ def setup_moon_process(options):
             if not options.have_obs_lists:
                write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
             
-               #if it is an off moon then write the track_off_moon txt file
+               #if it is an off moon then write the track_off_moon txt file and the 'paired' obsid file
                if (on_off_moon_string=='off_moon'):
                   on_moon_obsid_filename="%s%s%s_on_moon_%s.txt" % (chan_dir,'on_moon/',epoch_ID,chan) 
                   off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
-                  make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename)
+                  make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine)
             
             write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
 
             if not (machine=='magnus' or machine=='galaxy'):
                write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
-               launch_gator(epoch_ID,chan,chan_dir)
+               pass
             else:
                print "Don't know machine, doing nothing"
-
-            ###Don't need this anymore: gator should handle the data downloading  
-            #if (options.setup_gator_download and (machine=='magnus' or machine=='galaxy')):
-            #   #download_script_directory=os.path.dirname(default_download_script_name)+'/'
-            #   download_script_directory=on_off_moon_dir
-            #   queue_download_script_name='q_obsdownload_wrapper.sh' 
-            #   #cmd = "mv %s %s" % (queue_download_script_name,download_script_directory)
-            #   #print cmd
-            #   #os.system(cmd)
-            #   
-            #   cmd = "chmod +x %s%s" % (download_script_directory,queue_download_script_name)
-            #   #print cmd
-            #   os.system(cmd)
-            #   cmd = "%s%s" % (download_script_directory,queue_download_script_name)
-            #   print cmd
-            #   os.system(cmd)              
-              
-                  
+         if (machine=='magnus' or machine=='galaxy') and options.run_gator:
+            launch_gator(epoch_ID,chan,chan_dir)   
             
 
 from optparse import OptionParser,OptionGroup
