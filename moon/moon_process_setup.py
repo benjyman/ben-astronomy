@@ -74,7 +74,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       sister_observations_filename="%s%s_off_moon_%s.txt" % (off_moon_dir,epoch_ID,chan)    
       track_moon_string='--track_moon'
    elif on_off_moon_string=='off_moon':
-      observationsdatabase_name,_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+      observations_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
       observations_filename_no_path=observations_filename.split(on_off_moon_dir)[1]
       track_off_moon_filename='%strack_off_moon_%s' % (on_off_moon_dir,observations_filename_no_path)
       on_moon_dir=os.path.dirname(os.path.dirname(on_off_moon_dir))+'/on_moon/'
