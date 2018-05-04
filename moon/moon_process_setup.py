@@ -257,7 +257,8 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
    else:
-      mwa_dir = '/astro/mwaeor/MWA/data/'   on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
+      mwa_dir = '/astro/mwaeor/MWA/data/'   
+   on_moon_directory=os.path.dirname(on_moon_obsid_filename)+'/'
    off_moon_directory=os.path.dirname(off_moon_obsid_filename)+'/'
    off_moon_obsid_filename_no_path=off_moon_obsid_filename.split(off_moon_directory)[1]
    on_moon_obsid_list=[]

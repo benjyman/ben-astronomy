@@ -84,14 +84,15 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    solutions_name=solutions_base_name+'.bin'
 
    if(options.cotter):
-      if epoch_ID=='2015B_05':
-         if not options.track_off_moon:
-            concat_vis_base='%s_cotter_%s' % (obsid,'20150926_moon_69')
-         else:
-            concat_vis_base='%s_cotter_%s' % (obsid,'20150929_moon_69')
-      else:
-         #concat_vis_base='%s_cotter_%s' % (obsid,tagname)
-         concat_vis_base='%s_%s' % (obsid,epoch_ID)
+      concat_vis_base='%s_%s' % (obsid,epoch_ID)
+      #if epoch_ID=='2015B_05':
+      #   if not options.track_off_moon:
+      #      concat_vis_base='%s_cotter_%s' % (obsid,'20150926_moon_69')
+      #   else:
+      #      concat_vis_base='%s_cotter_%s' % (obsid,'20150929_moon_69')
+      #else:
+      #   #concat_vis_base='%s_cotter_%s' % (obsid,tagname)
+      #   concat_vis_base='%s_%s' % (obsid,epoch_ID)
 
    if (options.chgcentre):
       concat_vis_base+='_newcentre'

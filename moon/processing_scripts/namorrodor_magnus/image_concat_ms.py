@@ -81,13 +81,15 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       #else:
       #   #need to image the transformed ms
       
-      if epoch_ID=='2015B_05':
-         if options.track_off_moon:
-            concat_vis_base='%s_cotter_%s' % (obsid,'20150929_moon_69')
-         else:
-            concat_vis_base='%s_cotter_%s' % (obsid,'20150926_moon_69')
-      else:
-         concat_vis_base='%s_%s' % (obsid,epoch_ID)
+      #if epoch_ID=='2015B_05':
+      #   if options.track_off_moon:
+      #      concat_vis_base='%s_cotter_%s' % (obsid,'20150929_moon_69')
+      #   else:
+      #      concat_vis_base='%s_cotter_%s' % (obsid,'20150926_moon_69')
+      #else:
+      #   concat_vis_base='%s_%s' % (obsid,epoch_ID)
+      
+      concat_vis_base='%s_%s' % (obsid,epoch_ID)
       concat_image_base=concat_vis_base
       
       if (options.selfcal):
