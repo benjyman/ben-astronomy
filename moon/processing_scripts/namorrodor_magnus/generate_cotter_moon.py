@@ -127,7 +127,7 @@ def generate_cotter_moon(options):
           sbatch_file.write('#SBATCH -o cotter-%A.out\n')
           sbatch_file.write('##SBATCH --ntasks=1\n')
           sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-          sbatch_file.write('#SBATCH --time=01:00:00\n')
+          sbatch_file.write('#SBATCH --time=06:00:00\n')
           sbatch_file.write('#SBATCH -J cotter_%s\n' % (options.epoch_ID))
           #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
           #sbatch_file.write('#SBATCH --clusters=magnus\n')
