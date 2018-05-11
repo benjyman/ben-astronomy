@@ -16,7 +16,10 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
       mwa_dir = '/astro/mwaeor/MWA/data/'
 
    #do all the next steps for each chan
-   number_images=int(options.channelsout)
+   if options.array_by_chan != '':
+      number_images=1
+   else:
+      number_images=int(options.channelsout)
 
    print obsid
 
@@ -131,6 +134,8 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
 
    #Then rest of chans
    for image_number in range(number_images):
+       if options.array_by_chan != '':
+          image_number = int(options.array_by_chan)
        image_base_name_loop='%s-%04d' % (image_base_name,image_number)
        beam_base_name_loop='%s-%04d' % (beam_base_name,image_number)
        print image_base_name_loop
@@ -205,7 +210,7 @@ parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to
 parser.add_option('--dirty',action='store_true',dest='dirty',default=False,help='perform all operations on the dirty images, not the cleaned images [default=%default]')
 parser.add_option('--channelsout',type='string', dest='channelsout',default='1',help='Specify how many channels were output from wsclean e.g.channelsout=24 [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
-
+parser.add_option('--array_by_chan',type='string', dest='array_by_chan',default='',help='Number of the image (index 0) if using array jobs on magnus/galaxy e.g. --array_by_chan=11 [default=%default]')
 
 (options, args) = parser.parse_args()
 
