@@ -128,7 +128,8 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          else:
             concat_vis_name=data_dir+concat_vis_base+'.ms'
 
-   if (options.track_off_moon):
+   #apply the same flags to both ms for moon obs, do this in the on moon stage
+   if (options.track_moon and not options.ionpeel):
       on_moon_table=table(on_moon_ms_name,readonly=False)
       #print on_moon_table
       #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')

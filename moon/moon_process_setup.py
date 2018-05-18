@@ -239,20 +239,20 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #print cmd
    #os.system(cmd)
 
-def launch_gator(epoch_ID,chan,chan_dir):
-   database_name='/group/mwaeor/bmckinley/%s_%s.sqlite' % (epoch_ID,chan)
-   #we only use the on_moon paired observsations filename - gator takes care of the off moon
-   paired_observations_filename="%son_moon/%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
-
-   cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
-   print cmd
-   os.system(cmd)
-
-   cmd='nohup gator_rts_daemon.rb -d %s --cotter &' % (database_name)
-   print cmd
-   #os.system(cmd)
+#def launch_gator(epoch_ID,chan,chan_dir):
+#   database_name='/group/mwaeor/bmckinley/%s_%s.sqlite' % (epoch_ID,chan)
+#   #we only use the on_moon paired observsations filename - gator takes care of the off moon
+#   paired_observations_filename="%son_moon/%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
+#
+#   cmd='gator_add_to_rts_table.rb -d %s %s' % (database_name,paired_observations_filename)
+#   print cmd
+#   os.system(cmd)
+#
+#   cmd='nohup gator_rts_daemon.rb -d %s --cotter &' % (database_name)
+#   print cmd
+#   os.system(cmd)
          
-def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine):
+def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine,epoch_ID,chan):
    #make the file that has the sister moon obsid moon ra (hh:mm:ss.ss)  moon dec (dd.mm.ss.s) and off_moon obsid
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
@@ -263,8 +263,12 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    off_moon_obsid_filename_no_path=off_moon_obsid_filename.split(off_moon_directory)[1]
    on_moon_obsid_list=[]
    off_moon_obsid_list=[]
+   paired_obs_list=[]
    track_off_moon_string_list=[]
    track_off_moon_filename='%strack_off_moon_%s' % (off_moon_directory,off_moon_obsid_filename_no_path)
+
+   paired_obs_list_filename="%s%s_on_moon_paired_%s.txt" % (on_moon_directory,epoch_ID,chan)
+
    for line in open(on_moon_obsid_filename):
       on_moon_obsid_list.append(line.strip()) 
    for line in open(off_moon_obsid_filename):
@@ -274,6 +278,11 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
       on_moon_data_dir = "%s%s/" % (mwa_dir,on_moon_obsid)
       off_moon_obsid=off_moon_obsid_list[obsid_index]
+
+      #paired obs list
+      paired_obs_string="%s%s" % (on_moon_obsid,off_moon_obsid)
+      paired_obs_list.append(paired_obs_string) 
+
       #Check LSTs
       LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
       LST_remainder = LST_difference % sidereal_day_sec
@@ -333,6 +342,11 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       f.write("\n".join(track_off_moon_string_list))
    print "wrote track_off_moon file %s" % (track_off_moon_filename)
 
+   with open(paired_obs_list_filename,'w') as f:
+      f.write('\n'.join(paired_obs_list))
+   print "wrote paired obsid  file %s" % (paired_obs_list_filename)
+
+
 #Main function:
 def setup_moon_process(options):
    machine=options.machine
@@ -343,6 +357,8 @@ def setup_moon_process(options):
    base_dir=options.base_dir
    directory_of_epochs="%sepochs/" % base_dir
    moon_exp_filename=options.infile
+   moon_exp_filename_base=os.path.basename(moon_exp_filename).split('.')[0]
+   database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
    chan_list=[69,93,121,145,169]
    on_moon_and_off_moon=["on_moon","off_moon"]
@@ -399,19 +415,34 @@ def setup_moon_process(options):
                if (on_off_moon_string=='off_moon'):
                   on_moon_obsid_filename="%s%s%s_on_moon_%s.txt" % (chan_dir,'on_moon/',epoch_ID,chan) 
                   off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
-                  make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine)
-            
-            write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
+                  make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine,epoch_ID,chan)
+
+            #can only do this here if you have already made the obslists - redundant now
+            #as paired obslist written in make_track_off_moon_file
+            #else:
+            #   write_paired_obslist(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir)
 
             if not (machine=='magnus' or machine=='galaxy'):
                write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine)
             elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
                pass
             else:
-               print "Don't know machine, doing nothing"
-         if (machine=='magnus' or machine=='galaxy') and options.run_gator:
-            launch_gator(epoch_ID,chan,chan_dir)   
-            
+               print "Not running gator"
+
+         if (machine=='magnus' or machine=='galaxy'):
+            #launch_gator(epoch_ID,chan,chan_dir)   
+            #add the paired obs to the database
+            paired_observations_filename="%son_moon/%s_on_moon_paired_%s.txt" % (chan_dir,epoch_ID,chan)
+            cmd='gator_add_to_rts_table.rb -d %s --epoch_id %s %s' % (database_name,epoch_ID,paired_observations_filename)
+            print cmd
+            os.system(cmd)
+
+   if (machine=='magnus' or machine=='galaxy') and options.run_gator:
+      #launch gator
+      cmd='nohup gator_rts_daemon.rb -d %s --cotter &' % (database_name)
+      print cmd
+      os.system(cmd)   
+
 
 from optparse import OptionParser,OptionGroup
 
