@@ -10,6 +10,7 @@ def image_with_miriad(options):
    
    basename=options.basename
    subarray_list=['full','centre','north','south','east','west']
+   #subarray_list=['east','west']
    n_flag_chunks = 8
    n_image_time_chunks = 60
    date = "18apr05"
@@ -74,78 +75,84 @@ def image_with_miriad(options):
             
          uvdata = new_uvdata_name
       
-   #calibrate the data
-   if options.calibrate:
-      cmd = "mfcal vis=%s flux=10000,0.150,0 refant=2 interval=1 stokes=xx,yy,xy,yx" % (uvdata)
+      #calibrate the data
+      if options.calibrate:
+         cmd = "mfcal vis=%s flux=10000,0.150,0 refant=2 interval=1 stokes=xx,yy,xy,yx" % (uvdata)
+         print cmd
+         os.system(cmd)
+         
+         
+      #make an image for every two minutes
+      
+      #use varplt to get the times
+      #mirFix the images to put correct keywords in header for Slant Orthographic Projection
+      cmd = "if [ ! -s lst.txt ] ; then varplt vis=%s yaxis=lst log=lst.txt ; fi " % (uvdata)
       print cmd
       os.system(cmd)
-         
-         
-   #make an image for every two minutes
       
-   #use varplt to get the times
-   #mirFix the images to put correct keywords in header for Slant Orthographic Projection
-   cmd = "if [ ! -s lst.txt ] ; then varplt vis=%s yaxis=lst log=lst.txt ; fi " % (uvdata)
-   print cmd
-   os.system(cmd)
-      
-   time_list=[]
-   for line in open('lst.txt'):
-      time_list.append(line.split()[1].strip()) 
+      time_list=[]
+      lst_list=[]
+      for line in open('lst.txt'):
+         time_list.append(line.split()[1].strip()) 
+         lst_list.append(line.split()[2].strip()) 
          
-   #two hours of data - image every 2 mins - 60 images
+      #two hours of data - image every 2 mins - 60 images
    
-   split_time_list = np.array_split(time_list[4:],n_image_time_chunks)
+      split_time_list = np.array_split(time_list[4:],n_image_time_chunks)
+      split_lst_list = np.array_split(lst_list[4:],n_image_time_chunks)
    
-   for i in range(0,1):
-      time_1 = split_time_list[i][0]
-      time_2 = split_time_list[i][-1]
+      for i in range(0,n_image_time_chunks):
+         time_1 = split_time_list[i][0]
+         time_2 = split_time_list[i][-1]
          
-      t1 = "%s:%s.0" % (date,time_1)
-      t2 = "%s:%s.0" % (date,time_2)
-      
-      #t1="18apr05:04:00:00"
-      #t2="18apr05:04:02:00"
-      
-      select_time_string="select=time\(%s,%s\)" % (t1,t2)
+         lst_index=int(np.round(len(split_time_list[i])/2))
+         lst_hrs = split_lst_list[i][lst_index]
          
+         t1 = "%s:%s.0" % (date,time_1)
+         t2 = "%s:%s.0" % (date,time_2)
       
-      cmd = "invert vis=%s map=%s_%s_xx.map beam=%s_%s.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 %s " % (uvdata,basename,subarray,basename,subarray,select_time_string)
-      print cmd
-      os.system(cmd)
-      cmd = "clean map=%s_%s_xx.map beam=%s_%s.beam out=%s_%s_xx.model niters=2000" % (basename,subarray,basename,subarray,basename,subarray)
-      print cmd
-      os.system(cmd)
-      cmd = "restor model=%s_%s_xx.model  beam=%s_%s.beam map=%s_%s_xx.map out=%s_%s_xx.restor " % (basename,subarray,basename,subarray,basename,subarray,basename,subarray)
-      print cmd
-      os.system(cmd)
+         #t1="18apr05:04:00:00"
+         #t2="18apr05:04:02:00"
       
-      cmd = "invert vis=%s map=%s_%s_yy.map options=double imsize=512 stokes=yy robust=-0.5 cell=1800 %s " % (uvdata,basename,subarray,select_time_string)
-      print cmd
-      os.system(cmd)
-      cmd = "clean map=%s_%s_yy.map beam=%s_%s.beam out=%s_%s_yy.model niters=2000" % (basename,subarray,basename,subarray,basename,subarray)
-      print cmd
-      os.system(cmd)
-      cmd = "restor model=%s_%s_yy.model  beam=%s_%s.beam map=%s_%s_yy.map out=%s_%s_yy.restor " % (basename,subarray,basename,subarray,basename,subarray,basename,subarray)
-      print cmd
-      os.system(cmd)
+         select_time_string="select=time\(%s,%s\)" % (t1,t2)
+         
+         image_basename="%s_%s_%02d" % (basename,subarray,i)
       
-      cmd = "nlines=`cat lst.txt | wc -l`"
-      print cmd
-      os.system(cmd)
+         cmd = "invert vis=%s map=%s_xx.map beam=%s.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 %s " % (uvdata,image_basename,image_basename,select_time_string)
+         print cmd
+         os.system(cmd)
+         cmd = "clean map=%s_xx.map beam=%s.beam out=%s_xx.model niters=2000" % (image_basename,image_basename,image_basename)
+         print cmd
+         os.system(cmd)
+         cmd = "restor model=%s_xx.model  beam=%s.beam map=%s_xx.map out=%s_xx.restor " % (image_basename,image_basename,image_basename,image_basename)
+         print cmd
+         os.system(cmd)
       
-      cmd = "lst_hrs=`head -$(( (nlines-4)/2 +5 )) lst.txt | tail -1 | tr -s " "| cut -f 4 -d " "` "
-      print cmd
-      os.system(cmd)
+         cmd = "invert vis=%s map=%s_yy.map options=double imsize=512 stokes=yy robust=-0.5 cell=1800 %s " % (uvdata,image_basename,select_time_string)
+         print cmd
+         os.system(cmd)
+         cmd = "clean map=%s_yy.map beam=%s.beam out=%s_yy.model niters=2000" % (image_basename,image_basename,image_basename)
+         print cmd
+         os.system(cmd)
+         cmd = "restor model=%s_yy.model  beam=%s.beam map=%s_yy.map out=%s_yy.restor " % (image_basename,image_basename,image_basename,image_basename)
+         print cmd
+         os.system(cmd)   
       
-      cmd = "/data/code/git/ben-astronomy/miriad/mirFixhdr.sh %s_%s_xx.restor $lst_hrs" % (basename,subarray)
-      print cmd
-      os.system(cmd)
+         #cmd = "lst_hrs=`head -$(( (nlines-4)/2 +5 )) lst.txt | tail -1 | tr -s " "| cut -f 4 -d " "` "
+         #print cmd
+         #os.system(cmd)
       
-      cmd = "/data/code/git/ben-astronomy/miriad/mirFixhdr.sh %s_%s_yy.restor $lst_hrs" % (basename,subarray)
-      print cmd
-      os.system(cmd)
+         cmd = "/data/code/git/ben-astronomy/miriad/mirFixhdr.sh %s_xx.restor %s" % (image_basename,lst_hrs)
+         print cmd
+         os.system(cmd)
       
+         cmd = "/data/code/git/ben-astronomy/miriad/mirFixhdr.sh %s_yy.restor %s" % (image_basename,lst_hrs)
+         print cmd
+         os.system(cmd)
+      
+         #export to fits
+         
+         
 import sys,os, glob
 from optparse import OptionParser,OptionGroup
 
