@@ -151,6 +151,14 @@ def image_with_miriad(options):
          os.system(cmd)
       
          #export to fits
+         cmd= "fits in=%s_xx.restor out=%s_xx_restor.fits op=xyout" % (image_basename,image_basename)
+         print cmd
+         os.system(cmd)
+         
+
+         cmd= "fits in=%s_yy.restor out=%s_yy_restor.fits op=xyout" % (image_basename,image_basename)
+         print cmd
+         os.system(cmd)
          
          
 import sys,os, glob
