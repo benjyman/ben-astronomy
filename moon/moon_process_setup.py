@@ -84,6 +84,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       print "Bad values for on/off moon of %s" % on_off_moon_string
 
    database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
+   download_database_name='/group/mwaeor/bmckinley/%s_%s_%s_download.sqlite' % (epoch_ID,chan,on_off_moon_string)
 
    #things that depend on obs semester
    obs_semester=epoch_ID[0:5]
@@ -424,6 +425,14 @@ def setup_moon_process(options):
                   off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
                   make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine,epoch_ID,chan)
 
+            if ((machine=='magnus' or machine=='galaxy') and options.setup_gator_download):
+               obsid_filename="%s%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,on_off_moon_string,chan)
+               cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
+               print cmd
+               os.system(cmd) 
+              
+         
+
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
             #else:
@@ -463,8 +472,7 @@ parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',d
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Set to delete gpubox files after converting to ms in cotter mode [default=%default]')
-
-#parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
