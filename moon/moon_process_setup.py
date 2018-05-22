@@ -84,7 +84,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       print "Bad values for on/off moon of %s" % on_off_moon_string
 
    database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
-   download_database_name='/group/mwaeor/bmckinley/%s_%s_%s_download.sqlite' % (epoch_ID,chan,on_off_moon_string)
+
 
    #things that depend on obs semester
    obs_semester=epoch_ID[0:5]
@@ -367,6 +367,7 @@ def setup_moon_process(options):
    moon_exp_filename=options.infile
    moon_exp_filename_base=os.path.basename(moon_exp_filename).split('.')[0]
    database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
+   download_database_name="/group/mwaeor/bmckinley/%s_download.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
    chan_list=[69,93,121,145,169]
    on_moon_and_off_moon=["on_moon","off_moon"]
