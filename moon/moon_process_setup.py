@@ -337,6 +337,11 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       track_off_moon_string_list.append(track_off_moon_string)
       #write the track off moon string to a file in the on_moon obsid data dir where gator can find it
       track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s_%s.txt' % (on_moon_data_dir,on_moon_obsid,off_moon_obsid)
+      #check if on moon directory exists and if not, make it
+      if not os.path.exists(on_moon_data_dir):
+         cmd="mkdir %s" % (on_moon_data_dir)
+         print cmd
+         os.system(cmd)
       with open(track_off_moon_filename_on_moon_data_dir, 'w') as f:
          f.write(track_off_moon_string)
       print "wrote track_off_moon file %s" % (track_off_moon_filename_on_moon_data_dir)
