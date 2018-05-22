@@ -4,13 +4,80 @@ import os
 import cmd
 
 
-#script to do imaging with miriad incl subarrays
-        
+#export the fits files as jpg or png with external grid
+def export_image_ds9(options):
+   basename=options.basename
+   subarray_list=['full','centre','north','south','east','west']
+   #subarray_list=['full']
+   n_image_time_chunks = 60
+   for subarray in subarray_list:
+      for i in range(0,n_image_time_chunks):
+         image_basename="%s_%s_%02d" % (basename,subarray,i)
+         #cmd = "ds9 -fits %s_xx_restor.fits -scale limits 1 100 -cmap invert yes -colorbar yes -grid yes -grid axes type exterior -export jpg %s_xx_restor.jpg -exit " % (image_basename,image_basename)
+         cmd = "ds9 %s_xx_restor.fits -invert -colorbar yes -view buttons no -view panner no -view magnifier no -view info no -scale limits 0.0 100 -zoom 1 -width 512 -height 512 -grid  -saveimage png %s_xx_restor.png -quit" % (image_basename,image_basename)
+         print cmd
+         os.system(cmd)
+
+         cmd = "ds9 %s_yy_restor.fits -invert -colorbar yes -view buttons no -view panner no -view magnifier no -view info no -scale limits 0.0 100 -zoom 1 -width 512 -height 512 -grid  -saveimage png %s_yy_restor.png -quit" % (image_basename,image_basename)
+         print cmd
+         os.system(cmd)
+
+   
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_full_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_full_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_full_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_full_yy.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_centre_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_centre_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_centre_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_centre_yy.mp4" 
+   print cmd
+   os.system(cmd)
+   
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_north_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_north_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_north_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_north_yy.mp4" 
+   print cmd
+   os.system(cmd)
+   
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_south_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_south_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_south_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_south_yy.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_east_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_east_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_east_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_east_yy.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_west_%02d_xx_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_west_xx.mp4" 
+   print cmd
+   os.system(cmd)
+
+   cmd = "ffmpeg -framerate 5 -i sun_20180405_aavs1_west_%02d_yy_restor.png -c:v libx264 -r 30 -pix_fmt yuv420p asun_20180405_aavs1_west_yy.mp4" 
+   print cmd
+   os.system(cmd)      
+   #ffmpeg -framerate 5 -i sun_aavs1_${stokes}_%d.png -c:v libx264 -r 30 -pix_fmt yuv420p sun_aavs1_${stokes}.mp4
+
+#script to do imaging with miriad incl subarrays     
 def image_with_miriad(options):
    
    basename=options.basename
-   subarray_list=['full','centre','north','south','east','west']
-   #subarray_list=['east','west']
+   #subarray_list=['full','centre','north','south','east','west']
+   subarray_list=['full']
    n_flag_chunks = 8
    n_image_time_chunks = 60
    date = "18apr05"
@@ -173,11 +240,14 @@ parser.add_option('--basename',type='string', dest='basename',default='sun',help
 parser.add_option('--read_uvdata',action='store_true',dest='read_uvdata',default=False,help='Read in the uvdata  [default=%default]')
 parser.add_option('--copy_uvdata_subarrays',action='store_true',dest='copy_uvdata_subarrays',default=False,help='Make new copies of data for subarray flagging  [default=%default]')
 parser.add_option('--calibrate',action='store_true',dest='calibrate',default=False,help='Do calibration  [default=%default]')
+parser.add_option('--export_only',action='store_true',dest='export_only',default=False,help='Just export fits files as images  [default=%default]')
 
 
 
 (options, args) = parser.parse_args()
 
-
-image_with_miriad(options)
+if options.export_only:
+   export_image_ds9(options)
+else:
+   image_with_miriad(options)
 
