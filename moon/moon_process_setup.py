@@ -124,9 +124,11 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
    #with cleanup
-   #generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   if options.cleanup:
+      generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   else:
    #no cleanup
-   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+      generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
    with open(default_cotter_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)
@@ -455,6 +457,8 @@ parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mw
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
+parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Set to delete gpubox files after converting to ms in cotter mode [default=%default]')
+
 #parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
