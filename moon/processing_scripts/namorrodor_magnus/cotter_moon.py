@@ -7,7 +7,7 @@ import cmd
 import datetime
 import numpy as np
 from casacore.tables import table,tablecolumn,tablerow
-
+import subprocess
 
 def cotter_moon(options):
    machine=options.machine
@@ -85,6 +85,20 @@ def cotter_moon(options):
          ms_name=base_name+'.ms'
       else:
          ms_name=data_dir+base_name+'.ms'
+
+   if epoch_ID[0:5]=="2015B":
+      #min size in Mb
+      min_ms_size=800.0
+   else:
+      min_ms_size=100.0
+
+   #Check if the ms already exists and is the right size then just exit - no need to make it again
+   ms_size = float(subprocess.check_output(['du','-sh', ms_name]).split()[0].decode('utf-8').split("'")[0].split('M')[0])
+   if (os.path.exists(ms_name) and ms_size >= min_ms_size):
+      print "%s already exists and has size %s (greatewr than min size %s), exiting cotter_moon.py" % (ms_name, ms_size, min_ms_size)
+      sys.exit(0)
+      #exit  
+
    #metafits_filename=data_dir+obsid+'.metafits'
    metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
@@ -192,7 +206,7 @@ def cotter_moon(options):
       print flag_ants_cmd_string
       os.system(flag_ants_cmd_string)
    
-   if (options.cleanup and os.path.exists(ms_name)):
+   if (options.cleanup and os.path.exists(ms_name) and ms_size >= min_ms_size):
       cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
       print cmd
       os.system(cmd)
