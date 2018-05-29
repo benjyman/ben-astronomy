@@ -85,6 +85,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
 
    database_name='/group/mwaeor/bmckinley/%s_%s_%s.sqlite' % (epoch_ID,chan,on_off_moon_string)
 
+
    #things that depend on obs semester
    obs_semester=epoch_ID[0:5]
    if (obs_semester=='2015A' or obs_semester=='2015B'):
@@ -124,9 +125,11 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
    #2. cotter
    default_cotter_script_name="%s2_default_cotter_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
    #with cleanup
-   #generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   if options.cleanup:
+      generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --cleanup --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+   else:
    #no cleanup
-   generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
+      generate_cotter_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_cotter_moon.py --epoch_ID=%s %s --flag_ants="" --obsid_infile=%s --sister_obsid_infile=%s' % (ben_code_base,epoch_ID,track_moon_string,observations_filename,sister_observations_filename)
    with open(default_cotter_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_cotter_string)
@@ -335,6 +338,11 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       track_off_moon_string_list.append(track_off_moon_string)
       #write the track off moon string to a file in the on_moon obsid data dir where gator can find it
       track_off_moon_filename_on_moon_data_dir='%strack_off_moon_%s_%s.txt' % (on_moon_data_dir,on_moon_obsid,off_moon_obsid)
+      #check if on moon directory exists and if not, make it
+      if not os.path.exists(on_moon_data_dir):
+         cmd="mkdir %s" % (on_moon_data_dir)
+         print cmd
+         os.system(cmd)
       with open(track_off_moon_filename_on_moon_data_dir, 'w') as f:
          f.write(track_off_moon_string)
       print "wrote track_off_moon file %s" % (track_off_moon_filename_on_moon_data_dir)
@@ -359,6 +367,7 @@ def setup_moon_process(options):
    moon_exp_filename=options.infile
    moon_exp_filename_base=os.path.basename(moon_exp_filename).split('.')[0]
    database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
+   download_database_name="/group/mwaeor/bmckinley/%s_download.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
    chan_list=[69,93,121,145,169]
    on_moon_and_off_moon=["on_moon","off_moon"]
@@ -417,6 +426,14 @@ def setup_moon_process(options):
                   off_moon_obsid_filename="%s%s_off_moon_%s.txt" % (on_off_moon_dir,epoch_ID,chan)                
                   make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,machine,epoch_ID,chan)
 
+            if ((machine=='magnus' or machine=='galaxy') and options.setup_gator_download):
+               obsid_filename="%s%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,on_off_moon_string,chan)
+               cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
+               print cmd
+               os.system(cmd) 
+              
+         
+
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
             #else:
@@ -455,7 +472,8 @@ parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mw
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
-#parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Set to delete gpubox files after converting to ms in cotter mode [default=%default]')
+parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
