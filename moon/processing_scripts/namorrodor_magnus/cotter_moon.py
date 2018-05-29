@@ -1,3 +1,4 @@
+#!/usr/bin/env python 
 #python script to cotter moon obs
 
 from astropy.io import fits
