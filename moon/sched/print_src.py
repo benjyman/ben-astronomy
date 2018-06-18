@@ -93,7 +93,7 @@ sname = [];
 slist = [];
 SJy   = [];
 
-sname.append("Sun");              SJy.append(" 1e4 Jy - 1e8 Jy "); slist.append("");
+sname.append("Sun");              SJy.append(" 1e4 Jy - 1e8 Jy "); slist.append(""); 
 sname.append("Moon");              SJy.append(" 60 Jy in FM band! "); slist.append("");
 
 sname.append("SCP");              SJy.append("-----------------"); slist.append("");
@@ -125,6 +125,7 @@ if add_radec != '':
 
 print "\nUTC: %s\n" % ( MRO.date )
 print "At %s N, %s E (LST %s = %f):\n" % ( MRO.lat, MRO.long, MRO.sidereal_time(), MRO.sidereal_time()*r2h )
+size_string = ""
 
 for snum in range(0,len(slist)):
 
@@ -135,24 +136,30 @@ for snum in range(0,len(slist)):
         az = sun.az  * r2d
         el = sun.alt * r2d
         ra0, dec0 = MRO.radec_of(sun.az, sun.alt)
+        size_string = ""   
     elif sname[snum] == "Moon":
         moon = Moon(MRO);
         az = moon.az  * r2d
         el = moon.alt * r2d
         ra0, dec0 = MRO.radec_of(moon.az, moon.alt)
+        moon_size_arcsecs = moon.size
+        moon_size_arcmin = moon_size_arcsecs/60
+        size_string = "Moon diameter %.2f arcmin" % (moon_size_arcmin)
     elif sname[snum] == "SCP":
         scp = Equatorial('0', '-90', epoch=J2000)
         az = 180
         el = -MRO.lat * r2d
         ra0, dec0 = scp.ra, scp.dec
+        size_string = ""
     else:
         src.compute(MRO);
         ra0, dec0 = MRO.radec_of(src.az, src.alt)
         az = src.az  * r2d
         el = src.alt * r2d
+        size_string = ""
 
     if print_type == 'l':
-        print "%17s: ra = %11s, dec = %11s, az = %8.4f, el = %8.4f: %s" % (sname[snum], ra0, dec0, az, el, SJy[snum])
+        print "%17s: ra = %11s, dec = %11s, az = %8.4f, el = %8.4f: %s %s" % (sname[snum], ra0, dec0, az, el, SJy[snum], size_string)
 
     if print_type == 's':
         print "%17s: ra = %11s, dec = %11s" % (sname[snum], ra0, dec0)
