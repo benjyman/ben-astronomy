@@ -11,11 +11,23 @@ import glob
 sidereal_day_sec = 86164
 sourcelist='srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
 havebeam_string = ''
+namorrodor_image_dir = "/md0/moon/images/"
 
+def copy_images_from_magnus(filename):
+   for filepath in open(filename):
+      cmd = "rsync -a bmckinley@magnus.pawsey.org.au:%s*I.fits %s" % (filepath.rstrip(),namorrodor_image_dir)
+      print cmd
+      os.system(cmd)
+      cmd = "rsync -a bmckinley@magnus.pawsey.org.au:%s*psf*.fits %s" % (filepath.rstrip(),namorrodor_image_dir)
+      print cmd
+      os.system(cmd)
+
+      
+   
 #Functions
 def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
    on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
-   print on_off_moon_string
+   #print on_off_moon_string
    if on_off_moon_string=='on_moon':
       start_time_string="%s 00:00:00" % on_moon_date
       start_time_datetime=datetime.strptime(start_time_string, '%Y-%m-%d %H:%M:%S')
@@ -357,6 +369,11 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
 
 #Main function:
 def setup_moon_process(options):
+   
+   if options.copy_images_from_magnus:
+      filelist = options.copy_images_from_magnus
+      copy_images_from_magnus(filelist)
+                  
    machine=options.machine
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
@@ -389,7 +406,7 @@ def setup_moon_process(options):
       cmd = "mkdir %s " % directory_of_epochs
       print cmd
       os.system(cmd)
-            
+   
    for epoch_ID_index,epoch_ID in enumerate(epoch_ID_list):
       on_moon_date=on_moon_date_list[epoch_ID_index]
       off_moon_date=off_moon_date_list[epoch_ID_index]
@@ -474,6 +491,7 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Set to delete gpubox files after converting to ms in cotter mode [default=%default]')
 parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
+parser.add_option('--copy_images_from_magnus',type='string', dest='copy_images_from_magnus',default=None,help='Give a file containing the paths to the folders where images are to be copied from e.g. --copy_images_from_magnus="trackmoon_file_list.txt" [default=%default]')
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
