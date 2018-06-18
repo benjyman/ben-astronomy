@@ -146,7 +146,7 @@ def generate_namorrodor(options):
        sbatch_file.write('##SBATCH --ntasks=1\n')
        sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
        if options.array_by_chan:
-          sbatch_file.write('#SBATCH --time=00:30:00\n'
+          sbatch_file.write('#SBATCH --time=00:30:00\n')
        else:
           sbatch_file.write('#SBATCH --time=06:00:00\n')
        sbatch_file.write('#SBATCH -J pbcorr_%s\n' % (options.epoch_ID))

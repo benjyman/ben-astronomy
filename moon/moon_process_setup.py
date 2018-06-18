@@ -181,7 +181,7 @@ def write_and_run_default_scripts(epoch_ID,chan,on_off_moon_dir,machine):
       
    #5. pbcorr
    default_pbcorr_script_name="%s5_default_pbcorr_%s_%s_%s.sh" % (on_off_moon_dir,epoch_ID,chan,on_off_moon_string)
-   generate_pbcorr_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qpbcorr_multi.py  --epoch_ID=%s %s  --obsid_infile=%s --dirty  --channelsout=24 %s   ' % (ben_code_base,epoch_ID,track_moon_string,observations_filename, havebeam_string) 
+   generate_pbcorr_string='python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/generate_qpbcorr_multi.py  --epoch_ID=%s %s  --obsid_infile=%s --dirty  --channelsout=24 %s --machine=%s   ' % (ben_code_base,epoch_ID,track_moon_string,observations_filename, havebeam_string, machine) 
    with open(default_pbcorr_script_name,'w+') as f:
       f.write('#!/bin/bash -l\n')
       f.write(generate_pbcorr_string)
@@ -334,7 +334,10 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       print new_date
       #find position of moon
       src_file_name='%ssrc_file_moon_%s.txt' % (on_moon_directory,on_moon_obsid)
-      cmd="print_src.py --date='"+new_date+"' > "+ src_file_name
+      if machine=="namorrodor":
+         cmd="/data/code/git/ben-astronomy/moon/sched/print_src.py --date='"+new_date+"' > "+ src_file_name
+      else:
+         cmd = "print_src.py --date='"+new_date+"' > "+ src_file_name
       print cmd
       os.system(cmd)
       #read src_file.txt to get Moon ra and dec 
