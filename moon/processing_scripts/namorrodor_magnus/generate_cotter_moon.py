@@ -74,7 +74,7 @@ def generate_cotter_moon(options):
        machine_string=' --machine=%s ' % (options.machine)
     else:
        machine_string=''
-       
+    
     if (options.epoch_ID):
        epoch_semester=options.epoch_ID[0:5]
        print epoch_semester

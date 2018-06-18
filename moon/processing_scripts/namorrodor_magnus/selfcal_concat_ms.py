@@ -77,7 +77,8 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       #cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
       ao_model_name_cwd=options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
       ao_model_name="%s%s" % (data_dir,ao_model_name_cwd)
-      cmd='cluster %s %s 10 ' % (ao_model_name,clustered_model_name)
+      #cluster in just 5 directions to be consistent with what RTS is doing
+      cmd='cluster %s %s 5 ' % (ao_model_name,clustered_model_name)
       print cmd
       os.system(cmd)
 
@@ -186,14 +187,14 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          print cmd
          os.system(cmd) 
 
-         #run andres ionpeel 
-         cmd='ionpeel -t 8 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
+         #run andres ionpeel, changed -t 1 from 8, since doing 8s timeres in cotter for EoR2 
+         cmd='ionpeel -t 1 -minuv 30 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
          print cmd
          os.system(cmd) 
    
       else:
-         #run andres calibrate 
-         cmd='calibrate -minuv 60  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         #run andres calibrate , changed minuv to 30 to be more in line with rts processing (I think)
+         cmd='calibrate -t 1 -minuv 30  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
