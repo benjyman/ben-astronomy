@@ -108,15 +108,20 @@ def model_moon(options):
    #CenA: ra_min=13*15., ra_max=14*15., dec_min=-53., dec_max=-33.
    #paper 1 moon pos:  22:52:17.79, dec =  -4:51:28.7,
    #need the pointing position! RA,DEC: 333.00, -7.70
-   ra_pointing=333.00
-   dec_pointing=-7.70
-   #only used for old (wrong) way:
-   ra_min=ra_pointing-20.0
-   ra_max=ra_pointing+20.0
-   dec_min=dec_pointing-20.0
-   dec_max=dec_pointing+20.0
-   #Need to change the way I do this: the mean (global) signal is the 'beam-weighted average' of the entire sky so need to generate an 
-   #average beam map (including all obsids) at each frequency
+   #RA DEC for Moon 2015B_05 
+   #ra_pointing=333.00
+   #dec_pointing=-7.70
+   
+   #need to work thios out for each epoch_ID ... print_src?
+   moon_diameter_arcmin=33.29
+   
+   
+   ##only used for old (wrong) way:
+   #ra_min=ra_pointing-20.0
+   #ra_max=ra_pointing+20.0
+   #dec_min=dec_pointing-20.0
+   #dec_max=dec_pointing+20.0
+
    
    if use_model_lfsm:
       average_temp_filename="average_lfsm_temp_for_moon_region.npy"
@@ -168,7 +173,7 @@ def model_moon(options):
    k=1.380648*10**(-23)
    #CMB temp (mather et al 1994)
    Tcmb=2.725
-   moon_diameter_arcmin=33.29
+   
    moon_diameter_deg=moon_diameter_arcmin/60
    moon_radius_deg=moon_diameter_deg/2. 
    #area of moon in deg_sq
@@ -262,7 +267,27 @@ def model_moon(options):
     a[-1].yaxis.set_label_coords(tick_label_left - labelpad,(bottom + top)/2, transform=f.transFigure)
 
    #model_data = lfsm or gsm or gsm2016
-   def occulted_patch_spectrum(frequency_array,model_data):
+   def occulted_patch_spectrum(frequency_array,model_data,middle_moon_obsid):
+      #get the obsid in the middle of the observations, and work out the Moon RA DEC from that
+      src_filename = "%smagnus_setup_tests/epochs/%s/169/on_moon/src_file_moon_%s.txt" % (base_dir,epoch_ID,middle_moon_obsid)
+      print "getting moon RA DEC from %s" % (src_filename)
+      #read src_file.txt to get Moon ra and dec 
+      with open(src_filename, "r") as infile:
+         lines=infile.readlines()
+         moon_ra_string=lines[6].split()[3].split(',')[0]
+         moon_dec_string=lines[6].split()[6].split(',')[0]
+      #get in RA and DEC in decimal degrees
+      moon_ra_decimal_mins = float(moon_ra_string.split(':')[1])+(float(moon_ra_string.split(':')[2])/60)
+      moon_ra_decimal_hours = float(moon_ra_string.split(':')[0])+(moon_ra_decimal_mins/60)
+      moon_ra_decimal_degrees = moon_ra_decimal_hours * 15.0
+      
+      moon_dec_decimal_mins = float(moon_dec_string.split(':')[1])+(float(moon_dec_string.split(':')[2])/60)
+      moon_dec_decimal_degrees = float(moon_dec_string.split(':')[0])+(moon_dec_decimal_mins/60)
+      
+      ra_pointing = moon_ra_decimal_degrees
+      dec_pointing = moon_dec_decimal_degrees
+      print "ra moon is %s degrees, dec moon is %s degrees" % (ra_pointing,dec_pointing)
+      
       if model_data=='lfsm':
             pixel_coordinate_file=pixel_coordinate_file_lfsm
       if model_data=='gsm2016':
@@ -637,7 +662,8 @@ def model_moon(options):
     for centre_chan_index,centre_chan in enumerate(band_centre_chans):
       
       #set rms_thresholds for difference images
-      if epoch_ID=="2015B_05":
+      #if epoch_ID=="2015B_05":
+      if ('2015' in epoch_ID):
          #rms_threshold=1.0
          rms_threshold=1.0
       elif epoch_ID=="2018A_01":
@@ -645,13 +671,16 @@ def model_moon(options):
       
       
       #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-      if (epoch_ID=="2015B_05"):
-         on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
-         off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
-      else:
-         on_moon_filename='%sepochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-         off_moon_filename='%sepochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-      
+      #if (epoch_ID=="2015B_05"):
+      #   on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+      #   off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+      #else:
+      #   on_moon_filename='%sepochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+      #   off_moon_filename='%sepochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+
+      on_moon_filename='%smagnus_setup_tests/epochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+      off_moon_filename='%smagnus_setup_tests/epochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+            
       print on_moon_filename
       print off_moon_filename
       
@@ -735,17 +764,27 @@ def model_moon(options):
                chan_string='%.04d' % chan
             else:
                chan_string='MFS'
-            if (epoch_ID=="2015B_05"):
-               moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
-               off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
-               on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-               off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-            else:
-               moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
-               off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
-               on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
-               off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
-             
+            #if (epoch_ID=="2015B_05"):
+            #   moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
+            #   off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
+            #   on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+            #   off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+            #else:
+            #   #moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
+            #   #off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+            #   #on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
+            #   #off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+            #   moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
+            #   off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+            #   on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
+            #   off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+            
+            moon_fitsname="%simages/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
+            off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+            on_moon_psf_fitsname="%simages/%s_%s_trackmoon-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
+            off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+            
+            
             ##output fitsnames:
             moon_difference_fitsname="difference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
             psf_difference_fitsname="difference_%s_%s_%s_psf_%s-%s-psf.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
@@ -1645,12 +1684,16 @@ def model_moon(options):
    
    if write_new_reconstructed_moon_rfi:
       for centre_chan_index,centre_chan in enumerate(band_centre_chans):
-         if (epoch_ID=="2015B_05"):
-            on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
-            off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
-         else:
-            on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-            off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+         #if (epoch_ID=="2015B_05"):
+         #   on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+         #   off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+         #else:
+         #   on_moon_filename='%sepochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+         #   off_moon_filename='%sepochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+
+         on_moon_filename='%smagnus_setup_tests/epochs/%s/on_moon/%s/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+         off_moon_filename='%smagnus_setup_tests/epochs/%s/off_moon/%s/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+
 
          print on_moon_filename
          print off_moon_filename
@@ -2185,9 +2228,20 @@ def model_moon(options):
          model_galaxy(big_freq_array,'lfsm')
    
    if options.model_occulted_sky:
-      occulted_patch_spectrum(big_freq_array,'gsm2016')
-      occulted_patch_spectrum(big_freq_array,'gsm')
-      occulted_patch_spectrum(big_freq_array,'lfsm') 
+      on_moon_filename='%smagnus_setup_tests/epochs/%s/169/on_moon/%s_on_moon_169.txt' % (base_dir,epoch_ID,epoch_ID)
+      on_moon_obsid_list=[]
+      with open(on_moon_filename,'r') as on_moon_file:
+         on_moon_lines = on_moon_file.readlines()
+      for line in on_moon_lines:
+         on_moon_obsid_list.append(line.strip())
+      n_obs=len(on_moon_obsid_list)
+         
+      middle_moon_index = int(np.around(n_obs/2))
+      middle_moon_obsid=on_moon_obsid_list[middle_moon_index]
+      print "middle moon obsid is %s" % (middle_moon_obsid)
+      occulted_patch_spectrum(big_freq_array,'gsm2016',middle_moon_obsid)
+      occulted_patch_spectrum(big_freq_array,'gsm',middle_moon_obsid)
+      occulted_patch_spectrum(big_freq_array,'lfsm',middle_moon_obsid) 
    
    #load the average temp files
    if options.do_beam_stuff:
