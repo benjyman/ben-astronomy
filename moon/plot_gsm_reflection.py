@@ -6,6 +6,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import optimize
+import pylab as py
 
 date_time_string="2015_09_26_16_55_28"
 
@@ -17,8 +18,9 @@ freq_points_filename="freq_array_%s.npy" % date_time_string
 #freq array didnt get saved for some reason...
 freq_array=np.arange(70,235,5)
 
-temp_data=np.load(temp_data_filename)
-
+#temp_data=np.load(temp_data_filename)
+temp_data=[173.093941475,144.998397717,122.860088014,105.153099257,90.9457504818,79.2771243913,69.5934418787,61.48155601,54.6287724985,48.7950326681,43.7939026617,39.4789253548,35.7338994194,32.4658118914,29.5994825419,27.0737087829,24.8382947245,22.9438511781,21.2473600338,19.7228808664,18.3485262771,17.105723973,15.9786484377,14.9537375587,14.0193313371,13.1653627638,12.383101946,11.6649549463,11.0042897956,10.395295178,9.83286501804,9.31249915369,8.8302181769]
+temp_data=np.asarray(temp_data)
 temp_error=0.1*temp_data
 
 
@@ -96,5 +98,28 @@ plt.xlim(70, 240)
 fit_plot.savefig(plot_filename)
 
 
+py.clf()
+Tb_plot=py.figure()
+Tb_plot_figname="reflected_gsm_powerlaw_fit.png" 
+#py.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured",elinewidth=0.5)
+plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.',elinewidth=0.5)  # Data
+#py.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit",linewidth=1,linestyle='--')
+plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index),label="Powerlaw fit",linewidth=1,linestyle='--')     # Fit
+axes = py.gca()
+#axes.set_xlim([xmin,xmax])
+axes.set_ylim([0,200])
+py.title('Reflected galactic brightness temperature vs frequency for MWA and Moon')
+py.ylabel('Reflected brightness temperature (K)')
+py.xlabel('Frequency (MHz)')
+#py.text(150, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
+#py.text(150, 250, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
+py.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
+py.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
+
+py.legend(loc=1)
+Tb_plot.savefig(Tb_plot_figname, format='png', dpi=900)
+print "saved figure %s" % Tb_plot_figname
+py.close()
+      
 #plot maps
 

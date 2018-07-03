@@ -84,6 +84,7 @@ MRO = Observer()
 
 # Set the observer at Boolardy
 MRO.lat, MRO.long, MRO.elevation = '-26:42:11.95', '116:40:14.93', 377.83
+MRO.pressure = 0
 
 # Set the time.
 if obs_date  != '': MRO.date  = obs_date
