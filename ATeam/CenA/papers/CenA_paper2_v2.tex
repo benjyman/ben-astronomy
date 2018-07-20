@@ -1,0 +1,508 @@
+% mn2esample.tex
+%
+% v2.1 released 22nd May 2002 (G. Hutton)
+%
+% The mnsample.tex file has been amended to highlight
+% the proper use of LaTeX2e code with the class file
+% and using natbib cross-referencing. These changes
+% do not reflect the original paper by A. V. Raveendran.
+%
+% Previous versions of this sample document were
+% compatible with the LaTeX 2.09 style file mn.sty
+% v1.2 released 5th September 1994 (M. Reed)
+% v1.1 released 18th July 1994
+% v1.0 released 28th January 1994
+
+\documentclass[useAMS,usenatbib]{mn2e}
+
+% If your system does not have the AMS fonts version 2.0 installed, then
+% remove the useAMS option.
+%
+% useAMS allows you to obtain upright Greek characters.
+% e.g. \umu, \upi etc.  See the section on "Upright Greek characters" in
+% this guide for further information.
+%
+% If you are using AMS 2.0 fonts, bold math letters/symbols are available
+% at a larger range of sizes for NFSS release 1 and 2 (using \boldmath or
+% preferably \bmath).
+%
+% The usenatbib command allows the use of Patrick Daly's natbib.sty for
+% cross-referencing.
+%
+% If you wish to typeset the paper in Times font (if you do not have the
+% PostScript Type 1 Computer Modern fonts you will need to do this to get
+% smoother fonts in a PDF file) then uncomment the next line
+% \usepackage{Times}
+
+%%%%% AUTHORS - PLACE YOUR OWN MACROS HERE %%%%%
+
+\usepackage{enumerate}
+\usepackage{gensymb}
+\usepackage{ textcomp }
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage[export]{adjustbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title[Interactions between AGN and Environment on Intermediate Scales in Centaurus~A]{Interactions between AGN and Environment on Intermediate Scales in Centaurus~A}
+
+\author[B. McKinley et al.]
+{B.~McKinley,$^{1,2}$\thanks{E-mail:ben.mckinley@unimelb.edu.au}
+S.~J.~Tingay,$^{3,4}$
+E.~Carretti,$^{5}$
+J.~Line,$^{1,2}$
+\newauthor
+S.~Ellis,$^{6}$
+J.~Bland-Hawthorn,$^{7}$
+M.~McDonald,$^{8}$
+S.~Veilleux,$^{9}$
+\newauthor
+R.~Wahl~Olsen,$^{10}$
+M.~Sidonio,$^{11}$
+R.~Ekers,$^{12}$
+A.~R.~Offringa,$^{13}$
+\newauthor
+P.~Procopio,$^{1,2}$
+B.~Pindor,$^{1,2}$
+R.~B.~Wayth,$^{4,2}$
+S-PASS core team,
+\\
+$^{1}$School of Physics, The University of Melbourne, Parkville, VIC 3010, Australia\\
+$^{2}$ARC Centre of Excellence for All-sky Astrophysics (CAASTRO),The University of Melbourne, Parkville, VIC 3010, Australia\\
+$^{3}$Istituto di Radioastronomia, Istituto Nazionale di Astrofisica, Via Gobetti 40129, Bologna, Italy\\
+$^{4}$International Centre for Radio Astronomy Research, Curtin University, Bentley, WA 6102, Australia\\
+$^{5}$Osservatorio Astronomico di Cagliari, Via della Scienza 5 - I-09047, Selargius (Cagliari), Italy \\
+$^{6}$Australian Astronomical Observatory, PO Box 915, North Ryde, NSW 1670, Australia \\
+$^{7}$Sydney Institute for Astronomy, University of Sydney, NSW 2006, Australia \\
+$^{8}$Kavli Institute for Astrophysics and Space Research, MIT, Cambridge, MA 02139, USA \\
+$^{9}$Department of Astronomy, Joint Space-Science Institute, University of Maryland, College Park, MD, 20742, USA \\
+$^{10}$1 Fanshawe Street, Auckland 1010, New Zealand  \\
+$^{11}$Terroux Observatory, 12/38 Mort St, Braddon, ACT 2612, Australia \\
+$^{12}$CSIRO, Australia \\
+$^{13}$Netherlands Institute for Radio Astronomy (ASTRON), PO Box 2, 7990 AA Dwingeloo, The Netherlands
+}
+
+\begin{document}
+
+%\date{Accepted 1988 December 15. Received 1988 December 14; in original form 1988 October 11}
+
+\pagerange{\pageref{firstpage}--\pageref{lastpage}} \pubyear{2014}
+
+\maketitle
+
+\label{firstpage}
+
+\begin{abstract}
+
+We present new radio and optical images of the nearest radio galaxy Centaurus~A and investigate the structure and origin of the northern middle lobe. Our Murchison Widefield Array observations at 154~MHz show there is diffuse emission connecting the Centaurus~A Northern Middle Lobe (NML) to the Northern Inner Lobe (NIL). This diffuse emission appears to be a continuation of the ridge-like feature which characterises the NML at higher frequencies. These images are in contrast to the most recent Very Large Array (VLA) observations at 327~MHz and in support of previous Australia Telescope Compact Array observations at 1.4~GHz. We use our 2.3~GHz image from the Parkes radio telescope to construct a spectral index map between 154~MHz and 2.3~GHz and find that the spectral properties of the lobes are consistent with typical radio galaxy models and do not provide a reason for the differences seen in the VLA images of the NML. Consistent with all previous observations, we find no southern counterpart to the NML in the radio, however our deep optical image shows that the optical galaxy extends to both the north and south, with a position angle coincident with the connecting ridge in the north and diametrically opposed to this in the south, where the missing southern middle lobe would be expected. We also find that the outer optical filaments, as seen in H$\alpha$, lie alongside the diffuse emission ridge in the north, providing evidence for jet-induced star formation as a result of an active albeit weak connection to the central AGN. Finally, our MWA observations reveal a new, diffuse radio structure emanating from the east of the NIL, possibly associated with a newly identified H$\alpha$ filament to its north, indicating a possible region of photoionisation powered by a galactic wind. \\
+
+\end{abstract}
+
+\begin{keywords}
+galaxies: individual (NGC5128) - galaxies: active - radio continuum: galaxies 
+\end{keywords}
+
+\section{Introduction}
+
+Centaurus A (Cen~A), hosted in the galaxy NGC 5128, is recognised as the nearest classical radio galaxy, of Fanaroff-Riley type I (FR-I: Fanaroff \& Riley 1975) and at a distance of 3.8$\pm$0.1 Mpc \citep{har10}.  Cen~A was the first radio source to be identified as extragalactic \citep{bol49} and (along with NGC 5128) has been studied intensively since, across the entire accessible electromagnetic spectrum and over eight orders of magnitude in spatial scale (see the proceedings of ``The Many Faces of Centaurus A'' for an overview: \citet{MFCA}).
+
+As the closest radio galaxy, Cen~A affords an unprecedented opportunity to study the transport of energy from the central engine in the active galactic nucleus (AGN), powered by a 55 solar mass black hole in this case \citep{neu10}, to intergalactic medium scales well outside the host galaxy.  Such systems are clearly excellent laboratories for studying the effects of feedback \citep{cro06}.  In the case of Cen~A, there is evidence of jet interactions with the environment within the galaxy \citep{tin09,wyk15,nef15} and of jet-induced star formation well beyond the galaxy itself \citep{mou00}..
+
+On scales of the AGN (parsec and below), Cen~A has been studied extensively over many years \citep{mei89,tin94,jon96,kel97,tin98,fuj00,tin01,tin01b,hor06,mul11,mul14} revealing a collimated sub-pc-scale jet that evolves on timescales of months to years. This jet feeds highly complex structures on scales of kpc that have been documented using instruments like the Australia Telescope Compact Array \citep{fea11}, Very Large Array \citep{bur83,cla92,nef15} and GMRT \citep{wyk14}.  On even larger scales, extended radio emission extends over many hundreds of kpc, imaged with interferometers \citep{mck13}, the Parkes radio telescope \citep{jun93} and other single dishes \citep{com97}.
+
+On the scales of the inner lobes, the radio structure is symmetric around the AGN.  The sub-pc-scale jet is also symmetrical (taking into account relativistic beaming), with double-sided jets aligned with the jets feeding the inner lobes.  However, on larger spatial scales, Cen~A shows striking asymmetries.  The so-called Northern Middle Lobe (NML) appears to be some form of extension to the north inner lobe, but the connection is unclear. Moreover, there is no obvious southern counterpart to the NML on scales larger than the inner lobes.
+
+If the extended radio emission traces past episodes of nuclear activity and jet formation, it appears that activity may have been asymmetric and preferentially acting via the northern jet.  However, perhaps the prominence of the NML relative to structure to the south may be due to a level of asymmetric interaction of the jet with the galactic/intergalactic medium, perhaps telling us something about these media. Or perhaps extrinsic effects (absorption processes, for example) that are orientation-dependent are at play. We seek to explore these questions in this paper.
+
+Regardless, the study of Cen~A on a range of spatial scales, and across the electromagnetic spectrum, is likely to be useful in terms of tracing the transport of energy from the central black hole system to larger scales.  As such, in this paper we present new data, primarily focusing on the larger spatial scale structure in Cen~A, at low frequencies from the Murchison Widefield Array (MWA) and at 2.3 GHz from the Parkes S-PASS survey. Additional clues as to the energy transport mechanisms at play in the northern transition region can also be gleaned from optical data, in particular from the filamentary structures that result from photoionisation of gas by starburst or AGN activity. 
+
+One of the major challenges in studying Cen~A at radio frequencies is the fact that the radio source has complex structure on all angular scales, including features spanning several degrees across the sky.  This presents a major challenge for observations with traditional interferometers possessing limited short baselines and sub square degree fields of view.  Imaging artefacts have consistently held back many previous studies (reviewed in detail in the next section). Two advantages of the MWA in this respect are: 1) the immense number of very short baselines, providing fantastic sensitivity to large scale structures; and 2) the extraordinarily large field of view (hundreds of square degrees) that accommodates Cen~A within a single observation.  We exploit these advantages to produce the best low frequency images (in some respects the best at any frequency) of Cen~A yet.  Similarly, observations with Parkes, used for the S-PASS survey, also have excellent sensitivity to large-scale structures, however, such observations do not have a wide field of view.
+
+In subsequent sections, we set the scene by describing the previous observations and analyses of Cen~A that are relevant to this paper (Section 2). We then describe our new observations at radio and optical wavelengths that are the main focus of this paper, including relevant details of the data reduction processes involved (Section 3). In Section 4 we present our analysis and describe the large-scale spectral properties of the radio component in detail. We compare our new data with previous radio datasets and results, to provide new insights into some of the outstanding questions regarding Cen~A, for example the structure of the NML and the absence of a southern counterpart, the nature of energy transport from the inner lobes to the NML and mechanisms responsible for e thformation of the prominent optical filaments at the base of the NML (Section 5). We provide our conclusions and recommendations for further study in Section 6. 
+
+\section{Previous observations and analyses of the Cen~A at intermediate scales}
+
+What do we mean by intermediate scales - focussing not he transition regions - need wide fields of view! New observationsadio and optical  provide these.
+
+Cen~A is unique in that its close proximity allows us to probe intricate details from sub-pc to almost Mpc scales. Hence Cen~A has been studied in detail across a very wide range of wavelengths and the amount of data and analysis available is extensive. Hence, we will restrict ourselves her to the particular previous observations relevant to the conclusions of this paper.
+
+Overall structure and terminology (radio): Israel et al., Alvarez et al, Haynes 1983, Feain et al 2011,  McKinley et al MWA, Inner lobes, NML, outer lobes etc. 
+
+Optical: Graham and Price Blanco 1975 (filaments), Morganti - filaments + NML relationship, santoro 2015
+
+Recent: Neff et al on the NML and galactic winds. (see also ionisation cones and galactic winds  (Veilleux2003),Veilleux2005, JBH et al fossil Magellanic stream, sharp and JBH 2010 galactic wind CenA.
+
+\section{Observations and data reduction}
+
+\subsection{MWA Observations and data reduction}
+
+The MWA \citep{tingay,bowman2013} is a low-frequency radio interferometer array located at the Murchison Radio Observatory in Western Australia. The telescope is made up of 128 antenna tiles, each containing 16 crossed-dipole antennas above a conducting ground plane. The tiles are pointed electronically using analogue beamformers. 
+
+The observations of Cen~A used in this paper were undertaken as part of the Galactic and Extragalactic All-sky MWA (GLEAM) survey (ref wayth,ref H-W) on 2014 June 10. Due to the high signal-to-noise afforded by the brightness of Cen~A and the exceptional instantaneous uv coverage of the MWA, we were able to produce our image from a single 112~s snapshot observation beginning at UTC 12:42:24. In line with the observing strategy of this phase of the GLEAM survey, our snapshot was part of a series of drift-scan observations at a fixed declination of -40 deg. The centre frequency of this particular observation was approximately 154~MHz and covered the MWA instantaneous bandwidth of 30.72~MHz. The correlator mode used outputted data at a frequency resolution of 40~kHz and a time resolution of 0.5~s.
+
+Initial calibration was performed using the MWA Real Time System (RTS; ref1, ref2) operating in an offline mode on Galaxy, a supercomputer located at the Pawsey Supercomputing Centre in Western Australia. The sky model used for calibration was constructed from archival multi-wavelength data that were cross-matched using the Positional Update and Matching Algorithm (PUMA; ref Line et al). The model contained all point sources that were successfully matched by PUMA, down to a flux-density level of xx~Jy for our pointing on the sky, taking into account the MWA primary beam [JACK to edit!]. The catalogues included in the cross-match were: NVSS (ref). MRC (ref), GLEAM IDR4 (ref), XXX? ...etc. To this point-source sky model, we added a Gaussian model of the Cen~A inner lobes, constructed by performing source extraction with PyBDSM (ref) on the VLA 1.4~GHz image of the inner lobed (ref), with the flux-density scaled assuming a spectral index of (-0.5???)  [PIETRO to edit!] (using the techniques from ref randal+pietro paper?). This sky model [BART/JACK to edit!] 
+
+, data reduction steps, calibration, self cal, imaging etc.
+
+\subsubsection{Flux density scale and photometry with PUMA}
+
+Discuss source field positions and flux densities and how corrections were made based on information from other frequencies using PUMA. [jack]
+
+\subsubsection{MWA Imaging challenges}
+
+All the stuff I tried but didn't improve the image.
+Talk about WSCLean etc and calibrate, minw, etc
+
+\subsection{Parkes Observations and data reduction}
+
+Ettore to edit
+
+
+\subsection{Optical emission line observations and data reduction}
+
+Narrow band imaging observations were made on 25th Feb 2009 using the Maryland-Magellan Tunable Filter (MMTF; \citealt{MMTF}) on the Inamori-Magellan Areal Camera and Spectrograph spectrograph (IMACS) at the Magellan Telescope. The MMTF has a very narrow bandpass ($\sim$5 to 12 \AA) which can be tuned to any wavelength over $\sim$5000 to 9200 \AA\ \citep{MMTF}. Coupled with the exquisite image quality at Magellan and the wide field of IMACS, this instrument is ideal for detecting emission-line filaments in external galaxies.  On 2009 February 25, we observed Cen~A at H$\alpha$ ($\lambda$ = 6563 \AA) and [NII] ($\lambda$ =6584 \AA) for a total of 20~min each and in the R band for 30~s. The typical image quality for these exposures was 0.7 $\pm$ 0.2~arcsec. Note that narrow band tunable filter images have a phase effect such that the central wavelength of the passband changes as a function of radius from the centre of the field (see \citealt{JSB}). The central wavelengths for both the H$\alpha$ and [NII] images were set at the location of the outer optical filament. 
+
+These data were fully reduced using the MMTF data reduction pipeline\footnote{http://www.astro.umd.edu/$\sim$veilleux/mmtf/datared.html}, which performs bias subtraction, flat fielding, sky-line removal, cosmic-ray removal, astrometric calibration, and stacking of multiple exposures (following \citealt{MMTF}, see also \citealt{JSB}). The R band continuum image was then intensity matched to the narrow-band images to allow for careful continuum subtraction. The stacked images were calibrated using spectrophotometric standards from \citep{oke1990} and \citep{hamuy1992,hamuy1994}. The error associated with our absolute photometric calibrations is $\sim$15\%, which is typical for tunable filters and spectrographs.  All of these procedures are described in detail in \citet{MMTF}. The astrometry was checked against 2MASS sources identified within the image.
+
+\subsection{Deep optical observations and data reduction}
+\label{sec:optical_obs}
+
+This image represents a collaborative integration time of 140 hours worth of exposure using two different imaging systems:
+ 
+Rolf Wahl Olsen: 120 hours using a 10" Newtonian and QSI CCD camera from the outer suburbs of Auckland, New Zealand. Image data was gathered over 43 nights in Feb-May 2013, using a homebuilt 10 inch f/4 Serrurier Truss Newtonian on a Losmandy G-11 mount, QSI683wsg-8 CCD camera with Astrodon LRGB E-Series Gen 2 filters and Lodestar guider. Total exposure in each channel (LRGB): 90h:10h:10h:10h = 120 hours. Image integration and processing was done using PixInsight 1.8. Image calibration was done against an extensive set of calibration frames consisting of approximately 400 dark frames, 500 bias frames and 300 flat field frames in each channel; L, R, G and B. All calibration frames were obtained at or near the typical operating temperature of the CCD camera (-25C). All light frames were calibrated using PixInsight's automatic dark/bias scaling to compensate for temperature differences.
+ 
+Michael Sidonio: 19.5 hours using a 6" AP152 F7.5 Starfire APO refractor with 4" field flattener and FLI ProLine11002 CCD camera with Astronomik filters. Taken over 3 nights from very dark skies at Wiruna, North West of Lithgow Australia. Total exposure in each channel (LRGB): 15h:1.5h:1.5h:1.5h: = 19.5 hours. Data was acquired with -35C chip temperature and calibrated with darks and flats.
+
+\section{Results and Analysis}
+
+\subsection{MWA images}
+
+%The widefield MWA image at 154~MHz is shown in Fig.~\ref{CenA_wide}. (describe the imaging artefacts present and the properties of the resulting image, resolution, noise etc)
+%
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=35 95 5 137,width=1.0\textwidth,angle=0]{paper_images/CenA-MWA_wide1.pdf}
+%\caption{Cen~A and surrounding field at 154~MHz with the Murchison Widefield Array. The image is shown on a linear scale between -0.2 and 1.2~Jy ...  res, noise stats etc}
+%\label{CenA_wide}
+%\end{figure*}
+%
+%Fig.~\ref{CenA_zoom_cont} shows the same image as Fig.~\ref{CenA_wide}, but zoomed in on Cen~A and overlaid with contours to show the structure of the lobes, particularly where the brighter parts are overexposed due to the stretch used to display the image, such as in the NML.
+
+The MWA image at 154~MHz is shown in Fig.~\ref{CenA_zoom_nocont}. This is a zoomed in version of the full image which covers a much larger field of view spanning approximately 30 degrees across, out to the first null of the primary beam. (describe any imaging artefacts present and the properties of the resulting image, resolution, noise etc)
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=140 110 130 143,width=1.0\textwidth,angle=0]{paper_images/CenA_zoom_nocont.pdf}
+%\caption{Cen~A at 154~MHz with the Murchison Widefield Array. The image is shown on a linear scale between -0.2 and 1.2~Jy and contours are at 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128 and 256~Jy...  res, noise stats etc}
+\caption{Cen~A at 154~MHz with the Murchison Widefield Array. The image is shown on a linear scale between -0.2 and 1.2~Jy.  res, noise stats etc}
+\label{CenA_zoom_nocont}
+\end{figure*}
+
+\subsection{Parkes images}
+
+The Parkes SPASS image at 2.3~GHz is shown in Fig.~\ref{parkes_zoom}. This is a zoomed in version of the full image which covers a much larger field of view spanning approximately 20 degrees in declination and 20 degrees in right ascension. (describe any imaging artefacts present and the properties of the resulting image, resolution, noise etc)
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=145 100 125 147,width=1.0\textwidth,angle=0]{paper_images/parkes_zoom.pdf}
+\caption{Cen~A at 2307~MHz with Parkes. The image is shown on a linear scale between 0.2 and 4~Jy... and res, noise stats,}
+\label{parkes_zoom}
+\end{figure*}
+
+%Fig.~\ref{parkes_cont} shows the same image as Fig.~\ref{parkes_wide}, but zoomed in on Cen~A and overlaid with contours to show the structure of the lobes, particularly where the brighter parts are overexposed due to the stretch used to display the image, such as in the NML.
+%
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=0 0 0 12,width=1.0\textwidth,angle=0]{paper_images/SPASS_regrid_MWA_cropped_contours.pdf}
+%\caption{Cen~A at 2307~MHz with Parkes. The image is shown on a linear scale between 0 - 3~Jy. ... and res, noise stats, contours  0.75 1 1.5 2 4 8 Jy/beam}
+%\label{parkes_cont}
+%\end{figure*}
+
+\subsection{Spectral index between 154~MHz and 2.3~GHz}
+\label{sec:spectral_index}
+
+We constructed a spectral index map between 154~MHz and 2307~MHz from the MWA and SPASS radio data (Fig.~\ref{spec_index_figure}, panel A). In order to produce an accurate representation of the spectral index it is important to ensure that both images contain information on the same angular scales. The smallest baseline of the MWA is approximately 7.7~m, allowing the interferometer to sample angular scales of up to 14.5\textdegree \ at zenith. This is more than sufficient to fully sample the emission from Cen~A, which has a maximum extent of approximately 8\textdegree. The single-dish SPASS image of course contains larger spatial scales, including the average or `zero-baseline' value. 
+
+The following procedure was used to effectively match the spatial information contained in both images. We first cropped the wide-field MWA image to an 865 x 865 pixel sub-image covering an area of 10 x 10 degrees centred on Cen~A. This image was used as a template to regrid the SPASS image to obtain a 2307~MHz image covering the same area as the cropped MWA image and having the same image and pixel sizes. We then took the FFT of the resultant SPASS image, set the central `zero spacing' pixel in the Fourier plane to zero, and took the inverse FFT to obtain an image with the DC component removed, thus obtaining a 10 x 10 degree image containing the same information on large spatial scales. The higher-angular-resolution MWA image was then smoothed to the SPASS angular resolution of 10.75 arcmins. 
+
+The spectral index image was then calculated using:
+\begin{equation} 
+\alpha=\frac{\rm{Log}(S_{154}/S_{2307})}{\rm{Log}(154/2307)},
+\label{alpha2}
+\end{equation}
+where $S_1$ and $S_2$ are the flux density values of each pixel in the 154~MHz and 2307~MHz images, respectively.
+
+%combine three figures into one:
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=0 0 0 7,width=1.0\textwidth,angle=0]{paper_images/CenA_spec_index_154_2307_DC_HPF_MWA_contours.pdf}
+%\caption{Spectral index map of Cen~A between 154~MHz and 2.3~GHz. MWA contours.}
+%\label{CenA_spec_index_154_2307_DC_HPF_MWA}
+%\end{figure*}
+
+Panels B and C of Fig. \ref{spec_index_figure} show the error in the spectral index and the signal to noise ratio (SNR) in the spectral index map, respectively. We can see that the SNR is high throughout the lobes (the lowest value is around 20 at the edges of the lobes where the emission is faintest), giving us confidence that our spectral variations on the order of 0.01 for $\alpha$ are real.
+
+\begin{figure*}
+     %\centering
+     \begin{minipage}[r]{1.2\columnwidth}
+         %\centering
+         \raggedright
+         \includegraphics[clip,trim=260 70 190 95,width=1.33\linewidth]{paper_images/spec_index_heat_cropped_anno.pdf}
+%         \caption{BBB}\label{fig:BBB}
+     \end{minipage} 
+     \hfill\begin{minipage}[l]{0.8\columnwidth}
+         \hfill\includegraphics[clip,trim=100 130 30 150,width=0.9\linewidth]{paper_images/spec_index_error_heat_cropped_anno.pdf} 
+         \raggedleft
+         \newline
+         \includegraphics[clip,trim=105 160 38 138,width=0.9\linewidth]{paper_images/spec_index_snr_heat_cropped_anno.pdf}
+%         \caption{AAA}\label{fig:AAA}
+     \end{minipage}
+
+\caption{Spectral index analysis of Cen A between 154~MHz and 2.3~GHz. Panel A shows the spectral index $\alpha$ as defined by $S\propto\nu^{\alpha}$. Panel B shows the error in the spectral index, computed by propagation of errors, using the background rms noise of the images as the error estimate across the entire image. Panel C shows the signal to noise ratio computed by taking the ratio of the images in panels A and B.}
+\label{spec_index_figure}
+\end{figure*}
+
+Also made a spectral index map for the NML between 1.4~GHz and 154~MHz, to aid in later discussion. See Fig. X
+
+\subsection{Optical emission line images of NML}
+
+The H$\alpha$ image from the IMACS instrument on the Magellan Telescope is shown in Fig.~\ref{optical_emission_lines}. (describe any imaging artefacts present and the properties of the resulting image, resolution, noise etc)
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=0 50 0 74,width=1.0\textwidth,angle=0]{optical_images/NML_halpha_1sec.pdf}
+\caption{Optical emission lines of NML}
+\label{optical_emission_lines}
+\end{figure*}
+
+\subsection{Deep optical images of NML}
+
+The deep optical image produced using a combination of data from two amateur telescope setups as described in Section \ref{sec:optical_obs} is shown in Fig.~\ref{optical1}. (describe any imaging artefacts present and the properties of the resulting image, resolution, noise etc)
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=0 10 0 30,width=1.0\textwidth,angle=0]{optical_images/optical_full_snap.png}
+\caption{Deep Optical image of Cen~A (NGC5128)}
+\label{optical1}
+\end{figure*}
+
+\section{Discussion}
+
+%\subsection{Large scale radio structure and features}
+%
+%Our images at 154~MHz and 2.3~GHz are consistent with previous observations showing the large scale structure of the giant radio lobes (e.g. Features in Feain et al 2011, although much worse angular resolution) and flux densities and spectral indices. e.g. Alvarez et al etc.... Junkes
+ 
+\subsection{Radio emission in the Northern Middle Lobe: existence of a large-scale `jet'}
+
+One of the many unanswered questions about the radio lobes of Cen~A is the means of energy transport from the inner lobes to the outer lobes. Viable models of the source require that the giant outer lobes are much older (on the order 1~Gyr) than the radiative lifetimes of the their constituent electrons (Eilek 2015 NJP164) and that in-situ particle particle acceleration must be occurring within the lobes. In order to maintain the turbulence necessary for this in-situ particle reacceleration, the models require that the outer lobes are resupplied with energy from the AGN, otherwise the turbulence would decay within 30~Myr (Sarka Wykes?). However, the means by which energy is transported from the inner lobes to the outer lobes is not well understood. To understand the physical mechanisms here we must understand the astrophysics of the so-called transition regions, between the inner and outer lobes of Cen~A, both in the north and the south.
+
+The northern transition region has been the subject of several studies (e.g. Junkes et al 1993, \citealt{morganti1999}, Romero et al 1996, Krishna and Wiita 2010, and most recently recently Neff et al 2015). It is a radio loud structure, the second brightest feature of Cen~A after the bright inner lobes and there are several competing models to explain its structure and its relationship to the inner and outer northern lobes. One set of models invokes a direct connection between the northern inner lobe and the NML through some kind of collimated jet. The other groups of models do not require a direct connection, but fail to solve other problems... e.g. Saxon et al 2001. ATCA Observations at 20~cm by \citet{morganti1999} support the existence of a collimated structure connecting the inner northern lobe and the NML as their image clearly shows a linear structure connecting the two features. However, recent VLA observations at 90~cm by \citet{nef15} have brought the existence of this feature once again into question. Their image shows a gap in the diffuse emission to the north-east of the NIL, almost exactly coincident with the \citet{morganti1999} linear connection feature. They also claim to have observed a new feature in the diffuse emission to the north of the NIL, and attribute this to be emission from a galactic wind \citep{nef15B}.
+
+Our new MWA observations of the northern transition region shed new light on this complex region, which is difficult to image due to its proximity to the extremely bright inner lobes. In Fig. \ref{morganti} we show the NML region as imaged with ATCA by \citet{morganti1999}, with both the ATCA 1.4~GHz and the MWA 154~MHz contours overlaid. The MWA image has an angular resolution of approximately 3~arcmin, compared to the higher angular resolution of xx arcmin for the \citet{morganti1999} image and xx arcmin for the \citet{nef15} image, however it is sufficient to make a valuable comparison. The advantage that the MWA image has over both the ATCA and VLA images is its excellent instantaneous uv coverage, and its abundance of short baselines, which allows us to accurately reconstruct the intermediate scales of the diffuse emission that are associated with the NML. Our data are well suited to the use of new wide field imaging tools such as WSCLEAN (ref), allowing us to accurately reconstruct diffuse emission without a strong reliance on deconvolution and the unpredictable outputs of imaging algorithms such as MEM. 
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=100 50 100 74,width=1.0\textwidth,angle=0]{paper_images/ATCA_overlaid_ATCAblue_MWAred.pdf}
+\caption{Morganti et al 1999 image of the NML with the ATCA 1,4~GHz contours (blue) and MWA 154~MHz contours (red) overlaid. Blue contours are at 0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, and 0.35 Jy/beam and red contours are at 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, and 7 Jy/beam.}
+\label{morganti}
+\end{figure*}
+
+
+The MWA 154~MHz image shown in Fig \ref{morganti} confirms the existence of a connection between the NIL and the NML as first reported by \citet{morganti1999}. It is possible that the `gap' observed by \citet{nef15} is an imaging artefact due to one of the many difficulties associated with imaging Cen~A with the VLA, including poor uv-sampling at the scales of interest, a very low elevation angle, which amplifies problems associated with primary beam shape and contamination from larger scale emission of the outer lobes. The MEM algorithm and use of AIPS does not allow for accurate wide field imaging as it cannot account for the curvature of the sky. The `gap' in the \citet{nef15} image runs parallel to other artefacts in their image (see fig 3 of \citealt{nef15}). Another particularly conspicuous feature of the \citet{nef15} image is the large dark gap on the northwest edge of the NML, which they identify as an imaging artefact. Our image confirms the \citet{nef15} conclusion that this large dark feature is not real and that the diffuse emission of the NML extends smoothly to the north, gradually fading as it merges into the outer lobe.
+
+Our 154~MHz image also does not show any evidence for the extra diffuse emission that appears in the \citet{nef15} image directly north of the NIL, and connects to the bright ridge of the NML via a large structure that runs parallel to, but north of, the \citet{morganti1999} linear connection feature. This structure does not appear in the \citet{morganti1999} image either, indicating that this feature is likely to be an artefact of the VLA image. A possible explanation for the differences between the \citet{nef15} image at 90~cm and the \citet{morganti1999} image at 20~cm is the difference in wavelength. Spectral index variations could result in features appearing at one wavelength and being undetectable at another, for example if the `galactic wind' and bright northerly connection feature of \citet{nef15} had a much steeper spectral index than the rest of the northern transition region, it may only be detectable in this instance by the VLA at 90~cm. Our spectral index results presented in Section \ref{sec:spectral_index} can be used to determine whether variations in spectral index are a likely explanation for the differences in the images. The spectral index map between 154~MHz and 2.3~GHz (Fig.~\ref{spec_index_figure}) shows that the spectral index of the area corresponding to the connecting jet in the Morganti et al image is approximately -0.65, in rough agreement with the estimate made by \citet{nef15}. The brightness of the feature in the \citet{morganti1999} 20~cm image is ~37 mJy/beam, so with a spectral index of -0.65, the flux density at 90~cm would be ~98~mJy, making it undetectable in the \citet{nef15} image, which has an rms noise level of around 50~mJy/beam in that region. This explains the missing feature in the \citet{nef15} VLA image. The question is then, why does the additional diffuse emission seen by \citet{nef15} not appear in the the \citet{morganti1999} image?
+
+Again, the spectral index can be instructive here. It is not possible that the bright feature in the \citet{nef15} image to the north-west of the \citet{morganti1999} linear jet is missing in the \citet{morganti1999} image due to it having a significantly steeper spectral index. The difference in spectral index between the two regions is clearly very small (in Fig.~\ref{spec_index_figure} the northwest region actually appears to have a slightly flatter special index). The most likely explanation is therefore that the \citet{nef15} et al feature is an imaging artefact i.e. an extra 'hook-like' artefact positioned below the ones identified in their figure 3 as artefacts, and the `gap' where the the \citet{morganti1999} `jet' should be is simply a non-detection of a faint feature due to the noise level of the image.
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=10 50 10 80,width=1.0\textwidth,angle=0]{paper_images/CenA_spec_index_NML_MWA_contours.pdf}
+%\caption{Spectral index map of the Cen~A NML between 154~MHz and 2.3~GHz. MWA contours.}
+%\label{NML_spec_index}
+%\end{figure*}
+
+What does this mean for the various models of the NML? Support for a model with the NML actively connected to and being resupplied with energy from the NIL, creating turbulence ... Eilek 2014)
+Formation of NML: merger, change of direction of AGN jets + interaction with IGM/ISM (such a merger may have disturbed the position angle of the radio jet as a result of a change of axis of the inner disc (Pringle 1997; Schreier et al. 1998).)
+ there seems to be a number of analogies between Centaurus A and M87. In particular, as in M87 (see Klein (1998) for a review) also Feigelson et al. (1981)
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=0 0 0 15,width=0.70\textwidth,angle=0]{paper_images/MWA_NML_new_cont.pdf}
+%\caption{Cen~A NML at 154~MHz with the MWA. contours are every 0.5 Jy/beam from 0.5 to 10 and then from 16 to 256 Jy/beam increasing by a factor of two Jy/beam. Gaussian restoring beam, BMAJ  2.98~arcmin, BMIN 2.75~arcmin, BPA -6.79~deg, shown in the bottom left corner.}
+%\label{NML_mwa_contours}
+%\end{figure*}
+
+Present the properties of the NML radio knots and their spectral index? Don't resolve them at our angular resolution, not sure if we can say anything useful 
+Neff compares this knotty ridge with a similar slightly offset structure seen in X-rays. I don't think we can provide much more insight on this due to angular resolution.
+
+Can't really say anything about the diffuse emission directly around the inner lobes discussed by Neff, insufficient angular resolution. Except that we don't see any evidence of this additional bulge at the North Western edge of the NIL. 
+
+We do, however see and extension to the North East of the NIL, which could be due to a galactic wind as postulated by Neff et al (2015 a and b). This possibility is made even more interesting by the discovery of a new optical filament, possibly related to the radio emission and a galactic wind or ionising cone from the AGN. This will be discussed further in Section XX
+
+%\subsection{Interpretation of the spectral index}
+%
+%Discuss the features of the spectral index map and the implied astrophysics in the lobes.
+%Mention the spur feature to the bottom right. Probably Galactic.
+%Discuss error map and SNR map - confident that spatial variations in the spectral index on the order of 0.01 are real. 
+%
+%From Ettore:
+%- The index looks flatter (green) along the ridge of the lobe (from the NML to the top end - the ``hook"), it might be the most recent outflow/jet with younger electrons and hence flatter index.
+%- Off this region, the index is steeper, possibly older gas emitted at earlier stages.
+%- Note the flattest area (blue), either in the NL and SL: it gives me the impression of the spots where the jets hit the IGM. It might be areas of shock, where the electrons are reaccelerated and the index turns flatter.
+%
+%-Could also be that the magnetic field changes (i.e. is lower at the edges) Look at O?Sullivan et al 2013  polarisation paper (magnetic field variations could account for 'steepening'?)
+% 
+%Comparison to Hercules A? (e.g. Gizany and leahy 2003 - CenA spectral variations much more subtle -0.4 to -1, rather than -0.6 -2! but the Her A spectral index is much higher frequency - 1.4 GHz to 5 GHz, indices do steepen at higher freqs
+%
+%Eileen et al 2014: "Turbulent dynamo. The outer lobes probably contain turbulence, possibly driven by internal velocity shear."
+%
+%support for flow-driven model? 
+%The model is seriously challenged, however, by the lack of any sign of channel deceleration or spreading towards the outer ends of the lobes. (E14)
+%see also: flow driven lobes: Tregillis I L, Jones T W and Ryu D 2001 Astrophys. J. 557 475
+
+\subsection{Optical emission lines in the NML: photoionisation from the AGN}
+
+In the H$\alpha$ image of the NML region (Fig. \ref{optical_emission_lines_labelled}) we can clearly see the `inner' filament (label A), the outer filament (label B) and a previously unreported filament further to the west (label C).
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=0 160 0 205,width=1.0\textwidth,angle=0]{optical_images/NML_halpha_1sec_MWAcont_labelled_export.pdf}
+%\caption{Optical emission lines of NML}
+%\label{optical_emission_lines_labelled}
+%\end{figure*}
+
+Properties of the filaments (velocity, velocity dispersion?))
+What is the relationship between the `new' (and old) filaments and the ionisation cone identified by Sharp and JBH 2010... Can't tell the size and orientation from the  ionization diagnostic diagrams (IDDs) ...
+
+The `new' filament is visible in the FUV maps of Neff et al 2015b and there is some coincident X-ray emission there (their figure 5, X-ray from Kraft et al 2009)
+
+
+\subsection{Halo stars of NGC5128: An old population affected by a recent merger and AGN activity}
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=10 10 182 46,width=0.70\textwidth,angle=0]{optical_images/optical_full_snap_MWA_cont.png}
+%\caption{Cen~A in optical with MWA radio contours overlaid}
+%\label{optical_overlaid_radio}
+%\end{figure*}
+
+%\begin{figure*}
+%\centering 
+%\includegraphics[clip,trim=0 0 0 10,width=0.70\textwidth,angle=0]{optical_images/MWA_optical_contours_green.pdf}
+%\caption{Cen~A at 154~MHz with optical contours overlaid (in green) after smoothing to MWA resolution. Optical contours are at 20$\%$ to 90$\%$ in steps of 10$\%$. MWA contours in white are from 0.5 to 10 in steps of 0.5 Jy/beam and then from 16 to 256 Jy/beam incrementing by a factor of two.}
+%\label{radio_overlaid_radio_and_optical}
+%\end{figure*}
+
+\begin{figure*}
+\centering 
+\includegraphics[clip,trim=50 150 50 150,width=0.9\textwidth,angle=270]{optical_images/optical_overlay_smooth_and_MWA_5percent_red_newpdf.pdf}
+\caption{Deep optical image overlaid with optical image smoothed to MWA resolution (red contours from 20$\%$ to 90$\%$ of maximum value, incrementing in steps of 5$\%$) and overlaid with MWA 154~MHz contours (blue contours from 0.5 to 10 Jy/beam incrementing in steps of 0.5 Jy/beam and then 16 to 256 Jy/beam incrementing by a factor of two). The positions and extents of the optical emission line filaments are shown in green and labelled A for the inner filament, B for the outer filament and C for the newly detected filament to east.}
+\end{figure*}
+
+The most interesting thing about the deep optical image is the extension to the north coinciding with the NML and the diametrically opposed extension to the south - where the missing Southern Middle Lobe should be! Are these stars from the original galaxy before the merger 1 x 10$^9$ years ago that have migrated out from the shells (Malin 1983 - shell structure)?
+
+What does this tell us?
+There is clearly a bipolar outflow from the AGN. In the North there has been a violent interaction between the AGN `jet' and cold gas (the big HI cloud in the north (ref)), but in the South there was no cold gas to interact with....
+
+Timing - how old are the stars in the shells and `cones' to the north and south? How does this relate to theories of the age and formation of the NML and the outer lobes? What clues can we glean from the position angles of the structures in the optical and radio?
+
+\subsection{Summary of significant events that have shaped Cen~A on intermediate scales}
+
+Significant events in the history of Cen~A:
+1. Merger (2E8 to 2E9 years ago, malin et al 1983, israel et al 1998, MFCA????), initiates a burst of AGN activity (refs), remnant of this first outburst is the north and south giant lobes, but there has been continuous reacceleration happening within the giant lobes otherwise they would have faded from view (refs e.g. Sarka Wykes). Our spectral index map supports this scenario of reaccelleration. lobes are a turbulent place (feain et al 2011 .\\
+2. The merger also produces the `shells' evident in the optical image (ref malin 1983 etc, quinn 1982 etc,Quinn 1984; Charmandaris et al. 2000), shell ages ~10$^9$ years from malin geometrical/dynamical arguments \\
+3. The AGN burst(s) also resulted in jet-induced star formation (Rejkuba 2002), producing the FILAMENTS, not the elongated stellar outflows seen to the north and south of our deep optical image which contain much older stars (what are the ages of these stars? A: They are old!  The majority 70-80$\%$ are 10-12 Gyr old and most of the rest are 2-4 Gyr old. So most formed much earlier than any `major merger' but some room is left for star formation triggered by a merger event ~1-2 Gyr ago (Rejkuba et al 2011)  Blanco et al. (1975) and Peterson, Dickens, & Cannon (1975) discovered the optical jet or Ðlaments in NGC 5128 \\
+3a. from rejkuba 2002: Many high-redshift radio galaxies show optical images elongated in the same direction as their double radio sources, the so-called alignment effect (McCarthy et al. 1987 ; Chambers, Miley, & van Breugel 1987 ; De Breuck et al. 1999
+4. The stellar outflow to the North does not line up with the NML. This is due to time-related factors: the AGN jet is rotating (refs Haynes 19..). The NML is younger than those outflow stars which formed after the initial burst but before the NML formed (young stars in filaments near NML - stars near the filaments are young (Rejkuba 2002) hot blue supergiants ~10 Myr old - but their ionising power alone cannot account for the high excitation emission lines - ionisation from the AGN must be at play - only in the north because that is where there was gas to interact with (rejkuba et al 2002) ages of the filament stars? Yes: quote rejkuba""The young stars formed after the collapse of the gas prob- ably have the same origin as the H I and molecular clouds (Charmandaris et al. 2000). The presence of this cool gas, with T [ 104 K, is the necessary ingredient in the jet- induced star formation models. In the model described by Rees (1989)""  Filaments are from an ionisation cone from the AGN or (ref Joss et al) from starburst from the galaxy (or local star forming?). What is expected lifetime of the filaments and when did they form?\\
+5. NML formed due to interaction of AGN jet with cold gas (HI cloud refs, Rejkuba 2002:"The obvious source of the new gas is the close-by H I cloud that will
+continue to supply fresh material that can be ionized as long as it stays in the direction of the jet." So the filament forms as soon as the gas hit the `jet' so a jet of some sorts must exist ), NML still connected to NIL, via a collimated outflow (but maybe not really a jet (ref morgant et al 1999 (compare image) and Neff et al 2015). NML is due to interact with gas currently and energy still being transported to the outer lobes, driving the turbulence (seen in feign image) and reaccelerating electrons - no spectral steepening with radius from core as might be expected for an FRI source (ref)\\
+5a: answers the question of alignment and time effects, precession: Rejkuba 2002 again: "The inner and the outer Ðlaments are not mutually aligned. Similarly, the inner and the outer radio jets are misaligned. If we assume that the jet is precessing as sug- gested by Haynes, Cannon, & Ekers (1983), it should have Ðrst hit the outer Ðlament and precessed in the eastward direction, hitting the inner Ðlament Ðeld later. The recent observations of the radio jet with VLBI (Tingay et al. 1998) and the x-ray jet with Chandra (Kraft et al. 2000) show close alignment with the inner Ðlaments at the position angle of 55¡. Stars in the inner and the outer Ðlament have the same ages to within our precision, of the order of D1È2 ] 106 yr. The distance between the inner and outer Ðlaments is D20¡, implying the projected precession rate of the order of 10~5 degrees per year. The presence of the large quantity of neutral gas toward the west of the outer Ðlament implies that either the jet is precessing in a cone whose right edge does not pass the outer Ðlaments on the west, or that it is intermittent and started shining only a few ] 107 yr ago."
+6. No SML, despite a clearly bipolar outflow (there is a SIL and stellar outflows from our optical image appear in the south, indicating a jet and jet induced star formation. No cold gas to interact with (HI: Oosterloo & Morganti 2005) - no SML, but there is still an `invisible' jet powering turbulence in the outer southern lobe (feain et al), reaccelerating electrons and causing bright synchrotron emission in the south.
+7. Also no filaments have been reported to the south (refs? more obs needed?), indicating that the emission line filaments have some relationship to the radio NML (refs) only to the east of the NML.
+8. Filaments may also be related to the X-Ray. (e.g see chandra/Kraft et al) no X-Ray in the south. What about Gamma Ray see Yang et al
+9. Present: inner lobes position angle changed again anticlockwise relative to NML and outer lobe (e.g. tangy et al) nothing new here from us due to resolution.
+
+
+\section{Conclusion}
+
+We have presented new low-frequency observations of Cen~A at 154~MHz from the MWA and 2.3~GHz from the Parkes S-Pass survey. We have also presented new optical images ... and emission lines .... We have used these data to explore the NML ....
+
+Main conclusions from this work:\\
+1. There is a collimated structure, a `jet' of sorts connecting the NML and the NIL, as first observed by Morganti et al 1999\\
+2. This jet has induced recent star formation due to its interaction with cold gas to the north - evidence by the inner and outer filaments whose high excitation emission lines can only be a result of AGN ionisation (star formation alone is just not enough) \\
+3. The other halo stars seen to the north and south are not aligned with the NML or the filaments - these stars are old. They have been pushed out slowly by galactic winds and pressure from the AGN over a long period of time. \\
+4. Prominent shell structure in the halo IS a result of the merger 1-2 Gyr ago \\
+5. No filaments or bright radio NML equivalent in the south as there was no cold gas there. The AGN jets and/or galactic winds are clearly bipolar though, as evidenced by the way the old galaxy halo stars are elongated in the north-south direction.(need to read more about the so-called alignment effect (McCarthy et al. 1987 ; Chambers, Miley, & van Breugel 1987 ; De Breuck et al. 1999)\\
+6. New filament observed is completely misaligned with the inner and outer filaments - need more observations to determine the ages of the stars in this filament and the ionisation possible from these stars and whether ionisation from the AGN (not possible due to alignment?!) or ionisation from a `galactic wind' is responsible for the photo ionised filament. (Need Joss's photoionisation cone image with proper axis!)\\
+
+
+\section*{Acknowledgments}
+
+Update this:
+
+This scientific work makes use of the Murchison Radio-astronomy Observatory, operated by CSIRO. We acknowledge the Wajarri Yamatji people as the traditional owners of the Observatory site. Support for the MWA comes from the U.S. National Science Foundation (grants AST-0457585, PHY-0835713, CAREER-0847753, and AST-0908884), the Australian Research Council (LIEF grants LE0775621 and LE0882938), the U.S. Air Force Office of Scientific Research (grant FA9550-0510247), and the Centre for All-sky Astrophysics (an Australian Research Council Centre of Excellence funded by grant CE110001020). Support is also provided by the Smithsonian Astrophysical Observatory, the MIT School of Science, the Raman Research Institute, the Australian National University, and the Victoria University of Wellington (via grant MED-E1799 from the New Zealand Ministry of Economic Development and an IBM Shared University Research Grant). The Australian Federal government provides additional support via the Commonwealth Scientific and Industrial Research Organisation (CSIRO), National Collaborative Research Infrastructure Strategy, Education Investment Fund, and the Australia India Strategic Research Fund, and Astronomy Australia Limited, under contract to Curtin University. We acknowledge the iVEC Petabyte Data Store, the Initiative in Innovative Computing and the CUDA Center for Excellence sponsored by NVIDIA at Harvard University, and the International Centre for Radio Astronomy Research (ICRAR), a Joint Venture of Curtin University and The University of Western Australia, funded by the Western Australian State government. We also acknowledge the support of the projects Spanish MINECO AYA2012-39475-C02-01 and CSD2010-00064.
+
+Please acknowledge funding from NSF grant AST/ATI 0242860.
+JBH is funded by a Laureate Fellowship from the ARC.
+
+
+\begin{thebibliography}{99}
+
+\bibitem[\protect\citeauthoryear{Bowman et al.}{2013}]{bowman2013} Bowman, J. D., Cairns, I., Kaplan, D. L., et al., 2013, PASA, 30, 31
+\bibitem[\protect\citeauthoryear{McKinley et al.}{2013}]{mckinley} McKinley, B., Briggs, F., Gaensler, B. M., et al., 2013, MNRAS, 436, 1286
+\bibitem[\protect\citeauthoryear{Offringa et al.}{2010}]{offringa2010} Offringa, A. R., de Bruyn, A. G., Biehl, M., et al., 2010, MNRAS, 405, 155
+\bibitem[\protect\citeauthoryear{Offringa et al.}{2012}]{offringa2012} Offringa, A. R., van de Gronde, J. J., Roerdink, J. B. T. M., et al., 2012, A\&A, 539, 95
+\bibitem[\protect\citeauthoryear{Offringa et al.}{2014}]{wsclean} Offringa, A. R., et al., 2014, MNRAS submitted
+\bibitem[\protect\citeauthoryear{Tingay et al.}{2013}]{tingay} Tingay, S. J., Goeke, R., Bowman, J. D., et al., 2013, PASA, 30, 7
+\bibitem[Bolton, Stanely, \& Slee(1949)]{bol49}Bolton, J.G., Stanely, G.J., \& Slee, O.B. 1949, Nature, 164, 101
+\bibitem[Burns, Feigelson \& Schreier(1983)]{bur83}Burns, J.O., Feigelson, E.D. \& Schreier, E.J. 1983, ApJ, 273, 128
+\bibitem[Clarke, Burns \& Norman(1992)]{cla92}Clarke, D.A., Burns, J.O. \& Norman, M.L. 1992, ApJ, 395, 444
+\bibitem[Combi \& Romero(1997)]{com97}Combi, J.A. \& Romero, G.E. 1997, 121, 11
+\bibitem[Croton et al.(2006)]{cro06}Croton, D.J. et al. 2006, MNRAS, 365, 11
+\bibitem[Feain et al.(2011)]{fea11}Feain, I.J. et al. 2011, ApJ, 740, 17
+\bibitem[Fujisawa et al.(2000)]{fuj00}Fujisawa, K. et al. 2000, PASJ, 52, 1021
+\bibitem[Hamuy et al. (1992)]{hamuy1992}Hamuy, M. et al., 1992, PASP, 104, 533
+\bibitem[Hamuy et al. (1994)]{hamuy1994}Hamuy, M. et al., 1994, PASP, 106, 566
+\bibitem[Harris, Rejkuba, \& Harris(2010)]{har10}Harris, G.L.H., Rejkuba, M., \& Harris, W.E. 2010, PASA, 27, 457
+\bibitem[Horiuchi et al.(2006)]{hor06}Horiuchi, S. et al. 2006, PASJ, 58, 211
+\bibitem[Jones \& Wherle(1997)]{jon97}Jones, D.L. \& Wherle, A.
+\bibitem[Jones et al.(1996)]{jon96}Jones, D.L. et al. 1996, ApJ, 466, L63
+ \bibitem[Jones, Shopbell \& Bland-Hawthorn(2002)]{JSB}Jones, Shopbell \& Bland-Hawthorn, 2002, MNRAS, 329, 759
+\bibitem[Junkes et al.(1993)]{jun93}Junkes, N., Haynes, R.F., Harnett, J.I. \& Jauncey, D.L. 1993, A\&A, 269, 29
+\bibitem[Kellermann, Zensus \& Cohen(1997)]{kel97}Kellermann, K.I., Zensus, J.A. \& Cohen, M.H. 1997, ApJ, 475, 93
+\bibitem[McKinley et al.(2013)]{mck13}McKinley, B. et al. 2013, MNRAS, 436, 1286
+\bibitem[MFCA(2010)]{MFCA}The Many Faces of Centaurus A: 2010, PASA Special Edition, Vol. 27, \#4, 379 - 495
+\bibitem[Meier et al.(1989)]{mei89}Meier, D.L. et al. 1989, AJ, 98, 27
+\bibitem[Morganti et al.(1999)]{morganti1999}Morganti, R., Killeen, N. E. B., Ekers, R. D., Oosterloo, T. A., 1999, MNRAS, 307, 750
+\bibitem[Mould et al.(2000)]{mou00}Mould, J.R. et al. 2000, ApJ, 536, 266
+\bibitem[M\"{u}ller et al.(2014)]{mul14}M\"{u}ller, C. et al. 2014, A\&A, 569, 115
+\bibitem[M\"{u}ller et al.(2011)]{mul11}M\"{u}ller, C. et al. 2011, A\&A, 530, L11
+\bibitem[Neff, Eilek, \& Frazer(2015A)]{nef15}Neff, S.G., Eilek, J.A.,\& Frazer, N. 2015, ApJ, 802, 87
+\bibitem[Neff, Eilek, \& Frazer(2015B)]{nef15B}Neff, S.G., Eilek, J.A.,\& Frazer, N. 2015, ApJ, 802, 88
+\bibitem[Neumayer(2010)]{neu10}Neumayer, N. 2010, PASA, 27, 449
+ \bibitem[Oke(1990)]{oke1990}Oke, J. B., 1990, AJ, 99, 1621
+\bibitem[Rioja et al.(2011)]{rio11}Rioja, M., Dodson, R., Malarecki, J. \& Asaki, Y. 2011, AJ, 142, 157
+\bibitem[Sault, Teuben \& Wright(1995)]{1995ASPC...77..433S}Sault, R.J., Teuben, P.J. \& Wright, M.C.H. 1995, ASPC, 77, 433
+\bibitem[Shepherd, Pearson, \& Taylor(1994)]{she94}Shepherd, M.C., Pearson, T.J. \& Taylor, G.B. 1994, BAAS, 26, 987
+\bibitem[Tingay \& Lenc(2009)]{tin09}Tingay, S.J. \& Lenc, E. 2009, AJ, 138, 808
+\bibitem[Tingay \& Murphy(2001)]{tin01b}Tingay, S.J. \& Murphy, D.W. 2001, ApJ, 546, 210
+\bibitem[Tingay, Preston, \& Jauncey(2001)]{tin01}Tingay, S.J., Preston, R.A. \& Jauncey, D.L. 2001, AJ, 122, 1697
+\bibitem[Tingay et al.(1998)]{tin98}Tingay, S.J. et al. 1998, AJ, 115, 960
+\bibitem[Tingay et al.(1994)]{tin94}Tingay, S.J. et al. 1994, Aust.J.Phys., 47, 619
+\bibitem[Vermeulen, Readhead \& Backer(1994)]{ver94}Vermeulen, R.C., Readhead, A.C.S. \& Backer, D.C. 1994, ApJ, 430, L41
+\bibitem[Veilleux et al. (2010)]{MMTF}Veilleux et al., 2010, AJ, 139, 145
+\bibitem[Wade et al.(1971)]{wad71}Wade, C.M., Hjellming, R.M., Kellermann, K.I. \& Wardle, J.F.C. 1971, ApJ, 170, L11
+\bibitem[Walker, Romney \& Benson(1994)]{wal94}Walker, R.C., Romney, J.D. \& Benson, J.M. 1994, ApJ, 430, L45
+\bibitem[Wykes et al.(2014)]{wyk14}Wykes, S. et al. 2014, MNRAS, 442, 2867
+\bibitem[Wykes et al.(2015)]{wyk15}Wykes, S. et al. 2015, MNRAS, 447, 1001\end{thebibliography}
+\end{thebibliography}
+
+\bsp
+
+\label{lastpage}
+
+\end{document}
