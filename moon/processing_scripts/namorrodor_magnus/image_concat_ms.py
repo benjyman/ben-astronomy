@@ -108,6 +108,9 @@ def image_concat_ms(obsid,track_off_moon_string,options):
          concat_image_base+='_peeled'
          concat_vis_base+='_peeled'
       
+      if (options.crop_images):
+         concat_image_base_cropped = concat_image_base + '_cropped'
+      
       if (machine=="magnus" or machine=="galaxy"):
          if (options.track_moon or options.track_off_moon):
             concat_vis_name=data_dir+concat_vis_base+'.ms'
@@ -273,6 +276,41 @@ def image_concat_ms(obsid,track_off_moon_string,options):
 		 #print cmd
 		 #os.system(cmd)
       
+      if options.crop_images:
+         for i in range(0,24):
+            for pol in ['XX','XY','XYi','YY']:
+               moon_fitsname="%s-%05d-%s-image.fits" % (concat_image_base,i,pol)
+               moon_zoom_fitsname="%s-%05d-%s_cropped-image.fits" % (concat_image_base,i,pol)
+               if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
+                  moon_hdulist = pyfits.open(moon_fitsname)
+               else:
+                  print "Either file %s is missing or is not readable" % moon_fitsname
+                  continue        
+               moon_data=moon_hdulist[0].data[0,0,:,:]
+               moon_data=np.nan_to_num(moon_data)
+               moon_header=moon_hdulist[0].header
+               
+               
+               del moon_header[8]
+               del moon_header[8]
+               del moon_header['history']
+               
+               moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               wcs = WCS(moon_header)
+               #print wcs
+               wcs=wcs.dropaxis(2)
+               wcs=wcs.dropaxis(2)
+               wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               #print wcs_cropped
+               moon_header.update(wcs_cropped.to_header())
+               
+               #write out the moon image
+               pyfits.writeto(moon_zoom_fitsname,moon_zoom,clobber=True)
+               pyfits.update(moon_zoom_fitsname,moon_zoom,header=moon_header)
+               print "wrote  image %s" %  moon_zoom_fitsname
+               
+               
+               
       #only generate beam if any one of the beam files doesn't already exist and you are doing pbcorrecting at this stage (not mosaicking later
       if not (options.no_pbcorr):
          if not os.path.exists(concat_image_base+'_beam-xxi.fits') or not os.path.exists(concat_image_base+'_beam-xxr.fits') or not os.path.exists(concat_image_base+'_beam-xyi.fits') or not os.path.exists(concat_image_base+'_beam-xyr.fits') or not os.path.exists(concat_image_base+'_beam-yxi.fits')  or not os.path.exists(concat_image_base+'_beam-yxr.fits')  or not os.path.exists(concat_image_base+'_beam-yyi.fits') or not os.path.exists(concat_image_base+'_beam-yyr.fits'):
@@ -309,6 +347,7 @@ parser.add_option('--ionpeeled',action='store_true',dest='ionpeeled',default=Fal
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms"  [default=%default]')
 parser.add_option('--cotter',action='store_true',dest='cotter',default=False,help='Use an ms from cotter, not imported from RTS e.g. --cotter   [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
+parser.add_option('--crop_images',action='store_true',dest='crop_images',default=False,help='Crop the images to the size required by model_moon.py e.g. --crop_images   [default=%default]')
 
 
 (options, args) = parser.parse_args()

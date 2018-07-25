@@ -21,6 +21,7 @@ import healpy as hp
 from datetime import datetime, timedelta, date, time
 import subprocess
 from astropy.wcs import WCS
+from statsmodels.stats.moment_helpers import cov2corr
 
 def model_moon(options):
    if options.plot_only:
@@ -110,7 +111,7 @@ def model_moon(options):
    #CenA: ra_min=13*15., ra_max=14*15., dec_min=-53., dec_max=-33.
    #paper 1 moon pos:  22:52:17.79, dec =  -4:51:28.7,
    #need the pointing position! RA,DEC: 333.00, -7.70
-   #RA DEC for Moon 2015B_05 
+   #RA DEC for Moon 2015B_05 (THIS is the pointing centre, i.e. the centre of the sweet spot, NOT the RA DEC  of the Moon!
    #ra_pointing=333.00
    #dec_pointing=-7.70
    
@@ -199,11 +200,11 @@ def model_moon(options):
    Omega=moon_area_deg_sq/steradian_in_sq_deg
    print "Omega is %s" % Omega
    
-   #T_moon=250. #K highest
-   #T_moon=230. #K  consistent with mckinley et al and vedantham et al
-   T_moon=210. #K lowest
-   #Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
-   
+   ##T_moon=250. #K highest
+   ##T_moon=230. #K  consistent with mckinley et al and vedantham et al
+   #T_moon=210. #K lowest
+   ##Moon RA 22:49:02 DEC -5:34:25 (2015-09-26) (RA 342.45 DEC -5.573)
+   T_moon = 0.
    #T_refl_gal_150=25.26 # temp of reflected galactic emisssion at 150 from reflection modeling (GSM2017) (takes into account albedo of 0.07)
    #T_refl_gal_150=300*0.07
    T_refl_gal_150=25.26
@@ -295,14 +296,24 @@ def model_moon(options):
       with open(src_filename, "r") as infile:
          lines=infile.readlines()
          moon_ra_string=lines[6].split()[3].split(',')[0]
+         print moon_ra_string
          moon_dec_string=lines[6].split()[6].split(',')[0]
+         print moon_dec_string
       #get in RA and DEC in decimal degrees
       moon_ra_decimal_mins = float(moon_ra_string.split(':')[1])+(float(moon_ra_string.split(':')[2])/60)
+      print moon_ra_decimal_mins
       moon_ra_decimal_hours = float(moon_ra_string.split(':')[0])+(moon_ra_decimal_mins/60)
+      print moon_ra_decimal_hours
       moon_ra_decimal_degrees = moon_ra_decimal_hours * 15.0
+      print moon_ra_decimal_degrees
       
       moon_dec_decimal_mins = float(moon_dec_string.split(':')[1])+(float(moon_dec_string.split(':')[2])/60)
-      moon_dec_decimal_degrees = float(moon_dec_string.split(':')[0])+(moon_dec_decimal_mins/60)
+      print moon_dec_decimal_mins
+      if float(moon_dec_string.split(':')[0]) >= 0.:
+         moon_dec_decimal_degrees = float(moon_dec_string.split(':')[0])+(moon_dec_decimal_mins/60)
+      else:
+         moon_dec_decimal_degrees = float(moon_dec_string.split(':')[0])-(moon_dec_decimal_mins/60)
+      print moon_dec_decimal_degrees
       
       ra_pointing = moon_ra_decimal_degrees
       dec_pointing = moon_dec_decimal_degrees
@@ -350,6 +361,7 @@ def model_moon(options):
          occulted_sky_temp_array[freq_index]=disk_average_sky
       #save the disk average temp array
       np.save(occulted_sky_temp_filename,occulted_sky_temp_array)
+      print 'saved % ' % occulted_sky_temp_filename
 
    ##these aren't real beam maps, just a temporary solution until marcin builds his code to get the FEKO sim maps in healpix
    ##for now they are just Gaussians in hpx
@@ -620,23 +632,32 @@ def model_moon(options):
       #logx=np.log10(freq_array/150.0)
       #logy = np.log10(temp_data)
       #logyerr = temp_data_error / temp_data
-      x = freq_array/150.
+      x = freq_array
+      #x = freq_array 
       y = temp_data
       yerr = temp_data_error
    
       #powerlaw = lambda x, amp, index: amp * (x**index)
    
       # define our (line) fitting function
-      fitfunc = lambda p, x: p[0] + p[1] * x ** p[2]
+      fitfunc = lambda p, x: -p[0] + p[1] * (x/150.) ** p[2]
       errfunc = lambda p, x, y, yerr: (y - fitfunc(p, x))/yerr
    
       pinit = [1.0, 100.0, -1]
       out = optimize.leastsq(errfunc, pinit,
                              args=(x, y, yerr), full_output=1)
    
-      print out[0]
+
+      print "for model: Tm + C*(nu/150MHz)^(alpha)"
       pfinal = out[0]
+      print "pfinal: %s " % pfinal
       covar = out[1]
+      correlation_matrix = cov2corr(covar)
+      print "covariance matrix"
+      print  covar
+      print "correlation_matrix"
+      print  correlation_matrix
+      
       #print pfinal
       #print covar
    
@@ -687,7 +708,7 @@ def model_moon(options):
          #hp.orthview(map=gsm_map,coord='G',half_sky=False,xsize=400,title=map_title,rot=(0,0,0))
          hp.mollview(map=spectral_index_map,coord='C',xsize=400,title=map_title)
          figmap = plt.gcf()
-         figmap.savefig(fig_name,dpi=400)
+         figmap.savefig(fig_name,dpi=900)
          print "saved spectral index map %s" % fig_name
       return spectral_index_map
    
@@ -711,6 +732,7 @@ def model_moon(options):
    #Save the big freq array
    big_freq_array_filename="frequencies_array.npy"
    np.save(big_freq_array_filename,big_freq_array)
+   print "saved %s" % big_freq_array_filename
    
    if generate_new_beam_maps:
        generate_beam_maps(big_freq_array)
@@ -737,768 +759,778 @@ def model_moon(options):
    
    if (not plot_only):
    
-    for centre_chan_index,centre_chan in enumerate(band_centre_chans):
-      
-      #set rms_thresholds for difference images
-      #if epoch_ID=="2015B_05":
-      if ('2015' in epoch_ID):
-         #rms_threshold=1.0
-         rms_threshold=1.0
-      elif epoch_ID=="2018A_01":
-         rms_threshold=10.0
-      
-      
-      #read the info files to find out how many observations there are and what the on and off-moon obsids are:
-      #if (epoch_ID=="2015B_05"):
-      #   on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
-      #   off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
-      #else:
-      #   on_moon_filename='%sepochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-      #   off_moon_filename='%sepochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-
-      on_moon_filename='%smagnus_setup_tests/epochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-      off_moon_filename='%smagnus_setup_tests/epochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-            
-      print on_moon_filename
-      print off_moon_filename
-      
-      on_moon_obsid_list=[]
-      off_moon_obsid_list=[]
-      
-      with open(on_moon_filename,'r') as on_moon_file:
-         on_moon_lines = on_moon_file.readlines()
-      for line in on_moon_lines:
-         on_moon_obsid_list.append(line.strip())
-      
-      with open(off_moon_filename,'r') as off_moon_file:
-         off_moon_lines = off_moon_file.readlines()
-      for line in off_moon_lines:
-         off_moon_obsid_list.append(line.strip())
-      
-      n_obs=len(on_moon_obsid_list)
-      n_chans=24 
-      
-      #multiple linear regresion (see http://stackoverflow.com/questions/11479064/multiple-linear-regression-in-python/14971531#14971531)
-      #using statsmodels
-          
-          
-      #read in moon images
-      #for each obsid
-      #for each channel
-      if (use_cropped_images): 
-         xstart_moon,xend_moon,ystart_moon,yend_moon=0,520,0,520
-         xstart_psf,xend_psf,ystart_psf,yend_psf=0,520,0,520
-      elif (phase_1_MWA_images):
-         #small images are 2048 x 2048
-         #xstart_moon,xend_moon,ystart_moon,yend_moon=0,2048,0,2048
-         #xstart_psf,xend_psf,ystart_psf,yend_psf=0,2048,0,2048    
-         #Crop to only use the inner quarter of the images
-         xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_small,xend_moon_small,ystart_moon_small,yend_moon_small
-         xstart_psf,xend_psf,ystart_psf,yend_psf=512,1536,512,1536 
-      elif (phase_2_long_baseline_MWA_images):
-         #these images are 4096 x 4096
-         xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_phase2,xend_moon_phase2,ystart_moon_phase2,yend_moon_phase2
-         xstart_psf,xend_psf,ystart_psf,yend_psf=1024,3072,1024,3072      
-      else:
-         #xstart,xend,ystart,yend=2000,3120,2000,3120
-         #crop images to make FFTs quicker
-         #69, 93 and 121 are all 5120 x 5120 pix
-         if (centre_chan <= 121): 
-            xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
-            xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
-         #145,169 are 3840 x 3840
-         else:
-            xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
-            xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
-      
-      #initialise arrays of length n_chans to store Smoon and Srfi values
-      rms_residual_images=np.zeros([n_chans,n_obs])
-      rms_residual_images[:]=np.nan 
-      Smoon_spectrum_values=np.zeros([n_chans,n_obs])
-      Smoon_spectrum_values[:]=np.nan 
-      Smoon_error_values=np.zeros([n_chans,n_obs])
-      Smoon_error_values[:]=np.nan
-      synth_beam_area_values=np.zeros(n_chans)
-      synth_beam_area_values[:]=np.nan
-      Srfi_spectrum_values=np.zeros([n_chans,n_obs])
-      Srfi_spectrum_values[:]=np.nan
-      Srfi_error_values=np.zeros([n_chans,n_obs])
-      Srfi_error_values[:]=np.nan
-      diffuse_rfi_values=np.zeros([n_chans,n_obs])
-      diffuse_rfi_values[:]=np.nan
-      Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
-      Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
-      rms_residual_images_average=np.zeros(n_chans) 
-
-      #need to do all this stuff for each frequency channel (and MF) and each obsid
-      channel_list=range(n_chans)
-      channel_list.append('MFS')
-      for chan_index,chan in enumerate(channel_list):
-         for obsid_index,obsid in enumerate(on_moon_obsid_list):
-            #sort out filenames 
-            on_moon_obsid=on_moon_obsid_list[obsid_index]
-            off_moon_obsid=off_moon_obsid_list[obsid_index] 
-            if (chan != 'MFS'):
-               chan_string='%.04d' % chan
-            else:
-               chan_string='MFS'
-            #if (epoch_ID=="2015B_05"):
-            #   moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
-            #   off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
-            #   on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-            #   off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-            #else:
-            #   #moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
-            #   #off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
-            #   #on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
-            #   #off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
-            #   moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
-            #   off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
-            #   on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
-            #   off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
-            
-            moon_fitsname="%simages/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
-            off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
-            on_moon_psf_fitsname="%simages/%s_%s_trackmoon-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
-            off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
-            
-            
-            ##output fitsnames:
-            moon_difference_fitsname="difference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-            psf_difference_fitsname="difference_%s_%s_%s_psf_%s-%s-psf.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-            moon_zoom_fitsname="moon_zoom_%s_%s_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,str(centre_chan),chan_string,stokes)
-            off_moon_zoom_fitsname="off_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
-            rfi_modelled_fitsname="rfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-            rfi_mask_fitsname="rfi_mask_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-            moon_modelled_fitsname="moon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-            residual_modelled_fitsname="residual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-   
-            #if (use_cropped_images): 
-               #moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-               #off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-               #on_moon_psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-               #moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I_cropped.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-               
-               #moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-               #off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I_cropped.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-               #psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-               #moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I_cropped.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-            #else:
-               #moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
-               #moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-               #off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
-               #off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-               #psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
-               #psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
-               #difference image filename
-               #moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-               #if (ionpeeled_images):
-                  #moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-                  #off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-                  #on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
-                  #off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
-                  #moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-                  #psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s_peeled-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string) 
-                  
-            print "############################"
-            print moon_fitsname  
-            print off_moon_fitsname
-            if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
-               moon_hdulist = pyfits.open(moon_fitsname)
-            else:
-               print "Either file %s is missing or is not readable" % moon_fitsname
-               continue        
-            moon_data=moon_hdulist[0].data[0,0,:,:]
-            moon_data=np.nan_to_num(moon_data)
-            moon_header=moon_hdulist[0].header
-            
-            del moon_header[8]
-            del moon_header[8]
-            del moon_header['history']
-         
-            moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
-            wcs = WCS(moon_header)
-            #print wcs
-            wcs=wcs.dropaxis(2)
-            wcs=wcs.dropaxis(2)
-            wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
-            #print wcs_cropped
-            moon_header.update(wcs_cropped.to_header())
-      
-            pix_size_deg = np.abs(float(moon_header['cdelt1']))
-            moon_radius_pix = np.round(moon_radius_deg/pix_size_deg)
+     for centre_chan_index,centre_chan in enumerate(band_centre_chans):
+       
+       #set rms_thresholds for difference images
+       #if epoch_ID=="2015B_05":
+       if ('2015' in epoch_ID):
+          #rms_threshold=1.0
+          rms_threshold=1.0
+       elif epoch_ID=="2018A_01":
+          rms_threshold=10.0
+       
+       
+       #read the info files to find out how many observations there are and what the on and off-moon obsids are:
+       #if (epoch_ID=="2015B_05"):
+       #   on_moon_filename="/data/moon/2017/20150926_moon_%s.txt" % (str(centre_chan))
+       #   off_moon_filename="/data/moon/2017/20150929_off_moon1_%s.txt" % (str(centre_chan))
+       #else:
+       #   on_moon_filename='%sepochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+       #   off_moon_filename='%sepochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+     
+       on_moon_filename='%smagnus_setup_tests/epochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+       off_moon_filename='%smagnus_setup_tests/epochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
+             
+       print on_moon_filename
+       print off_moon_filename
+       
+       on_moon_obsid_list=[]
+       off_moon_obsid_list=[]
+       
+       with open(on_moon_filename,'r') as on_moon_file:
+          on_moon_lines = on_moon_file.readlines()
+       for line in on_moon_lines:
+          on_moon_obsid_list.append(line.strip())
+       
+       with open(off_moon_filename,'r') as off_moon_file:
+          off_moon_lines = off_moon_file.readlines()
+       for line in off_moon_lines:
+          off_moon_obsid_list.append(line.strip())
+       
+       n_obs=len(on_moon_obsid_list)
+       n_chans=24 
+       
+       #multiple linear regresion (see http://stackoverflow.com/questions/11479064/multiple-linear-regression-in-python/14971531#14971531)
+       #using statsmodels
            
-            max_moon_value=np.max(moon_zoom)
-            min_moon_value=np.min(moon_zoom)  
-            #print max value of moon image in Jy/beam to check against rfi + moon total flux
-            #print "Max moon is %s Jy/beam" % (np.max(moon_data))
-            print "Max moon is %s Jy/beam" % max_moon_value
-            print "Min moon is %s Jy/beam" % min_moon_value
-      
-            if (max_moon_value==min_moon_value):
-               print "Moon max and min are the same - something is wrong with the image, discarding."
-               continue
-            #Need to have the images in Jy per pixel for the equations to make sense
-            #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
-            pix_area_deg_sq = pix_size_deg * pix_size_deg
-            #beam area (gaussian restoring beam)
-            bmaj_deg=np.abs(float(moon_header['bmaj'])) 
-            bmin_deg=np.abs(float(moon_header['bmin']))   
-            #beam area for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
-            beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
-            n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
-            #to convert from Jy/beam to Jy per pix, divide by n_pixels_per_beam
+           
+       #read in moon images
+       #for each obsid
+       #for each channel
+       if (use_cropped_images): 
+          xstart_moon,xend_moon,ystart_moon,yend_moon=0,520,0,520
+          xstart_psf,xend_psf,ystart_psf,yend_psf=0,520,0,520
+       elif (phase_1_MWA_images):
+          #small images are 2048 x 2048
+          #xstart_moon,xend_moon,ystart_moon,yend_moon=0,2048,0,2048
+          #xstart_psf,xend_psf,ystart_psf,yend_psf=0,2048,0,2048    
+          #Crop to only use the inner quarter of the images
+          xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_small,xend_moon_small,ystart_moon_small,yend_moon_small
+          xstart_psf,xend_psf,ystart_psf,yend_psf=512,1536,512,1536 
+       elif (phase_2_long_baseline_MWA_images):
+          #these images are 4096 x 4096
+          xstart_moon,xend_moon,ystart_moon,yend_moon=xstart_moon_phase2,xend_moon_phase2,ystart_moon_phase2,yend_moon_phase2
+          xstart_psf,xend_psf,ystart_psf,yend_psf=1024,3072,1024,3072      
+       else:
+          #xstart,xend,ystart,yend=2000,3120,2000,3120
+          #crop images to make FFTs quicker
+          #69, 93 and 121 are all 5120 x 5120 pix
+          if (centre_chan <= 121): 
+             xstart_moon,xend_moon,ystart_moon,yend_moon=2300,2820,2300,2820
+             xstart_psf,xend_psf,ystart_psf,yend_psf=2299,2819,2301,2821
+          #145,169 are 3840 x 3840
+          else:
+             xstart_moon,xend_moon,ystart_moon,yend_moon=1660,2180,1660,2180
+             xstart_psf,xend_psf,ystart_psf,yend_psf=1659,2179,1659,2179
+       
+       #initialise arrays of length n_chans to store Smoon and Srfi values
+       rms_residual_images=np.zeros([n_chans,n_obs])
+       rms_residual_images[:]=np.nan 
+       Smoon_spectrum_values=np.zeros([n_chans,n_obs])
+       Smoon_spectrum_values[:]=np.nan 
+       Smoon_error_values=np.zeros([n_chans,n_obs])
+       Smoon_error_values[:]=np.nan
+       synth_beam_area_values=np.zeros(n_chans)
+       synth_beam_area_values[:]=np.nan
+       Srfi_spectrum_values=np.zeros([n_chans,n_obs])
+       Srfi_spectrum_values[:]=np.nan
+       Srfi_error_values=np.zeros([n_chans,n_obs])
+       Srfi_error_values[:]=np.nan
+       diffuse_rfi_values=np.zeros([n_chans,n_obs])
+       diffuse_rfi_values[:]=np.nan
+       Smoon_average_stddev_spectrum=np.zeros([n_chans,2])
+       Srfi_average_stddev_spectrum=np.zeros([n_chans,2])
+       rms_residual_images_average=np.zeros(n_chans) 
+     
+       #need to do all this stuff for each frequency channel (and MF) and each obsid
+       channel_list=range(n_chans)
+       channel_list.append('MFS')
+       for chan_index,chan in enumerate(channel_list):
+          for obsid_index,obsid in enumerate(on_moon_obsid_list):
+             #sort out filenames 
+             on_moon_obsid=on_moon_obsid_list[obsid_index]
+             off_moon_obsid=off_moon_obsid_list[obsid_index] 
+             if (chan != 'MFS'):
+                chan_string='%.04d' % chan
+             else:
+                chan_string='MFS'
+             #if (epoch_ID=="2015B_05"):
+             #   moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-%s.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string,stokes)
+             #   off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string,stokes)
+             #   on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+             #   off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+             #else:
+             #   #moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
+             #   #off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+             #   #on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
+             #   #off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+             #   moon_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string,stokes)
+             #   off_moon_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+             #   on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
+             #   off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+             
+             if (not pre_cropped_images):
+                moon_fitsname="%simages/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
+                off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+                on_moon_psf_fitsname="%simages/%s_%s_trackmoon-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
+                off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+             
+             ##output fitsnames:
+             moon_difference_fitsname="difference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             psf_difference_fitsname="difference_%s_%s_%s_psf_%s-%s-psf.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+             moon_zoom_fitsname="moon_zoom_%s_%s_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,str(centre_chan),chan_string,stokes)
+             off_moon_zoom_fitsname="off_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
+             rfi_modelled_fitsname="rfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             rfi_mask_fitsname="rfi_mask_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             moon_modelled_fitsname="moon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             residual_modelled_fitsname="residual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+     
+             #if (use_cropped_images): 
+                #moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+                #off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I_cropped.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+                #on_moon_psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+                #moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I_cropped.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+                
+                #moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s_dirty-I_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+                #off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s-%s_dirty-I_cropped.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+                #psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon-%s-psf_cropped.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+                #moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s-%s-I_cropped.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+             #else:
+                #moon_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001_dirty_applied-I.fits"
+                #moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+                #off_moon_fitsname="1127572080_cotter_20150929_moon_93_track_off_moon_paired_1127313592_peeled-0001_dirty_applied-I.fits"
+                #off_moon_fitsname="images/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+                #psf_fitsname="1127313592_cotter_20150926_moon_93_trackmoon_peeled-0001-psf.fits"
+                #psf_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (on_moon_obsid,str(centre_chan),chan_string)
+                #difference image filename
+                #moon_difference_fitsname="images/difference_%s_%s_cotter_20150929_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+                #if (ionpeeled_images):
+                   #moon_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+                   #off_moon_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s_dirty_applied-I.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+                   #on_moon_psf_fitsname="/data/moon/2017/20150926/%s/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s-psf.fits" % (str(centre_chan),on_moon_obsid,str(centre_chan),chan_string)
+                   #off_moon_psf_fitsname="/data/moon/2017/20150929/%s/%s_cotter_20150929_moon_%s_track_off_moon_paired_%s_peeled-%s-psf.fits" % (str(centre_chan),off_moon_obsid,str(centre_chan),on_moon_obsid,chan_string)
+                   #moon_difference_fitsname="/data/moon/2017/difference_%s_%s_on_off_moon_%s_peeled-%s-I.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+                   #psf_difference_fitsname="/data/moon/2017/difference_%s_%s_psf_%s_peeled-%s-psf.fits" % (on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string) 
+                   
+             print "############################"
+             print moon_fitsname  
+             print off_moon_fitsname
+             if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
+                moon_hdulist = pyfits.open(moon_fitsname)
+             else:
+                print "Either file %s is missing or is not readable" % moon_fitsname
+                continue        
+             moon_data=moon_hdulist[0].data[0,0,:,:]
+             moon_data=np.nan_to_num(moon_data)
+             moon_header=moon_hdulist[0].header
+             
+             if (not pre_cropped_images):
+                del moon_header[8]
+                del moon_header[8]
+                del moon_header['history']
+          
+                moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+                wcs = WCS(moon_header)
+                #print wcs
+                wcs=wcs.dropaxis(2)
+                wcs=wcs.dropaxis(2)
+                wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
+                #print wcs_cropped
+                moon_header.update(wcs_cropped.to_header())
+             else:
+                moon_zoom=moon_data
+                
+                
+             pix_size_deg = np.abs(float(moon_header['cdelt1']))
+             moon_radius_pix = np.round(moon_radius_deg/pix_size_deg)
             
-            #read in off moon images
-            if os.path.isfile(off_moon_fitsname) and os.access(off_moon_fitsname, os.R_OK):
-                off_moon_hdulist = pyfits.open(off_moon_fitsname)
-            else:
-                print "Either file %s is missing or is not readable" % off_moon_fitsname
+             max_moon_value=np.max(moon_zoom)
+             min_moon_value=np.min(moon_zoom)  
+             #print max value of moon image in Jy/beam to check against rfi + moon total flux
+             #print "Max moon is %s Jy/beam" % (np.max(moon_data))
+             print "Max moon is %s Jy/beam" % max_moon_value
+             print "Min moon is %s Jy/beam" % min_moon_value
+       
+             if (max_moon_value==min_moon_value):
+                print "Moon max and min are the same - something is wrong with the image, discarding."
                 continue
-            off_moon_hdulist = pyfits.open(off_moon_fitsname)
-            off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
-            off_moon_data=np.nan_to_num(off_moon_data)
-            #off_moon_header=off_moon_hdulist[0].header
-            off_moon_zoom=off_moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+             #Need to have the images in Jy per pixel for the equations to make sense
+             #know the pix area in degrees^2 = pix_size_deg x pix_size_deg
+             pix_area_deg_sq = pix_size_deg * pix_size_deg
+             #beam area (gaussian restoring beam)
+             bmaj_deg=np.abs(float(moon_header['bmaj'])) 
+             bmin_deg=np.abs(float(moon_header['bmin']))   
+             #beam area for 2d gussian 2 pi major minor / (8 ln 2) = 1.133 maj min ?
+             beam_area_deg_sq=1.133 * bmaj_deg * bmin_deg
+             n_pixels_per_beam=beam_area_deg_sq/pix_area_deg_sq
+             #to convert from Jy/beam to Jy per pix, divide by n_pixels_per_beam
+             
+             #read in off moon images
+             if os.path.isfile(off_moon_fitsname) and os.access(off_moon_fitsname, os.R_OK):
+                 off_moon_hdulist = pyfits.open(off_moon_fitsname)
+             else:
+                 print "Either file %s is missing or is not readable" % off_moon_fitsname
+                 continue
+             off_moon_hdulist = pyfits.open(off_moon_fitsname)
+             off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
+             off_moon_data=np.nan_to_num(off_moon_data)
+             #off_moon_header=off_moon_hdulist[0].header
+             off_moon_zoom=off_moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+             
+             max_off_moon_value=np.max(off_moon_zoom)
+             min_off_moon_value=np.min(off_moon_zoom) 
+             
+             print "Max off_moon is %s Jy/beam" % max_off_moon_value
+             print "Min off_moon is %s Jy/beam" % min_off_moon_value
+       
+             if (max_off_moon_value==min_off_moon_value):
+                print "Off_moon max and min are the same - something is wrong with the image, discarding."
+                continue
+             
+             #difference the images
+             moon_minus_sky=moon_zoom-off_moon_zoom
+             #convert to Jy per pix
+             moon_minus_sky_jyppix=moon_minus_sky/n_pixels_per_beam
+     
+             #print out the rms of the difference image ( corner only )
+             difference_rms=np.sqrt(np.mean(np.square(moon_minus_sky[rms_start_x:rms_end_x,rms_start_y:rms_end_y])))
+             
+             #difference rms in Jy/pixel:
+             difference_rms_jy_per_pixel=np.sqrt(np.mean(np.square(moon_minus_sky_jyppix[rms_start_x:rms_end_x,rms_start_y:rms_end_y])))
+             print "rms of difference map %s is %s in Jy/pixel." % (moon_difference_fitsname,difference_rms_jy_per_pixel)
+             
+             #If the rms is too high then just put a nan in the arrays and move on to next obsid
+             if (difference_rms>rms_threshold or math.isnan(difference_rms)==True):
+                print "rms of difference map %s is %s in Jy/beam. Discarding images." % (moon_difference_fitsname,difference_rms)
+                #place values in the arrays
+                if (chan != 'MFS'):
+                   Smoon_spectrum_values[chan,obsid_index]=np.nan
+                   Smoon_error_values[chan,obsid_index]=np.nan
+                   Srfi_spectrum_values[chan,obsid_index]=np.nan
+                   Srfi_error_values[chan,obsid_index]=np.nan
+                continue  
+             else:
+                print "rms of difference map %s is %s in Jy/beam. Writing out images." % (moon_difference_fitsname,difference_rms)
+                #write out the difference image
+                pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
+                pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
+                print "wrote  image %s" %  moon_difference_fitsname
+                #write out the difference image in Jy per pix
+                moon_difference_jyperpix_fitsname=moon_difference_fitsname.split('.')[0]+'_jyperpix.fits'
+                pyfits.writeto(moon_difference_jyperpix_fitsname,moon_minus_sky_jyppix,clobber=True)
+                #should really change header so it says it is in Jy pper pix....later
+                pyfits.update(moon_difference_jyperpix_fitsname,moon_minus_sky_jyppix,header=moon_header)
+                print "wrote  image %s" %  moon_difference_jyperpix_fitsname
+                
+                
+                
+                #write out the moon image
+                pyfits.writeto(moon_zoom_fitsname,moon_zoom,clobber=True)
+                pyfits.update(moon_zoom_fitsname,moon_zoom,header=moon_header)
+                print "wrote  image %s" %  moon_zoom_fitsname
+                #write out the off moon image
+                pyfits.writeto(off_moon_zoom_fitsname,off_moon_zoom,clobber=True)
+                pyfits.update(off_moon_zoom_fitsname,off_moon_zoom,header=moon_header)
+                print "wrote  image %s" %  off_moon_zoom_fitsname
+     
+             #read in psf images
+             if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):         
+                psf_hdulist = pyfits.open(on_moon_psf_fitsname)
+             else:
+                print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
+                continue
+             psf_data=psf_hdulist[0].data[0,0,:,:]
+             psf_data=np.nan_to_num(psf_data)
+             psf_header=psf_hdulist[0].header
+             psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
+             psf_zoom=np.require(psf_zoom, dtype=np.float32)
+             #convert to Jy per pix
+             psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
+     
+             #if os.path.isfile(off_moon_psf_fitsname) and os.access(off_moon_psf_fitsname, os.R_OK):         
+             #   off_moon_psf_hdulist = pyfits.open(off_moon_psf_fitsname)
+             #else:
+             #   print "Either file %s is missing or is not readable" % off_moon_psf_fitsname
+             #   continue
+             #off_moon_psf_data=off_moon_psf_hdulist[0].data[0,0,:,:]
+             #off_moon_psf_header=off_moon_psf_hdulist[0].header
+             #off_moon_psf_zoom=off_moon_psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
+             #off_moon_psf_zoom=np.require(off_moon_psf_data, dtype=np.float32)
+             #convert to Jy per pix
+             #off_moon_psf_zoom_jyppix=off_moon_psf_zoom/n_pixels_per_beam
+             #
+             #make the psf difference image and save
+             ##difference the images
+             #psf_difference=psf_zoom-off_moon_psf_zoom
+       
+             #write out the difference image
+             #pyfits.writeto(psf_difference_fitsname,psf_difference,clobber=True)
+             #pyfits.update(psf_difference_fitsname,psf_difference,header=moon_header)
+             #print "wrote psf difference image %s" %  psf_difference_fitsname
+             
+             
+             image_length=moon_zoom.shape[0]
+             image_height=moon_zoom.shape[1]
+             moon_mask = np.zeros((image_length,image_height))
+       
+             #define the centre of the disk (moon position)
+             a,b = (image_length/2)-1, (image_height/2)-1
+       
+             y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
+             mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
+             moon_mask[mask]=1
+             
+             #make a Moon mask that properly takes into account the limb darkening of the Moon and wavelength dependence on its apparent size 
+             #https://math.stackexchange.com/questions/1136233/angle-at-which-a-body-bounces-off-a-sphere
+             #sin of the incidence angle is approximately equal to the ratio between the radial distance from the centre of the disk and the radius of the Moon
+             # so go through the grid and work out the mask value for each pix:
+             #for ypix in range(image_height):
+             #   for xpix in range(image_length):
+             #      radial_distance=np.sqrt((a-xpix)**2 + (b-ypix)**2)
+             #      if (radial_distance <= moon_radius_pix):
+             #        angle_of_incidence=np.arcsin(radial_distance/moon_radius_pix)
+             #        mask_value=(np.cos(angle_of_incidence))**(3/2)
+             #        moon_mask[ypix,xpix]=mask_value
+             
+             
+             
+             
+             #print moon_mask[b,a-40:a+40]
+                   
+             #make rfi model mask - this was assuming 14 ddeg rms of moon surface and using a gaussian
+             #rfi_radius_deg=rfi_model_mask_size/60.0
+             #rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
+             #print "rfi radius in pix is %s " % rfi_radius_pix
+             #rfi_model_mask = np.zeros((image_length,image_height))
+             #rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
+             #rfi_model_mask[rfi_mask]=1
+     
+             #instead, just make a mask that is 4 (dec) x 8 (ra)(for 2015 pix size .0085 to account for 6.8 deg rms (daniels 1963a revised)n = 4 pix)
+             #and movement of 4 pix in 4 min snapshot
+             #I keep the pixle size the same for all freqs so the mask can be defined like this
+             rfi_model_mask = np.zeros((image_length,image_height))
+             if (epoch_ID_year <= 2015):
+                rfi_model_mask[b-2:b+3,a-3:a+5]=np.ones([5,8])
+             elif (epoch_ID_year == 2018):
+                rfi_model_mask[b-4:b+6,a-6:a+10]=np.ones([10,16])
+             #do some maths
+             #following Harish's notation:
+             #D = moon_zoom
+             #M = moon_mask
+             #P= psf_zoom
+             #G= M convol P
+     
+             ##Rather than a convolution, take the FFT of both images and multiply them, then inverse FFT
+             #moon_mask_fft=fftpack.fft2(moon_mask)
+             #psf_fft=fftpack.fft2(psf_zoom)
+             #G_fourier=moon_mask_fft*psf_fft
+             #G_image=np.real(fftpack.ifft2(G_fourier))
+             #G_image_shift=fftpack.fftshift(G_image)
+     
+     
+             #G=signal.convolve2d(moon_mask,psf_zoom)
+             G_image_shift=signal.fftconvolve(moon_mask,psf_zoom_jyppix,mode='same')
+     
+             #Vectorise
+             vec_D=moon_minus_sky_jyppix.flatten('F')
+             vec_G=G_image_shift.flatten('F')
+             vec_PSF=psf_zoom_jyppix.flatten('F')
+     
+             H=[vec_G,vec_PSF]
+     
+             #using statsmodels
+             X = np.array(H).T
+             X_const=sm.add_constant(X)
+             #results = sm.OLS(endog=vec_D, exog=X_const).fit()
+             #beta_hat=results.params
+             #print results.summary()
+     
+     
+             ##Try again using sklearn
+             #reg = linear_model.LinearRegression(fit_intercept=True)
+             #reg.fit(X,vec_D)
+             ##print reg.coef_
+             ##print reg.intercept_
+     
+             # Now do just with numpy:
+             #beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
+             #print beta_hat
+     
+             #Do it using the MLE from Vedantham et al 2015  (eqn 17)
+             #H_matrix=np.column_stack((vec_G,vec_PSF))
+             #theta_hat=np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),vec_D)
+             #print "theta_hat is %s" % str(theta_hat)
+     
+     
+             #Use whichever one for now
+             #S_moon=beta_hat[1]
+             #S_RFI=beta_hat[2]
+             #S_moon=theta_hat[0]
+             #S_RFI=theta_hat[1]
+     
+     
+             #print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
+     
+             #Woohoo! all give basically the same answer and it is about what we expect, the Moon disk is close to zero (constant offset is negative so that is good) and the RF is about 29 Jy
+     
+             #Create reconstructed moon dirty image with RFI removed.
+             #reconstructed_moon=S_moon*G_image_shift
+     
+             #Show earthshine (RFI) alone:
+             #RFI_alone=S_RFI*psf_zoom_jyppix
+     
+             #Make a residual map (vedantham et al 2015 eqn 18)
+             #theta_hat=[[S_moon],[S_RFI]]
+             #H_theta_hat=S_moon*vec_G + S_RFI*vec_PSF
+             #vec_R=vec_D - H_theta_hat
+             #R=np.reshape(vec_R, psf_zoom.shape, order='F')
+             #equivalent to just:
+             #R=moon_minus_sky_jyppix-reconstructed_moon-RFI_alone
+             
+             ##############
+             #What I've done isn't right - need to re-do the maths with this new convolution?
+             #residuals show we are oversubtracting in the middle and under-subtracting 
+             #at the edges so the RFI must be broader than the PSF (as expected)
+             #So instead of using the psf * S_RFI as the model, use a Gaussian of width 3.86 arcmin (Vedantham et al 2015)
+             #convolved with the PSF
+             #gaussian_fwhm_deg=3.86/60.0
+             gaussian_fwhm_deg=3.86/60.0
+             gaussian_fwhm_pix = np.round(gaussian_fwhm_deg/pix_size_deg)
+             
+             #For the broadened RFI, try a disk instead of a Gaussian 
+             #old:
+             #RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
+             #new:
+             RFI_broadening=rfi_model_mask
+             #limit extent of broadened rfi model
+             #RFI_broadening=RFI_broadening*rfi_model_mask
+             ##Convolve this with the PSF
+             #RFI_broadening_fft=fftpack.fft2(RFI_broadening)
+             #RFI_convolved_fourier=psf_fft*RFI_broadening_fft
+             #RFI_convolved_image=np.real(fftpack.ifft2(RFI_convolved_fourier))
+             #shift and normalise - this is the new PSF for RFI
+             #RFI_convolved_shift=fftpack.fftshift(RFI_convolved_image)/np.max(RFI_convolved_image)
+             
+             RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
+             ##Don't need this normalising step
+             #RFI_convolved_shift=(RFI_convolved_image)/np.max(RFI_convolved_image)
+             RFI_convolved_shift=RFI_convolved_image
+             #convert Jy per pix
+             RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam   
+             
+             vec_RFI=RFI_convolved_shift_jyppix.flatten('F')
+             
+             ##Use this for broadened RFI
+             #H2=[vec_G,vec_RFI]
+             if not do_RFI_broadening:
+                #Go back to pt source RFI for test
+                vec_RFI=vec_PSF
+             
+             H2=[vec_G,vec_RFI]
+             
+             
+             #using statsmodels
+             X2 = np.array(H2).T
+             X2_const=sm.add_constant(X2)
+             
+             # Now do just with numpy:
+             #beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
+     
+             #using vedantham MLE as above
+             H2_matrix=np.column_stack((vec_G,vec_RFI))
+             theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+             print "theta_hat2 is %s Jy/pix" % str(theta_hat2)
+     
             
-            max_off_moon_value=np.max(off_moon_zoom)
-            min_off_moon_value=np.min(off_moon_zoom) 
-            
-            print "Max off_moon is %s Jy/beam" % max_off_moon_value
-            print "Min off_moon is %s Jy/beam" % min_off_moon_value
-      
-            if (max_off_moon_value==min_off_moon_value):
-               print "Off_moon max and min are the same - something is wrong with the image, discarding."
-               continue
-            
-            #difference the images
-            moon_minus_sky=moon_zoom-off_moon_zoom
-            #convert to Jy per pix
-            moon_minus_sky_jyppix=moon_minus_sky/n_pixels_per_beam
-   
-            #print out the rms of the difference image ( corner only )
-            difference_rms=np.sqrt(np.mean(np.square(moon_minus_sky[rms_start_x:rms_end_x,rms_start_y:rms_end_y])))
-            
-            #difference rms in Jy/pixel:
-            difference_rms_jy_per_pixel=np.sqrt(np.mean(np.square(moon_minus_sky_jyppix[rms_start_x:rms_end_x,rms_start_y:rms_end_y])))
-            print "rms of difference map %s is %s in Jy/pixel." % (moon_difference_fitsname,difference_rms_jy_per_pixel)
-            
-            #If the rms is too high then just put a nan in the arrays and move on to next obsid
-            if (difference_rms>rms_threshold or math.isnan(difference_rms)==True):
-               print "rms of difference map %s is %s in Jy/beam. Discarding images." % (moon_difference_fitsname,difference_rms)
-               #place values in the arrays
-               if (chan != 'MFS'):
-                  Smoon_spectrum_values[chan,obsid_index]=np.nan
-                  Smoon_error_values[chan,obsid_index]=np.nan
-                  Srfi_spectrum_values[chan,obsid_index]=np.nan
-                  Srfi_error_values[chan,obsid_index]=np.nan
-               continue  
-            else:
-               print "rms of difference map %s is %s in Jy/beam. Writing out images." % (moon_difference_fitsname,difference_rms)
-               #write out the difference image
-               pyfits.writeto(moon_difference_fitsname,moon_minus_sky,clobber=True)
-               pyfits.update(moon_difference_fitsname,moon_minus_sky,header=moon_header)
-               print "wrote  image %s" %  moon_difference_fitsname
-               #write out the difference image in Jy per pix
-               moon_difference_jyperpix_fitsname=moon_difference_fitsname.split('.')[0]+'_jyperpix.fits'
-               pyfits.writeto(moon_difference_jyperpix_fitsname,moon_minus_sky_jyppix,clobber=True)
-               #should really change header so it says it is in Jy pper pix....later
-               pyfits.update(moon_difference_jyperpix_fitsname,moon_minus_sky_jyppix,header=moon_header)
-               print "wrote  image %s" %  moon_difference_jyperpix_fitsname
-               
-               
-               
-               #write out the moon image
-               pyfits.writeto(moon_zoom_fitsname,moon_zoom,clobber=True)
-               pyfits.update(moon_zoom_fitsname,moon_zoom,header=moon_header)
-               print "wrote  image %s" %  moon_zoom_fitsname
-               #write out the off moon image
-               pyfits.writeto(off_moon_zoom_fitsname,off_moon_zoom,clobber=True)
-               pyfits.update(off_moon_zoom_fitsname,off_moon_zoom,header=moon_header)
-               print "wrote  image %s" %  off_moon_zoom_fitsname
-   
-            #read in psf images
-            if os.path.isfile(on_moon_psf_fitsname) and os.access(on_moon_psf_fitsname, os.R_OK):         
-               psf_hdulist = pyfits.open(on_moon_psf_fitsname)
-            else:
-               print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
-               continue
-            psf_data=psf_hdulist[0].data[0,0,:,:]
-            psf_data=np.nan_to_num(psf_data)
-            psf_header=psf_hdulist[0].header
-            psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
-            psf_zoom=np.require(psf_zoom, dtype=np.float32)
-            #convert to Jy per pix
-            psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
-    
-            #if os.path.isfile(off_moon_psf_fitsname) and os.access(off_moon_psf_fitsname, os.R_OK):         
-            #   off_moon_psf_hdulist = pyfits.open(off_moon_psf_fitsname)
-            #else:
-            #   print "Either file %s is missing or is not readable" % off_moon_psf_fitsname
-            #   continue
-            #off_moon_psf_data=off_moon_psf_hdulist[0].data[0,0,:,:]
-            #off_moon_psf_header=off_moon_psf_hdulist[0].header
-            #off_moon_psf_zoom=off_moon_psf_data[xstart_psf:xend_psf,ystart_psf:yend_psf]
-            #off_moon_psf_zoom=np.require(off_moon_psf_data, dtype=np.float32)
-            #convert to Jy per pix
-            #off_moon_psf_zoom_jyppix=off_moon_psf_zoom/n_pixels_per_beam
-            #
-            #make the psf difference image and save
-            ##difference the images
-            #psf_difference=psf_zoom-off_moon_psf_zoom
-      
-            #write out the difference image
-            #pyfits.writeto(psf_difference_fitsname,psf_difference,clobber=True)
-            #pyfits.update(psf_difference_fitsname,psf_difference,header=moon_header)
-            #print "wrote psf difference image %s" %  psf_difference_fitsname
-            
-            
-            image_length=moon_zoom.shape[0]
-            image_height=moon_zoom.shape[1]
-            moon_mask = np.zeros((image_length,image_height))
-      
-            #define the centre of the disk (moon position)
-            a,b = (image_length/2)-1, (image_height/2)-1
-      
-            y,x = np.ogrid[-a:image_length-a, -b:image_height-b]
-            mask = x*x + y*y <= moon_radius_pix*moon_radius_pix
-            moon_mask[mask]=1
-            
-            #make a Moon mask that properly takes into account the limb darkening of the Moon and wavelength dependence on its apparent size 
-            #https://math.stackexchange.com/questions/1136233/angle-at-which-a-body-bounces-off-a-sphere
-            #sin of the incidence angle is approximately equal to the ratio between the radial distance from the centre of the disk and the radius of the Moon
-            # so go through the grid and work out the mask value for each pix:
-            #for ypix in range(image_height):
-            #   for xpix in range(image_length):
-            #      radial_distance=np.sqrt((a-xpix)**2 + (b-ypix)**2)
-            #      if (radial_distance <= moon_radius_pix):
-            #        angle_of_incidence=np.arcsin(radial_distance/moon_radius_pix)
-            #        mask_value=(np.cos(angle_of_incidence))**(3/2)
-            #        moon_mask[ypix,xpix]=mask_value
-            
-            
-            
-            
-            #print moon_mask[b,a-40:a+40]
-                  
-            #make rfi model mask - this was assuming 14 ddeg rms of moon surface and using a gaussian
-            #rfi_radius_deg=rfi_model_mask_size/60.0
-            #rfi_radius_pix = np.round(rfi_radius_deg/pix_size_deg)
-            #print "rfi radius in pix is %s " % rfi_radius_pix
-            #rfi_model_mask = np.zeros((image_length,image_height))
-            #rfi_mask = x*x + y*y <= rfi_radius_pix*rfi_radius_pix
-            #rfi_model_mask[rfi_mask]=1
-   
-            #instead, just make a mask that is 4 (dec) x 8 (ra)(for 2015 pix size .0085 to account for 6.8 deg rms (daniels 1963a revised)n = 4 pix)
-            #and movement of 4 pix in 4 min snapshot
-            #I keep the pixle size the same for all freqs so the mask can be defined like this
-            rfi_model_mask = np.zeros((image_length,image_height))
-            if (epoch_ID_year <= 2015):
-               rfi_model_mask[b-2:b+3,a-3:a+5]=np.ones([5,8])
-            elif (epoch_ID_year == 2018):
-               rfi_model_mask[b-4:b+6,a-6:a+10]=np.ones([10,16])
-            #do some maths
-            #following Harish's notation:
-            #D = moon_zoom
-            #M = moon_mask
-            #P= psf_zoom
-            #G= M convol P
-   
-            ##Rather than a convolution, take the FFT of both images and multiply them, then inverse FFT
-            #moon_mask_fft=fftpack.fft2(moon_mask)
-            #psf_fft=fftpack.fft2(psf_zoom)
-            #G_fourier=moon_mask_fft*psf_fft
-            #G_image=np.real(fftpack.ifft2(G_fourier))
-            #G_image_shift=fftpack.fftshift(G_image)
-   
-   
-            #G=signal.convolve2d(moon_mask,psf_zoom)
-            G_image_shift=signal.fftconvolve(moon_mask,psf_zoom_jyppix,mode='same')
-   
-            #Vectorise
-            vec_D=moon_minus_sky_jyppix.flatten('F')
-            vec_G=G_image_shift.flatten('F')
-            vec_PSF=psf_zoom_jyppix.flatten('F')
-   
-            H=[vec_G,vec_PSF]
-   
-            #using statsmodels
-            X = np.array(H).T
-            X_const=sm.add_constant(X)
-            #results = sm.OLS(endog=vec_D, exog=X_const).fit()
-            #beta_hat=results.params
-            #print results.summary()
-   
-   
-            ##Try again using sklearn
-            #reg = linear_model.LinearRegression(fit_intercept=True)
-            #reg.fit(X,vec_D)
-            ##print reg.coef_
-            ##print reg.intercept_
-   
-            # Now do just with numpy:
-            #beta_hat = np.linalg.lstsq(X_const,vec_D)[0]
-            #print beta_hat
-   
-            #Do it using the MLE from Vedantham et al 2015  (eqn 17)
-            #H_matrix=np.column_stack((vec_G,vec_PSF))
-            #theta_hat=np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),vec_D)
-            #print "theta_hat is %s" % str(theta_hat)
-   
-   
-            #Use whichever one for now
-            #S_moon=beta_hat[1]
-            #S_RFI=beta_hat[2]
-            #S_moon=theta_hat[0]
-            #S_RFI=theta_hat[1]
-   
-   
-            #print "First test: S_moon is %s Jy and S_RFI is %s Jy" % (S_moon, S_RFI)
-   
-            #Woohoo! all give basically the same answer and it is about what we expect, the Moon disk is close to zero (constant offset is negative so that is good) and the RF is about 29 Jy
-   
-            #Create reconstructed moon dirty image with RFI removed.
-            #reconstructed_moon=S_moon*G_image_shift
-   
-            #Show earthshine (RFI) alone:
-            #RFI_alone=S_RFI*psf_zoom_jyppix
-   
-            #Make a residual map (vedantham et al 2015 eqn 18)
-            #theta_hat=[[S_moon],[S_RFI]]
-            #H_theta_hat=S_moon*vec_G + S_RFI*vec_PSF
-            #vec_R=vec_D - H_theta_hat
-            #R=np.reshape(vec_R, psf_zoom.shape, order='F')
-            #equivalent to just:
-            #R=moon_minus_sky_jyppix-reconstructed_moon-RFI_alone
-            
-            ##############
-            #What I've done isn't right - need to re-do the maths with this new convolution?
-            #residuals show we are oversubtracting in the middle and under-subtracting 
-            #at the edges so the RFI must be broader than the PSF (as expected)
-            #So instead of using the psf * S_RFI as the model, use a Gaussian of width 3.86 arcmin (Vedantham et al 2015)
-            #convolved with the PSF
-            #gaussian_fwhm_deg=3.86/60.0
-            gaussian_fwhm_deg=3.86/60.0
-            gaussian_fwhm_pix = np.round(gaussian_fwhm_deg/pix_size_deg)
-            
-            #For the broadened RFI, try a disk instead of a Gaussian 
-            #old:
-            #RFI_broadening=makeGaussian(image_length, fwhm = gaussian_fwhm_pix, center=(a+1,b+1))
-            #new:
-            RFI_broadening=rfi_model_mask
-            #limit extent of broadened rfi model
-            #RFI_broadening=RFI_broadening*rfi_model_mask
-            ##Convolve this with the PSF
-            #RFI_broadening_fft=fftpack.fft2(RFI_broadening)
-            #RFI_convolved_fourier=psf_fft*RFI_broadening_fft
-            #RFI_convolved_image=np.real(fftpack.ifft2(RFI_convolved_fourier))
-            #shift and normalise - this is the new PSF for RFI
-            #RFI_convolved_shift=fftpack.fftshift(RFI_convolved_image)/np.max(RFI_convolved_image)
-            
-            RFI_convolved_image=signal.fftconvolve(psf_zoom,RFI_broadening,mode='same')
-            ##Don't need this normalising step
-            #RFI_convolved_shift=(RFI_convolved_image)/np.max(RFI_convolved_image)
-            RFI_convolved_shift=RFI_convolved_image
-            #convert Jy per pix
-            RFI_convolved_shift_jyppix=RFI_convolved_shift/n_pixels_per_beam   
-            
-            vec_RFI=RFI_convolved_shift_jyppix.flatten('F')
-            
-            ##Use this for broadened RFI
-            #H2=[vec_G,vec_RFI]
-            if not do_RFI_broadening:
-               #Go back to pt source RFI for test
-               vec_RFI=vec_PSF
-            
-            H2=[vec_G,vec_RFI]
-            
-            
-            #using statsmodels
-            X2 = np.array(H2).T
-            X2_const=sm.add_constant(X2)
-            
-            # Now do just with numpy:
-            #beta_hat2 = np.linalg.lstsq(X2_const,vec_D)[0]
-   
-            #using vedantham MLE as above
-            H2_matrix=np.column_stack((vec_G,vec_RFI))
-            theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
-            print "theta_hat2 is %s Jy/pix" % str(theta_hat2)
-   
+             #S_moon2=beta_hat2[1]
+             #S_RFI2=beta_hat2[2]
+             S_moon2=theta_hat2[0]
+             S_RFI2=theta_hat2[1]         
+     
+             #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux in Jy)
+             S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
+             print "Initial total moon flux density is %s Jy" % S_moon2_tot_Jy
+             if not do_RFI_broadening:
+                #for non-point source version:
+                RFI_alone2=S_RFI2
+                print "Initial total RFI flux density assuming pt source is %s Jy" % RFI_alone2
+             else:
+                RFI_alone2=np.sum(S_RFI2*RFI_broadening)
+             #enforce Srfi is always positive
+             #take this out and rerun just for kicks
+             if enforce_Srfi_positive:
+                if (S_RFI2 <0.0):
+                   print "Srfi is negative, but this is unphysical, enforcing Srfi to be positive"
+                   vec_RFI=-1.0*vec_RFI
+             if enforce_Smoon_negative:
+                #enforce S_moon to be negative if we are in coarse chan 69 or 93 
+                if (S_moon2 >= 0.0 and centre_chan <= 93):
+                   #repeat the analysis above but reverse the sign of G (i.e. equivalent to making the mask M negative?)
+                   print "Smoon is positive, but frequency is below 150 MHz, enforcing Smoon to be negative"
+                   vec_G=-1.0*vec_G
+                #enforce S_moon to be positive if we are in coarse chan 145 or 169 
+                if (S_moon2 <= 0.0 and centre_chan >= 145):
+                   print "Smoon is negative, but frequency is above 150 MHz, enforcing Smoon to be positive"
+                   vec_G=-1.0*vec_G
+     
+             H2_matrix=np.column_stack((vec_G,vec_RFI))
+             theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+             print "New theta_hat2 is %s Jy/pix for negative Smoon" % str(theta_hat2) 
+             S_moon2=theta_hat2[0]
+             #Need to conserve flux density: check RFI and moon flux density against max Moon
+             S_RFI2=theta_hat2[1]
+     
+             #
+             
+             if not do_RFI_broadening:
+                RFI_alone2=S_RFI2
+             else:
+                RFI_alone2=np.sum(S_RFI2*RFI_broadening) 
+             
+             #Calculate the errors:
+             covariance_matrix_theta=(difference_rms_jy_per_pixel**2)*(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)))
+             print "covariance_matrix_theta"
+             print covariance_matrix_theta
+             S_moon2_error=np.sqrt(covariance_matrix_theta[0,0])
+             RFI_alone2_error=np.sqrt(covariance_matrix_theta[1,1])
+             #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
+             S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
+             #Error from rms in Jy/pixel
+             #1. convert error units back to Jy/beam. 
+             S_moon2_error_Jy_beam=S_moon2_error*n_pixels_per_beam
+             RFI_alone2_error_Jy_beam=RFI_alone2_error*n_pixels_per_beam
+             #3. sigma_integratedfluxdensity = rms x sqrt(N), where N is the integrated area in units of synthesised beam area
+             # so for us N=moon_area / synthesised beam area = pi*(moon_radius_deg)^2 / 1.33*bmaj*bmin ? 
+             #This is not correct! Need to take into account the synthesised beam size!
+             ##S_moon2_tot_Jy_error=np.sum(S_moon2_error*moon_mask)
+             
+             S_moon2_tot_Jy_error=S_moon2_error_Jy_beam*np.sqrt(moon_area_deg_sq/beam_area_deg_sq)
+             RFI_alone2_tot_Jy_error=RFI_alone2_error_Jy_beam*np.sqrt(moon_area_deg_sq/beam_area_deg_sq)
+             print "S_moon2_error_Jy_beam %s" % S_moon2_error_Jy_beam
+             print "np.sqrt(moon_area_deg_sq/beam_area_deg_sq) %s" % (np.sqrt(moon_area_deg_sq/beam_area_deg_sq))
+             #print S_moon2_tot_Jy_error
+             
+             #print "Final Smoon, with RFI broadening: is %s Jy/pix and S_RFI is %s Jy/pix for moon obsid %s chan %s" % (S_moon2, S_RFI2,on_moon_obsid,chan_string)
+             if not do_RFI_broadening:
+                print "Final total Moon flux density, without RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,on_moon_obsid,chan_string)
+             else:
+                print "Final total Moon flux density, with RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy +/- %s for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,RFI_alone2_tot_Jy_error,on_moon_obsid,chan_string)
+             #print "Final total Moon flux density, with RFI broadening: is %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy, RFI_alone2,on_moon_obsid,chan_string)
+             
+             ##At this point we can subtract away the Diffuse RFI component from the S_moon (and propagate the errors from S_rfi?)
+             if (options.remove_diffuse_rfi_on_fly):
+                evans_ratio_normalised=np.load(evans_ratio_normalised_filename)
+                big_index=(centre_chan_index*24)+chan_index
+                diffuse_RFI_Jy=evans_ratio_normalised[big_index]*RFI_alone2
+                S_moon2_tot_Jy=S_moon2_tot_Jy-diffuse_RFI_Jy
+             
+                #print the diffuse subtracted values
+                if not do_RFI_broadening:
+                   print "Diffuse RFI subtracted, final total Moon flux density, without RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,on_moon_obsid,chan_string)
+                else:
+                   print "Diffuse RFI subtracted, final total Moon flux density, with RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy +/- %s for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,RFI_alone2_tot_Jy_error,on_moon_obsid,chan_string)
            
-            #S_moon2=beta_hat2[1]
-            #S_RFI2=beta_hat2[2]
-            S_moon2=theta_hat2[0]
-            S_RFI2=theta_hat2[1]         
-   
-            #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux in Jy)
-            S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
-            print "Initial total moon flux density is %s Jy" % S_moon2_tot_Jy
-            if not do_RFI_broadening:
-               #for non-point source version:
-               RFI_alone2=S_RFI2
-               print "Initial total RFI flux density assuming pt source is %s Jy" % RFI_alone2
-            else:
-               RFI_alone2=np.sum(S_RFI2*RFI_broadening)
-            #enforce Srfi is always positive
-            #take this out and rerun just for kicks
-            if enforce_Srfi_positive:
-               if (S_RFI2 <0.0):
-                  print "Srfi is negative, but this is unphysical, enforcing Srfi to be positive"
-                  vec_RFI=-1.0*vec_RFI
-            if enforce_Smoon_negative:
-               #enforce S_moon to be negative if we are in coarse chan 69 or 93 
-               if (S_moon2 >= 0.0 and centre_chan <= 93):
-                  #repeat the analysis above but reverse the sign of G (i.e. equivalent to making the mask M negative?)
-                  print "Smoon is positive, but frequency is below 150 MHz, enforcing Smoon to be negative"
-                  vec_G=-1.0*vec_G
-               #enforce S_moon to be positive if we are in coarse chan 145 or 169 
-               if (S_moon2 <= 0.0 and centre_chan >= 145):
-                  print "Smoon is negative, but frequency is above 150 MHz, enforcing Smoon to be positive"
-                  vec_G=-1.0*vec_G
-   
-            H2_matrix=np.column_stack((vec_G,vec_RFI))
-            theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
-            print "New theta_hat2 is %s Jy/pix for negative Smoon" % str(theta_hat2) 
-            S_moon2=theta_hat2[0]
-            #Need to conserve flux density: check RFI and moon flux density against max Moon
-            S_RFI2=theta_hat2[1]
-   
-            #
-            
-            if not do_RFI_broadening:
-               RFI_alone2=S_RFI2
-            else:
-               RFI_alone2=np.sum(S_RFI2*RFI_broadening) 
-            
-            #Calculate the errors:
-            covariance_matrix_theta=(difference_rms_jy_per_pixel**2)*(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)))
-            print "covariance_matrix_theta"
-            print covariance_matrix_theta
-            S_moon2_error=np.sqrt(covariance_matrix_theta[0,0])
-            RFI_alone2_error=np.sqrt(covariance_matrix_theta[1,1])
-            #Convert to total flux in Jy for Moon (assume for now RFI is a point source therefore flux in Jy/pix is same as total flux is Jy)
-            S_moon2_tot_Jy=np.sum(S_moon2*moon_mask)
-            #Error from rms in Jy/pixel
-            #1. convert error units back to Jy/beam. 
-            S_moon2_error_Jy_beam=S_moon2_error*n_pixels_per_beam
-            RFI_alone2_error_Jy_beam=RFI_alone2_error*n_pixels_per_beam
-            #3. sigma_integratedfluxdensity = rms x sqrt(N), where N is the integrated area in units of synthesised beam area
-            # so for us N=moon_area / synthesised beam area = pi*(moon_radius_deg)^2 / 1.33*bmaj*bmin ? 
-            #This is not correct! Need to take into account the synthesised beam size!
-            ##S_moon2_tot_Jy_error=np.sum(S_moon2_error*moon_mask)
-            
-            S_moon2_tot_Jy_error=S_moon2_error_Jy_beam*np.sqrt(moon_area_deg_sq/beam_area_deg_sq)
-            RFI_alone2_tot_Jy_error=RFI_alone2_error_Jy_beam*np.sqrt(moon_area_deg_sq/beam_area_deg_sq)
-            print "S_moon2_error_Jy_beam %s" % S_moon2_error_Jy_beam
-            print "np.sqrt(moon_area_deg_sq/beam_area_deg_sq) %s" % (np.sqrt(moon_area_deg_sq/beam_area_deg_sq))
-            #print S_moon2_tot_Jy_error
-            
-            #print "Final Smoon, with RFI broadening: is %s Jy/pix and S_RFI is %s Jy/pix for moon obsid %s chan %s" % (S_moon2, S_RFI2,on_moon_obsid,chan_string)
-            if not do_RFI_broadening:
-               print "Final total Moon flux density, without RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,on_moon_obsid,chan_string)
-            else:
-               print "Final total Moon flux density, with RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy +/- %s for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,RFI_alone2_tot_Jy_error,on_moon_obsid,chan_string)
-            #print "Final total Moon flux density, with RFI broadening: is %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy, RFI_alone2,on_moon_obsid,chan_string)
-            
-            ##At this point we can subtract away the Diffuse RFI component from the S_moon (and propagate the errors from S_rfi?)
-            if (options.remove_diffuse_rfi_on_fly):
-               evans_ratio_normalised=np.load(evans_ratio_normalised_filename)
-               big_index=(centre_chan_index*24)+chan_index
-               diffuse_RFI_Jy=evans_ratio_normalised[big_index]*RFI_alone2
-               S_moon2_tot_Jy=S_moon2_tot_Jy-diffuse_RFI_Jy
-            
-               #print the diffuse subtracted values
-               if not do_RFI_broadening:
-                  print "Diffuse RFI subtracted, final total Moon flux density, without RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,on_moon_obsid,chan_string)
-               else:
-                  print "Diffuse RFI subtracted, final total Moon flux density, with RFI broadening: is %s Jy +- %s Jy and S_RFI is %s Jy +/- %s for moon obsid %s chan %s" % (S_moon2_tot_Jy,S_moon2_tot_Jy_error, RFI_alone2,RFI_alone2_tot_Jy_error,on_moon_obsid,chan_string)
+             
+             ###Not sure if I have done this correctly
+             #I think for RFI we need to do (S_RFI2x1 pix in centre) convolved with psf
+             # and for moon: (S_moon2xmoon_mask) convolved with psf
+             if do_RFI_broadening:
+                reconstructed_RFI=S_RFI2*RFI_convolved_shift_jyppix
+             else:
+                reconstructed_RFI=S_RFI2*psf_zoom_jyppix
+                #instead try this:
+                ############RFI_pt=np.zeros((image_length,image_height))
+                ############RFI_pt[image_length/2-1,image_height/2-1]=1
+                ############reconstructed_RFI=signal.fftconvolve(psf_zoom_jyppix,(S_RFI2*RFI_pt),mode='same')
+                
+             reconstructed_moon2=S_moon2*G_image_shift
+             #instead try this:
+             ##########reconstructed_moon2=signal.fftconvolve(psf_zoom_jyppix,(S_moon2*moon_mask),mode='same') 
+             
+             #residual=moon_minus_sky_jyppix-reconstructed_moon2-RFI_alone2
+             residual=moon_minus_sky_jyppix-reconstructed_moon2-reconstructed_RFI
+             residual_rms=np.sqrt(np.mean(np.square(residual)))
+             
+             
+             #place values in the arrays
+             if (chan != 'MFS'):
+                 Smoon_spectrum_values[chan,obsid_index]=S_moon2_tot_Jy
+                 Smoon_error_values[chan,obsid_index]=S_moon2_tot_Jy_error
+                 Srfi_spectrum_values[chan,obsid_index]=RFI_alone2 
+                 if options.remove_diffuse_rfi_on_fly:
+                    diffuse_rfi_values[chan,obsid_index]=diffuse_RFI_Jy
+                 rms_residual_images[chan,obsid_index]=residual_rms
+                 synth_beam_area_values[chan]=beam_area_deg_sq
+             
+             #write out the modelled rfi image
+             pyfits.writeto(rfi_modelled_fitsname,reconstructed_RFI,clobber=True)
+             pyfits.update(rfi_modelled_fitsname,reconstructed_RFI,header=moon_header)
+             print "wrote image %s" %  rfi_modelled_fitsname
+             
+             #write out the rfi mask image
+             pyfits.writeto(rfi_mask_fitsname,rfi_model_mask,clobber=True)
+             pyfits.update(rfi_mask_fitsname,rfi_model_mask,header=moon_header)
+             print "wrote image %s" %  rfi_mask_fitsname
+             
+             pyfits.writeto(moon_modelled_fitsname,reconstructed_moon2,clobber=True)
+             pyfits.update(moon_modelled_fitsname,reconstructed_moon2,header=moon_header)
+             print "wrote image %s" %  moon_modelled_fitsname
+     
+             pyfits.writeto(residual_modelled_fitsname,residual,clobber=True)
+             pyfits.update(residual_modelled_fitsname,residual,header=moon_header)
+             print "wrote image %s" %  residual_modelled_fitsname         
+             
+             
+             
+             
+       #work out average values and standard deviations
+       #Smoon_spectrum_values=np.empty([n_chans,n_obs])
+       #Srfi_spectrum_values=np.empty([n_chans,n_obs])
+       #Smoon_average_stddev_spectrum=np.empty([n_chans,2])
+       #Srfi_average_stddev_spectrum=np.empty([n_chans,2])
+       #print Smoon_spectrum_values
+       
+       
+       #rms
+       rms_residual_images_average=np.nanmean(rms_residual_images,axis=1)
+       ##take the average of the Smoon values and put in the array
+       #Smoon_average_stddev_spectrum[:,0]=np.nanmean(Smoon_spectrum_values, axis=1)
+       ##What about the average error?
+       
+       
+       #what freqs?
+       if centre_chan==69:
+          freq_array=(np.arange(24)+57)*1.28
+       if centre_chan==93:
+          freq_array=(np.arange(24)+57+24)*1.28
+       if centre_chan==121:
+          freq_array=(np.arange(24)+57+24+24+4)*1.28
+       if centre_chan==145:
+          freq_array=(np.arange(24)+57+24+24+24+4)*1.28
+       if centre_chan==169:
+          freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
+       
+       #put in to the big arrays:
+       if (centre_chan==69):
+          #big_Smoon_average_stddev_spectrum[57-57:57-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+          #big_Smoon_average_stddev_spectrum[57-57:57-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+          big_Smoon_spectrum_values[57-57:57-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
+          #big_Srfi_average_stddev_spectrum[57-57:57-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+          #big_Srfi_average_stddev_spectrum[57-57:57-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+          big_Srfi_spectrum_values[57-57:57-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
           
-            
-            ###Not sure if I have done this correctly
-            #I think for RFI we need to do (S_RFI2x1 pix in centre) convolved with psf
-            # and for moon: (S_moon2xmoon_mask) convolved with psf
-            if do_RFI_broadening:
-               reconstructed_RFI=S_RFI2*RFI_convolved_shift_jyppix
-            else:
-               reconstructed_RFI=S_RFI2*psf_zoom_jyppix
-               #instead try this:
-               ############RFI_pt=np.zeros((image_length,image_height))
-               ############RFI_pt[image_length/2-1,image_height/2-1]=1
-               ############reconstructed_RFI=signal.fftconvolve(psf_zoom_jyppix,(S_RFI2*RFI_pt),mode='same')
-               
-            reconstructed_moon2=S_moon2*G_image_shift
-            #instead try this:
-            ##########reconstructed_moon2=signal.fftconvolve(psf_zoom_jyppix,(S_moon2*moon_mask),mode='same') 
-            
-            #residual=moon_minus_sky_jyppix-reconstructed_moon2-RFI_alone2
-            residual=moon_minus_sky_jyppix-reconstructed_moon2-reconstructed_RFI
-            residual_rms=np.sqrt(np.mean(np.square(residual)))
-            
-            
-            #place values in the arrays
-            if (chan != 'MFS'):
-                Smoon_spectrum_values[chan,obsid_index]=S_moon2_tot_Jy
-                Smoon_error_values[chan,obsid_index]=S_moon2_tot_Jy_error
-                Srfi_spectrum_values[chan,obsid_index]=RFI_alone2 
-                if options.remove_diffuse_rfi_on_fly:
-                   diffuse_rfi_values[chan,obsid_index]=diffuse_RFI_Jy
-                rms_residual_images[chan,obsid_index]=residual_rms
-                synth_beam_area_values[chan]=beam_area_deg_sq
-            
-            #write out the modelled rfi image
-            pyfits.writeto(rfi_modelled_fitsname,reconstructed_RFI,clobber=True)
-            pyfits.update(rfi_modelled_fitsname,reconstructed_RFI,header=moon_header)
-            print "wrote image %s" %  rfi_modelled_fitsname
-            
-            #write out the rfi mask image
-            pyfits.writeto(rfi_mask_fitsname,rfi_model_mask,clobber=True)
-            pyfits.update(rfi_mask_fitsname,rfi_model_mask,header=moon_header)
-            print "wrote image %s" %  rfi_mask_fitsname
-            
-            pyfits.writeto(moon_modelled_fitsname,reconstructed_moon2,clobber=True)
-            pyfits.update(moon_modelled_fitsname,reconstructed_moon2,header=moon_header)
-            print "wrote image %s" %  moon_modelled_fitsname
-   
-            pyfits.writeto(residual_modelled_fitsname,residual,clobber=True)
-            pyfits.update(residual_modelled_fitsname,residual,header=moon_header)
-            print "wrote image %s" %  residual_modelled_fitsname         
-            
-            
-            
-            
-      #work out average values and standard deviations
-      #Smoon_spectrum_values=np.empty([n_chans,n_obs])
-      #Srfi_spectrum_values=np.empty([n_chans,n_obs])
-      #Smoon_average_stddev_spectrum=np.empty([n_chans,2])
-      #Srfi_average_stddev_spectrum=np.empty([n_chans,2])
-      #print Smoon_spectrum_values
-      
-      
-      #rms
-      rms_residual_images_average=np.nanmean(rms_residual_images,axis=1)
-      ##take the average of the Smoon values and put in the array
-      #Smoon_average_stddev_spectrum[:,0]=np.nanmean(Smoon_spectrum_values, axis=1)
-      ##What about the average error?
-      
-      
-      #what freqs?
-      if centre_chan==69:
-         freq_array=(np.arange(24)+57)*1.28
-      if centre_chan==93:
-         freq_array=(np.arange(24)+57+24)*1.28
-      if centre_chan==121:
-         freq_array=(np.arange(24)+57+24+24+4)*1.28
-      if centre_chan==145:
-         freq_array=(np.arange(24)+57+24+24+24+4)*1.28
-      if centre_chan==169:
-         freq_array=(np.arange(24)+57+24+24+24+24+4)*1.28
-      
-      #put in to the big arrays:
-      if (centre_chan==69):
-         #big_Smoon_average_stddev_spectrum[57-57:57-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-         #big_Smoon_average_stddev_spectrum[57-57:57-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-         big_Smoon_spectrum_values[57-57:57-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
-         #big_Srfi_average_stddev_spectrum[57-57:57-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-         #big_Srfi_average_stddev_spectrum[57-57:57-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-         big_Srfi_spectrum_values[57-57:57-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
-         
-         big_rms_residual_images[57-57:57-57+24]=rms_residual_images_average
-         big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,0]=Srfi_spectrum_values
-         if options.remove_diffuse_rfi_on_fly:
-            big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,1]=diffuse_rfi_values
-         big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,2]=on_moon_obsid_list
-      if (centre_chan==93):
-         #big_Smoon_average_stddev_spectrum[81-57:81-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-         #big_Smoon_average_stddev_spectrum[81-57:81-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-         big_Smoon_spectrum_values[81-57:81-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values         
-         #big_Srfi_average_stddev_spectrum[81-57:81-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-         #big_Srfi_average_stddev_spectrum[81-57:81-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-         big_Srfi_spectrum_values[81-57:81-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
-         
-         big_rms_residual_images[81-57:81-57+24]=rms_residual_images_average
-         big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,0]=Srfi_spectrum_values
-         if options.remove_diffuse_rfi_on_fly:
-            big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,1]=diffuse_rfi_values
-         big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,2]=on_moon_obsid_list
-      if (centre_chan==121):
-         #big_Smoon_average_stddev_spectrum[109-57:109-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-         #big_Smoon_average_stddev_spectrum[109-57:109-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-         big_Smoon_spectrum_values[109-57:109-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values 
-         #big_Srfi_average_stddev_spectrum[109-57:109-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-         #big_Srfi_average_stddev_spectrum[109-57:109-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-         big_Srfi_spectrum_values[109-57:109-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
-         
-         big_rms_residual_images[109-57:109-57+24]=rms_residual_images_average
-         big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,0]=Srfi_spectrum_values
-         if options.remove_diffuse_rfi_on_fly:       
-            big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,1]=diffuse_rfi_values
-         big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,2]=on_moon_obsid_list
-      if (centre_chan==145):
-         #big_Smoon_average_stddev_spectrum[133-57:133-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-         #big_Smoon_average_stddev_spectrum[133-57:133-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-         big_Smoon_spectrum_values[133-57:133-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
-         #big_Srfi_average_stddev_spectrum[133-57:133-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-         #big_Srfi_average_stddev_spectrum[133-57:133-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-         big_Srfi_spectrum_values[133-57:133-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
-         
-         big_rms_residual_images[133-57:133-57+24]=rms_residual_images_average
-         big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,0]=Srfi_spectrum_values
-         if options.remove_diffuse_rfi_on_fly:       
-            big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,1]=diffuse_rfi_values
-         big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,2]=on_moon_obsid_list
-      if (centre_chan==169):
-         #big_Smoon_average_stddev_spectrum[157-57:157-57+24,0]=Smoon_average_stddev_spectrum[:,0]
-         #big_Smoon_average_stddev_spectrum[157-57:157-57+24,1]=Smoon_average_stddev_spectrum[:,1]
-         big_Smoon_spectrum_values[157-57:157-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
-         #big_Srfi_average_stddev_spectrum[157-57:157-57+24,0]=Srfi_average_stddev_spectrum[:,0]
-         #big_Srfi_average_stddev_spectrum[157-57:157-57+24,1]=Srfi_average_stddev_spectrum[:,1]
-         big_Srfi_spectrum_values[157-57:157-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
-         
-         big_rms_residual_images[157-57:157-57+24]=rms_residual_images_average
-         big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,0]=Srfi_spectrum_values
-         if options.remove_diffuse_rfi_on_fly:
-            big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,1]=diffuse_rfi_values
-         big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,2]=on_moon_obsid_list
-   
-   
-      ##now plot the  Smoon with std dev as error bars for each subband
-      #plt.clf()
-      #Smoon_plot=plt.figure(1)
-      #plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
-      ###plt.plot(freq_array,Smoon_average_stddev_spectrum[:,0])
-      #plt.title('Moon flux density vs frequency for MWA')
-      #plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
-      #plt.xlabel('Frequency (MHz)')
-      #Smoon_plot.savefig('Smoon_plot.png')
-   
-      
-      ##Plot the inferred and predicted background temp
-      #plt.clf()
-      #Tb_plot=plt.figure(2)
-      #plt.errorbar(freq_array,Tb,yerr=Tb_error)
-      #plt.plot(freq_array,T_sky_predicted)
-      #plt.title('Inferred backroud temperature vs frequency for MWA')
-      #plt.ylabel('Inferred background temperature (Tb in K)')
-      #plt.xlabel('Frequency (MHz)')
-      #Tb_plot.savefig('Tb_plot.png')
-   
-      #print freq_array
-      #print Smoon_average_stddev_spectrum[:,0]
-   
-    #save the big array for later use
-    if not options.remove_diffuse_rfi_on_fly:
-       #np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
-       np.save(big_Smoon_data_npy_filename, big_Smoon_spectrum_values)
-    else:
-       #np.save(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename, big_Smoon_average_stddev_spectrum)
-       np.save(big_Smoon_data_diffuse_on_fly_npy_filename, big_Smoon_spectrum_values)
-    #np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
-    np.save(big_Srfi_data_npy_filename,big_Srfi_spectrum_values)
-
-    np.save(big_rms_residual_images_npy_filename,big_rms_residual_images)
-    np.save(big_RFI_vs_time_freq_npy_filename,big_RFI_vs_time_freq_array)  
- 
+          big_rms_residual_images[57-57:57-57+24]=rms_residual_images_average
+          big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,0]=Srfi_spectrum_values
+          if options.remove_diffuse_rfi_on_fly:
+             big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,1]=diffuse_rfi_values
+          big_RFI_vs_time_freq_array[57-57:57-57+24,0:n_obs,2]=on_moon_obsid_list
+       if (centre_chan==93):
+          #big_Smoon_average_stddev_spectrum[81-57:81-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+          #big_Smoon_average_stddev_spectrum[81-57:81-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+          big_Smoon_spectrum_values[81-57:81-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values         
+          #big_Srfi_average_stddev_spectrum[81-57:81-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+          #big_Srfi_average_stddev_spectrum[81-57:81-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+          big_Srfi_spectrum_values[81-57:81-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
+          
+          big_rms_residual_images[81-57:81-57+24]=rms_residual_images_average
+          big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,0]=Srfi_spectrum_values
+          if options.remove_diffuse_rfi_on_fly:
+             big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,1]=diffuse_rfi_values
+          big_RFI_vs_time_freq_array[81-57:81-57+24,0:n_obs,2]=on_moon_obsid_list
+       if (centre_chan==121):
+          #big_Smoon_average_stddev_spectrum[109-57:109-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+          #big_Smoon_average_stddev_spectrum[109-57:109-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+          big_Smoon_spectrum_values[109-57:109-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values 
+          #big_Srfi_average_stddev_spectrum[109-57:109-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+          #big_Srfi_average_stddev_spectrum[109-57:109-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+          big_Srfi_spectrum_values[109-57:109-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
+          
+          big_rms_residual_images[109-57:109-57+24]=rms_residual_images_average
+          big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,0]=Srfi_spectrum_values
+          if options.remove_diffuse_rfi_on_fly:       
+             big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,1]=diffuse_rfi_values
+          big_RFI_vs_time_freq_array[109-57:109-57+24,0:n_obs,2]=on_moon_obsid_list
+       if (centre_chan==145):
+          #big_Smoon_average_stddev_spectrum[133-57:133-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+          #big_Smoon_average_stddev_spectrum[133-57:133-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+          big_Smoon_spectrum_values[133-57:133-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
+          #big_Srfi_average_stddev_spectrum[133-57:133-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+          #big_Srfi_average_stddev_spectrum[133-57:133-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+          big_Srfi_spectrum_values[133-57:133-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
+          
+          big_rms_residual_images[133-57:133-57+24]=rms_residual_images_average
+          big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,0]=Srfi_spectrum_values
+          if options.remove_diffuse_rfi_on_fly:       
+             big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,1]=diffuse_rfi_values
+          big_RFI_vs_time_freq_array[133-57:133-57+24,0:n_obs,2]=on_moon_obsid_list
+       if (centre_chan==169):
+          #big_Smoon_average_stddev_spectrum[157-57:157-57+24,0]=Smoon_average_stddev_spectrum[:,0]
+          #big_Smoon_average_stddev_spectrum[157-57:157-57+24,1]=Smoon_average_stddev_spectrum[:,1]
+          big_Smoon_spectrum_values[157-57:157-57+24,0:len(Smoon_spectrum_values[0])]=Smoon_spectrum_values
+          #big_Srfi_average_stddev_spectrum[157-57:157-57+24,0]=Srfi_average_stddev_spectrum[:,0]
+          #big_Srfi_average_stddev_spectrum[157-57:157-57+24,1]=Srfi_average_stddev_spectrum[:,1]
+          big_Srfi_spectrum_values[157-57:157-57+24,0:len(Srfi_spectrum_values[0])]=Srfi_spectrum_values
+          
+          big_rms_residual_images[157-57:157-57+24]=rms_residual_images_average
+          big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,0]=Srfi_spectrum_values
+          if options.remove_diffuse_rfi_on_fly:
+             big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,1]=diffuse_rfi_values
+          big_RFI_vs_time_freq_array[157-57:157-57+24,0:n_obs,2]=on_moon_obsid_list
+     
+     
+       ##now plot the  Smoon with std dev as error bars for each subband
+       #plt.clf()
+       #Smoon_plot=plt.figure(1)
+       #plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
+       ###plt.plot(freq_array,Smoon_average_stddev_spectrum[:,0])
+       #plt.title('Moon flux density vs frequency for MWA')
+       #plt.ylabel('Mean Moon Flux Density (Smoon in Jy)')
+       #plt.xlabel('Frequency (MHz)')
+       #Smoon_plot.savefig('Smoon_plot.png')
+     
+       
+       ##Plot the inferred and predicted background temp
+       #plt.clf()
+       #Tb_plot=plt.figure(2)
+       #plt.errorbar(freq_array,Tb,yerr=Tb_error)
+       #plt.plot(freq_array,T_sky_predicted)
+       #plt.title('Inferred backroud temperature vs frequency for MWA')
+       #plt.ylabel('Inferred background temperature (Tb in K)')
+       #plt.xlabel('Frequency (MHz)')
+       #Tb_plot.savefig('Tb_plot.png')
+     
+       #print freq_array
+       #print Smoon_average_stddev_spectrum[:,0]
+     
+     #save the big array for later use
+     if not options.remove_diffuse_rfi_on_fly:
+        #np.save(big_Smoon_average_stddev_spectrum_npy_filename, big_Smoon_average_stddev_spectrum)
+        np.save(big_Smoon_data_npy_filename, big_Smoon_spectrum_values)
+        print "saved %s" % big_Smoon_data_npy_filename
+     else:
+        #np.save(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename, big_Smoon_average_stddev_spectrum)
+        np.save(big_Smoon_data_diffuse_on_fly_npy_filename, big_Smoon_spectrum_values)
+        print "saved %s" % big_Smoon_data_diffuse_on_fly_npy_filename
+     #np.save(big_Srfi_average_stddev_spectrum_npy_filename,big_Srfi_average_stddev_spectrum)
+     np.save(big_Srfi_data_npy_filename,big_Srfi_spectrum_values)
+     print "saved %s" % big_Srfi_data_npy_filename
+     
+     np.save(big_rms_residual_images_npy_filename,big_rms_residual_images)
+     print "saved %s" % big_rms_residual_images_npy_filename
+     
+     np.save(big_RFI_vs_time_freq_npy_filename,big_RFI_vs_time_freq_array)  
+     print "saved %s" % big_RFI_vs_time_freq_npy_filename
+     
    #Now plot the big array
    if (plot_only):
       #big_Srfi_average_stddev_spectrum=np.load(big_Srfi_average_stddev_spectrum_npy_filename)
@@ -1511,69 +1543,70 @@ def model_moon(options):
          #big_Smoon_average_stddev_spectrum=np.load(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename)
          big_Smoon_spectrum_values=np.load(big_Smoon_data_diffuse_on_fly_npy_filename)
       
-      
-      #do std dev and averaging stuff here    
-      #-------------------------------
-      new_big_Smoon_average_stddev_spectrum=np.nanmean(big_Smoon_spectrum_values, axis=1)
-      big_Smoon_average_stddev_spectrum[:,0]=new_big_Smoon_average_stddev_spectrum
-      #print "new_big_Smoon_average_stddev_spectrum %s" % new_big_Smoon_average_stddev_spectrum
-      #print "big_Smoon_average_stddev_spectrum[:,0] %s" % big_Smoon_average_stddev_spectrum[:,0]
-      
-      
-      #std_dev_Smoon=np.nanstd(Smoon_spectrum_values, axis=1)
-      new_big_Smoon_average_stddev_spectrum_stddev = np.nanstd(big_Smoon_spectrum_values, axis=1)
-      big_Smoon_average_stddev_spectrum[:,1]=new_big_Smoon_average_stddev_spectrum_stddev
-      #print "new_big_Smoon_average_stddev_spectrum_stddev %s" % new_big_Smoon_average_stddev_spectrum_stddev
-      #print "big_Smoon_average_stddev_spectrum[:,1] %s" % big_Smoon_average_stddev_spectrum[:,1]
-      
-      new_big_Srfi_average_stddev_spectrum=np.nanmean(big_Srfi_spectrum_values, axis=1)
-      big_Srfi_average_stddev_spectrum[:,0]=new_big_Srfi_average_stddev_spectrum
-      #print "new_big_Smoon_average_stddev_spectrum %s" % new_big_Smoon_average_stddev_spectrum
-      #print "big_Smoon_average_stddev_spectrum[:,0] %s" % big_Smoon_average_stddev_spectrum[:,0]
-      
-      
-      #std_dev_Smoon=np.nanstd(Smoon_spectrum_values, axis=1)
-      new_big_Srfi_average_stddev_spectrum_stddev = np.nanstd(big_Srfi_spectrum_values, axis=1)
-      big_Srfi_average_stddev_spectrum[:,1]=new_big_Srfi_average_stddev_spectrum_stddev
-      #print "new_big_Smoon_average_stddev_spectrum_stddev %s" % new_big_Smoon_average_stddev_spectrum_stddev
-      #print "big_Smoon_average_stddev_spectrum[:,1] %s" % big_Smoon_average_stddev_spectrum[:,1]
-      
-      
-      #What happens if you just skip all this stuff and use the stdev? (25 June 2018)
-      
-      ##count the number of non-nan data points
-      ##~ inverts the boolean matrix returned from np.isnan
-      #check_non_zero_array=~np.isnan(Smoon_spectrum_values)
-      #Smoon_data_points=np.sum(check_non_zero_array,axis=1)
-      #print "Number of Smoon data points is %s" % Smoon_data_points
-      #std_dev_of_mean_Smoon=std_dev_Smoon/np.sqrt(Smoon_data_points)
-      
-      ##Go back to using  std dev of mean!
-      
-      ##Smoon_average_stddev_spectrum[:,1]=std_dev_of_mea n_Smoon
-      ##Also need to take into account the size of the synthesised beam when computing the error,
-      ## since to get the total flux density we just multiply by the moon mask and some, but pixels 
-      ##are correlated on the scale of the synthesised beam.
-      ##Smoon_average_stddev_spectrum[:,1]=std_dev_Smoon
-      #moon_area_in_synth_beam_units=moon_area_deg_sq/synth_beam_area_values
-      #Smoon_error_from_std_dev=std_dev_of_mean_Smoon*np.sqrt(moon_area_in_synth_beam_units)
-      #Smoon_average_stddev_spectrum[:,1]=Smoon_error_from_std_dev
-      ##print "S_moon average and std dev of mean for each chan:" 
-      ##print Smoon_average_stddev_spectrum
-      #Srfi_average_stddev_spectrum[:,0]=np.nanmean(Srfi_spectrum_values, axis=1)
-      #std_dev_Srfi=np.nanstd(Srfi_spectrum_values, axis=1)
-      #check_non_zero_array_rfi=~np.isnan(Srfi_spectrum_values)
-      #Srfi_data_points=np.sum(check_non_zero_array_rfi,axis=1)
-      #std_dev_of_mean_Srfi=std_dev_Srfi/np.sqrt(Srfi_data_points)
-   
-      ##Go back to using std dev rather than std dev of mean 
-      ##Srfi_average_stddev_spectrum[:,1]=std_dev_of_mean_Srfi
-      #Srfi_average_stddev_spectrum[:,1]=std_dev_Srfi
-      ##print "S_rfi average and std dev of mean for each chan:"
-      ##print Srfi_average_stddev_spectrum
-      ##--------------------------------------------------------------
    else:
       pass
+     
+   #do std dev and averaging stuff here    
+   #-------------------------------
+   new_big_Smoon_average_stddev_spectrum=np.nanmean(big_Smoon_spectrum_values, axis=1)
+   big_Smoon_average_stddev_spectrum[:,0]=new_big_Smoon_average_stddev_spectrum
+   #print "new_big_Smoon_average_stddev_spectrum %s" % new_big_Smoon_average_stddev_spectrum
+   #print "big_Smoon_average_stddev_spectrum[:,0] %s" % big_Smoon_average_stddev_spectrum[:,0]
+   
+   
+   #std_dev_Smoon=np.nanstd(Smoon_spectrum_values, axis=1)
+   new_big_Smoon_average_stddev_spectrum_stddev = np.nanstd(big_Smoon_spectrum_values, axis=1)
+   big_Smoon_average_stddev_spectrum[:,1]=new_big_Smoon_average_stddev_spectrum_stddev
+   #print "new_big_Smoon_average_stddev_spectrum_stddev %s" % new_big_Smoon_average_stddev_spectrum_stddev
+   #print "big_Smoon_average_stddev_spectrum[:,1] %s" % big_Smoon_average_stddev_spectrum[:,1]
+   
+   new_big_Srfi_average_stddev_spectrum=np.nanmean(big_Srfi_spectrum_values, axis=1)
+   big_Srfi_average_stddev_spectrum[:,0]=new_big_Srfi_average_stddev_spectrum
+   #print "new_big_Smoon_average_stddev_spectrum %s" % new_big_Smoon_average_stddev_spectrum
+   #print "big_Smoon_average_stddev_spectrum[:,0] %s" % big_Smoon_average_stddev_spectrum[:,0]
+   
+   
+   #std_dev_Smoon=np.nanstd(Smoon_spectrum_values, axis=1)
+   new_big_Srfi_average_stddev_spectrum_stddev = np.nanstd(big_Srfi_spectrum_values, axis=1)
+   big_Srfi_average_stddev_spectrum[:,1]=new_big_Srfi_average_stddev_spectrum_stddev
+   #print "new_big_Smoon_average_stddev_spectrum_stddev %s" % new_big_Smoon_average_stddev_spectrum_stddev
+   #print "big_Smoon_average_stddev_spectrum[:,1] %s" % big_Smoon_average_stddev_spectrum[:,1]
+   
+   
+   
+   #What happens if you just skip all this stuff and use the stdev? (25 June 2018)
+   
+   ##count the number of non-nan data points
+   ##~ inverts the boolean matrix returned from np.isnan
+   #check_non_zero_array=~np.isnan(Smoon_spectrum_values)
+   #Smoon_data_points=np.sum(check_non_zero_array,axis=1)
+   #print "Number of Smoon data points is %s" % Smoon_data_points
+   #std_dev_of_mean_Smoon=std_dev_Smoon/np.sqrt(Smoon_data_points)
+   
+   ##Go back to using  std dev of mean!
+   
+   ##Smoon_average_stddev_spectrum[:,1]=std_dev_of_mea n_Smoon
+   ##Also need to take into account the size of the synthesised beam when computing the error,
+   ## since to get the total flux density we just multiply by the moon mask and some, but pixels 
+   ##are correlated on the scale of the synthesised beam.
+   ##Smoon_average_stddev_spectrum[:,1]=std_dev_Smoon
+   #moon_area_in_synth_beam_units=moon_area_deg_sq/synth_beam_area_values
+   #Smoon_error_from_std_dev=std_dev_of_mean_Smoon*np.sqrt(moon_area_in_synth_beam_units)
+   #Smoon_average_stddev_spectrum[:,1]=Smoon_error_from_std_dev
+   ##print "S_moon average and std dev of mean for each chan:" 
+   ##print Smoon_average_stddev_spectrum
+   #Srfi_average_stddev_spectrum[:,0]=np.nanmean(Srfi_spectrum_values, axis=1)
+   #std_dev_Srfi=np.nanstd(Srfi_spectrum_values, axis=1)
+   #check_non_zero_array_rfi=~np.isnan(Srfi_spectrum_values)
+   #Srfi_data_points=np.sum(check_non_zero_array_rfi,axis=1)
+   #std_dev_of_mean_Srfi=std_dev_Srfi/np.sqrt(Srfi_data_points)
+   
+   ##Go back to using std dev rather than std dev of mean 
+   ##Srfi_average_stddev_spectrum[:,1]=std_dev_of_mean_Srfi
+   #Srfi_average_stddev_spectrum[:,1]=std_dev_Srfi
+   ##print "S_rfi average and std dev of mean for each chan:"
+   ##print Srfi_average_stddev_spectrum
+   ##--------------------------------------------------------------
   
    #get rid of nans and really small/big numbers
    big_Srfi_average_stddev_spectrum[big_Srfi_average_stddev_spectrum < 1e-10] = 0.
@@ -1763,6 +1796,7 @@ def model_moon(options):
       #   if np.isinf(rfi_value):
       #      RFI_peak_frac_in_disk_fm_band[rfi_index]=(RFI_peak_frac_in_disk_fm_band[rfi_index-1]+RFI_peak_frac_in_disk_fm_band[rfi_index+1])/2
       #print RFI_peak_frac_in_disk_fm_band
+      
       line_fit_result_RFI=fit_line(RFI_peak_frac_in_disk_fm_band,RFI_peak_frac_in_disk_fm_band*.1,big_freq_array[12:27])
       big_RFI_line_fit=big_freq_array*line_fit_result_RFI['a']+line_fit_result_RFI['b']
       av_RFI_peak_frac_in_disk_fm_band=np.mean(RFI_peak_frac_in_disk_fm_band)
@@ -1780,6 +1814,7 @@ def model_moon(options):
    
       #save this as a numpy array to be used in a subsequent run where we remove the diffuse RFI 'on the fly'
       np.save(evans_ratio_normalised_filename,ratio_evans_normalised)
+      print "saved %s" % evans_ratio_normalised_filename
    
       #This theoretical wavelength dependence is clearly wrong (diffuse to specular should increase more quickly with freq)
       #Evans measurements are at the wrong freq anyway, but we know that it is a powerlaw dependence anyway, not linear
@@ -2039,6 +2074,9 @@ def model_moon(options):
    Smoon_no_diffuse_rfi_removal_error =np.nanstd(Smoon_no_diffuse_rfi_removal_data,axis=1)
    Smoon_no_diffuse_rfi_removal[np.isnan(Smoon_no_diffuse_rfi_removal)] = 0.
    Smoon_no_diffuse_rfi_removal_error[np.isnan(Smoon_no_diffuse_rfi_removal_error)] = 20.
+   big_Srfi_average_stddev_spectrum[:,0][np.isnan(big_Srfi_average_stddev_spectrum[:,0])] = 0.
+   big_Srfi_average_stddev_spectrum[:,1][np.isnan(big_Srfi_average_stddev_spectrum[:,1])] = 0.
+   
    #Smoon_no_diffuse_rfi_removal[:,1][Smoon_no_diffuse_rfi_removal[:,1] == 0] = 20.
    #line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal[:,0],Smoon_no_diffuse_rfi_removal[:,1],big_freq_array)
    line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal,Smoon_no_diffuse_rfi_removal_error,big_freq_array)
@@ -2047,11 +2085,11 @@ def model_moon(options):
    a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed',linewidth=1)
 
    #a[0].text(150, 100, 'y=%5.2fx +%5.2f ' % (line_fit_result['a'],line_fit_result['a'])) 
-   a[0].legend(loc=1)
+   #a[0].legend(loc=1)
 
    #a[1].plot(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],label="reflected RFI")
    a[1].errorbar(big_freq_array,big_Srfi_average_stddev_spectrum[:,0],yerr=big_Srfi_average_stddev_spectrum[:,1],label="reflected RFI",elinewidth=0.5)
-   a[1].legend(loc=1)
+   #a[1].legend(loc=1)
    
    #a[2].plot(big_freq_array,S_moon_minus_linear_fit,label="S_moon-linear fit")
    #a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
@@ -2061,10 +2099,12 @@ def model_moon(options):
       #Smoon_remove_RFI_on_fly=np.load(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename)
       Smoon_remove_RFI_on_fly = np.nanmean(big_Smoon_spectrum_values, axis=1)
       Smoon_remove_RFI_on_fly_error = np.nanstd(big_Smoon_spectrum_values, axis=1)
+      Smoon_remove_RFI_on_fly[np.isnan(Smoon_remove_RFI_on_fly)] = 0.
+      Smoon_remove_RFI_on_fly_error[np.isnan(Smoon_remove_RFI_on_fly_error)] = 0.
       #a[2].errorbar(big_freq_array,Smoon_remove_RFI_on_fly[:,0],yerr=Smoon_remove_RFI_on_fly[:,1],label="S_moon RFI excised",elinewidth=0.5)      
       a[2].errorbar(big_freq_array,Smoon_remove_RFI_on_fly,yerr=Smoon_remove_RFI_on_fly_error,label="S_moon RFI excised",elinewidth=0.5)      
       
-   a[2].legend(loc=4)
+   #a[2].legend(loc=4)
    
    #a[3].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon_minus_linear_fit_RFI_subtracted")
    ##a[3].set_ylim([0,5])
@@ -2111,30 +2151,63 @@ def model_moon(options):
       print "saved figure %s" % plot_filename
       plt.close()
    
-   #Work out what the wavelength dependence of the radio brightness temperature looks like from Krotikov 1964
-   krotikov_lambda_array_cm=np.array([1.38,2.55,3.18,9.5,34.78,35.24,50.05])
+   #Work out what the wavelength dependence of the radio brightness temperature looks like from Krotikov 1964(b)
+   ##krotikov_lambda_array_cm=np.array([1.38,2.55,3.18,9.5,34.78,35.24,50.05])
+   ##krotikov_lambda_array_m=krotikov_lambda_array_cm/100.0
+   ##krotikov_freq_array_MHz=300.0/krotikov_lambda_array_m
+   ##   krotikov_data_array_Tm_K=np.array([206.6,212.5,209.5,217.7,235.8,237.6,236.2])
+   ##krotikov_data_array_Tm_K_error=np.array([5.0,5.0,5.0,5.0,7.0,5.0,10.0])
+   
+   
+   #Data from table 2 of Krotikov and Troitski 1964a Sov Phys Usp, 6 841
+   #with no error bar points:
+   #krotikov_lambda_array_cm       = np.array([  0.13  ,  0.18   ,  0.40  ,  0.40  ,  0.40  ,  0.43  ,  0.43  ,  0.43  ,  0.80  ,  0.80  ,  0.86  ,  1.25  ,  1.63  ,  1.63  ,  1.63  ,  2.0  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  9.4  ,  9.6  ,  9.6  ,  10.0  ,  10.0  ,  10.0  ,  10.0  ,  10.3  ,  11.0  ,  20.8  ,  21.0  ,  22.0  ,  22.0  ,  23.0  ,  32.3  ,  33.0  ,  35.0  ,  36.0  ,  50.0  ,  75    , 168 ])
+   #krotikov_data_array_Tm_K       = np.array([  219.  ,  240.   ,  230.  ,  228.  ,  204.  ,  182.  ,  243.  ,  245.  ,  197.  ,  211.  ,  180.  ,  215.  ,  224.  ,  208.  ,  207.  ,  190  ,  223  ,  195  ,  170  ,  255  ,  210  ,  213  ,  216  ,  220  ,  230  ,  218  ,  215.  ,  130.  ,  315.  ,  256.  ,  207.  ,  214.  ,  205.  ,  250.  ,  270.  ,  270.  ,  254.  ,  233.  ,  208.  ,  236.  ,  237.  ,  241.  ,  185   , 233 ])
+   #krotikov_data_array_Tm_K_error = np.array([  15.   ,  20.0   ,  10.0  ,  15.0  ,  4.00  ,  20.0  ,  20.0  ,  20.0  ,  10.0  ,  15.0  ,  15.0  ,  10.0  ,  15.0  ,  3.00  ,  3.00  ,  75.  ,  15.  ,  15.  ,  15.  ,  15.  ,  5.0  ,  2.0  ,  3.0  ,  5.0  ,  15.  ,  2.5  ,  100.  ,  100.  ,  100.  ,  15.   ,  15.   ,  12.   ,  100.  ,  15.   ,  20.   ,  100.  ,  15.0  ,  2.5   ,  100.  ,  4.00  ,  3.00  ,  5.0   ,  20.   , 4.0 ])
+
+   #without no error bar points at low freq
+   krotikov_lambda_array_cm       = np.array([  0.13  ,  0.18   ,  0.40  ,  0.40  ,  0.40  ,  0.43  ,  0.43  ,  0.43  ,  0.80  ,  0.80  ,  0.86  ,  1.25  ,  1.63  ,  1.63  ,  1.63  ,  2.0  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  3.2  ,  9.4  ,  9.6  ,  9.6  ,  10.0  ,  10.0  ,  10.0  ,  10.0  ,  10.3  ,  11.0  ,  21.0  ,  22.0  ,  23.0  ,  32.3  ,  35.0  ,  36.0  ,  50.0  ,  75    , 168 ])
+   krotikov_data_array_Tm_K       = np.array([  219.  ,  240.   ,  230.  ,  228.  ,  204.  ,  182.  ,  243.  ,  245.  ,  197.  ,  211.  ,  180.  ,  215.  ,  224.  ,  208.  ,  207.  ,  190  ,  223  ,  195  ,  170  ,  255  ,  210  ,  213  ,  216  ,  220  ,  230  ,  218  ,  215.  ,  130.  ,  315.  ,  256.  ,  207.  ,  214.  ,  250.  ,  270.  ,  254.  ,  233.  ,  236.  ,  237.  ,  241.  ,  185   , 233 ])
+   krotikov_data_array_Tm_K_error = np.array([  15.   ,  20.0   ,  10.0  ,  15.0  ,  4.00  ,  20.0  ,  20.0  ,  20.0  ,  10.0  ,  15.0  ,  15.0  ,  10.0  ,  15.0  ,  3.00  ,  3.00  ,  75.  ,  15.  ,  15.  ,  15.  ,  15.  ,  5.0  ,  2.0  ,  3.0  ,  5.0  ,  15.  ,  2.5  ,  100.  ,  100.  ,  100.  ,  15.   ,  15.   ,  12.   ,  15.   ,  20.   ,  15.0  ,  2.5   ,  4.00  ,  3.00  ,  5.0   ,  20.   , 8.0 ])
+
+   #ones without error bars at low freq
+   krotikov_lambda_array_cm_no_err = np.array([20.8, 22.0  , 33.0])
+   krotikov_data_array_Tm_K_no_err = np.array([205., 270.  , 208.])
+   
    krotikov_lambda_array_m=krotikov_lambda_array_cm/100.0
    krotikov_freq_array_MHz=300.0/krotikov_lambda_array_m
    
-   krotikov_data_array_Tm_K=np.array([206.6,212.5,209.5,217.7,235.8,237.6,236.2])
-   krotikov_data_array_Tm_K_error=np.array([5.0,5.0,5.0,5.0,7.0,5.0,10.0])
+   krotikov_lambda_array_m_no_err=krotikov_lambda_array_cm_no_err/100.0
+   krotikov_freq_array_MHz_no_err=300.0/krotikov_lambda_array_m_no_err
    
+   this_work_Tm = [180]
+   this_work_Tm_err = [12]
+   this_work_Freq_MHz = (230-72)/2 + 72
+   #print krotikov_freq_array_MHz
    #fit a curve to it!
-   powerlaw_fit_result = fit_powerlaw(krotikov_data_array_Tm_K,krotikov_data_array_Tm_K_error,krotikov_freq_array_MHz)
+   #powerlaw_fit_result = fit_powerlaw(krotikov_data_array_Tm_K,krotikov_data_array_Tm_K_error,krotikov_freq_array_MHz)
    
    plt.clf()
    plot=plt.figure()
+   figname='krot.png'
    #plt.errorbar(krotikov_lambda_array_cm,krotikov_data_array_Tm_K,yerr=krotikov_data_array_Tm_K_error,label="Krotikov")
-   plt.errorbar(krotikov_freq_array_MHz,krotikov_data_array_Tm_K,yerr=krotikov_data_array_Tm_K_error,label="Krotikov")
-   plt.plot(krotikov_freq_array_MHz,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
-   plt.title('Moon Brightness Temperature Frequency Dependence ')
+   #up to 4GHz
+   #plt.errorbar(krotikov_freq_array_MHz[23:],krotikov_data_array_Tm_K[23:],yerr=krotikov_data_array_Tm_K_error[23:],label="Krotikov & Troitski 1964")
+   #below 1.5 GHz - with no error bar points
+   plt.errorbar(krotikov_freq_array_MHz[32:],krotikov_data_array_Tm_K[32:],yerr=krotikov_data_array_Tm_K_error[32:],label="Krotikov & Troitskii (1964a)",marker='.',linestyle='None',capsize=2)
+   plt.errorbar(this_work_Freq_MHz, this_work_Tm, yerr=this_work_Tm_err, marker='s',label='This work',capsize=2,linestyle='None') #star: marker=(5, 1))
+   plt.plot(krotikov_freq_array_MHz_no_err, krotikov_data_array_Tm_K_no_err, marker='o',label='Krotikov & Troitskii (1964a) no error',linestyle='None') #star: marker=(5, 1))
+   
+   #plt.plot(krotikov_freq_array_MHz,powerlaw_fit_result['T_sky_fit'],label="Powerlaw fit")
+   plt.title('Moon Brightness Temperature Krotikov and Troitskii 1964a ')
    plt.ylabel('Moon Brightness Temp (K)')
    plt.xlabel('Frequency (MHz)')
-   plt.text(12000, 240, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
-   plt.text(12000, 235, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
-   plt.text(12000, 230, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
-   plot.savefig('krotikov_plot_1')
-   print "saved figure krotikov_plot_1"
+   plt.legend(loc=4)
+   #plt.text(12000, 240, 'Temp_150MHz = %5.1f +/- %3.1f' % (powerlaw_fit_result['T_150'], powerlaw_fit_result['T_150_err']))
+   #plt.text(12000, 235, 'Index = %5.2f +/- %4.2f' % (powerlaw_fit_result['alpha'], powerlaw_fit_result['alpha_err']))
+   #plt.text(12000, 230, 'Red_chi_sq = %5.2f (dof: %1.0f)' % (powerlaw_fit_result['red_chi_sq'], powerlaw_fit_result['dof']))
+   plot.savefig(figname,dpi=900)
+   print "saved figure %s" % figname
    plt.close
    
    #So what happens if we put in the frequency dependence on the Moon temp!
@@ -2175,7 +2248,9 @@ def model_moon(options):
    #logx = np.log10(freq_array)
    
    #only do this fitting if Tb is all positive:
-   if any(t < 0 for t in Tb):
+   dont_do_negative = False
+   #if any(t < 0 for t in Tb):
+   if dont_do_negative:
       print "Tb has negative elements, skipping power law fit"
    else:
       #print Tb_error
@@ -2185,18 +2260,56 @@ def model_moon(options):
       
       powerlaw_fit_result = fit_powerlaw_with_offset(Tb,Tb_error,big_freq_array)
       
-      T_sky_measured_fit=powerlaw_fit_result['T_sky_fit']
-      T_150_measured=powerlaw_fit_result['T_150']
-      T_150_measured_err=powerlaw_fit_result['T_150_err']
+      #T_sky_measured_fit=powerlaw_fit_result['T_sky_fit']
+      #T_150_measured=powerlaw_fit_result['T_150']
+      #T_150_measured_err=powerlaw_fit_result['T_150_err']
+      #alpha_gal_measured=powerlaw_fit_result['alpha']
+      #alpha_gal_measured_err=powerlaw_fit_result['alpha_err']
+      #residuals_big = powerlaw_fit_result['residuals']
+      #dof=powerlaw_fit_result['dof']
+      #red_chi_sq=powerlaw_fit_result['red_chi_sq']
+      T_moon_offset_measured = powerlaw_fit_result['T_moon_offset']
+      T_moon_offset_measured_err = powerlaw_fit_result['T_moon_offset_err']
+      T_moon_measured_from_fit = T_moon + T_moon_offset_measured
+      #print "T_moon_measured_from_fit is %s +/- %s"  % (T_moon_measured_from_fit,T_moon_offset_measured_err)
+      
+      #4 July 2018:
+      #Need to add the T_moon offset to Tb and then redo the powelaw fit:
+      Tb += T_moon_offset_measured
+      #print Tb[60]
+      #print big_freq_array[60]
+      T_150_measured = powerlaw_fit_result['T_150']
       alpha_gal_measured=powerlaw_fit_result['alpha']
       alpha_gal_measured_err=powerlaw_fit_result['alpha_err']
+      #print A,alpha_gal_measured
+      
+      #T_150_measured = A / (150.**-alpha_gal_measured)
+      #print powerlaw_fit_result['T_150_err']
+      #print  (150.**-alpha_gal_measured)
+      T_150_measured_err = powerlaw_fit_result['T_150_err']
+      #A_error_fractional = A_error / A
+      #print A_error_fractional
+      #T_150_measured_err=powerlaw_fit_result['T_150_err']/ (150.**-alpha_gal_measured)
+      #$T_150_measured_err = A_error_fractional * T_150_measured
+      #print T_150_measured_err
+      #T_sky_measured_fit = T_150_measured*(big_freq_array/150.)**alpha_gal_measured
+      T_sky_measured_fit = T_150_measured*(big_freq_array/150.)**alpha_gal_measured
+      #print T_sky_measured_fit[60]
+      #powerlaw_fit_result = fit_powerlaw(Tb,Tb_error,big_freq_array)
+      #T_sky_measured_fit=powerlaw_fit_result['T_sky_fit']
+      #T_150_measured=powerlaw_fit_result['T_150']
+      #T_150_measured_err=powerlaw_fit_result['T_150_err']
+      #alpha_gal_measured=powerlaw_fit_result['alpha']
+      #alpha_gal_measured_err=powerlaw_fit_result['alpha_err']
+      
+      print "T_moon_measured_from_fit is %s +/- %s"  % (T_moon_measured_from_fit,T_moon_offset_measured_err)
+      print "alpha is %s +/- %s"  % (alpha_gal_measured,alpha_gal_measured_err)
+      print "T_150_measured is %s +/- %s"  % (T_150_measured,T_150_measured_err)
+      
       residuals_big = powerlaw_fit_result['residuals']
       dof=powerlaw_fit_result['dof']
       red_chi_sq=powerlaw_fit_result['red_chi_sq']
-      T_moon_offset_measured = powerlaw_fit_result['T_moon_offset']
-      T_moon_offset_measured_err = powerlaw_fit_result['T_moon_offset_err']
-      T_moon_measured_from_fit = T_moon_offset_measured + T_moon
-      print "T_moon_measured_from_fit is %s"  % T_moon_measured_from_fit
+      
       
       #work out the residuals - what is the rms?
       #print len(residuals)
@@ -2315,7 +2428,17 @@ def model_moon(options):
       big_Tb_value_error[:,0]=Tb
       big_Tb_value_error[:,1]=Tb_error
       np.save(tb_filename,big_Tb_value_error)
+      print "saved %s" % tb_filename
    
+      data_filename = 'moon_data.txt'
+      data_list = []
+      data_list.append("FreqMHz   Tgal   Tgalerr")
+      for freq_index,freq in enumerate(big_freq_array):
+         data_string="%s   %s   %s" % (big_freq_array[freq_index],Tb[freq_index],Tb_error[freq_index])
+         data_list.append(data_string)
+      with open(data_filename, 'w') as f:
+         f.write("\n".join(data_list))
+         
       
       py.clf()
       Tb_plot=py.figure()
@@ -2324,7 +2447,7 @@ def model_moon(options):
       py.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit",linewidth=1,linestyle='--')
       axes = py.gca()
       #axes.set_xlim([xmin,xmax])
-      axes.set_ylim([0,2000])
+      axes.set_ylim([0,1800])
       py.title('Galactic brightness temperature vs frequency for MWA')
       py.ylabel('Galactic brightness temperature (K)')
       py.xlabel('Frequency (MHz)')
@@ -3307,6 +3430,7 @@ parser.add_option('--plot_only',action='store_true',dest='plot_only',default=Fal
 parser.add_option('--model_occulted_sky',action='store_true',dest='model_occulted_sky',default=False,help='set if you want to make a new model of the occulted sky e.g. --model_occulted_sky')
 parser.add_option('--do_beam_stuff',action='store_true',dest='do_beam_stuff',default=False,help='set if you want to do all the beam weighted averaging stuff e.g. --do_beam_stuff')
 parser.add_option('--sky_model',type='string', dest='sky_model',default='gsm',help='Sky model to use for predicted disk-averaged sky (gsm,gsm2016 or lfsm) e.g. --sky_model="gsm2016" [default=%default]')
+parser.add_option('--pre_cropped_images',action='store_true',dest='pre_cropped_images',default=False,help='set if using images pre-cropped in imaging step (i.e. with --crop_images e.g. --pre_cropped_images')
 
 
 (options, args) = parser.parse_args()

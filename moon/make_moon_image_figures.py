@@ -531,10 +531,10 @@ def make_images(options):
       AX[1,0].set_ylim([ymin,ymax])
       AX[1,0].annotate("C", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
       AX[1,1].annotate("D", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
-      #plt.xlabel('Right Ascention (hrs:mins)')
+      #plt.xlabel('Right Ascension (hrs:mins)')
       #f.gca().invert_xaxis()
       set_shared_ylabel(AX[:,0], 'Brightness (Jy/pixel)')
-      f.text(0.5, 0.09, 'Right Ascention (hrs:mins)', ha='center', va='center')
+      f.text(0.5, 0.09, 'Right Ascension (hrs:mins)', ha='center', va='center')
       #f.text(0.06, 0.5, 'common ylabel', ha='center', va='center', rotation='vertical')
 
       x_ref_deg = average_moon_modelled_header['crval1']
@@ -578,7 +578,7 @@ def make_images(options):
       AX[1,1].xaxis.set_major_formatter(formatter)
       
       f.autofmt_xdate()
-      f.savefig('profile_fig_four_panel.png')
+      f.savefig('profile_fig_four_panel.png',dpi=900)
 
       #TODO:
       #figureout what slice you are plotting and if the RA matches!
@@ -655,7 +655,7 @@ def make_images(options):
       f4.hide_ytick_labels()
       
       fig.canvas.draw()
-      py.savefig(four_panel_figname)
+      py.savefig(four_panel_figname,dpi=500)
 
 
   

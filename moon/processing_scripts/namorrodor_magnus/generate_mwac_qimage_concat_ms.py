@@ -73,6 +73,11 @@ def generate_namorrodor(options):
     else:
        cotter_string=''
 
+    if (options.crop_images):
+       crop_images_string=' --crop_images '
+    else:
+       crop_images_string=''
+       
     #if (options.tagname):
     #   tagname=options.tagname
     #   tagname_string=' --tagname=%s ' % (tagname)
@@ -145,7 +150,7 @@ def generate_namorrodor(options):
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string, no_pbcorr_string, track_moon_string,chgcentre_string,minw_string,imsize_string,epoch_ID_string, pol_string,concat6_string,wsclean_options_string,cotter_string,selfcal_string,ionpeeled_string,machine_string) )
+       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string, no_pbcorr_string, track_moon_string,chgcentre_string,minw_string,imsize_string,epoch_ID_string, pol_string,concat6_string,wsclean_options_string,cotter_string,selfcal_string,ionpeeled_string,machine_string,crop_images_string) )
     
     sbatch_file.close()
     print "wrote %s" %  q_filename
@@ -179,6 +184,7 @@ parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to
 parser.add_option('--cotter',action='store_true',dest='cotter',default=False,help='Use an ms from cotter, not imported from RTS e.g. --cotter   [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
+parser.add_option('--crop_images',action='store_true',dest='crop_images',default=False,help='Crop the images to the size required by model_moon.py e.g. --crop_images   [default=%default]')
 
 
 (options, args) = parser.parse_args()
