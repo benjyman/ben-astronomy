@@ -27,9 +27,11 @@ new_sun_pos_file = False
 combine_to_pdf = True
 pdf_compare_beam_amp = False
 pdf_compare_beam_phase = False
+pdf_compare_beam_amp_EDA = True
+pdf_compare_beam_phase_EDA = True
 pdf_beam_maps_AAVS1_amp = False
 pdf_beam_maps_AAVS1_phase = False
-pdf_beam_maps_EDA_amp = True
+pdf_beam_maps_EDA_amp = False
 pdf_beam_maps_EDA_phase = False
 
 #freq_MHz = 1.28 * 121
@@ -88,29 +90,33 @@ def combine_images_to_pdf(imagelist,pol,figname):
    # imagelist is the list with all image filenames
    #/usr/bin/montage compare*X*.png -mode concatenate -tile 3x5 out.pdf
    #/usr/bin/convert 0 out.pdf -quality 50 out2.pdf
-   cmd = "rm *_comp*"
+   cmd = "rm *_compressed*"
    os.system(cmd)
    cmd = "rm %s" % figname
    os.system(cmd)
    for image in imagelist:
       image_base = image.split('.')[0]
       print image_base
-      comp_image = '%s_comp.jpg' % image_base
+      comp_image = '%s_compressed.jpg' % image_base
       cmd = '/usr/bin/convert -quality 25 %s %s ' % (image,comp_image)
       print cmd
       os.system(cmd)
-   if ('compare' in figname and 'amp' in figname):
-      cmd = '/usr/bin/montage compare*amp*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
-   elif ('compare' in figname and 'phase' in figname):
-      cmd = '/usr/bin/montage compare*phase*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+   if ('compare' in figname and 'amp' in figname and 'AAVS' in figname):
+      cmd = '/usr/bin/montage compare*amp*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+   elif ('compare' in figname and 'phase' in figname and 'AAVS' in figname):
+      cmd = '/usr/bin/montage compare*phase*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+   elif ('compare' in figname and 'phase' in figname and 'EDA' in figname):
+      cmd = '/usr/bin/montage EDA*compare*phase*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+   elif ('compare' in figname and 'amp' in figname and 'EDA' in figname):
+      cmd = '/usr/bin/montage EDA*compare*amp*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
    elif ('EDA' in figname and 'power' in figname):
-      cmd = '/usr/bin/montage EDA_Power_*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+      cmd = '/usr/bin/montage EDA_Power_*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
    elif ('EDA' in figname and 'phase' in figname):
-      cmd = '/usr/bin/montage EDA_phase_*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+      cmd = '/usr/bin/montage EDA_phase_*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
    elif ('phase_patterns_AAVS' in figname):
-      cmd = '/usr/bin/montage phase_*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+      cmd = '/usr/bin/montage phase_*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
    else:
-      cmd = '/usr/bin/montage Power_*%s*_comp.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
+      cmd = '/usr/bin/montage Power_*%s*_compressed.jpg -mode concatenate -tile 3x5 %s' % (pol,figname)
    #print cmd
    os.system(cmd)
    
@@ -1463,19 +1469,23 @@ if compare_sols_to_beam:
          ant002_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/AAVS1_power_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),'002',pol)
          #ant002_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/data/AAVS1_voltage_pattern_linear_Ant%s_%s_theta_phi.npy' % ('002',pol)
          ant_compare_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/AAVS1_power_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol)
-         EDA_ant_compare_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/EDA_power_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol)
+         EDA_ant_compare_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/EDA_power_pattern_linear_Ant%s_%s_%sMHz_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol,int(freq_MHz))
          print "comparing %s" % ant_compare_pattern_filename
          #phase_ant_compare_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/AAVS1_phase_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol)
          #print "comparing %s" % phase_ant_compare_pattern_filename
          phase_pattern_ant_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/AAVS1_phase_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol)
-         EDA_phase_pattern_ant_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/EDA_phase_pattern_linear_Ant%s_%s_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol)
+         EDA_phase_pattern_ant_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/new_data/%s_MHz/EDA_phase_pattern_linear_Ant%s_%s_%sMHz_theta_phi.npy' % (int(freq_MHz),ant_name_randall,pol,int(freq_MHz))
          print "comparing %s" % phase_pattern_ant_filename
          #ant_compare_pattern_filename = '/mnt/md0/AAVS-1/beam_pattern_tests/data/AAVS1_voltage_pattern_linear_Ant%s_%s_theta_phi.npy' % (ant_name_randall,pol)
          ant002_pattern = np.load(ant002_pattern_filename) 
          ant_compare_pattern = np.load(ant_compare_pattern_filename)
          phase_compare_pattern = np.load(phase_pattern_ant_filename)
-         EDA_ant_compare_pattern = np.load(EDA_ant_compare_pattern_filename)
-         EDA_phase_compare_pattern = np.load(EDA_phase_pattern_ant_filename)
+         if ant_name_randall != '063':
+            EDA_ant_compare_pattern = np.load(EDA_ant_compare_pattern_filename)
+            EDA_phase_compare_pattern = np.load(EDA_phase_pattern_ant_filename)
+         else:
+            EDA_ant_compare_pattern = ant_compare_pattern*0.+0.5
+            EDA_phase_compare_pattern = phase_compare_pattern*0.+0.5
          #Do this later - just for cut across beam by sun? - No
          #normalise the beam patterns with respect to ant002 reference antenna
          max_ant002 = np.max(ant002_pattern)         
@@ -1596,7 +1606,7 @@ if compare_sols_to_beam:
          #phase
          fig, ax = plt.subplots()
          ax.plot(datetimes,EDA_phase_ant_compare_array_deg,label='ant%s beam model phase ref Ant002' % ant_name_randall)
-         ax.plot(datetimes,sun_ph_sols_list,label='ant%s sol phase X Pol' % ant_name_randall)
+         #ax.plot(datetimes,sun_ph_sols_list,label='ant%s sol phase X Pol' % ant_name_randall)
          ax.xaxis.set_major_formatter(formatter)
          ax.set_ylim(-60,60)
          #ax.plot(x,amplitude_ratio_ant100_ant002_array,label='ant100/ant002')
@@ -1637,6 +1647,32 @@ if combine_to_pdf:
       output = subprocess.check_output('ls compare*phase*%s*.jpg'%pol, shell=True)
       image_list = output.split('\n')
       combined_figname='compare_beam_phase_to_cal_sols_AAVS-1_%s_pol_%sMHz.pdf' % (pol,int(freq_MHz))
+      combine_images_to_pdf(image_list,pol,combined_figname)
+   if pdf_compare_beam_amp_EDA:
+      #Xpol:
+      pol='X'
+      output = subprocess.check_output('ls EDA_compare*%s*.jpg'%pol, shell=True)
+      image_list = output.split('\n')
+      combined_figname='compare_beam_amp_to_cal_sols_EDA_%s_pol_%sMHz.pdf' % (pol,int(freq_MHz))
+      combine_images_to_pdf(image_list,pol,combined_figname)
+      #Ypol
+      pol='Y'
+      output = subprocess.check_output('ls EDA_compare*%s*.jpg'%pol, shell=True)
+      image_list = output.split('\n')
+      combined_figname='compare_beam_amp_to_cal_sols_EDA_%s_pol_%sMHz.pdf' % (pol,int(freq_MHz))
+      combine_images_to_pdf(image_list,pol,combined_figname)
+   if pdf_compare_beam_phase_EDA:
+      #Xpol:
+      pol='X'
+      output = subprocess.check_output('ls EDA_compare*phase*%s*.jpg'%pol, shell=True)
+      image_list = output.split('\n')
+      combined_figname='compare_beam_phase_to_cal_sols_EDA_%s_pol_%sMHz.pdf' % (pol,int(freq_MHz))
+      combine_images_to_pdf(image_list,pol,combined_figname)
+      #Ypol
+      pol='Y'
+      output = subprocess.check_output('ls EDA_compare*phase*%s*.jpg'%pol, shell=True)
+      image_list = output.split('\n')
+      combined_figname='compare_beam_phase_to_cal_sols_EDA_%s_pol_%sMHz.pdf' % (pol,int(freq_MHz))
       combine_images_to_pdf(image_list,pol,combined_figname)
    if pdf_beam_maps_AAVS1_amp:                 
       #beam power patterns
