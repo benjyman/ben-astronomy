@@ -4,7 +4,13 @@ pbcorr a bunch of images at different chans
 """
 import os.path
 
-def generate_namorrodor(infile,options):
+def generate_namorrodor(options):
+    infile = options.obsid_infile
+    machine=options.machine
+    if machine=='namorrodor':
+       ben_code_base='/data/code/git/'
+    else:
+       ben_code_base='/astro/mwaeor/bmckinley/code/'
 
     obsid_list=[]
     for line in open(infile):
@@ -12,7 +18,8 @@ def generate_namorrodor(infile,options):
   
     n_obs = sum(1 for line in open(infile))
     n_images=int(options.channelsout)
-    n_array_jobs=int(n_obs*n_images)
+    #n_array_jobs=int(n_obs*n_images)
+    n_array_jobs=int(options.channelsout)   
 
     if (options.track_off_moon):
        track_off_moon_list=[]
@@ -51,6 +58,10 @@ def generate_namorrodor(infile,options):
     else:
        epoch_ID_string=''
 
+    if (options.machine):
+       machine_string=' --machine=%s ' % (options.machine)
+    else:
+       machine_string=''
 
     if (options.image_base_name):
        image_base_name=options.image_base_name
@@ -118,19 +129,47 @@ def generate_namorrodor(infile,options):
     else:
        channelsout_string=' --channelsout="1" '
  
-    q_script_name='q_pbcorr_multi_wrapper.sh'
+    q_filename_path=os.path.dirname(infile)+'/'        
+
+    if options.track_moon:
+       q_filename='%sq_pbcorr_on_moon.sh' % (q_filename_path)
+    elif options.track_off_moon:
+       q_filename='%sq_pbcorr_off_moon.sh' % (q_filename_path)
+    else:
+       q_filename='%sq_pbcorr_moon.sh' % (q_filename_path)
      
-    imaging_file = open(q_script_name,'w+')
-    imaging_file.write('#!/bin/bash -l\n')
+    sbatch_file = open(q_filename,'w+')
+    sbatch_file.write('#!/bin/bash -l\n')
+    if (machine=='magnus' or machine=='galaxy'):          
+       #sbatch_file.write('#!/bin/bash -l\n')
+       sbatch_file.write('#SBATCH -o pbcorr-%A.out\n' )
+       sbatch_file.write('##SBATCH --ntasks=1\n')
+       sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
+       if options.array_by_chan:
+          sbatch_file.write('#SBATCH --time=00:30:00\n')
+       else:
+          sbatch_file.write('#SBATCH --time=06:00:00\n')
+       sbatch_file.write('#SBATCH -J pbcorr_%s\n' % (options.epoch_ID))
+       if options.array_by_chan:
+          sbatch_file.write('#SBATCH --array=0-%s\n' % (n_array_jobs-1))
+       #sbatch_file.write('#SBATCH --clusters=magnus\n')
+       sbatch_file.write('#SBATCH --partition=workq\n')
+       sbatch_file.write('#SBATCH --account=mwaeor\n')
+       sbatch_file.write('#SBATCH --export=NONE\n')
+
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py ' +str(obsid) + ' ' + track_off_moon_list_string+image_base_name_string +havebeam_string+ms_name_string+metafits_name_string+applyion_string+clustered_model_string+render_string+pbuncorrect_string+selfcal_string+track_moon_string+track_off_moon_string+epoch_ID_string+ionpeeled_string+chgcentre_string+minw_string+dirty_string+channelsout_string+' \n')
 
-    imaging_file.close()
-    print "wrote file %s " %  (q_script_name)
+       if options.array_by_chan:
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s --array_by_chan=${SLURM_ARRAY_TASK_ID}\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string))
+       else:
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string))
 
-    command="chmod +x %s " % (q_script_name) 
+    sbatch_file.close()
+    print "wrote file %s " %  (q_filename)
+
+    command="chmod +x %s " % (q_filename) 
     print command
     os.system(command)
     
@@ -161,8 +200,10 @@ parser.add_option('--chgcentre',type='string',dest='chgcentre',default=None,help
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms" or minw="self" will use the minw of the observation  [default=%default]')
 parser.add_option('--dirty',action='store_true',dest='dirty',default=False,help='perform all operations on the dirty images, not the cleaned images [default=%default]')
 parser.add_option('--channelsout',type='string', dest='channelsout',default='1',help='Specify how many channels were output from wsclean e.g.channelsout=24 [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
+parser.add_option('--array_by_chan',action='store_true',dest='array_by_chan',default=False,help='Set to use array jobs for pbcorr on magnus/galaxy [default=%default]')
 
 (options, args) = parser.parse_args()
 
-infile = args[0]
-generate_namorrodor(infile,options)
+generate_namorrodor(options)

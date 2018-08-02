@@ -74,7 +74,7 @@ def generate_cotter_moon(options):
        machine_string=' --machine=%s ' % (options.machine)
     else:
        machine_string=''
-    
+       
     if (options.epoch_ID):
        epoch_semester=options.epoch_ID[0:5]
        print epoch_semester
@@ -114,12 +114,8 @@ def generate_cotter_moon(options):
           end_obs_id_index=int(obs_list_number*chunk_size+last_list_length)
        
        q_filename_path=os.path.dirname(obsid_infile)+'/'        
-       if options.track_moon:
-          q_filename='%sq_cotter_on_moon_%s.sh' % (q_filename_path,str(obs_list_number))
-       elif options.track_off_moon:
-          q_filename='%sq_cotter_off_moon_%s.sh' % (q_filename_path,str(obs_list_number))
-       else:
-          q_filename='%sq_cotter_moon_%s.sh' % (q_filename_path,str(obs_list_number))
+       q_filename='%sq_cotter_moon_%s.sh' % (q_filename_path,str(obs_list_number))
+    
        sbatch_file = open(q_filename,'w+')
        sbatch_file.write('#!/bin/bash -l\n')
        if (machine=='magnus' or machine=='galaxy'):          
@@ -127,7 +123,7 @@ def generate_cotter_moon(options):
           sbatch_file.write('#SBATCH -o cotter-%A.out\n')
           sbatch_file.write('##SBATCH --ntasks=1\n')
           sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-          sbatch_file.write('#SBATCH --time=06:00:00\n')
+          sbatch_file.write('#SBATCH --time=12:00:00\n')
           sbatch_file.write('#SBATCH -J cotter_%s\n' % (options.epoch_ID))
           #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
           #sbatch_file.write('#SBATCH --clusters=magnus\n')

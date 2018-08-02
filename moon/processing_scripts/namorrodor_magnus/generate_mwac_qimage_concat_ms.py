@@ -7,7 +7,13 @@ Generates a qsub scripts to qa, and image a list of obsIDs that have already bee
 """
 import os.path
 
-def generate_namorrodor(infile,options):
+def generate_namorrodor(options):
+    infile = options.obsid_infile
+    machine=options.machine
+    if machine=='namorrodor':
+       ben_code_base='/data/code/git/'
+    else:
+       ben_code_base='/astro/mwaeor/bmckinley/code/'
 
     obsid_list=[]
     for line in open(infile):
@@ -67,6 +73,11 @@ def generate_namorrodor(infile,options):
     else:
        cotter_string=''
 
+    if (options.crop_images):
+       crop_images_string=' --crop_images '
+    else:
+       crop_images_string=''
+       
     #if (options.tagname):
     #   tagname=options.tagname
     #   tagname_string=' --tagname=%s ' % (tagname)
@@ -78,7 +89,12 @@ def generate_namorrodor(infile,options):
        epoch_ID_string=' --epoch_ID=%s ' % (epoch_ID)
     else:
        epoch_ID_string=''
-       
+      
+    if (options.machine):
+       machine_string=' --machine=%s ' % (options.machine)
+    else:
+       machine_string=''
+
     if (options.pol):
        pol_string = ' --pol='+options.pol
     else:
@@ -109,19 +125,37 @@ def generate_namorrodor(infile,options):
 
     wsclean_options_string=' --wsclean_options="'+options.wsclean_options+'" '
 
-    q_script_name='q_image_concat_ms_wrapper.sh'
+    q_filename_path=os.path.dirname(infile)+'/'   
+    if options.track_moon:
+       q_filename='%sq_image_on_moon.sh' % (q_filename_path)     
+    elif options.track_off_moon:
+       q_filename='%sq_image_off_moon.sh' % (q_filename_path)
+    else:
+       q_filename='%sq_image_moon.sh' % (q_filename_path)
 
-    imaging_file = open(q_script_name,'w+')
-    imaging_file.write('#!/bin/bash -l\n')
+    sbatch_file = open(q_filename,'w+')
+    sbatch_file.write('#!/bin/bash -l\n')
+    if (machine=='magnus' or machine=='galaxy'):          
+       #sbatch_file.write('#!/bin/bash -l\n')
+       sbatch_file.write('#SBATCH -o image-%A.out\n' )
+       sbatch_file.write('##SBATCH --ntasks=1\n')
+       sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
+       sbatch_file.write('#SBATCH --time=01:00:00\n')
+       sbatch_file.write('#SBATCH -J image_%s\n' % (options.epoch_ID))
+       #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
+       #sbatch_file.write('#SBATCH --clusters=magnus\n')
+       sbatch_file.write('#SBATCH --partition=workq\n')
+       sbatch_file.write('#SBATCH --account=mwaeor\n')
+       sbatch_file.write('#SBATCH --export=NONE\n')
     for obsid_index,obsid in enumerate(obsid_list):
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       imaging_file.write('python /data/code/git/ben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py '+ str(obsid) + ' ' + track_off_moon_list_string + track_off_moon_string + no_pbcorr_string +track_moon_string+chgcentre_string+minw_string+imsize_string+epoch_ID_string + pol_string+concat6_string+wsclean_options_string+cotter_string+selfcal_string+ionpeeled_string+' \n')
+       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/image_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string, no_pbcorr_string, track_moon_string,chgcentre_string,minw_string,imsize_string,epoch_ID_string, pol_string,concat6_string,wsclean_options_string,cotter_string,selfcal_string,ionpeeled_string,machine_string,crop_images_string) )
     
-    imaging_file.close()
-    print "wrote %s" %  q_script_name
+    sbatch_file.close()
+    print "wrote %s" %  q_filename
 
-    command="chmod +x %s " % (q_script_name) 
+    command="chmod +x %s " % (q_filename) 
     print command
     os.system(command)
 
@@ -148,9 +182,12 @@ parser.add_option('--selfcal',dest='selfcal',type='string',default=None,help='Se
 parser.add_option('--ionpeeled',dest='ionpeeled',action='store_true',default=False,help='Set if this is a subsequent imaging run after ionpeeling e.g. --ionpeeled [default=%default]')
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms" or minw="self" will use the minw of the observation  [default=%default]')
 parser.add_option('--cotter',action='store_true',dest='cotter',default=False,help='Use an ms from cotter, not imported from RTS e.g. --cotter   [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
+parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
+parser.add_option('--crop_images',action='store_true',dest='crop_images',default=False,help='Crop the images to the size required by model_moon.py e.g. --crop_images   [default=%default]')
+
 
 (options, args) = parser.parse_args()
 
-infile = args[0]
 
-generate_namorrodor(infile,options)
+generate_namorrodor(options)

@@ -6,13 +6,20 @@ import numpy as np
 
 def pbcorr_multi(obsid,track_off_moon_string,options):
    epoch_ID=options.epoch_ID
-   if epoch_ID=="2015B_05":
-      mwa_dir='/data/MWA/'
+   machine=options.machine
+   if machine=='namorrodor':
+      if epoch_ID=='2015B_05':
+         mwa_dir='/data/MWA/'
+      else:
+         mwa_dir = '/md0/moon/data/MWA/'
    else:
-      mwa_dir = '/md0/moon/data/MWA/'
+      mwa_dir = '/astro/mwaeor/MWA/data/'
 
    #do all the next steps for each chan
-   number_images=int(options.channelsout)
+   if options.array_by_chan != '':
+      number_images=1
+   else:
+      number_images=int(options.channelsout)
 
    print obsid
 
@@ -45,8 +52,14 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
          ms_base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
       if (options.ionpeeled):
          ms_base_name+='_peeled'
-      ms_name=data_dir+ms_base_name+'.ms'
-
+      
+      if (options.track_moon or options.track_off_moon):
+         ms_name=data_dir+ms_base_name+'.ms'
+      else:
+         if (machine=="magnus" or machine=="galaxy"):
+            ms_name=ms_base_name+'.ms'
+         else:
+            ms_name=data_dir + ms_base_name+'.ms'
    if (options.image_base_name):
       image_base=options.image_base_name
       if options.track_off_moon:
@@ -121,6 +134,8 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
 
    #Then rest of chans
    for image_number in range(number_images):
+       if options.array_by_chan != '':
+          image_number = int(options.array_by_chan)
        image_base_name_loop='%s-%04d' % (image_base_name,image_number)
        beam_base_name_loop='%s-%04d' % (beam_base_name,image_number)
        print image_base_name_loop
@@ -194,6 +209,8 @@ parser.add_option('--chgcentre',type='string',dest='chgcentre',default=None,help
 parser.add_option('--minw',type='string',dest='minw',default=None,help='Shift to minw position of whatever ms is central in the chunk and then shiftback (must start at same phase centre which eor obs do e.g. --minw="12345678.ms"  [default=%default]')
 parser.add_option('--dirty',action='store_true',dest='dirty',default=False,help='perform all operations on the dirty images, not the cleaned images [default=%default]')
 parser.add_option('--channelsout',type='string', dest='channelsout',default='1',help='Specify how many channels were output from wsclean e.g.channelsout=24 [default=%default]')
+parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
+parser.add_option('--array_by_chan',type='string', dest='array_by_chan',default='',help='Number of the image (index 0) if using array jobs on magnus/galaxy e.g. --array_by_chan=11 [default=%default]')
 
 (options, args) = parser.parse_args()
 

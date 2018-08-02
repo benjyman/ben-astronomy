@@ -4,6 +4,46 @@ matplotlib.use('Agg')
 import pyfits
 import pylab as py
 import numpy as np
+from astropy.wcs import WCS
+import astropy 
+import datetime
+import copy
+import aplpy
+import matplotlib.pyplot as plt
+from matplotlib.dates import  DateFormatter
+
+
+def set_shared_ylabel(a, ylabel, labelpad = 0.01):
+    """Set a y label shared by multiple axes
+    Parameters
+    ----------
+    a: list of axes
+    ylabel: string
+    labelpad: float
+        Sets the padding between ticklabels and axis label"""
+
+    f = a[0].get_figure()
+    f.canvas.draw() #sets f.canvas.renderer needed below
+
+    # get the center position for all plots
+    top = a[0].get_position().y1
+    bottom = a[-1].get_position().y0
+
+    # get the coordinates of the left side of the tick labels 
+    x0 = 1
+    for at in a:
+        at.set_ylabel('') # just to make sure we don't and up with multiple labels
+        bboxes, _ = at.yaxis.get_ticklabel_extents(f.canvas.renderer)
+        bboxes = bboxes.inverse_transformed(f.transFigure)
+        xt = bboxes.x0
+        if xt < x0:
+            x0 = xt
+    tick_label_left = x0
+
+    # set position of label
+    a[-1].set_ylabel(ylabel)
+    a[-1].yaxis.set_label_coords(tick_label_left - labelpad,(bottom + top)/2, transform=f.transFigure)
+
  
 def make_images(options):
    stokes=options.stokes
@@ -147,8 +187,24 @@ def make_images(options):
             moon_hdulist = pyfits.open(moon_fitsname)
          else:
             print "Either file %s is missing or is not readable" % moon_fitsname
-            continue       
+            continue 
+         
+         print "opening image %s" % moon_fitsname
          moon_data=moon_hdulist[0].data
+         moon_header=moon_hdulist[0].header
+         #print moon_header
+         #del moon_header[5]
+         #del moon_header[5]
+         #del moon_header['history']
+         #del moon_header['ctype3']
+         #del moon_header['crval3']
+         #del moon_header['crpix3']
+         #del moon_header['cdelt3']
+         #del moon_header['ctype4']
+         #del moon_header['crval4']
+         #del moon_header['crpix4']
+         #del moon_header['cdelt4']
+         
          average_moon_image_array+=moon_data
          moon_image_counter+=1
       
@@ -268,93 +324,338 @@ def make_images(options):
       print "moon_image_counter is %s" % moon_image_counter
       average_moon_image=average_moon_image_array/moon_image_counter
       average_moon_image_crop = average_moon_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_moon_image_fitsname,average_moon_image,clobber=True)
-      py.figure(1)
-      py.clf()
-      py.title("Average Moon image from %s obsids chan %s %s" % (str(moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
-      py.colorbar()
-      py.savefig(average_moon_image_figname)
-      py.close()
+
+      wcs = WCS(moon_header)
+      #print wcs
+      wcs=wcs.dropaxis(2)
+      wcs=wcs.dropaxis(2)
+      wcs_cropped = wcs[ystart:yend,xstart:xend]
+      #print wcs_cropped
+      moon_header.update(wcs_cropped.to_header())
+      
+      #print moon_header
+      del moon_header['ctype3']
+      del moon_header['cdelt3']
+      del moon_header['crval3']
+      del moon_header['crpix3']
+      del moon_header['cunit3']
+      del moon_header['ctype4']
+      del moon_header['cdelt4']
+      del moon_header['crval4']
+      del moon_header['crpix4']
+      del moon_header['cunit4']
+      #print moon_header
+      
+      pyfits.writeto(average_moon_image_fitsname,average_moon_image_crop,clobber=True)
+      pyfits.update(average_moon_image_fitsname,average_moon_image_crop,clobber=True,header=moon_header)
+      
+      #py.figure(1)
+      #py.clf()
+      #py.title("Average Moon image from %s obsids chan %s %s" % (str(moon_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
+      #py.colorbar()
+      #py.savefig(average_moon_image_figname)
+      #py.close()
+      
+      matplotlib.rcParams['xtick.direction'] = 'in'
+      matplotlib.rcParams['ytick.direction'] = 'in'
+
+      #gc = aplpy.FITSFigure(average_moon_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_moon_image_figname)
+      #print "saved %s with aplpy" % average_moon_image_figname
+      #gc.close()
       
       #form the average Off Moon image and plot
       average_off_moon_image=average_off_moon_image_array/off_moon_image_counter
       average_off_moon_image_crop = average_off_moon_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_off_moon_image_fitsname,average_off_moon_image,clobber=True)
-      py.figure(2)
-      py.clf()
-      py.title("Average Off Moon image from %s obsids chan %s %s" % (str(off_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_off_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
-      py.colorbar()
-      py.savefig(average_off_moon_image_figname)
-      py.close()
+
+      
+      pyfits.writeto(average_off_moon_image_fitsname,average_off_moon_image_crop,clobber=True)
+      pyfits.update(average_off_moon_image_fitsname,average_off_moon_image_crop,clobber=True,header=moon_header)
+      
+      #gc = aplpy.FITSFigure(average_off_moon_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_off_moon_image_figname)
+      #print "saved %s with aplpy" % average_off_moon_image_figname
+      #gc.close()
+      
+      #py.figure(2)
+      #py.clf()
+      #py.title("Average Off Moon image from %s obsids chan %s %s" % (str(off_moon_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_off_moon_image_crop ), cmap=py.cm.Greys,origin='lower')
+      #py.colorbar()
+      #py.savefig(average_off_moon_image_figname)
+      #py.close()
          
       #form the average difference image and plot
       vmin_difference=-2.0
       vmax_difference=2.0
       average_difference_image=average_difference_image_array/difference_image_counter
       average_difference_image_crop = average_difference_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_difference_image_fitsname,average_difference_image,clobber=True)
-      py.figure(3)
-      py.clf()
-      py.title("Average difference image from %s obsids chan %s %s" % (str(difference_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_difference_image_crop ), cmap=py.cm.Greys,origin='lower',vmin=vmin_difference, vmax=vmax_difference)
-      py.colorbar()
-      py.savefig(average_difference_image_figname)
-      py.close()
+      pyfits.writeto(average_difference_image_fitsname,average_difference_image_crop,clobber=True)
+      pyfits.update(average_difference_image_fitsname,average_difference_image_crop,clobber=True,header=moon_header)
+
+      #gc = aplpy.FITSFigure(average_difference_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_difference_image_figname)
+      #print "saved %s with aplpy" % average_difference_image_figname
+      #gc.close()
+      
+      #py.figure(3)
+      #py.clf()
+      #py.title("Average difference image from %s obsids chan %s %s" % (str(difference_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_difference_image_crop ), cmap=py.cm.Greys,origin='lower',vmin=vmin_difference, vmax=vmax_difference)
+      #py.colorbar()
+      #py.savefig(average_difference_image_figname)
+      #py.close()
 
       #form the average difference image in jy per pix and plot
       vmin_difference_jyperpix=-0.002
       vmax_difference_jyperpix=0.002
       average_difference_jyperpix_image=average_difference_jyperpix_image_array/difference_jyperpix_image_counter
       average_difference_jyperpix_image_crop = average_difference_jyperpix_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_difference_jyperpix_image_fitsname,average_difference_jyperpix_image,clobber=True)
-      py.figure(4)
-      py.clf()
-      py.title("Average difference Jy per pix image from %s obsids chan %s %s" % (str(difference_jyperpix_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_difference_jyperpix_image_crop ), cmap=py.cm.Greys,origin='lower')
-      py.colorbar()
-      py.savefig(average_difference_jyperpix_image_figname)
-      py.close()
+      pyfits.writeto(average_difference_jyperpix_image_fitsname,average_difference_jyperpix_image_crop,clobber=True)
+      pyfits.update(average_difference_jyperpix_image_fitsname,average_difference_jyperpix_image_crop,clobber=True,header=moon_header)
+      
+     #gc = aplpy.FITSFigure(average_difference_jyperpix_image_fitsname)
+     #gc.show_grayscale()
+     #gc.add_colorbar()
+     #gc.set_theme('publication')
+     #gc.save(average_difference_jyperpix_image_figname)
+     #print "saved %s with aplpy" % average_difference_jyperpix_image_figname
+     #gc.close()
+     
+      #py.figure(4)
+      #py.clf()
+      #py.title("Average difference Jy per pix image from %s obsids chan %s %s" % (str(difference_jyperpix_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_difference_jyperpix_image_crop ), cmap=py.cm.Greys,origin='lower')
+      #py.colorbar()
+      #py.savefig(average_difference_jyperpix_image_figname)
+      #py.close()
             
       #form the average modelled moon image and plot
       moon_modelled_vmax=0.01
       moon_modelled_vmin=0.00
       average_moon_modelled_image=average_moon_modelled_image_array/modelled_moon_image_counter
       average_moon_modelled_image_crop = average_moon_modelled_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_moon_modelled_image_fitsname,average_moon_modelled_image,clobber=True)
-      py.figure(5)
-      py.clf()
-      py.title("Average modelled moon image from %s obsids chan %s %s" % (str(modelled_moon_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_moon_modelled_image_crop ), cmap=py.cm.Greys,origin='lower',vmax=moon_modelled_vmax, vmin=moon_modelled_vmin)
-      py.colorbar()
-      py.savefig(average_moon_modelled_image_figname)
-      py.close()
+      pyfits.writeto(average_moon_modelled_image_fitsname,average_moon_modelled_image_crop,clobber=True)
+      pyfits.update(average_moon_modelled_image_fitsname,average_moon_modelled_image_crop,clobber=True,header=moon_header)
+      
+      #gc = aplpy.FITSFigure(average_moon_modelled_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_moon_modelled_image_figname)
+      #print "saved %s with aplpy" % average_moon_modelled_image_figname
+      #gc.close()
+      
+      #py.figure(5)
+      #py.clf()
+      #py.title("Average modelled moon image from %s obsids chan %s %s" % (str(modelled_moon_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_moon_modelled_image_crop ), cmap=py.cm.Greys,origin='lower',vmax=moon_modelled_vmax, vmin=moon_modelled_vmin)
+      #py.colorbar()
+      #py.savefig(average_moon_modelled_image_figname)
+      #py.close()
 
       #form the average modelled rfi image and plot
       average_rfi_modelled_image=average_rfi_modelled_image_array/modelled_rfi_image_counter
       average_rfi_modelled_image_crop = average_rfi_modelled_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_rfi_modelled_image_fitsname,average_rfi_modelled_image,clobber=True)
-      py.figure(7)
-      py.clf()
-      py.title("Average modelled rfi image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_rfi_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
-      py.colorbar()
-      py.savefig(average_rfi_modelled_image_figname)
-      py.close()   
+      pyfits.writeto(average_rfi_modelled_image_fitsname,average_rfi_modelled_image_crop,clobber=True)
+      pyfits.update(average_rfi_modelled_image_fitsname,average_rfi_modelled_image_crop,clobber=True,header=moon_header)
+      
+      #gc = aplpy.FITSFigure(average_rfi_modelled_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_rfi_modelled_image_figname)
+      #print "saved %s with aplpy" % average_rfi_modelled_image_figname
+      #gc.close()
+            
+      #py.figure(7)
+      #py.clf()
+      #py.title("Average modelled rfi image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_rfi_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
+      #py.colorbar()
+      #py.savefig(average_rfi_modelled_image_figname)
+      #py.close()   
       
       #form the average modelled residual image and plot
       average_residual_modelled_image=average_residual_modelled_image_array/modelled_residual_image_counter
       average_residual_modelled_image_crop = average_residual_modelled_image[ystart:yend,xstart:xend]
-      pyfits.writeto(average_residual_modelled_image_fitsname,average_residual_modelled_image,clobber=True)
-      py.figure(8)
-      py.clf()
-      py.title("Average modelled residual image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
-      py.imshow( ( average_residual_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
-      py.colorbar()
-      py.savefig(average_residual_modelled_image_figname)
-      py.close() 
-    
+      #average_residual_modelled_image_crop[75,0:50] = 1
+      pyfits.writeto(average_residual_modelled_image_fitsname,average_residual_modelled_image_crop,clobber=True)
+      pyfits.update(average_residual_modelled_image_fitsname,average_residual_modelled_image_crop,clobber=True,header=moon_header)
+
+      #gc = aplpy.FITSFigure(average_residual_modelled_image_fitsname)
+      #gc.show_grayscale()
+      #gc.add_colorbar()
+      #gc.set_theme('publication')
+      #gc.save(average_residual_modelled_image_figname)
+      #print "saved %s with aplpy" % average_residual_modelled_image_figname
+      #gc.close()
+      
+      #py.figure(8)
+      #py.clf()
+      #py.title("Average modelled residual image from %s obsids chan %s %s" % (str(modelled_rfi_image_counter),centre_chan,chan_string))
+      #py.imshow( ( average_residual_modelled_image_crop ), cmap=py.cm.Greys,origin='lower')
+      #py.colorbar()
+      #py.savefig(average_residual_modelled_image_figname)
+      #py.close() 
+
+      #1D profiles:
+      # row and column sharing
+
+      average_moon_modelled_hdulist = pyfits.open(average_moon_modelled_image_fitsname)
+      average_moon_modelled_header=average_moon_modelled_hdulist[0].header
+      #f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
+      f, (AX) = plt.subplots(2, 2, sharex='col', sharey='row')
+      #f.tight_layout()
+      ymin = -.015
+      ymax = .055
+      ystep = .02
+      AX[0,0].invert_xaxis()
+      AX[0,0].yaxis.set_ticks(np.arange(ymin, ymax, ystep))
+      AX[0,0].set_ylim([ymin,ymax])
+      #AX[0,0].add_label(0.07,0.93,'A',relative=True,size=25,style='normal',weight=boldness,color='black')
+      AX[0,0].annotate("A", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
+      AX[0,1].invert_xaxis()
+      AX[1,0].yaxis.set_ticks(np.arange(ymin, ymax, ystep))
+      AX[0,1].annotate("B", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
+      AX[1,0].set_ylim([ymin,ymax])
+      AX[1,0].annotate("C", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
+      AX[1,1].annotate("D", xy=(0.05,0.88), xycoords="axes fraction",fontweight='bold')
+      #plt.xlabel('Right Ascension (hrs:mins)')
+      #f.gca().invert_xaxis()
+      set_shared_ylabel(AX[:,0], 'Brightness (Jy/pixel)')
+      f.text(0.5, 0.09, 'Right Ascension (hrs:mins)', ha='center', va='center')
+      #f.text(0.06, 0.5, 'common ylabel', ha='center', va='center', rotation='vertical')
+
+      x_ref_deg = average_moon_modelled_header['crval1']
+      print "x_ref_deg is %s" % x_ref_deg
+      x_delt_deg= average_moon_modelled_header['cdelt1']
+      print "x_delt_deg is %s" % x_delt_deg
+      x_length = average_moon_modelled_header['naxis1']
+      print "x_length is %s" % x_length
+      x_start_deg = x_ref_deg - (x_length/2)*x_delt_deg
+      print "x_start_deg is %s" % x_start_deg
+      x_end_deg=x_start_deg + (x_length*x_delt_deg)
+      #x_start_hrs = (x_start_deg + 360)/15.
+      #print "x_start_hrs is %s" % x_start_hrs      
+      
+      x_deg = np.linspace(x_start_deg,x_end_deg,x_length)
+      x_hrs = (x_deg + 360)/15.
+      #print x_hrs
+      date_time_initial = datetime.datetime(2015, 9, 26, 00, 00)
+      formatter = DateFormatter('%H:%M') 
+      
+      t = [date_time_initial + datetime.timedelta(hours=i) for i in x_hrs]
+      
+      #This is a horizontal line
+      y=average_difference_jyperpix_image_crop[75,:]
+      AX[0,0].plot(t, y,color='black')
+      AX[0,0].xaxis.set_major_formatter(formatter)  
+
+       
+      y=average_moon_modelled_image_crop[75,:]
+      AX[0,1].plot(t, y,color='black')
+      # [left, bottom, width, height] 
+      #AX[0,1].set_position([0.0,0.5,0.45,0.45])
+      AX[0,1].xaxis.set_major_formatter(formatter) 
+   
+      y=average_rfi_modelled_image_crop[75,:]
+      AX[1,0].plot(t, y,color='black')
+      AX[1,0].xaxis.set_major_formatter(formatter) 
+
+      y=average_residual_modelled_image_crop[75,:]
+      AX[1,1].plot(t, y,color='black')
+      AX[1,1].xaxis.set_major_formatter(formatter)
+      
+      f.autofmt_xdate()
+      f.savefig('profile_fig_four_panel.png',dpi=900)
+
+      #TODO:
+      #figureout what slice you are plotting and if the RA matches!
+      #set vmin vmax for yscale
+      #set RA (hh:mm) and brightness (Jy/pixel) labels
+      #smoosh subplots together more
+      
+      
+      
+
+      #make a four panel:
+      font_size=15
+      dx,dy = .47,.43
+      boldness = 580
+      four_panel_figname = 'fig1_four_panel.png'
+      fig = py.figure(figsize=(17, 15))
+
+      f1 = aplpy.FITSFigure(average_difference_jyperpix_image_fitsname, figure=fig, subplot=[0.05,0.5,dx,dy])
+      f1.set_axis_labels_font(size=font_size)
+      f1.add_label(0.07,0.93,'A',relative=True,size=25,style='normal',weight=boldness,color='black')
+      f1.show_grayscale()
+      f1.add_colorbar()
+      f1.colorbar.set_font(size=font_size)
+      f1.tick_labels.set_xformat('hh:mm')
+      f1.tick_labels.set_yformat('dd:mm')
+      f1.tick_labels.set_font(size=font_size)
+      f1.set_theme('publication')
+      
+      f1.hide_xaxis_label()
+      f1.hide_xtick_labels()
+      
+      f2 = aplpy.FITSFigure(average_moon_modelled_image_fitsname, figure=fig, subplot=[0.5,0.5,dx,dy])
+      f2.add_label(0.07,0.93,'B',relative=True,size=25,style='normal',weight=boldness,color='black')
+      f2.tick_labels.set_xformat('hh:mm')
+      f2.tick_labels.set_yformat('dd:mm')
+      f2.tick_labels.set_font(size=font_size)
+      f2.show_grayscale()
+      f2.add_colorbar()
+      f2.colorbar.set_font(size=font_size)
+      f2.colorbar.set_axis_label_font(size=font_size)
+      f2.colorbar.set_axis_label_text('Jy/pixel')
+      f2.set_theme('publication')
+      
+      f2.hide_yaxis_label()
+      f2.hide_ytick_labels()
+      f2.hide_xaxis_label()
+      f2.hide_xtick_labels()
+      
+      f3 = aplpy.FITSFigure(average_rfi_modelled_image_fitsname, figure=fig, subplot=[0.05,0.05,dx,dy])
+      f3.add_label(0.07,0.93,'C',relative=True,size=25,style='normal',weight=boldness,color='black')
+      f3.set_axis_labels_font(size=font_size)
+      f3.tick_labels.set_xformat('hh:mm')
+      f3.tick_labels.set_yformat('dd:mm')
+      f3.tick_labels.set_font(size=font_size)
+      f3.show_grayscale()
+      f3.add_colorbar()
+      f3.colorbar.set_font(size=font_size)
+      f3.set_theme('publication')
+      
+      f4 = aplpy.FITSFigure(average_residual_modelled_image_fitsname, figure=fig, subplot=[0.5,0.05,dx,dy])
+      f4.add_label(0.07,0.93,'D',relative=True,size=25,style='normal',weight=boldness,color='white')
+      f4.set_axis_labels_font(size=font_size)
+      f4.tick_labels.set_xformat('hh:mm')
+      f4.tick_labels.set_yformat('dd:mm')
+      f4.tick_labels.set_font(size=font_size)
+      f4.show_grayscale()
+      f4.add_colorbar()
+      f4.colorbar.set_font(size=font_size)
+      f4.colorbar.set_axis_label_font(size=font_size)
+      f4.colorbar.set_axis_label_text('Jy/pixel')
+      f4.set_theme('publication')
+      
+      f4.hide_yaxis_label()
+      f4.hide_ytick_labels()
+      
+      fig.canvas.draw()
+      py.savefig(four_panel_figname,dpi=500)
 
 
   
