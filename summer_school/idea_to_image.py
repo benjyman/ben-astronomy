@@ -120,7 +120,20 @@ def idea_to_image(options):
       lambda_on_D_deg = (wavelength/max_baseline)/np.pi*180
       scale=lambda_on_D_deg/oversample
       print scale
-      cmd = "wsclean -name  %s -size 2000 2000  -niter 5000 -threshold 0.3 -multiscale -mgain 0.85 -data-column CORRECTED_DATA  -scale %.3f -weight briggs 1 -small-inversion  -make-psf    -pol xx,xy,yx,yy -join-polarizations  %s.ms" % (obs,scale,obs)
+      cmd = "wsclean -name  %s -size 2000 2000  -niter 5000 -threshold 0.3  -mgain 0.85 -data-column CORRECTED_DATA  -scale %.3f -weight briggs 1 -small-inversion  -make-psf    -pol xx,xy,yx,yy -join-polarizations  %s.ms" % (obs,scale,obs)
+      print cmd
+      os.system(cmd)
+
+      #now have images in instrumental pol (show with aplpy?)
+      #beam correct
+
+      #generate beams
+      cmd = "beam -2016 -proto %s-XX-image.fits -name  %s_beam -ms  %s.ms  -m %s_metafits_ppds.fits" % (obs,obs,obs)
+      print cmd
+      os.system(cmd)
+
+      #pbcorrect the images (or later combine them with pbaddimage)
+      cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
       print cmd
       os.system(cmd)
 
