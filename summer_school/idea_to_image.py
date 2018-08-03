@@ -122,13 +122,13 @@ def idea_to_image(options):
       print scale
       cmd = "wsclean -name  %s -size 2000 2000  -niter 5000 -threshold 0.3  -mgain 0.85 -data-column CORRECTED_DATA  -scale %.3f -weight briggs 1 -small-inversion  -make-psf    -pol xx,xy,yx,yy -join-polarizations  %s.ms" % (obs,scale,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       #now have images in instrumental pol (show with aplpy?)
       #beam correct
 
       #generate beams
-      cmd = "beam -2016 -proto %s-XX-image.fits -name  %s_beam -ms  %s.ms  -m %s_metafits_ppds.fits" % (obs,obs,obs)
+      cmd = "beam -2016 -proto %s-XX-image.fits -name  %s_beam -ms  %s.ms  -m %s_metafits_ppds.fits" % (obs,obs,obs,obs)
       print cmd
       os.system(cmd)
 
@@ -136,6 +136,17 @@ def idea_to_image(options):
       cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
       print cmd
       os.system(cmd)
+
+
+   #combine images with pbaddimg
+   pbaddimg_string = "pbaddimg integrated-stokes "
+   for obs in obs_list[1:]:
+      pbaddimg_string += "%s image.fits %s_beam " % (obs,obs)
+   cmd = pbaddimg_string
+   print cmd
+   os.system(cmd)
+
+
 
 import sys,os
 from optparse import OptionParser,OptionGroup
