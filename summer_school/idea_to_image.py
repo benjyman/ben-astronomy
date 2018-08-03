@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #Python script - idea to image for SKA Summer School Shanghai
 import os
+from astropy.io import fits
+import numpy as np
 #1. Idea! (EoR!)
 #2. Find some observations.
 #- website (http://mwa-metadata01.pawsey.org.au MWA-guest guest)
@@ -9,16 +11,24 @@ import os
 os.environ["ASVO_USER"] = "bmckinley"
 os.environ["ASVO_PASS"] = "Bridgey2014"
 
+#change this if phase 2 data i.e. 6000
+max_baseline = 3000.
+
+#how much to oversample the synthesised beam in imaging (3 to 5 is fine)
+oversample = 3.
+
 def idea_to_image(options):
 
    #data_dir = "/md0/summer_school/"
    data_dir="/data/"
-
+   #number of sources to use in calibration sky model
+   n_cal_sources = 200
+  
    #first lets download a calibrator observation - bright point source, cause this is easy and one way to calibrate the data
    obs_filename="calibrator.txt"
    cmd = 'find_observations.py --proj=G0009 --start=1075635272 --stop=1075647960 --obsname=high_PictorA* > %s' % obs_filename
    print cmd
-   os.system(cmd)
+   #os.system(cmd)
    cal_obs_list=[]
    with open(obs_filename,'r') as f:
       lines = f.readlines()
@@ -57,20 +67,21 @@ def idea_to_image(options):
 
    cmd = "mwa_client -c %s -d %s" % (csv_filename,data_dir)
    print cmd
-   os.system(cmd)
+   #os.system(cmd)
 
    #this gives you zip files
    for obs in obs_list:
       cmd = "unzip %s_ms.zip" % obs
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
       #cmd = "rm %s_ms.zip" % obs
       #print cmd
       #os.system(cmd)
       #also need the metafits files, get the most up-to-date:
       cmd = "wget -O %s_metafits_ppds.fits http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (obs,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
+      
 
    #now you have your measurment sets! what has been done toi the data? see slides
   
@@ -80,14 +91,38 @@ def idea_to_image(options):
    #Method 2: full sky model:
    for obs in obs_list[1:]:
       print obs
-      cmd="/srclists/srclist_by_beam.py -x --aocalibrate -m %s_metafits_ppds.fits -n 1000 -s /srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt" % (obs)
+      cmd="/srclists/srclist_by_beam.py -x --aocalibrate -m %s_metafits_ppds.fits -n %s -s /srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt" % (obs,n_cal_sources)
       print cmd
       #os.system(cmd)   
       #once you have a sourclist, use it to calibrate
-      cmd="calibrate -minuv 60  -m srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal1000.txt -applybeam  %s.ms  %s_selfcal.bin" % (obs,obs,obs)
+      solutions_filename=" %s_selfcal.bin" % obs
+      cmd="calibrate -minuv 60  -m srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt -applybeam  %s.ms  %s" % (obs,n_cal_sources,obs,solutions_filename)
+      print cmd
+      #os.system(cmd)
+
+      #plot the solutions
+      cmd = "aocal_plot.py %s" % solutions_filename
+      print cmd
+      #os.system(cmd)
+
+      #apply the cal sols
+      cmd = "applysolutions %s.ms %s" % (obs,solutions_filename)
+      print cmd
+      #os.system(cmd)
+
+      #image!
+      #work out pixel scale
+      #get frequency from the metafits file
+      hdulist=fits.open("%s_metafits_ppds.fits" % obs)
+      header=hdulist[0].header
+      freq_MHz=float(header['freqcent'])
+      wavelength = 300./freq_MHz
+      lambda_on_D_deg = (wavelength/max_baseline)/np.pi*180
+      scale=lambda_on_D_deg/oversample
+      print scale
+      cmd = "wsclean -name  %s -size 2000 2000  -niter 5000 -threshold 0.3 -multiscale -mgain 0.85 -datacolumn CORRECTED_DATA  -scale %.3f -weight briggs 1 -smallinversion  -make-psf    -pol xx,xy,yx,yy -joinpolarizations  %s.ms" % (obs,scale,obs)
       print cmd
       os.system(cmd)
-
 
 import sys,os
 from optparse import OptionParser,OptionGroup
