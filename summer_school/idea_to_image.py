@@ -93,7 +93,7 @@ def idea_to_image(options):
    print "obs_list"
    print obs_list 
    #Method 2: full sky model:
-   for obs in obs_list[0:1]:
+   for obs in obs_list:
       print obs
       cmd="/srclists/srclist_by_beam.py -x --aocalibrate -m %s_metafits_ppds.fits -n %s -s /srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt" % (obs,n_cal_sources)
       print cmd
