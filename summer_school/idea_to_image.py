@@ -3,6 +3,7 @@
 import os
 from astropy.io import fits
 import numpy as np
+import copy
 #1. Idea! (EoR!)
 #2. Find some observations.
 #- website (http://mwa-metadata01.pawsey.org.au MWA-guest guest)
@@ -55,7 +56,8 @@ def idea_to_image(options):
    csv_filename="manta_ray_csv_download.csv"
    manta_ray_options_string = "job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true"
    csv_file_list=[]
-   csv_obs_list = obs_list
+   csv_obs_list = copy.copy(obs_list)
+   print csv_obs_list
    csv_obs_list.append(cal_obs_list[0])
    for obs in csv_obs_list:
       print obs
@@ -91,7 +93,7 @@ def idea_to_image(options):
    print "obs_list"
    print obs_list 
    #Method 2: full sky model:
-   for obs in obs_list:
+   for obs in obs_list[0:1]:
       print obs
       cmd="/srclists/srclist_by_beam.py -x --aocalibrate -m %s_metafits_ppds.fits -n %s -s /srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt" % (obs,n_cal_sources)
       print cmd
