@@ -139,7 +139,7 @@ def idea_to_image(options):
       #pbcorrect the images (or later combine them with pbaddimage)
       cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
 
    #combine images with pbaddimg
@@ -148,7 +148,38 @@ def idea_to_image(options):
       pbaddimg_string += "%s image.fits %s_beam " % (obs,obs)
    cmd = pbaddimg_string
    print cmd
-   os.system(cmd)
+   #os.system(cmd)
+
+   #not bad images, but clearly there is a bright point source outside of the field
+   #try to be a bit more fancy - ionpeel
+   for obs in obs_list:
+      #create clustered sourcelist
+      cmd = "cluster srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt 10" % (obs,n_cal_sources,obs,n_cal_sources)
+      print cmd
+      os.system(cmd)
+
+      #make a copy of the ms to peel
+      ms_peel_name = "%s_peeled.ms" % obs
+      cmd = "cp -r %s.ms %s " % (obs,ms_peel_name)
+      print cmd
+      os.system(cmd)
+
+      cmd="ionpeel %s clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (ms_peel_name,obs,n_cal_sources,obs)
+      print cmd
+      os.system(cmd)      
+
+      #image peeled ms
+    
+      #beam correct peeled ms (can use same beams)
+
+      #apply iopeel solutions
+
+      #render sources back
+
+      #uncorrect so we can pbaddimage
+
+   #pbaddimg peeled images (should look a lot better!)
+
 
 
 
