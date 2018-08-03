@@ -55,8 +55,9 @@ def idea_to_image(options):
    csv_filename="manta_ray_csv_download.csv"
    manta_ray_options_string = "job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true"
    csv_file_list=[]
-   obs_list.append(cal_obs_list[0])
-   for obs in obs_list:
+   csv_obs_list = obs_list
+   csv_obs_list.append(cal_obs_list[0])
+   for obs in csv_obs_list:
       print obs
       csv_line_string = "obs_id=%s, %s" % (obs,manta_ray_options_string)
       csv_file_list.append(csv_line_string)
@@ -70,7 +71,7 @@ def idea_to_image(options):
    #os.system(cmd)
 
    #this gives you zip files
-   for obs in obs_list:
+   for obs in csv_obs_list:
       cmd = "unzip %s_ms.zip" % obs
       print cmd
       #os.system(cmd)
@@ -87,9 +88,10 @@ def idea_to_image(options):
   
    #These data are uncalibrated! 
    #To calibrate you do it two ways: 1. use calibrator with a simple sky model (single source), or 2. use a full model of the sky for your pointing
-   
+   print "obs_list"
+   print obs_list 
    #Method 2: full sky model:
-   for obs in obs_list[1:]:
+   for obs in obs_list:
       print obs
       cmd="/srclists/srclist_by_beam.py -x --aocalibrate -m %s_metafits_ppds.fits -n %s -s /srclists/srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt" % (obs,n_cal_sources)
       print cmd
@@ -130,7 +132,7 @@ def idea_to_image(options):
       #generate beams
       cmd = "beam -2016 -proto %s-XX-image.fits -name  %s_beam -ms  %s.ms  -m %s_metafits_ppds.fits" % (obs,obs,obs,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       #pbcorrect the images (or later combine them with pbaddimage)
       cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
@@ -140,7 +142,7 @@ def idea_to_image(options):
 
    #combine images with pbaddimg
    pbaddimg_string = "pbaddimg integrated-stokes "
-   for obs in obs_list[1:]:
+   for obs in obs_list:
       pbaddimg_string += "%s image.fits %s_beam " % (obs,obs)
    cmd = pbaddimg_string
    print cmd
