@@ -156,7 +156,7 @@ def idea_to_image(options):
       #create clustered sourcelist
       cmd = "cluster srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt 10" % (obs,n_cal_sources,obs,n_cal_sources)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       #make a copy of the ms to peel
       ms_peel_name = "%s_peeled.ms" % obs
@@ -176,23 +176,32 @@ def idea_to_image(options):
       #beam correct peeled ms (can use same beams)
       cmd = "pbcorrect %s_peeled image.fits %s_beam %s_peeled" % (obs,obs,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
       
-      #apply iopeel solutions
+      #apply ionpeel solutions
       cmd = "applyion %s_peeled-I.fits %s_peeled_ion_applied-I.fits clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (obs,obs,obs,n_cal_sources,obs)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       #render sources back
       cmd = "render -t  %s_peeled_ion_applied-I.fits -o %s_peeled_ion_applied_rendered-I.fits -a -r clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt " % (obs,obs,obs,n_cal_sources)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       #uncorrect so we can pbaddimage
+      cmd = "pbcorrect -uncorrect %s_peeled_ion_applied_rendered_uncorrected image.fits %s_beam %s_peeled_ion_applied_rendered" % (obs,obs,obs)
+      print cmd
+      #os.system(cmd)
       
 
    #pbaddimg peeled images (should look a lot better!)
-
+   #combine images with pbaddimg
+   pbaddimg_string = "pbaddimg integrated-stokes-from-peeled "
+   for obs in obs_list:
+      pbaddimg_string += "%s_peeled_ion_applied_rendered_uncorrected image.fits %s_beam " % (obs,obs)
+   cmd = pbaddimg_string
+   print cmd
+   os.system(cmd)
 
 
 
