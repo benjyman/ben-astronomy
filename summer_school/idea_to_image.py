@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#Python script - idea to image for SKA Summer School Shanghai
+##Python script - idea to image for SKA Summer School Shanghai
 import os
 from astropy.io import fits
 import numpy as np
