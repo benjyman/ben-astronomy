@@ -139,7 +139,7 @@ def idea_to_image(options):
       #pbcorrect the images (or later combine them with pbaddimage)
       cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
       print cmd
-      #os.system(cmd)
+      os.system(cmd)
 
 
    #combine images with pbaddimg
@@ -176,7 +176,7 @@ def idea_to_image(options):
       #beam correct peeled ms (can use same beams)
       cmd = "pbcorrect %s_peeled image.fits %s_beam %s_peeled" % (obs,obs,obs)
       print cmd
-      #os.system(cmd)
+      os.system(cmd)
       
       #apply iopeel solutions
       cmd = "applyion %s_peeled-I.fits %s_peeled_ion_applied-I.fits clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (obs,obs,obs,n_cal_sources,obs)
@@ -184,9 +184,12 @@ def idea_to_image(options):
       os.system(cmd)
 
       #render sources back
-
+      cmd = "render -t  %s_peeled_ion_applied-I.fits -o %s_peeled_ion_applied_rendered-I.fits -a -r clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt " % (obs,obs,obs,n_cal_sources)
+      print cmd
+      os.system(cmd)
 
       #uncorrect so we can pbaddimage
+      
 
    #pbaddimg peeled images (should look a lot better!)
 
