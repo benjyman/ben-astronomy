@@ -162,19 +162,29 @@ def idea_to_image(options):
       ms_peel_name = "%s_peeled.ms" % obs
       cmd = "cp -r %s.ms %s " % (obs,ms_peel_name)
       print cmd
-      os.system(cmd)
+      #os.system(cmd)
 
       cmd="ionpeel %s clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (ms_peel_name,obs,n_cal_sources,obs)
       print cmd
-      os.system(cmd)      
+      #os.system(cmd)      
 
       #image peeled ms
-    
-      #beam correct peeled ms (can use same beams)
+      cmd = "wsclean -name  %s_peeled -size 2000 2000  -niter 5000 -threshold 0.3  -mgain 0.85 -data-column CORRECTED_DATA  -scale %.3f -weight briggs 1 -small-inversion  -make-psf    -pol xx,xy,yx,yy -join-polarizations  %s" % (obs,scale,ms_peel_name)
+      print cmd
+      #os.system(cmd)    
 
+      #beam correct peeled ms (can use same beams)
+      cmd = "pbcorrect %s_peeled image.fits %s_beam %s_peeled" % (obs,obs,obs)
+      print cmd
+      #os.system(cmd)
+      
       #apply iopeel solutions
+      cmd = "applyion %s_peeled-I.fits %s_peeled_ion_applied-I.fits clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (obs,obs,obs,n_cal_sources,obs)
+      print cmd
+      os.system(cmd)
 
       #render sources back
+
 
       #uncorrect so we can pbaddimage
 
