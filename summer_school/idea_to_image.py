@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 ##Python script - idea to image for SKA Summer School Shanghai
+import matplotlib
+matplotlib.use('Agg')
 import os
 from astropy.io import fits
 import numpy as np
 import copy
+import aplpy
+
+#Change into directory where you want files to be saved and then:
+#docker run -it --rm --volume=$PWD:/data --volume=/data/code:/code benjyman/mwa-suite:201808041723
+
 #1. Idea! (EoR!)
 #2. Find some observations.
 #- website (http://mwa-metadata01.pawsey.org.au MWA-guest guest)
@@ -128,6 +135,22 @@ def idea_to_image(options):
       print cmd
       #os.system(cmd)
 
+      matplotlib.rcParams['xtick.direction'] = 'in'
+      matplotlib.rcParams['ytick.direction'] = 'in'
+
+      for instr_pol in ['XX','YY','XY','XYi']:
+         print instr_pol
+         fits_name = "%s-%s-image.fits" % (obs,instr_pol)
+         fig_name = "%s-%s-image.png" % (obs,instr_pol)
+         #make png images with aplpy      
+         #gc = aplpy.FITSFigure(fits_name)
+         #gc.show_grayscale(vmin=-0.5,vmax=1.8)
+         #gc.add_colorbar()
+         #gc.set_theme('publication')
+         #gc.save(fig_name)
+         #print "saved %s with aplpy" % fig_name
+         #gc.close()
+
       #now have images in instrumental pol (show with aplpy?)
       #beam correct
 
@@ -136,11 +159,26 @@ def idea_to_image(options):
       print cmd
       #os.system(cmd)
 
+
+
       #pbcorrect the images (or later combine them with pbaddimage)
       cmd = "pbcorrect %s image.fits %s_beam %s" % (obs,obs,obs)
       print cmd
       os.system(cmd)
 
+      for stokes in ['I','Q','U','V']:
+         print stokes
+         fits_name = "%s-%s.fits" % (obs,stokes)
+         fig_name = "%s-%s.png" % (obs,stokes)
+         #make png images with aplpy      
+         #gc = aplpy.FITSFigure(fits_name)
+         #gc.show_grayscale(vmin=-0.5,vmax=1.8)
+         #gc.add_colorbar()
+         #gc.set_theme('publication')
+         #gc.save(fig_name)
+         #print "saved %s with aplpy" % fig_name
+         #gc.close()
+         
 
    #combine images with pbaddimg
    pbaddimg_string = "pbaddimg integrated-stokes "
@@ -149,6 +187,19 @@ def idea_to_image(options):
    cmd = pbaddimg_string
    print cmd
    #os.system(cmd)
+
+   for stokes in ['I']:
+      print stokes
+      fits_name = "integrated-stokes-%s.fits" % (stokes)
+      fig_name = "integrated-stokes-%s.png" % (stokes)
+      #make png images with aplpy      
+      gc = aplpy.FITSFigure(fits_name)
+      gc.show_grayscale(vmin=-0.5,vmax=1.8)
+      gc.add_colorbar()
+      gc.set_theme('publication')
+      gc.save(fig_name)
+      print "saved %s with aplpy" % fig_name
+      gc.close()
 
    #not bad images, but clearly there is a bright point source outside of the field
    #try to be a bit more fancy - ionpeel
@@ -177,17 +228,55 @@ def idea_to_image(options):
       cmd = "pbcorrect %s_peeled image.fits %s_beam %s_peeled" % (obs,obs,obs)
       print cmd
       #os.system(cmd)
-      
+
+
+      stokes='I'
+      fits_name = "%s_peeled-%s.fits" % (obs,stokes)
+      fig_name = "%s_peeled-%s.png" % (obs,stokes)
+      #make png images with aplpy      
+      gc = aplpy.FITSFigure(fits_name)
+      gc.show_grayscale(vmin=-0.5,vmax=1.8)
+      gc.add_colorbar()
+      gc.set_theme('publication')
+      gc.save(fig_name)
+      print "saved %s with aplpy" % fig_name
+      gc.close()
+         
+               
       #apply ionpeel solutions
       cmd = "applyion %s_peeled-I.fits %s_peeled_ion_applied-I.fits clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt ionsolutions_%s.bin" % (obs,obs,obs,n_cal_sources,obs)
       print cmd
       #os.system(cmd)
 
+      stokes='I'
+      fits_name = "%s_peeled_ion_applied-%s.fits" % (obs,stokes)
+      fig_name = "%s_peeled_ion_applied-%s.png" % (obs,stokes)
+      #make png images with aplpy      
+      gc = aplpy.FITSFigure(fits_name)
+      gc.show_grayscale(vmin=-0.5,vmax=1.8)
+      gc.add_colorbar()
+      gc.set_theme('publication')
+      gc.save(fig_name)
+      print "saved %s with aplpy" % fig_name
+      gc.close()
+      
       #render sources back
       cmd = "render -t  %s_peeled_ion_applied-I.fits -o %s_peeled_ion_applied_rendered-I.fits -a -r clustered_srclist_pumav3_EoR0aegean_EoR1pietro+ForA_%s_aocal%s.txt " % (obs,obs,obs,n_cal_sources)
       print cmd
       #os.system(cmd)
 
+      stokes='I'
+      fits_name = "%s_peeled_ion_applied_rendered-%s.fits" % (obs,stokes)
+      fig_name = "%s_peeled_ion_applied_rendered-%s.png" % (obs,stokes)
+      #make png images with aplpy      
+      gc = aplpy.FITSFigure(fits_name)
+      gc.show_grayscale(vmin=-0.5,vmax=1.8)
+      gc.add_colorbar()
+      gc.set_theme('publication')
+      gc.save(fig_name)
+      print "saved %s with aplpy" % fig_name
+      gc.close()
+      
       #uncorrect so we can pbaddimage
       cmd = "pbcorrect -uncorrect %s_peeled_ion_applied_rendered_uncorrected image.fits %s_beam %s_peeled_ion_applied_rendered" % (obs,obs,obs)
       print cmd
@@ -201,14 +290,26 @@ def idea_to_image(options):
       pbaddimg_string += "%s_peeled_ion_applied_rendered_uncorrected image.fits %s_beam " % (obs,obs)
    cmd = pbaddimg_string
    print cmd
-   os.system(cmd)
+   #os.system(cmd)
 
-
+   for stokes in ['I']:
+      print stokes
+      fits_name = "integrated-stokes-from-peeled-%s.fits" % (stokes)
+      fig_name = "integrated-stokes-from-peeled-%s.png" % (stokes)
+      #make png images with aplpy      
+      gc = aplpy.FITSFigure(fits_name)
+      gc.show_grayscale(vmin=-0.5,vmax=1.8)
+      gc.add_colorbar()
+      gc.set_theme('publication')
+      gc.save(fig_name)
+      print "saved %s with aplpy" % fig_name
+      gc.close()
+      
 
 import sys,os
 from optparse import OptionParser,OptionGroup
 
-usage = 'Usage: model_moon.py [options]'
+usage = 'Usage: idea_to_image.py [options]'
 
 parser = OptionParser(usage=usage)
 
