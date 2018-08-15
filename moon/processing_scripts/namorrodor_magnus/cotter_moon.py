@@ -88,15 +88,15 @@ def cotter_moon(options):
          ms_name=data_dir+base_name+'.ms'
 
    if epoch_ID[0:5]=="2015B":
-      #min size in Mb
-      min_ms_size=800.0
+      #min size in Kb
+      min_ms_size=800000.0
    else:
-      min_ms_size=100.0
+      min_ms_size=100000.0
 
    #Check if the ms already exists and is the right size then just exit - no need to make it again
-   ms_size = float(subprocess.check_output(['du','-sh', ms_name]).split()[0].decode('utf-8').split("'")[0].split('M')[0])
+   ms_size = float(subprocess.check_output(['du','-s', ms_name]).split()[0].decode('utf-8').split("'")[0])
    if (os.path.exists(ms_name) and ms_size >= min_ms_size):
-      print "%s already exists and has size %s (greatewr than min size %s), exiting cotter_moon.py" % (ms_name, ms_size, min_ms_size)
+      print "%s already exists and has size %s (greater than min size %s), exiting cotter_moon.py" % (ms_name, ms_size, min_ms_size)
       sys.exit(0)
       #exit  
 
