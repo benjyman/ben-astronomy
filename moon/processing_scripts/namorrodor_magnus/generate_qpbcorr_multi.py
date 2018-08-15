@@ -85,7 +85,12 @@ def generate_namorrodor(options):
        metafits_name_string=' --metafits_name=%s ' % (metafits_name)
     else:
        metafits_name_string=''
-   
+
+    if (options.crop_images):
+       crop_images_string=' --crop_images ' 
+    else:
+       crop_images_string=''
+          
     if (options.applyion):
        applyion_string=' --applyion=%s ' % (options.applyion)
        clustered_model_string=' --clustered_model=%s ' % (options.clustered_model)
@@ -162,9 +167,9 @@ def generate_namorrodor(options):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
 
        if options.array_by_chan:
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s --array_by_chan=${SLURM_ARRAY_TASK_ID}\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string))
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s --array_by_chan=${SLURM_ARRAY_TASK_ID}\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string,crop_images_string))
        else:
-          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string))
+          sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/pbcorr_multi.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n ' % (ben_code_base,str(obsid),track_off_moon_list_string,image_base_name_string,havebeam_string,ms_name_string,metafits_name_string,applyion_string,clustered_model_string,render_string,pbuncorrect_string,selfcal_string,track_moon_string,track_off_moon_string,epoch_ID_string,ionpeeled_string,chgcentre_string,minw_string,dirty_string,channelsout_string,machine_string,crop_images_string))
 
     sbatch_file.close()
     print "wrote file %s " %  (q_filename)
@@ -203,6 +208,7 @@ parser.add_option('--channelsout',type='string', dest='channelsout',default='1',
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--array_by_chan',action='store_true',dest='array_by_chan',default=False,help='Set to use array jobs for pbcorr on magnus/galaxy [default=%default]')
+parser.add_option('--crop_images',action='store_true',dest='crop_images',default=False,help='Pbcorrect the cropped images required by model_moon.py e.g. --crop_images   [default=%default]')
 
 (options, args) = parser.parse_args()
 

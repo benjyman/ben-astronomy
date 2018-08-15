@@ -79,7 +79,10 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
          image_base_name+='_track_off_moon_paired_%s' % track_off_moon_paired_obsid
       if (options.ionpeeled):
          image_base_name+='_peeled'
-      
+
+      if (options.crop_images):
+         image_base_name = image_base_name + '_cropped'
+         
    if (options.metafits_name):
       metafits_name=options.metafits_name
    else:
@@ -211,6 +214,8 @@ parser.add_option('--dirty',action='store_true',dest='dirty',default=False,help=
 parser.add_option('--channelsout',type='string', dest='channelsout',default='1',help='Specify how many channels were output from wsclean e.g.channelsout=24 [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 parser.add_option('--array_by_chan',type='string', dest='array_by_chan',default='',help='Number of the image (index 0) if using array jobs on magnus/galaxy e.g. --array_by_chan=11 [default=%default]')
+parser.add_option('--crop_images',action='store_true',dest='crop_images',default=False,help='Pbcorrect the cropped images required by model_moon.py e.g. --crop_images   [default=%default]')
+
 
 (options, args) = parser.parse_args()
 
