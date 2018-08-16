@@ -108,9 +108,6 @@ def image_concat_ms(obsid,track_off_moon_string,options):
          concat_image_base+='_peeled'
          concat_vis_base+='_peeled'
       
-      if (options.crop_images):
-         concat_image_base_cropped = concat_image_base + '_cropped'
-      
       if (machine=="magnus" or machine=="galaxy"):
          if (options.track_moon or options.track_off_moon):
             concat_vis_name=data_dir+concat_vis_base+'.ms'
@@ -279,8 +276,8 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       if options.crop_images:
          for i in range(0,24):
             for pol in ['XX','XY','XYi','YY']:
-               moon_fitsname="%s-%05d-%s-image.fits" % (concat_image_base,i,pol)
-               moon_zoom_fitsname="%s-%05d-%s_cropped-image.fits" % (concat_image_base,i,pol)
+               moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
+               moon_zoom_fitsname="%s-%04d-%s_cropped-image.fits" % (concat_image_base,i,pol)
                if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
                   moon_hdulist = pyfits.open(moon_fitsname)
                else:
