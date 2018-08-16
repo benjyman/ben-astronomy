@@ -261,7 +261,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       else: 
          cmd='wsclean -name '+ concat_image_base+' -size '+imsize+' '+imsize+ ' ' +wsclean_options_string+' '+ pol_string + ' ' + concat_vis_name
          print cmd
-         #os.system(cmd)
+         os.system(cmd)
 		 #delete all the unwanted files
 		 #cmd='rm -f '+concat_image_base+'*-residual.fits'
 		 #print cmd
