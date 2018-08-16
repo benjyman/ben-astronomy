@@ -276,7 +276,9 @@ def image_concat_ms(obsid,track_off_moon_string,options):
 		 #print cmd
 		 #os.system(cmd)
       
+      
       if options.crop_images:
+         xstart_moon,xend_moon,ystart_moon,yend_moon=511,1535,513,1537
          for i in range(0,24):
             for pol in ['XX','XY','XYi','YY']:
                moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
