@@ -4,6 +4,7 @@
 #option to track the moon.
 
 import string 
+import pyfits
 
 def image_concat_ms(obsid,track_off_moon_string,options):
 
