@@ -13,6 +13,9 @@ sourcelist='srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
 havebeam_string = ''
 namorrodor_image_dir = "/md0/moon/images/"
 
+#get filepaths using gator_read_table_only_peeled.py (need to fix this script for peeled images)
+#or just rsync -a -v bmckinley@magnus.pawsey.org.au:/astro/mwaeor/MWA/data/11273*/2018-08-*/*cropped*I.fits .
+
 def copy_images_from_magnus(filename):
    for filepath in open(filename):
       cmd = "rsync -a bmckinley@magnus.pawsey.org.au:%s*I.fits %s" % (filepath.rstrip(),namorrodor_image_dir)

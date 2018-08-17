@@ -282,7 +282,43 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       
       if options.crop_images:
          xstart_moon,xend_moon,ystart_moon,yend_moon=511,1535,513,1537
-         for i in range(0,24):
+         #do MFS image first
+         channel_list=range(0,24)
+         channel_list.append('MFS')
+         
+         for i in channel_list:
+            #do psf first
+            psf_fitsname="%s-%04d-psf.fits" % (concat_image_base,i)
+            psf_zoom_fitsname="%s-%04d-psf.fits" % (concat_image_base_cropped,i)
+            if os.path.isfile(psf_fitsname) and os.access(psf_fitsname, os.R_OK):
+                  psf_hdulist = pyfits.open(psf_fitsname)
+               else:
+                  print "Either file %s is missing or is not readable" % psf_fitsname
+                  continue        
+               psf_data=psf_hdulist[0].data[0,0,:,:]
+               psf_data=np.nan_to_num(psf_data)
+               psf_header=psf_hdulist[0].header
+               
+               
+               del psf_header[8]
+               del psf_header[8]
+               del psf_header['history']
+               
+               psf_zoom=psf_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               wcs = WCS(psf_header)
+               #print wcs
+               wcs=wcs.dropaxis(2)
+               wcs=wcs.dropaxis(2)
+               wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               #print wcs_cropped
+               psf_header.update(wcs_cropped.to_header())
+               
+               #write out the psf image
+               pyfits.writeto(psf_zoom_fitsname,psf_zoom,clobber=True)
+               pyfits.update(psf_zoom_fitsname,psf_zoom,header=psf_header)
+               print "wrote  image %s" %  psf_zoom_fitsname
+            
+            #now for all pol images   
             for pol in ['XX','XY','XYi','YY']:
                moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
                moon_zoom_fitsname="%s-%04d-%s-image.fits" % (concat_image_base_cropped,i,pol)

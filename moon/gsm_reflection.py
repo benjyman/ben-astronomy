@@ -155,7 +155,7 @@ if not plot_only:
    
       #make some vectors.
    
-      #The zenith vector is important, it points from the Moon to the MWA. We need it to get the incindent moon surface vector
+      #The zenith vector is important, it points from the Moon to the MWA. We need it to get the incident moon surface vector
       zenith_theta=np.pi/2
       zenith_phi=0
       zenith_vector=hp.ang2vec(zenith_theta,zenith_phi)
