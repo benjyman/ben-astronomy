@@ -36,7 +36,7 @@ def model_moon(options):
    sky_model_list=['lfsm','gsm2016','gsm']
    
    if (epoch_ID_year==2015):
-      phase_1_MWA_images=True #i.e.  2048x2048 images 
+      phase_1_MWA_images=True #i.e.  2048x2048 images .
       phase_2_long_baseline_MWA_images=False
       use_cropped_images=False
       ionpeeled_images=False

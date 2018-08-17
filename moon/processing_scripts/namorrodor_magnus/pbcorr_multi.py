@@ -111,7 +111,7 @@ def pbcorr_multi(obsid,track_off_moon_string,options):
 
       #flag the bad ionsolutions so applyion doesn't crash
       #Do we still need this bit? or is applyion fixed? Looks like we still need!!
-      ###flagged_ion_solutions=ion_solutions
+      ###flagged_ion_solutions=ion_solutions.
       flagged_ion_solutions='flagged_%s' % (ion_solutions)
       cmd='ionsol -o %s -threshold-dl 4e-4 -threshold-dm 4e-4 -max-gain 2 -min-gain 0.2 -replace-unset %s %s ' % (flagged_ion_solutions,ion_solutions,clustered_model)
       print cmd

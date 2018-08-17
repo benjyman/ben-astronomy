@@ -287,7 +287,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
          channel_list.append('MFS')
          
          for i in channel_list:
-            #do psf first
+            #do psf first.
             psf_fitsname="%s-%04d-psf.fits" % (concat_image_base,i)
             psf_zoom_fitsname="%s-%04d-psf.fits" % (concat_image_base_cropped,i)
             if os.path.isfile(psf_fitsname) and os.access(psf_fitsname, os.R_OK):
