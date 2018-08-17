@@ -287,9 +287,13 @@ def image_concat_ms(obsid,track_off_moon_string,options):
          channel_list.append('MFS')
          
          for i in channel_list:
-            #do psf first.
-            psf_fitsname="%s-%04d-psf.fits" % (concat_image_base,i)
-            psf_zoom_fitsname="%s-%04d-psf.fits" % (concat_image_base_cropped,i)
+            #do psf first
+            if (i=='MFS'):
+               psf_fitsname="%s-%s-psf.fits" % (concat_image_base,i)
+               psf_zoom_fitsname="%s-%s-psf.fits" % (concat_image_base_cropped,i)
+            else:
+               psf_fitsname="%s-%04d-psf.fits" % (concat_image_base,i)
+               psf_zoom_fitsname="%s-%04d-psf.fits" % (concat_image_base_cropped,i)
             if os.path.isfile(psf_fitsname) and os.access(psf_fitsname, os.R_OK):
                psf_hdulist = pyfits.open(psf_fitsname)
             else:
@@ -320,8 +324,12 @@ def image_concat_ms(obsid,track_off_moon_string,options):
             
             #now for all pol images   
             for pol in ['XX','XY','XYi','YY']:
-               moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
-               moon_zoom_fitsname="%s-%04d-%s-image.fits" % (concat_image_base_cropped,i,pol)
+               if (i=='MFS'):
+                  moon_fitsname="%s-%s-%s-image.fits" % (concat_image_base,i,pol)
+                  moon_zoom_fitsname="%s-%s-%s-image.fits" % (concat_image_base_cropped,i,pol)
+               else:
+                  moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
+                  moon_zoom_fitsname="%s-%04d-%s-image.fits" % (concat_image_base_cropped,i,pol)
                if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
                   moon_hdulist = pyfits.open(moon_fitsname)
                else:
