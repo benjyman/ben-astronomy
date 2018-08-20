@@ -299,7 +299,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
             else:
                print "Either file %s is missing or is not readable" % psf_fitsname
                continue        
-            psf_data=psf_hdulist[0].data[0,0,:,:]
+            psf_data=psf_hdulist[0].data
             psf_data=np.nan_to_num(psf_data)
             psf_header=psf_hdulist[0].header
             
@@ -308,13 +308,13 @@ def image_concat_ms(obsid,track_off_moon_string,options):
             del psf_header[8]
             del psf_header['history']
             
-            psf_zoom=psf_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+            psf_zoom=psf_data[:,:,ystart_moon:yend_moon,xstart_moon:xend_moon]
             wcs = WCS(psf_header)
             #print wcs
             #don't want to drop axis cause beam uses the third axis to find frequency
             #wcs=wcs.dropaxis(2)
             #wcs=wcs.dropaxis(2)
-            wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon,:,:]
+            wcs_cropped = wcs[:,:,ystart_moon:yend_moon,xstart_moon:xend_moon]
             #print wcs_cropped
             psf_header.update(wcs_cropped.to_header())
             
@@ -336,7 +336,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
                else:
                   print "Either file %s is missing or is not readable" % moon_fitsname
                   continue        
-               moon_data=moon_hdulist[0].data[0,0,:,:]
+               moon_data=moon_hdulist[0].data
                moon_data=np.nan_to_num(moon_data)
                moon_header=moon_hdulist[0].header
                
@@ -345,7 +345,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
                del moon_header[8]
                del moon_header['history']
                
-               moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               moon_zoom=moon_data[:,:,ystart_moon:yend_moon,xstart_moon:xend_moon]
                wcs = WCS(moon_header)
                #print wcs
                #don't want to drop axis cause beam uses the third axis to find frequency
