@@ -311,9 +311,10 @@ def image_concat_ms(obsid,track_off_moon_string,options):
             psf_zoom=psf_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
             wcs = WCS(psf_header)
             #print wcs
-            wcs=wcs.dropaxis(2)
-            wcs=wcs.dropaxis(2)
-            wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
+            #don't want to drop axis cause beam uses the third axis to find frequency
+            #wcs=wcs.dropaxis(2)
+            #wcs=wcs.dropaxis(2)
+            wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon,:,:]
             #print wcs_cropped
             psf_header.update(wcs_cropped.to_header())
             
@@ -347,9 +348,10 @@ def image_concat_ms(obsid,track_off_moon_string,options):
                moon_zoom=moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
                wcs = WCS(moon_header)
                #print wcs
-               wcs=wcs.dropaxis(2)
-               wcs=wcs.dropaxis(2)
-               wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon]
+               #don't want to drop axis cause beam uses the third axis to find frequency
+               #wcs=wcs.dropaxis(2)
+               #wcs=wcs.dropaxis(2)
+               wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon,:,:]
                #print wcs_cropped
                moon_header.update(wcs_cropped.to_header())
                

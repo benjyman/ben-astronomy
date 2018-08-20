@@ -879,7 +879,7 @@ def model_moon(options):
              #   on_moon_psf_fitsname="%sepochs/%s/%s/on_moon/%s_%s_trackmoon-%s-psf.fits" % (base_dir,epoch_ID,str(centre_chan),on_moon_obsid,epoch_ID,chan_string)
              #   off_moon_psf_fitsname="%sepochs/%s/%s/off_moon/%s_%s_track_off_moon_paired_%s-%s_dirty-psf.fits" % (base_dir,epoch_ID,str(centre_chan),off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
              
-             if (not pre_cropped_images):
+             if (not options.pre_cropped_images):
                 moon_fitsname="%simages/%s_%s_trackmoon-%s_dirty-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
                 off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s_dirty-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
                 on_moon_psf_fitsname="%simages/%s_%s_trackmoon-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
@@ -940,7 +940,7 @@ def model_moon(options):
              moon_data=np.nan_to_num(moon_data)
              moon_header=moon_hdulist[0].header
              
-             if (not pre_cropped_images):
+             if (not options.pre_cropped_images):
                 del moon_header[8]
                 del moon_header[8]
                 del moon_header['history']
@@ -991,7 +991,10 @@ def model_moon(options):
              off_moon_data=off_moon_hdulist[0].data[0,0,:,:]
              off_moon_data=np.nan_to_num(off_moon_data)
              #off_moon_header=off_moon_hdulist[0].header
-             off_moon_zoom=off_moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+             if (not options.pre_cropped_images):
+                off_moon_zoom=off_moon_data[ystart_moon:yend_moon,xstart_moon:xend_moon]
+             else:
+                off_moon_zoom=off_moon_data
              
              max_off_moon_value=np.max(off_moon_zoom)
              min_off_moon_value=np.min(off_moon_zoom) 
@@ -1055,10 +1058,15 @@ def model_moon(options):
              else:
                 print "Either file %s is missing or is not readable" % on_moon_psf_fitsname
                 continue
-             psf_data=psf_hdulist[0].data[0,0,:,:]
-             psf_data=np.nan_to_num(psf_data)
              psf_header=psf_hdulist[0].header
-             psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
+             if (not options.pre_cropped_images):
+                psf_data=psf_hdulist[0].data[0,0,:,:]
+                psf_data=np.nan_to_num(psf_data)
+                psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
+             else:
+                psf_data=psf_hdulist[0].data
+                psf_data=np.nan_to_num(psf_data)
+                psf_zoom=psf_data
              psf_zoom=np.require(psf_zoom, dtype=np.float32)
              #convert to Jy per pix
              psf_zoom_jyppix=psf_zoom/n_pixels_per_beam
