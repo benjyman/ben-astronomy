@@ -198,7 +198,7 @@ def cotter_moon(options):
    #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
    #can probably get away with just halving each (double baselines)
    
-   cmd='cotter4 -flagfiles %s -norfi -noantennapruning -o %s %s -m %s %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,dysco_string,time_res,freq_res,data_dir)
+   cmd='cotter -flagfiles %s -norfi -noantennapruning -o %s %s -m %s %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,dysco_string,time_res,freq_res,data_dir)
    print cmd
    os.system(cmd)
 
