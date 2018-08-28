@@ -7,9 +7,8 @@ import os.path
 import cmd
 import datetime
 import numpy as np
-from casacore.tables import table,tablecolumn,tablerow
 import subprocess
-from cmd import Cmd
+
 
 def manta_ray(options):
    machine=options.machine
