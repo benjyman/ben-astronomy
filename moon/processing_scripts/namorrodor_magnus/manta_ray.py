@@ -207,7 +207,7 @@ def manta_ray(options):
    os.system(cmd)
 
    #this gives you zip files - unzip!
-   cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,obsid)
+   cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
    print cmd
    os.system(cmd)
    
