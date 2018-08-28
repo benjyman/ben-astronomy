@@ -207,10 +207,10 @@ def manta_ray(options):
    print cmd
    #os.system(cmd)
 
-   #this gives you zip files
-   for obs in csv_obs_list:
-      cmd = "unzip %s_ms.zip" % obsid
-      print cmd
+   #this gives you zip files - unzip!
+   cmd = "unzip %s_ms.zip" % obsid
+   print cmd
+   os.system(cmd)
    
    #rename ms:
    cmd = "mv %s.ms %s" % (obsid,ms_name)
