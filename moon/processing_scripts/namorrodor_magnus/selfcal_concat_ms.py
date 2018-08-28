@@ -131,35 +131,39 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
 
    #apply the same flags to both ms for moon obs, do this in the on moon stage
    if (options.track_moon and not options.ionpeel):
-      on_moon_table=table(on_moon_ms_name,readonly=False)
-      #print on_moon_table
-      #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
-      #on_moon_table_time=tablecolumn(on_moon_table,'TIME')
-      on_moon_table_flag=tablecolumn(on_moon_table,'FLAG')
+      with table(on_moon_ms_name,readonly=False) as on_moon_table:         
+         #on_moon_table=table(on_moon_ms_name,readonly=False)
+         #print on_moon_table
+         #on_moon_table_UVW=tablecolumn(on_moon_table,'UVW')
+         #on_moon_table_time=tablecolumn(on_moon_table,'TIME')
+         
+         with tablecolumn(on_moon_table,'FLAG') as on_moon_table_flag:
+            #on_moon_table_flag=tablecolumn(on_moon_table,'FLAG')
+            with table(off_moon_ms_name,readonly=False) as off_moon_table:
+               #off_moon_table=table(off_moon_ms_name,readonly=False)
+               #print off_moon_table
+               #off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
+               #off_moon_table_time=tablecolumn(off_moon_table,'TIME')
+               with tablecolumn(off_moon_table,'FLAG') as off_moon_table_flag:
+                  #off_moon_table_flag=tablecolumn(off_moon_table,'FLAG')
    
-      off_moon_table=table(off_moon_ms_name,readonly=False)
-      #print off_moon_table
-      #off_moon_table_UVW=tablecolumn(off_moon_table,'UVW')
-      #off_moon_table_time=tablecolumn(off_moon_table,'TIME')
-      off_moon_table_flag=tablecolumn(off_moon_table,'FLAG')
-   
-      new_off_moon_table_flag=np.logical_not(off_moon_table_flag)
+                  #new_off_moon_table_flag=np.logical_not(off_moon_table_flag)
 
    
-      #look in obs_list_generator.py for how to compare LSTs
+                  #look in obs_list_generator.py for how to compare LSTs
    
-      #Not sure if 2018A obs are well enough LST matched
-      #Continue anyway (come back and look at 2015A) 
+                  #Not sure if 2018A obs are well enough LST matched
+                  #Continue anyway (come back and look at 2015A) 
    
-      #OR the two flag columns
-      new_flag_column=np.logical_or(on_moon_table_flag,off_moon_table_flag)
-      #print new_flag_column[20100:20101]
+                  #OR the two flag columns
+                  new_flag_column=np.logical_or(on_moon_table_flag,off_moon_table_flag)
+                  #print new_flag_column[20100:20101]
    
-      on_moon_table.putcol('FLAG',new_flag_column)
-      off_moon_table.putcol('FLAG',new_flag_column)
+                  on_moon_table.putcol('FLAG',new_flag_column)
+                  off_moon_table.putcol('FLAG',new_flag_column)
    
-      on_moon_table.close()
-      off_moon_table.close()
+                  #on_moon_table.close()
+                  #off_moon_table.close()
    
    
    if (options.applyonly):
