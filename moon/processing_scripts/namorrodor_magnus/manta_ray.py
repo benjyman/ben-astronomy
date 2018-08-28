@@ -205,7 +205,7 @@ def manta_ray(options):
 
    cmd = "mwa_client -c %s -d %s" % (csv_filename,data_dir)
    print cmd
-   #os.system(cmd)
+   os.system(cmd)
 
    #this gives you zip files - unzip!
    cmd = "unzip %s_ms.zip" % obsid
