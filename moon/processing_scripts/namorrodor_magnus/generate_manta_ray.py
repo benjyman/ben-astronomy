@@ -128,7 +128,7 @@ def generate_manta_ray(options):
           sbatch_file.write('#SBATCH --export=NONE\n')
           #sbatch_file.write('module swap PrgEnv-cray/6.0.4 PrgEnv-gnu && module swap gcc gcc/5.3.0\n')
           #sbatch_file.write('module use /group/mwa/software/modulefiles\n')
-          #sbatch_file.write('module load MWA_Tools/mwa-sci\n')
+          sbatch_file.write('module load manta-ray-client\n')
           #sbatch_file.write('module load setuptools\n')
     
        for obsid_index,obsid in enumerate(obsid_list[start_obs_id_index:end_obs_id_index]):
