@@ -392,7 +392,8 @@ def setup_moon_process(options):
    database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
    download_database_name="/group/mwaeor/bmckinley/%s_download.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
-   chan_list=[69,93,121,145,169]
+   #chan_list=[69,93,121,145,169]
+   chan_list=[169]
    on_moon_and_off_moon=["on_moon","off_moon"]
    epoch_ID_list=[]
    on_moon_date_list=[]
