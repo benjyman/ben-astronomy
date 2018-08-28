@@ -212,7 +212,7 @@ def manta_ray(options):
    os.system(cmd)
    
    #rename ms:
-   cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
+   cmd = "mv %s.ms %s" % (data_dir,obsid,ms_name)
    print cmd
    os.system(cmd)
    
