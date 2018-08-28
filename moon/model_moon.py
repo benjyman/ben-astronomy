@@ -65,7 +65,6 @@ def model_moon(options):
    use_mwa_beams=True
    use_gaussian_beams=False
    generate_new_beam_maps=False
-   #set if you just want to plot already saved data
 
    write_new_reconstructed_moon_rfi=False
    #RFI broadening or not:
@@ -1064,7 +1063,7 @@ def model_moon(options):
                 psf_data=np.nan_to_num(psf_data)
                 psf_zoom=psf_data[ystart_psf:yend_psf,xstart_psf:xend_psf]
              else:
-                psf_data=psf_hdulist[0].data
+                psf_data=psf_hdulist[0].data[0,0,:,:]
                 psf_data=np.nan_to_num(psf_data)
                 psf_zoom=psf_data
              psf_zoom=np.require(psf_zoom, dtype=np.float32)
@@ -2088,12 +2087,17 @@ def model_moon(options):
    Smoon_no_diffuse_rfi_removal_error =np.nanstd(Smoon_no_diffuse_rfi_removal_data,axis=1)
    Smoon_no_diffuse_rfi_removal[np.isnan(Smoon_no_diffuse_rfi_removal)] = 0.
    Smoon_no_diffuse_rfi_removal_error[np.isnan(Smoon_no_diffuse_rfi_removal_error)] = 20.
+   Smoon_no_diffuse_rfi_removal_error[Smoon_no_diffuse_rfi_removal_error==0.] = 20.
    big_Srfi_average_stddev_spectrum[:,0][np.isnan(big_Srfi_average_stddev_spectrum[:,0])] = 0.
    big_Srfi_average_stddev_spectrum[:,1][np.isnan(big_Srfi_average_stddev_spectrum[:,1])] = 0.
    
    #Smoon_no_diffuse_rfi_removal[:,1][Smoon_no_diffuse_rfi_removal[:,1] == 0] = 20.
    #line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal[:,0],Smoon_no_diffuse_rfi_removal[:,1],big_freq_array)
    line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal,Smoon_no_diffuse_rfi_removal_error,big_freq_array)
+   
+   print Smoon_no_diffuse_rfi_removal
+   print Smoon_no_diffuse_rfi_removal_error
+   print line_fit_result['line']
    
    a[0].errorbar(big_freq_array,Smoon_no_diffuse_rfi_removal,yerr=Smoon_no_diffuse_rfi_removal_error,label="S_moon",elinewidth=0.5)
    a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed',linewidth=1)
