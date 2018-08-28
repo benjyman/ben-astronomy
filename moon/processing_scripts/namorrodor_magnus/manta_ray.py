@@ -196,7 +196,7 @@ def manta_ray(options):
    #can probably get away with just halving each (double baselines)
    
    #make csv file
-   csv_filename="manta_ray_csv_download.csv"
+   csv_filename="manta_ray_csv_download_%s.csv" % obsid
    manta_ray_options_string = "obs_id=%s, job_type=c, timeres=%s, freqres=%s, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true" % (obsid,time_res,freq_res)
 
    with open(csv_filename,'w') as f:
@@ -210,6 +210,11 @@ def manta_ray(options):
    cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
    print cmd
    os.system(cmd)
+   
+   #remopve if theree is an existing ms:
+   cmd = "rm -rf %s" % (ms_name)
+   print cmd
+   os.system(cmd)  
    
    #rename ms:
    cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
