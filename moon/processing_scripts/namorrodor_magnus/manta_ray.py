@@ -207,12 +207,12 @@ def manta_ray(options):
    os.system(cmd)
 
    #this gives you zip files - unzip!
-   cmd = "unzip %s%s_ms.zip" % (data_dir,obsid)
+   cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,obsid)
    print cmd
    os.system(cmd)
    
    #rename ms:
-   cmd = "mv %s.ms %s" % (obsid,ms_name)
+   cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
    print cmd
    os.system(cmd)
    
