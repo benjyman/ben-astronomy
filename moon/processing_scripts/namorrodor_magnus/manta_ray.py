@@ -9,8 +9,9 @@ import datetime
 import numpy as np
 from casacore.tables import table,tablecolumn,tablerow
 import subprocess
+from cmd import Cmd
 
-def cotter_moon(options):
+def manta_ray(options):
    machine=options.machine
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
@@ -30,15 +31,11 @@ def cotter_moon(options):
    else:
       track_off_moon_string=' '
 
-   if options.no_dysco:
-      dysco_string=''
-   else:
-      dysco_string='-use-dysco'
    
    if options.sister_obsid:   
-      print "cottering obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
+      print "downloading ms obsid %s paired with %s with time resolution %s and freq resolution %s" % (obsid,sister_obsid,time_res,freq_res)
    else:
-      print "cottering obsid %s with time resolution %s and freq resolution %s" % (obsid,time_res,freq_res)
+      print "downloading ms obsid %s with time resolution %s and freq resolution %s" % (obsid,time_res,freq_res)
 
    if options.track_off_moon:
       track_off_moon_list=track_off_moon_string.split(',')
@@ -87,37 +84,38 @@ def cotter_moon(options):
       else:
          ms_name=data_dir+base_name+'.ms'
 
-   if epoch_ID[0:5]=="2015B":
-      #min size in Kb
-      min_ms_size=800000.0
-   else:
-      min_ms_size=100000.0
-
    #Check if the ms already exists and is the right size then just exit - no need to make it again
-   ms_size = float(subprocess.check_output(['du','-s', ms_name]).split()[0].decode('utf-8').split("'")[0])
-   if (os.path.exists(ms_name) and ms_size >= min_ms_size):
-      print "%s already exists and has size %s (greater than min size %s), exiting cotter_moon.py" % (ms_name, ms_size, min_ms_size)
-      sys.exit(0)
-      #exit  
+   if options.use_existing_ms:
+      if epoch_ID[0:5]=="2015B":
+         #min size in Kb
+         min_ms_size=800000.0
+      else:
+         min_ms_size=100000.0
+   
+      ms_size = float(subprocess.check_output(['du','-s', ms_name]).split()[0].decode('utf-8').split("'")[0])
+      if (os.path.exists(ms_name) and ms_size >= min_ms_size):
+         print "%s already exists and has size %s (greater than min size %s), exiting cotter_moon.py" % (ms_name, ms_size, min_ms_size)
+         sys.exit(0)
+         #exit  
 
    #metafits_filename=data_dir+obsid+'.metafits'
    metafits_filename="%s%s_metafits_ppds.fits" % (data_dir,obsid)
    
    
-   flag_file_name=data_dir+obsid+'_flags.zip'
+   #flag_file_name=data_dir+obsid+'_flags.zip'
 
    #check if metafits file exists, if not, download it
    #No always download new fits file
    #if not os.path.isfile(metafits_filename):
    #   #cmd="make_metafits.py -o %s -g %s" % (metafits_filename,obsid)
-   cmd="wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (metafits_filename,obsid)
-   print cmd
-   os.system(cmd)
+   #cmd="wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s" % (metafits_filename,obsid)
+   #print cmd
+   #os.system(cmd)
 
-   #unpack the flagfile
-   cmd="unzip %s -d %s " % (flag_file_name,data_dir)
-   print cmd
-   os.system(cmd)
+   ##unpack the flagfile
+   #cmd="unzip %s -d %s " % (flag_file_name,data_dir)
+   #print cmd
+   #os.system(cmd)
 
    #if tracking moon, find moon position
    if (options.track_moon):
@@ -160,7 +158,7 @@ def cotter_moon(options):
          #print moon_dec
       #get ra and dec in right format for cotter
       new_moon_dec=string.replace(moon_dec,":",".")
-      track_moon_string=' -centre %s %s ' % (moon_ra,new_moon_dec)
+      track_moon_string=' %s %s ' % (moon_ra,new_moon_dec)
       print track_moon_string
 
 
@@ -168,12 +166,12 @@ def cotter_moon(options):
    if (options.track_off_moon):
       off_moon_ra=track_off_moon_new_RA
       off_moon_dec=track_off_moon_new_DEC
-      track_moon_string=' -centre %s %s ' % (off_moon_ra,off_moon_dec)
+      track_moon_string=' %s %s ' % (off_moon_ra,off_moon_dec)
       print track_moon_string
    
-   #flagfiles for this observation
-   flagfiles_string= " %s%s_%s.mwaf " % (data_dir,obsid,"%%")
-   print flagfiles_string
+   ##flagfiles for this observation
+   #flagfiles_string= " %s%s_%s.mwaf " % (data_dir,obsid,"%%")
+   #print flagfiles_string
 
    ##flagfiles for paired sister observation
    #flagfiles_string_sister= " %s%s/%s_%s.mwaf " % (mwa_dir,sister_obsid,sister_obsid,"%%")
@@ -198,19 +196,45 @@ def cotter_moon(options):
    #need to put user options on the time and freq resolution - what is best for the new long baseline obs?
    #can probably get away with just halving each (double baselines)
    
-   cmd='cotter -flagfiles %s -norfi -noantennapruning -o %s %s -m %s %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,dysco_string,time_res,freq_res,data_dir)
+   #make csv file
+   csv_filename="manta_ray_csv_download.csv"
+   manta_ray_options_string = "obs_id=%s, job_type=c, timeres=%s, freqres=%s, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true" % (obsid,time_res,freq_res)
+
+   with open(csv_filename,'w') as f:
+      f.write(manta_ray_options_string)
+
+   cmd = "mwa_client -c %s -d %s" % (csv_filename,data_dir)
+   print cmd
+   #os.system(cmd)
+
+   #this gives you zip files
+   for obs in csv_obs_list:
+      cmd = "unzip %s_ms.zip" % obsid
+      print cmd
+   
+   #rename ms:
+   cmd = "mv %s.ms %s" % (obsid,ms_name)
    print cmd
    os.system(cmd)
+   
+   #change the phase centre of the ms
+   cmd = "chgcentre %s %s" % (ms_name,track_moon_string)
+   print cmd
+   os.system(cmd)
+   
+   #cmd='cotter -flagfiles %s -norfi -noantennapruning -o %s %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,time_res,freq_res,data_dir)
+   #print cmd
+   #os.system(cmd)
 
    if (options.flag_ants):
       flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
       print flag_ants_cmd_string
       os.system(flag_ants_cmd_string)
    
-   if (options.cleanup and os.path.exists(ms_name) and ms_size >= min_ms_size):
-      cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
-      print cmd
-      os.system(cmd)
+   #if (options.cleanup and os.path.exists(ms_name) and ms_size >= min_ms_size):
+   #   cmd="rm -rf  %s*gpubox*.fits" % (data_dir)
+   #   print cmd
+   #   os.system(cmd)
 
    #do all this stuff in the selfcal stage instead - so you are sure that both ms have already meen created
    #here merge the flag columns for both the on_moon and off_moon ms
@@ -250,7 +274,7 @@ def cotter_moon(options):
 import sys,os
 from optparse import OptionParser,OptionGroup
 
-usage = 'Usage: cotter_moon.py [obsid] [options]'
+usage = 'Usage: manta_ray.py [obsid] [options]'
 
 parser = OptionParser(usage=usage)
 
@@ -259,13 +283,12 @@ parser.add_option('--track_off_moon',action='store_true',dest='track_off_moon',d
 #parser.add_option('--tagname',type='string', dest='tagname',default='',help='Tagname for ms file e.g. --tagname="" [default=%default]')
 parser.add_option('--epoch_ID',type='string', dest='epoch_ID',default='',help='epoch_ID of observations e.g. --epoch_ID="2018A_01" [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
-parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Delete the gpubox files after making the ms [default=%default]') 
+parser.add_option('--use_existing_ms',action='store_true',dest='use_existing_ms',default=False,help='If there is already a measurment set dont remake it [default=%default]') 
 parser.add_option('--obsid',type='string', dest='obsid',default='',help='obsid to be cottered e.g. --obsid="1199394880" [default=%default]')
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 parser.add_option('--track_off_moon_list',type='string', dest='track_off_moon_list',default='',help='When track_off_moon is True. Details of on-moon pairing on_moon_obsid,RA,DEC of on_moon paired obs e.g. --track_off_moon_list="1199394880,13.0,0.56" [default=%default]')
 parser.add_option('--time_freq_res',type='string', dest='time_freq_res',default='8,80',help='Time and then frequency resolution, comma separated e.g. --time_freq_res="8,80" [default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
-parser.add_option('--no_dysco',action='store_true',dest='no_dysco',default=False,help='Do not use Dysco compression [default=%default]')
 
 
 (options, args) = parser.parse_args()
@@ -276,6 +299,6 @@ parser.add_option('--no_dysco',action='store_true',dest='no_dysco',default=False
 #else:
 #   track_off_moon_string=' '
 
-cotter_moon(options)
+manta_ray(options)
 
 

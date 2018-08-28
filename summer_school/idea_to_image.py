@@ -16,8 +16,8 @@ import aplpy
 #- website (http://mwa-metadata01.pawsey.org.au MWA-guest guest)
 #- find_observations.py
 
-os.environ["ASVO_USER"] = "bmckinley"
-os.environ["ASVO_PASS"] = "Bridgey2014"
+os.environ["ASVO_USER"] = "username"
+os.environ["ASVO_PASS"] = "password"
 
 #change this if phase 2 data i.e. 6000
 max_baseline = 3000.
