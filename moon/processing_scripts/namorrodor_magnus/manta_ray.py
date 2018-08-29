@@ -206,34 +206,35 @@ def manta_ray(options):
    print cmd
    os.system(cmd)
 
+   ##Do the following in self_cal.py now - as copyq on zeus seems not to have the reqd memory
    #this gives you zip files - unzip!
-   cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
-   print cmd
-   os.system(cmd)
-   
-   #remopve if theree is an existing ms:
-   cmd = "rm -rf %s" % (ms_name)
-   print cmd
-   os.system(cmd)  
-   
-   #rename ms:
-   cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
-   print cmd
-   os.system(cmd)
-   
-   #change the phase centre of the ms
-   cmd = "chgcentre %s %s" % (ms_name,track_moon_string)
-   print cmd
-   os.system(cmd)
-   
-   #cmd='cotter -flagfiles %s -norfi -noantennapruning -o %s %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,time_res,freq_res,data_dir)
+   #cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
    #print cmd
    #os.system(cmd)
+   #
+   ##remopve if theree is an existing ms:
+   #cmd = "rm -rf %s" % (ms_name)
+   #print cmd
+   #os.system(cmd)  
+   #
+   ##rename ms:
+   #cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
+   #print cmd
+   #os.system(cmd)
+   #
+   ##change the phase centre of the ms
+   #cmd = "chgcentre %s %s" % (ms_name,track_moon_string)
+   #print cmd
+   #os.system(cmd)
+   
+   ##cmd='cotter -flagfiles %s -norfi -noantennapruning -o %s %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (flagfiles_string,ms_name,track_moon_string,metafits_filename,time_res,freq_res,data_dir)
+   ##print cmd
+   ##os.system(cmd)
 
-   if (options.flag_ants):
-      flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
-      print flag_ants_cmd_string
-      os.system(flag_ants_cmd_string)
+   #if (options.flag_ants):
+   #   flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
+   #   print flag_ants_cmd_string
+   #   os.system(flag_ants_cmd_string)
    
    #if (options.cleanup and os.path.exists(ms_name) and ms_size >= min_ms_size):
    #   cmd="rm -rf  %s*gpubox*.fits" % (data_dir)

@@ -52,6 +52,16 @@ def generate_namorrodor(options):
     else:
        track_moon_string=''
 
+    if (options.manta_ray):
+       manta_ray_string=' --manta_ray '
+    else:
+       manta_ray_string=''
+       
+    if (options.flag_ants):
+       flag_ants_string=' --flag_ants="%s" ' % (options.flag_ants)
+    else:
+       flag_ants_string='' 
+
     if (options.chgcentre):
        chgcentre_string=' --chgcentre '
     else:
@@ -156,7 +166,7 @@ def generate_namorrodor(options):
           sister_obsid_string=''
        if (options.track_off_moon):
           track_off_moon_list_string=",".join(track_off_moon_list[int(float(obsid_index)*3):int(float(obsid_index)*3+3)])
-       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string,track_moon_string,epoch_ID_string,ionpeel_string,chgcentre_string,minw_string,cotter_string,model_string,selfcal_string,applyonly_string,sourcelist_string,machine_string,sister_obsid_string))
+       sbatch_file.write('python %sben-astronomy/moon/processing_scripts/namorrodor_magnus/selfcal_concat_ms.py %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' % (ben_code_base,str(obsid),track_off_moon_list_string,track_off_moon_string,track_moon_string,epoch_ID_string,ionpeel_string,chgcentre_string,minw_string,cotter_string,model_string,selfcal_string,applyonly_string,sourcelist_string,machine_string,sister_obsid_string,manta_ray_string))
 
     sbatch_file.close()
     print "wrote file %s" % q_filename
@@ -189,6 +199,8 @@ parser.add_option('--track_off_moon',type='string',dest='track_off_moon',help='T
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
+parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
+parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 
 
 (options, args) = parser.parse_args()

@@ -129,6 +129,83 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          else:
             concat_vis_name=data_dir+concat_vis_base+'.ms'
 
+   if (options.manta_ray):      
+      #if tracking moon, find moon position
+      if (options.track_moon):
+         #get the date and time of the observation from the metafits file
+         try:
+            HDU_list = fits.open(metafits_filename)
+         except IOError, err:
+            'Cannot open metadata file %s\n' % str(options.input_file)
+         header=HDU_list[0].header 
+         date_unix_utc_string = (header)['GOODTIME']
+         #datetime.datetime.utcfromtimestamp(posix_time).strftime('%Y-%m-%dT%H:%M:%SZ')
+         date_unix_utc=datetime.datetime.utcfromtimestamp(date_unix_utc_string)
+         print "start time (GOODTIME) of observation is %s" % (date_unix_utc)
+         
+         #Get the observation length
+         obslength=float((header)['EXPOSURE'])
+         print "EXPOSURE is %s s" % obslength
+         half_obslength=obslength/2.
+         half_obslength_timedelta=datetime.timedelta(seconds=half_obslength)
+         middle_of_observation=date_unix_utc+half_obslength_timedelta
+         print "middle_of_observation is %s" % middle_of_observation
+         
+         middle_of_observation_formatted=middle_of_observation.strftime('%Y-%m-%dT%H:%M:%S')
+         print "middle_of_observation_formatted %s " % middle_of_observation_formatted
+         
+         #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
+         new_date=string.replace(string.replace(middle_of_observation_formatted,'-','/'),'T',' ')
+         print new_date
+         #find position of moon
+         src_file_name='src_file_moon_%s.txt' % obsid 
+         cmd="print_src.py --date='"+new_date+"' > "+ src_file_name
+         print cmd
+         os.system(cmd)
+         #read src_file.txt to get Moon ra and dec 
+         with open(src_file_name, "r") as infile:
+            lines=infile.readlines()
+            moon_ra=lines[6].split()[3].split(',')[0]
+            moon_dec=lines[6].split()[6].split(',')[0]
+            #print moon_ra
+            #print moon_dec
+         #get ra and dec in right format for cotter
+         new_moon_dec=string.replace(moon_dec,":",".")
+         track_moon_string=' %s %s ' % (moon_ra,new_moon_dec)
+         print track_moon_string
+      
+      
+      #if tracking off moon, shift to required moon  position from a previous time
+      if (options.track_off_moon):
+         off_moon_ra=track_off_moon_new_RA
+         off_moon_dec=track_off_moon_new_DEC
+         track_moon_string=' %s %s ' % (off_moon_ra,off_moon_dec)
+         print track_moon_string
+         
+      cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
+      print cmd
+      os.system(cmd)
+      
+      #remopve if theree is an existing ms:
+      cmd = "rm -rf %s" % (ms_name)
+      print cmd
+      os.system(cmd)  
+      
+      #rename ms:
+      cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
+      print cmd
+      os.system(cmd)
+      
+      #change the phase centre of the ms
+      cmd = "chgcentre %s %s" % (ms_name,track_moon_string)
+      print cmd
+      os.system(cmd)
+
+   if (options.flag_ants):
+      flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
+      print flag_ants_cmd_string
+      os.system(flag_ants_cmd_string)
+
    #apply the same flags to both ms for moon obs, do this in the on moon stage
    if (options.track_moon and not options.ionpeel):
       with table(on_moon_ms_name,readonly=False) as on_moon_table:
@@ -213,6 +290,8 @@ parser.add_option('--applyonly',type='string', dest='applyonly',default=None,hel
 parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help='Specify the base catalog to be used to generate the dynamic sourcelist (specify this instead of model and an ao model will be made from the sourclist), overidden by --model=')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
+parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
+parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
 
 
 (options, args) = parser.parse_args()
