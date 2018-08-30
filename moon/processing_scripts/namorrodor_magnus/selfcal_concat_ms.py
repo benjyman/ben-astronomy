@@ -192,22 +192,22 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       os.system(cmd)
       
       #remopve if theree is an existing ms:
-      cmd = "rm -rf %s" % (ms_name)
+      cmd = "rm -rf %s" % (concat_vis_name)
       print cmd
       os.system(cmd)  
       
       #rename ms:
-      cmd = "mv %s%s.ms %s" % (data_dir,obsid,ms_name)
+      cmd = "mv %s%s.ms %s" % (data_dir,obsid,concat_vis_name)
       print cmd
       os.system(cmd)
       
       #change the phase centre of the ms
-      cmd = "chgcentre %s %s" % (ms_name,track_moon_string)
+      cmd = "chgcentre %s %s" % (concat_vis_name,track_moon_string)
       print cmd
       os.system(cmd)
 
    if (options.flag_ants):
-      flag_ants_cmd_string="flagantennae %s %s " % (ms_name,options.flag_ants)
+      flag_ants_cmd_string="flagantennae %s %s " % (concat_vis_name,options.flag_ants)
       print flag_ants_cmd_string
       os.system(flag_ants_cmd_string)
 
