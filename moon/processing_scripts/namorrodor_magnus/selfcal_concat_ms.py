@@ -139,7 +139,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       if (options.track_moon):
          #get the date and time of the observation from the metafits file
          try:
-            HDU_list = fits.open(metafits_filename)
+            HDU_list = fits.open(metafits_file_name)
          except IOError, err:
             'Cannot open metadata file %s\n' % str(options.input_file)
          header=HDU_list[0].header 
