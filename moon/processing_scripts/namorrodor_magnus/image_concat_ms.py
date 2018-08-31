@@ -351,7 +351,7 @@ def image_concat_ms(obsid,track_off_moon_string,options):
                #don't want to drop axis cause beam uses the third axis to find frequency
                #wcs=wcs.dropaxis(2)
                #wcs=wcs.dropaxis(2)
-               wcs_cropped = wcs[ystart_moon:yend_moon,xstart_moon:xend_moon,:,:]
+               wcs_cropped = wcs[:,:,ystart_moon:yend_moon,xstart_moon:xend_moon]
                #print wcs_cropped
                moon_header.update(wcs_cropped.to_header())
                
