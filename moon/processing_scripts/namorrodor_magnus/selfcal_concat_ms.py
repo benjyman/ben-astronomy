@@ -180,18 +180,20 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          print track_moon_string
       
       
+      
       #if tracking off moon, shift to required moon  position from a previous time
       if (options.track_off_moon):
          off_moon_ra=track_off_moon_new_RA
          off_moon_dec=track_off_moon_new_DEC
          track_moon_string=' %s %s ' % (off_moon_ra,off_moon_dec)
          print track_moon_string
-         
+      
+      #for on_moon:   
       cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
       print cmd
       os.system(cmd)
       
-      #remopve if theree is an existing ms:
+      #remove if there is an existing ms:
       cmd = "rm -rf %s" % (concat_vis_name)
       print cmd
       os.system(cmd)  
@@ -205,6 +207,28 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       cmd = "chgcentre %s %s" % (concat_vis_name,track_moon_string)
       print cmd
       os.system(cmd)
+
+      #repeat for off moon
+      off_moon_data_dir=mwa_dir+sister_obsid+'/'
+      cmd = "unzip -o -d %s %s%s_ms.zip " % (off_moon_data_dir,off_moon_data_dir,sister_obsid)
+      print cmd
+      os.system(cmd)
+      
+      #remove if there is an existing ms:
+      cmd = "rm -rf %s" % (off_moon_ms_name)
+      print cmd
+      os.system(cmd)  
+      
+      #rename ms:
+      cmd = "mv %s%s.ms %s" % (off_moon_data_dir,sister_obsid,off_moon_ms_name)
+      print cmd
+      os.system(cmd)
+   
+   if (options.track_off_moon):
+      #change the phase centre of the ms
+      cmd = "chgcentre %s %s" % (concat_vis_name,track_moon_string)
+      print cmd
+      os.system(cmd)      
 
    if (options.flag_ants):
       flag_ants_cmd_string="flagantennae %s %s " % (concat_vis_name,options.flag_ants)
