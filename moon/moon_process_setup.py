@@ -478,12 +478,19 @@ def setup_moon_process(options):
             print cmd
             os.system(cmd)
 
-   if (machine=='magnus' or machine=='galaxy') and options.run_gator:
+   if (machine=='magnus' or machine=='galaxy') and options.ms_download:
+      #launch gator
+      cmd='nohup gator_rts_daemon.rb -d %s --cotter --ms_download &' % (database_name)
+      print cmd
+      os.system(cmd)
+
+   elif (machine=='magnus' or machine=='galaxy') and options.run_gator:
       #launch gator
       cmd='nohup gator_rts_daemon.rb -d %s --cotter &' % (database_name)
       print cmd
       os.system(cmd)   
-
+   else:
+      print "not launching gator"
 
 from optparse import OptionParser,OptionGroup
 
@@ -496,6 +503,7 @@ parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mw
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
+parser.add_option('--ms_download',action='store_true',dest='ms_download',default=False,help='Set if you want to run gator to download ms only [default=%default]')
 parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,help='Set to delete gpubox files after converting to ms in cotter mode [default=%default]')
 parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 parser.add_option('--copy_images_from_magnus',type='string', dest='copy_images_from_magnus',default=None,help='Give a file containing the paths to the folders where images are to be copied from e.g. --copy_images_from_magnus="trackmoon_file_list.txt" [default=%default]')
