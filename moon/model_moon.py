@@ -360,7 +360,7 @@ def model_moon(options):
          occulted_sky_temp_array[freq_index]=disk_average_sky
       #save the disk average temp array
       np.save(occulted_sky_temp_filename,occulted_sky_temp_array)
-      print 'saved % ' % occulted_sky_temp_filename
+      print 'saved %s ' % occulted_sky_temp_filename
 
    ##these aren't real beam maps, just a temporary solution until marcin builds his code to get the FEKO sim maps in healpix
    ##for now they are just Gaussians in hpx
@@ -652,10 +652,10 @@ def model_moon(options):
       print "pfinal: %s " % pfinal
       covar = out[1]
       correlation_matrix = cov2corr(covar)
-      print "covariance matrix"
-      print  covar
-      print "correlation_matrix"
-      print  correlation_matrix
+      #print "covariance matrix"
+      #print  covar
+      #print "correlation_matrix"
+      #print  correlation_matrix
       
       #print pfinal
       #print covar
@@ -2095,9 +2095,9 @@ def model_moon(options):
    #line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal[:,0],Smoon_no_diffuse_rfi_removal[:,1],big_freq_array)
    line_fit_result=fit_line(Smoon_no_diffuse_rfi_removal,Smoon_no_diffuse_rfi_removal_error,big_freq_array)
    
-   print Smoon_no_diffuse_rfi_removal
-   print Smoon_no_diffuse_rfi_removal_error
-   print line_fit_result['line']
+   #print Smoon_no_diffuse_rfi_removal
+   #print Smoon_no_diffuse_rfi_removal_error
+   #print line_fit_result['line']
    
    a[0].errorbar(big_freq_array,Smoon_no_diffuse_rfi_removal,yerr=Smoon_no_diffuse_rfi_removal_error,label="S_moon",elinewidth=0.5)
    a[0].plot(big_freq_array,line_fit_result['line'],label="linear fit",linestyle='dashed',linewidth=1)
@@ -2113,6 +2113,8 @@ def model_moon(options):
    #a[2].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon RFI excised")
    if not options.remove_diffuse_rfi_on_fly:
       a[2].errorbar(big_freq_array,S_moon_RFI_subtracted,yerr=big_Smoon_average_stddev_spectrum[:,1],label="S_moon RFI excised",elinewidth=0.5)
+      #Use the line fit to interpolate the missing data around ORBCOMM, Chans 48,49,50,51
+      S_moon_RFI_subtracted[48:52] = line_fit_result['line'][48:52]
    else:
       #Smoon_remove_RFI_on_fly=np.load(big_Smoon_average_stddev_spectrum_diffuse_on_fly_npy_filename)
       Smoon_remove_RFI_on_fly = np.nanmean(big_Smoon_spectrum_values, axis=1)
@@ -2121,8 +2123,15 @@ def model_moon(options):
       Smoon_remove_RFI_on_fly_error[np.isnan(Smoon_remove_RFI_on_fly_error)] = 0.
       #a[2].errorbar(big_freq_array,Smoon_remove_RFI_on_fly[:,0],yerr=Smoon_remove_RFI_on_fly[:,1],label="S_moon RFI excised",elinewidth=0.5)      
       a[2].errorbar(big_freq_array,Smoon_remove_RFI_on_fly,yerr=Smoon_remove_RFI_on_fly_error,label="S_moon RFI excised",elinewidth=0.5)      
-      
+      #Use the line fit to interpolate the missing data around ORBCOMM, Chans 48,49,50,51
+      S_moon_RFI_subtracted = Smoon_remove_RFI_on_fly
+      S_moon_RFI_subtracted[48:52] = line_fit_result['line'][48:52]      
    #a[2].legend(loc=4)
+   
+   
+   
+   
+   
    
    #a[3].plot(big_freq_array,S_moon_RFI_subtracted,label="S_moon_minus_linear_fit_RFI_subtracted")
    ##a[3].set_ylim([0,5])
@@ -2253,6 +2262,8 @@ def model_moon(options):
    
    Tb = T_moon + Tb_refl_gal_specular + Tb_refl_gal_diffuse - (10.0**(-26)*c**2*S_moon_RFI_subtracted)/(2*k*Omega*(big_freq_array*10**6)**2) - Tcmb #remove Tcmb to get Galactic spectrum
 
+
+
    #Tb_error=abs(0.07*Tsky_150*(big_freq_array/150.0)**(-2.5) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    #Tb_error=abs(0.07*160*(big_freq_array/60.0)**(-2.24) - (10.0**(-26)*c**2*big_Smoon_average_stddev_spectrum[:,1])/(2*k*Omega*(freq_array*10**6)**2))
    Tb_error=abs((10.0**(-26)*c**2*S_moon_error_total)/(2*k*Omega*(big_freq_array*10**6)**2))
@@ -2265,6 +2276,11 @@ def model_moon(options):
    #We want the amplitude to be the amp at 150 MHz so use
    #logx = np.log10(freq_array)
    
+   #Print for Sing
+   #for freq_index,freq in enumerate(big_freq_array[48:52]):
+   #   string = "%0.2f   %0.2f   %0.2f" % (freq,Tb[freq_index+48],Tb_error[freq_index+48]) 
+   #   print string
+
    #only do this fitting if Tb is all positive:
    dont_do_negative = False
    #if any(t < 0 for t in Tb):
