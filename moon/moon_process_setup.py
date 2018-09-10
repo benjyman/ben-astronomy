@@ -452,7 +452,8 @@ def setup_moon_process(options):
 
             if ((machine=='magnus' or machine=='galaxy') and options.setup_gator_download):
                obsid_filename="%s%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,on_off_moon_string,chan)
-               cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
+               #cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
+               cmd = "gator_add_to_database.rb %s -d --db %s --conversion-options='job_type=c, timeres=8, freqres=80, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true'" % (obsid_filename,download_database_name)
                print cmd
                os.system(cmd) 
               
