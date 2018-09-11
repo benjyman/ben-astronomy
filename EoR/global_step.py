@@ -203,7 +203,8 @@ for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_le
       array_factor = (1./N)*((np.sin(N*psi_parallel/2.))/(np.sin(psi_parallel/2.)))
       element_short_para_four = sky_map[hpx_index]*short_dipole_parallel_beam_map[hpx_index]*array_factor*np.exp(-1j*phase_angle)
       visibility_element_array_short_para_four[hpx_index] = element_short_para_four      
-
+      element_log_four = sky_map[hpx_index]*gaussian_parallel_beam_map[hpx_index]*array_factor*np.exp(-1j*phase_angle)
+      visibility_element_array_log_four[hpx_index] = element_log_four
    
    #integrate across the whole sky (using healpix so it is just a sum)
    visibility_iso = np.sum(visibility_element_array_iso)
@@ -221,12 +222,17 @@ for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_le
    visibility_short_para_four = np.sum(visibility_element_array_short_para_four)
    visibility_real_short_para_four = visibility_short_para_four.real
    visibility_amp_list_short_para_four.append(visibility_real_short_para_four)
-      
+
+   visibility_log_four = np.sum(visibility_element_array_log_four)
+   visibility_real_log_four = visibility_log_four.real
+   visibility_amp_list_log_four.append(visibility_real_log_four)
+         
 #normalise to value at b=0   
 visibility_amp_list_iso = visibility_amp_list_iso/visibility_amp_list_iso[0]
 visibility_amp_list_short_para = visibility_amp_list_short_para/visibility_amp_list_short_para[0]
 visibility_amp_list_short_para_four = visibility_amp_list_short_para_four/np.nanmax(visibility_amp_list_short_para_four)
 visibility_amp_list_log = visibility_amp_list_log/np.nanmax(visibility_amp_list_log)
+visibility_amp_list_log_four = visibility_amp_list_log_four/np.nanmax(visibility_amp_list_log_four)
 
 #for 21CMA, antenna spacing is 1.66 m, so for this to be lambda/2 the lambda = 3.32, frequency = 90.36 MHz, and the baseline length of 3.7 m = 1.114 lambda
 #baseline_length_21CMA_90_MHz_lambda = 1.114
@@ -247,6 +253,7 @@ plt.plot(freq_MHz_array,visibility_amp_list_iso,label="single isotropic")
 plt.plot(freq_MHz_array,visibility_amp_list_log,label="single log-periodic")
 plt.plot(freq_MHz_array,visibility_amp_list_short_para,label="single short para")
 plt.plot(freq_MHz_array,visibility_amp_list_short_para_four,label="four short para")
+plt.plot(freq_MHz_array,visibility_amp_list_log_four,label="four log-periodic")
 
 #plt.scatter(baseline_length_21CMA_90_MHz_lambda,vis_amp_21CMA_90_MHz,label="21 CMA short para 90 MHz",marker='+',c='r')
 plt.title(plot_title)

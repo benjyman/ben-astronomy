@@ -1541,7 +1541,7 @@ def model_moon(options):
      np.save(big_rms_residual_images_npy_filename,big_rms_residual_images)
      print "saved %s" % big_rms_residual_images_npy_filename
      
-     np.save(big_RFI_vs_time_freq_npy_filename,big_RFI_vs_time_freq_array)  
+     np.save(big_RFI_vs_time_freq_npy_filename,big_RFI_vs_time_freq_array)
      print "saved %s" % big_RFI_vs_time_freq_npy_filename
      
    #Now plot the big array

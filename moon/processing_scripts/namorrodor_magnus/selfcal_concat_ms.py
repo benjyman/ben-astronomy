@@ -188,20 +188,22 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          track_moon_string=' %s %s ' % (off_moon_ra,off_moon_dec)
          print track_moon_string
       
-      #for on_moon:   
-      cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
-      print cmd
-      os.system(cmd)
+      #for on_moon:  
+      ##this unzip is done by gator now 
+      #cmd = "unzip -o -d %s %s%s_ms.zip " % (data_dir,data_dir,obsid)
+      #print cmd
+      #os.system(cmd)
       
-      #remove if there is an existing ms:
-      cmd = "rm -rf %s" % (concat_vis_name)
-      print cmd
-      os.system(cmd)  
+      ##remove if there is an existing ms:
+      ##This is dont using moon_process_setup now
+      #cmd = "rm -rf %s" % (concat_vis_name)
+      #print cmd
+      #os.system(cmd)  
       
-      #rename ms:
-      cmd = "mv %s%s.ms %s" % (data_dir,obsid,concat_vis_name)
-      print cmd
-      os.system(cmd)
+      ##rename ms:
+      #cmd = "mv %s%s.ms %s" % (data_dir,obsid,concat_vis_name)
+      #print cmd
+      #os.system(cmd)
       
       #change the phase centre of the ms
       cmd = "chgcentre %s %s" % (concat_vis_name,track_moon_string)

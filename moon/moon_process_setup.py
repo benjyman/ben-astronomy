@@ -475,6 +475,37 @@ def setup_moon_process(options):
                   cmd = "rm -rf %s%s/%s_ms.zip" % (mwa_dir,obsid,obsid)
                   print cmd
                   os.system(cmd)
+                  
+            if options.rename_ms:
+               on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
+               if on_off_moon_string=='off_moon':
+                  continue
+               elif on_off_moon_string=='on_moon':
+                  obslist_file="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+               else:
+                  print "bad value for on_off_moon_string"
+               with open(obslist_file,'r') as f:
+                  lines = f.readlines()
+               for line in lines:
+                  on_moon_obsid = line.strip()[0:10]
+                  off_moon_obsid = line.strip()[10:20]
+                  old_on_moon_ms_name = '%s%s/%s.ms' % (mwa_dir,on_moon_obsid,on_moon_obsid)
+                  old_off_moon_ms_name = '%s%s/%s.ms' % (mwa_dir,off_moon_obsid,off_moon_obsid)
+                  new_on_moon_ms_name = '%s%s/%s_%s_trackmoon.ms' % (mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
+                  new_off_moon_ms_name = '%s%s/%s_%s_track_off_moon_paired_%s.ms' % (mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
+
+                  cmd = "rm -rf %s" % (new_on_moon_ms_name)
+                  print cmd 
+                  os.system(cmd)
+                  cmd = "rm -rf %s" % (new_off_moon_ms_name)
+                  print cmd 
+                  os.system(cmd)                  
+                  cmd = "mv %s %s" % (old_on_moon_ms_name,new_on_moon_ms_name)
+                  print cmd 
+                  os.system(cmd)
+                  cmd = "mv %s %s" % (old_off_moon_ms_name,new_off_moon_ms_name)
+                  print cmd 
+                  os.system(cmd)
 
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
@@ -526,6 +557,8 @@ parser.add_option('--cleanup',action='store_true',dest='cleanup',default=False,h
 parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator_download',default=False,help='Set up the gator download on magnus or galaxy. To start download: nohup [default=%default]')
 parser.add_option('--copy_images_from_magnus',type='string', dest='copy_images_from_magnus',default=None,help='Give a file containing the paths to the folders where images are to be copied from e.g. --copy_images_from_magnus="trackmoon_file_list.txt" [default=%default]')
 parser.add_option('--purge_ms',action='store_true',dest='purge_ms',default=False,help='Set to delete all ms and zip files to start again [default=%default]')
+parser.add_option('--rename_ms',action='store_true',dest='rename_ms',default=False,help='Set to rename ms for moon stuff [default=%default]')
+
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_image',action='store_true',dest='launch_image',default=False,help='Actually launch the imaging jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
