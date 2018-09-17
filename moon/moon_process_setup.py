@@ -392,7 +392,7 @@ def setup_moon_process(options):
    database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
    download_database_name="/group/mwaeor/bmckinley/%s_download.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
-   #chan_list=[69,93,121,145,169]
+   #chan_list=[69]
    chan_list=[69,93,121,145,169]
    on_moon_and_off_moon=["on_moon","off_moon"]
    epoch_ID_list=[]
@@ -469,12 +469,12 @@ def setup_moon_process(options):
                   lines = f.readlines()
                for line in lines:
                   obsid = line.split()[0]
-                  cmd = "rm -rf %s%s/%s.ms" % (mwa_dir,obsid,obsid)
-                  print cmd 
-                  os.system(cmd)
-                  cmd = "rm -rf %s%s/%s_ms.zip" % (mwa_dir,obsid,obsid)
-                  print cmd
-                  os.system(cmd)
+                  #cmd = "rm -rf %s%s/%s.ms" % (mwa_dir,obsid,obsid)
+                  #print cmd 
+                  #os.system(cmd)
+                  #cmd = "rm -rf %s%s/%s_ms.zip" % (mwa_dir,obsid,obsid)
+                  #print cmd
+                  #os.system(cmd)
                   
             if options.rename_ms:
                on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
@@ -494,18 +494,26 @@ def setup_moon_process(options):
                   new_on_moon_ms_name = '%s%s/%s_%s_trackmoon.ms' % (mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
                   new_off_moon_ms_name = '%s%s/%s_%s_track_off_moon_paired_%s.ms' % (mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
 
-                  cmd = "rm -rf %s" % (new_on_moon_ms_name)
+
+                  cmd = "ls %s" % (new_on_moon_ms_name)
                   print cmd 
                   os.system(cmd)
-                  cmd = "rm -rf %s" % (new_off_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)                  
-                  cmd = "mv %s %s" % (old_on_moon_ms_name,new_on_moon_ms_name)
+                  cmd = "ls %s" % (new_off_moon_ms_name)
                   print cmd 
                   os.system(cmd)
-                  cmd = "mv %s %s" % (old_off_moon_ms_name,new_off_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)
+                  
+                  #cmd = "rm -rf %s" % (new_on_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
+                  #cmd = "rm -rf %s" % (new_off_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)                  
+                  #cmd = "mv %s %s" % (old_on_moon_ms_name,new_on_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
+                  #cmd = "mv %s %s" % (old_off_moon_ms_name,new_off_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
 
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
@@ -548,7 +556,7 @@ usage = 'Usage: setup_moon_process.py [options]'
 parser = OptionParser(usage=usage)
 
 parser.add_option('--infile',type='string', dest='infile',default='',help='Just give it a txt file with three columns: epoch_ID on_moon_date off_moon_date (dates as YYYY-MM-DD) e.g. --infile="moon_experiment.txt" [default=%default]')
-parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mwaeor/bmckinley/moon/test_setup/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
+parser.add_option('--base_dir',type='string', dest='base_dir',default='/astro/mwaeor/bmckinley/moon/2015/',help='Base directory to set everything up in e.g. --base_dir="/md0/moon/magnus_setup_tests/" [default=%default]')
 parser.add_option('--have_obs_lists',action='store_true',dest='have_obs_lists',default=False,help='Set if you already have all the obs lists (dont want to run find_observations.py)[default=%default]')
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help=' e.g. --machine="magnus" [default=%default]')
 parser.add_option('--run_gator',action='store_true',dest='run_gator',default=False,help='Set if you want to run gator [default=%default]')
