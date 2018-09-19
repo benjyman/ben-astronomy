@@ -389,13 +389,13 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          os.system(cmd) 
 
          #run andres ionpeel, changed -t 1 from 8, since doing 8s timeres in cotter for EoR2 
-         cmd='ionpeel -t 1 -minuv 50 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
+         cmd='ionpeel -t 1 -minuv 100 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
          print cmd
          os.system(cmd) 
    
       else:
          #run andres calibrate , changed minuv to 30 to be more in line with rts processing (I think)
-         cmd='calibrate -t 1 -minuv 50  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         cmd='calibrate -t 1 -minuv 100  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
