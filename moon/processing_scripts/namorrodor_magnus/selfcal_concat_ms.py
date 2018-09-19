@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 
 #This is to be run after cleaning so that the model from the clean is in the ms already - andre's calibrate tool will use this model
 #can also be run to use a model in Andre format to calibrate, or just to apply solutions already made.
@@ -166,7 +165,9 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          print "middle_of_observation_formatted %s " % middle_of_observation_formatted
          
          #get date in right format for print_src.py eg --date='2015/3/2 12:01:01'
-         new_date=string.replace(string.replace(middle_of_observation_formatted,'-','/'),'T',' ')
+         #new_date=string.replace(string.replace(middle_of_observation_formatted,'-','/'),'T',' ')
+         tmp_new_date = middle_of_observation_formatted.replace('-','/')
+         new_date = tmp_new_date.replace('T',' ')
          print new_date
          #find position of moon
          src_file_name='src_file_moon_%s.txt' % obsid 
@@ -181,7 +182,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
             #print moon_ra
             #print moon_dec
          #get ra and dec in right format for cotter
-         new_moon_dec=string.replace(moon_dec,":",".")
+         new_moon_dec=moon_dec.replace(":",".")
          track_moon_string=' %s %s ' % (moon_ra,new_moon_dec)
          print track_moon_string
       
