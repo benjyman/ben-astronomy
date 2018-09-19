@@ -200,7 +200,7 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 parser.add_option('--sister_obsid_infile',type='string', dest='sister_obsid_infile',default='',help='File containing list of LST-matched sister observations for flag merging  e.g. --sister_obsid_infile="20180110_off_moon_93.txt" [default=%default]')
 parser.add_option('--obsid_infile',type='string', dest='obsid_infile',default='',help='File containing list of obsids to be cottered  e.g. --obsid_infile="20180107_moon_93.txt" [default=%default]')
 parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
-parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
+parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56 60" [default=%default]')
 
 
 (options, args) = parser.parse_args()

@@ -389,13 +389,13 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
          os.system(cmd) 
 
          #run andres ionpeel, changed -t 1 from 8, since doing 8s timeres in cotter for EoR2 
-         cmd='ionpeel -t 1 -minuv 30 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
+         cmd='ionpeel -t 1 -minuv 50 %s %s %s ' % (peeled_ms_name,clustered_model_name,solutions_name)
          print cmd
          os.system(cmd) 
    
       else:
          #run andres calibrate , changed minuv to 30 to be more in line with rts processing (I think)
-         cmd='calibrate -t 1 -minuv 30  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         cmd='calibrate -t 1 -minuv 50  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
@@ -428,7 +428,7 @@ parser.add_option('--sourcelist',dest='sourcelist',type='string',default='',help
 parser.add_option('--machine',type='string', dest='machine',default='magnus',help='machine can be galaxy, magnus or namorrodor e.g. --machine="namorrodor" [default=%default]')
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
-parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56,60" [default=%default]')
+parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56 60" [default=%default]')
 
 
 (options, args) = parser.parse_args()
