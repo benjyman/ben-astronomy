@@ -254,14 +254,14 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #apply the same flags to both ms for moon obs, do this in the on moon stage and get flags from metafits 
    if (options.track_moon and not options.ionpeel):      
       #get flagged antennas from the metafits file and flag them explicitly
-      on_moon_metafits_file_name = "%s_metafits_ppds.fits" % on_moon_obsid
-      off_moon_metafits_file_name = "%s_metafits_ppds.fits" % off_moon_obsid
+      on_moon_metafits_file_name = "%s%s_metafits_ppds.fits" % (data_dir,on_moon_obsid)
+      off_moon_metafits_file_name = "%s%s_metafits_ppds.fits" % (data_dir,off_moon_obsid)
       
       #on moon
       try:
-         HDU_list = fits.open(metafits_file_name)
+         HDU_list = fits.open(on_moon_metafits_file_name)
       except IOError, err:
-         'Cannot open metadata file %s\n' % str(options.input_file)
+         'Cannot open metadata file %s\n' % on_moon_metafits_file_name
       data = HDU_list[1].data
       tile_flags = data['FLAG']
       tile_flagging_indices = data['ANTENNA']
@@ -295,7 +295,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       try:
          HDU_list = fits.open(off_moon_metafits_file_name)
       except IOError, err:
-         'Cannot open metadata file %s\n' % str(options.input_file)
+         'Cannot open metadata file %s\n' % off_moon_metafits_file_name
       header=HDU_list[0].header
       data = HDU_list[1].data
       tile_flags = data['FLAG']
