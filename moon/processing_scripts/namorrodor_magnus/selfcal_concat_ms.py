@@ -111,12 +111,18 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #only do this step for track_off_moon, (always need to make on_moon ms first)
    if (options.track_moon):
       #base_name='%s_%s' % (obsid,epoch_ID)
+      on_moon_obsid = obsid
+      off_moon_obsid = sister_obsid
+      
       on_moon_basename=concat_vis_base + '_trackmoon'
       on_moon_ms_name=data_dir+on_moon_basename+'.ms'
       off_moon_base_name="%s_%s_track_off_moon_paired_%s" % (sister_obsid,epoch_ID,obsid)
       off_moon_ms_name=mwa_dir+sister_obsid+'/'+off_moon_base_name+'.ms'
       concat_vis_name=on_moon_ms_name 
    elif (options.track_off_moon):
+      on_moon_obsid = sister_obsid
+      off_moon_obsid = obsid
+      
       on_moon_basename="%s_%s_trackmoon" % (sister_obsid,epoch_ID) 
       on_moon_ms_name=mwa_dir+sister_obsid+'/'+on_moon_basename+'.ms'
       off_moon_base_name=concat_vis_base+'_track_off_moon_paired_' + sister_obsid
@@ -233,12 +239,93 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #   os.system(cmd)      
 
    if (options.flag_ants):
-      flag_ants_cmd_string="flagantennae %s %s " % (concat_vis_name,options.flag_ants)
+      #do both on and off moon
+      flag_ants_cmd_string="flagantennae %s %s " % (on_moon_ms_name,options.flag_ants)
       print flag_ants_cmd_string
       os.system(flag_ants_cmd_string)
 
-   #apply the same flags to both ms for moon obs, do this in the on moon stage
-   if (options.track_moon and not options.ionpeel):
+      flag_ants_cmd_string="flagantennae %s %s " % (off_moon_ms_name,options.flag_ants)
+      print flag_ants_cmd_string
+      os.system(flag_ants_cmd_string)     
+
+
+
+   #apply the same flags to both ms for moon obs, do this in the on moon stage and get flags from metafits 
+   if (options.track_moon and not options.ionpeel):      
+      #get flagged antennas from the metafits file and flag them explicitly
+      on_moon_metafits_file_name = "%s_metafits_ppds.fits" % on_moon_obsid
+      off_moon_metafits_file_name = "%s_metafits_ppds.fits" % off_moon_obsid
+      
+      #on moon
+      try:
+         HDU_list = fits.open(metafits_file_name)
+      except IOError, err:
+         'Cannot open metadata file %s\n' % str(options.input_file)
+      data = HDU_list[1].data
+      tile_flags = data['FLAG']
+      tile_flagging_indices = data['ANTENNA']
+      tile_name = data['TILENAME']
+      #print tile_flags
+      
+      flag_antenna_indices_list = []
+      flag_antenna_tilenames_list = []
+      for index,tile_flag in enumerate(tile_flags):
+         if (tile_flag==1):
+            string = "%s with antenna index %s should be flagged." % (tile_name[index],tile_flagging_indices[index])
+            #print string
+            if index==0:
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+            elif (tile_name[index]!=tile_name[index-1]):
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+      
+      print flag_antenna_indices_list
+      print flag_antenna_tilenames_list
+      
+      flag_ant_string = ' '.join(str(x) for x in flag_antenna_indices_list)
+      
+      #flag em
+      cmd="flagantennae %s %s" % (on_moon_ms_name,flag_ant_string)
+      print cmd
+      os.system(cmd)
+
+      #off moon
+      try:
+         HDU_list = fits.open(off_moon_metafits_file_name)
+      except IOError, err:
+         'Cannot open metadata file %s\n' % str(options.input_file)
+      header=HDU_list[0].header
+      data = HDU_list[1].data
+      tile_flags = data['FLAG']
+      tile_flagging_indices = data['ANTENNA']
+      tile_name = data['TILENAME']
+      #print tile_flags
+      
+      flag_antenna_indices_list = []
+      flag_antenna_tilenames_list = []
+      for index,tile_flag in enumerate(tile_flags):
+         if (tile_flag==1):
+            string = "%s with antenna index %s should be flagged." % (tile_name[index],tile_flagging_indices[index])
+            #print string
+            if index==0:
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+            elif (tile_name[index]!=tile_name[index-1]):
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+      
+      print flag_antenna_indices_list
+      print flag_antenna_tilenames_list
+      
+      flag_ant_string = ' '.join(str(x) for x in flag_antenna_indices_list)
+      
+      #flag em
+      cmd="flagantennae %s %s" % (off_moon_ms_name,flag_ant_string)
+      print cmd
+      os.system(cmd)
+
+      
       with table(on_moon_ms_name,readonly=False) as on_moon_table:
          with table(off_moon_ms_name,readonly=False) as off_moon_table:
             with tablecolumn(on_moon_table,'FLAG') as on_moon_table_flag:
@@ -254,7 +341,26 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       
                       on_moon_table.putcell('FLAG',row_index,on_moon_table_flag[row_index])
                       off_moon_table.putcell('FLAG',row_index,off_moon_table_flag[row_index])
+
+      #collect new statistics
+      cmd = "aoquality collect %s" % (on_moon_ms_name)
+      print cmd
+      os.system(cmd)
       
+      cmd = "aoquality collect %s" % (off_moon_ms_name)
+      print cmd
+      os.system(cmd)
+      
+      
+      #save a png of the aoqplot output for StandardDeviation
+      cmd = "aoqplot -save aoqplot_stddev_%s_on_moon StandardDeviation %s" % (on_moon_obsid, on_moon_ms_name)
+      print cmd
+      os.system(cmd)
+      
+      cmd = "aoqplot -save aoqplot_stddev_%s_off_moon StandardDeviation %s" % (off_moon_obsid, off_moon_ms_name)
+      print cmd
+      os.system(cmd)
+   
    
    
    if (options.applyonly):
