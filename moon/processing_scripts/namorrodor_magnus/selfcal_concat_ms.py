@@ -250,9 +250,9 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       os.system(flag_ants_cmd_string)     
 
 
-
+   #do this in moon_process_setup instead, that way yo can look at the qa before going ahead
    #apply the same flags to both ms for moon obs, do this in the on moon stage and get flags from metafits 
-   if (options.track_moon and not options.ionpeel):      
+   if (options.track_moon and not options.ionpeel and options.do_flagging):      
       #get flagged antennas from the metafits file and flag them explicitly
       on_moon_metafits_file_name = "%s%s_metafits_ppds.fits" % (data_dir,on_moon_obsid)
       off_moon_metafits_file_name = "%s%s_metafits_ppds.fits" % (data_dir,off_moon_obsid)
@@ -430,6 +430,7 @@ parser.add_option('--machine',type='string', dest='machine',default='magnus',hel
 parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default='',help='sister_obsid e.g. --sister_obsid="1199396880" [default=%default]')
 parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56 60" [default=%default]')
+parser.add_option('--do_flagging',action='store_true',dest='do_flagging',default=False,help='flag tiles and combine flags for on/off moon - now done in moon_process_setup.py by default [default=%default]') 
 
 
 (options, args) = parser.parse_args()
