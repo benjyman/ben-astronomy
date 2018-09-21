@@ -6,6 +6,9 @@ from datetime import datetime, timedelta, date, time
 from astropy.io import fits
 import string
 import glob
+from casacore.tables import table,tablecolumn,tablerow
+import numpy as np
+
 
 
 sidereal_day_sec = 86164
@@ -508,6 +511,146 @@ def setup_moon_process(options):
                   print cmd 
                   os.system(cmd)
 
+            if (options.ms_quality_check and machine=="namorrodor"):
+               #need to be sshfs'd in:sshfs galaxy:/ /md0/galaxy/ 
+               galaxy_mount_dir = "/md0/galaxy"
+               galaxy_mwa_dir = "/astro/mwaeor/MWA/data/"
+               on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
+               if on_off_moon_string=='off_moon':
+                  continue
+               elif on_off_moon_string=='on_moon':
+                  obslist_file="%s%s_on_moon_paired_%s.txt" % (on_off_moon_dir,epoch_ID,chan)
+               else:
+                  print "bad value for on_off_moon_string"
+               with open(obslist_file,'r') as f:
+                  lines = f.readlines()
+               for line in lines:
+                  on_moon_obsid = line.strip()[0:10]
+                  off_moon_obsid = line.strip()[10:20]
+                  on_moon_ms_name = '%s%s%s/%s_%s_trackmoon.ms' % (galaxy_mount_dir,galaxy_mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
+                  off_moon_ms_name = '%s%s%s/%s_%s_track_off_moon_paired_%s.ms' % (galaxy_mount_dir,galaxy_mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
+
+                  galaxy_on_moon_data_dir = "%s%s/" % (galaxy_mwa_dir,on_moon_obsid)
+                  galaxy_off_moon_data_dir = "%s%s/" % (galaxy_mwa_dir,off_moon_obsid)
+                  #apply the same flags to both ms for moon obs, do this in the on moon stage and get flags from metafits 
+                  #get flagged antennas from the metafits file and flag them explicitly
+                  on_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_on_moon_data_dir,on_moon_obsid)
+                  off_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_off_moon_data_dir,off_moon_obsid)
+                  
+                  if options.do_flagging:
+                     #on moon
+                     try:
+                        HDU_list = fits.open(on_moon_metafits_file_name)
+                     except IOError, err:
+                        'Cannot open metadata file %s\n' % on_moon_metafits_file_name
+                     data = HDU_list[1].data
+                     tile_flags = data['FLAG']
+                     tile_flagging_indices = data['ANTENNA']
+                     tile_name = data['TILENAME']
+                     #print tile_flags
+                     
+                     flag_antenna_indices_list = []
+                     flag_antenna_tilenames_list = []
+                     for index,tile_flag in enumerate(tile_flags):
+                        if (tile_flag==1):
+                           string = "%s with antenna index %s should be flagged." % (tile_name[index],tile_flagging_indices[index])
+                           #print string
+                           if index==0:
+                              flag_antenna_indices_list.append(tile_flagging_indices[index])
+                              flag_antenna_tilenames_list.append(tile_name[index])
+                           elif (tile_name[index]!=tile_name[index-1]):
+                              flag_antenna_indices_list.append(tile_flagging_indices[index])
+                              flag_antenna_tilenames_list.append(tile_name[index])
+                     
+                     print flag_antenna_indices_list
+                     print flag_antenna_tilenames_list
+                     
+                     flag_ant_string = ' '.join(str(x) for x in flag_antenna_indices_list)
+                     
+                     #flag em
+                     cmd="flagantennae %s %s" % (on_moon_ms_name,flag_ant_string)
+                     print cmd
+                     os.system(cmd)
+                     
+                     #off moon
+                     try:
+                        HDU_list = fits.open(off_moon_metafits_file_name)
+                     except IOError, err:
+                        'Cannot open metadata file %s\n' % off_moon_metafits_file_name
+                     header=HDU_list[0].header
+                     data = HDU_list[1].data
+                     tile_flags = data['FLAG']
+                     tile_flagging_indices = data['ANTENNA']
+                     tile_name = data['TILENAME']
+                     #print tile_flags
+                     
+                     flag_antenna_indices_list = []
+                     flag_antenna_tilenames_list = []
+                     for index,tile_flag in enumerate(tile_flags):
+                        if (tile_flag==1):
+                           string = "%s with antenna index %s should be flagged." % (tile_name[index],tile_flagging_indices[index])
+                           #print string
+                           if index==0:
+                              flag_antenna_indices_list.append(tile_flagging_indices[index])
+                              flag_antenna_tilenames_list.append(tile_name[index])
+                           elif (tile_name[index]!=tile_name[index-1]):
+                              flag_antenna_indices_list.append(tile_flagging_indices[index])
+                              flag_antenna_tilenames_list.append(tile_name[index])
+                     
+                     print flag_antenna_indices_list
+                     print flag_antenna_tilenames_list
+                     
+                     flag_ant_string = ' '.join(str(x) for x in flag_antenna_indices_list)
+                     
+                     #flag em
+                     cmd="flagantennae %s %s" % (off_moon_ms_name,flag_ant_string)
+                     print cmd
+                     os.system(cmd)
+               
+                     if options.flag_ants:
+                        #Flag additional antennas (should only have to flag one ms as flags are combined in next step
+                        cmd="flagantennae %s %s" % (on_moon_ms_name,options.flag_ants)
+                        print cmd
+                        os.system(cmd)
+                     
+                     
+                     with table(on_moon_ms_name,readonly=False) as on_moon_table:
+                        with table(off_moon_ms_name,readonly=False) as off_moon_table:
+                           with tablecolumn(on_moon_table,'FLAG') as on_moon_table_flag:
+                              with tablecolumn(off_moon_table,'FLAG') as off_moon_table_flag:
+                                  #new_moon_flag=np.empty_like(on_moon_table_flag)
+                                  for row_index,row in enumerate(on_moon_table_flag):
+                                     #if (on_moon_table_flag[row_index].all() != off_moon_table_flag[row_index]).all():
+                                     #   print on_moon_table_flag[row_index]
+                                     #   print off_moon_table_flag[row_index]
+                     
+                                     on_moon_table_flag[row_index] = np.logical_or(on_moon_table_flag[row_index],off_moon_table_flag[row_index])
+                                     off_moon_table_flag[row_index] = np.logical_or(on_moon_table_flag[row_index],off_moon_table_flag[row_index])
+                     
+                                     on_moon_table.putcell('FLAG',row_index,on_moon_table_flag[row_index])
+                                     off_moon_table.putcell('FLAG',row_index,off_moon_table_flag[row_index])
+                     
+
+                  #collect new statistics
+                  cmd = "aoquality collect %s" % (on_moon_ms_name)
+                  print cmd
+                  #os.system(cmd)
+                  
+                  cmd = "aoquality collect %s" % (off_moon_ms_name)
+                  print cmd
+                  #os.system(cmd)
+                  
+                  
+                  #save a png of the aoqplot output for StandardDeviation
+                  cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_paired_with_%s StandardDeviation %s" % (on_moon_obsid,off_moon_obsid,on_moon_ms_name)
+                  print cmd
+                  os.system(cmd)
+                  
+                  cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_paired_with_%s StandardDeviation %s" % (off_moon_obsid,on_moon_obsid,off_moon_ms_name)
+                  print cmd
+                  os.system(cmd)
+            
+                  
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
             #else:
@@ -527,6 +670,10 @@ def setup_moon_process(options):
             cmd='gator_add_to_rts_table.rb -d %s --epoch_id %s %s' % (database_name,epoch_ID,paired_observations_filename)
             print cmd
             os.system(cmd)
+
+   #combine qa into one pdf here
+   if (options.ms_quality_check and machine=="namorrodor"):
+      print "combine qa into one pdf here"
 
    if (machine=='magnus' or machine=='galaxy') and options.ms_download:
       #launch gator
@@ -559,6 +706,11 @@ parser.add_option('--setup_gator_download',action='store_true',dest='setup_gator
 parser.add_option('--copy_images_from_magnus',type='string', dest='copy_images_from_magnus',default=None,help='Give a file containing the paths to the folders where images are to be copied from e.g. --copy_images_from_magnus="trackmoon_file_list.txt" [default=%default]')
 parser.add_option('--purge_ms',action='store_true',dest='purge_ms',default=False,help='Set to delete all ms and zip files to start again [default=%default]')
 parser.add_option('--rename_ms',action='store_true',dest='rename_ms',default=False,help='Set to rename ms for moon stuff [default=%default]')
+parser.add_option('--ms_quality_check',action='store_true',dest='ms_quality_check',default=False,help='Set to run aoquality and aoqplot on each ms and make a single pdf (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
+parser.add_option('--do_flagging',action='store_true',dest='do_flagging',default=False,help='Set to do flagging ie flag ants from metafits and combine on/off moon flags (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
+parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='flag these antennas (zero-indexed andre style numbering), space separated, used with ms_quality_check only e.g. --flag_ants="56 60" [default=%default]')
+
+
 
 #parser.add_option('--launch_cotter',action='store_true',dest='launch_cotter',default=False,help='Actually launch the cotter jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
 #parser.add_option('--launch_selfcal',action='store_true',dest='launch_selfcal',default=False,help='Actually launch the selfcal jobs (sbatch to queue on HPC) - otherwise just sets everything up [default=%default]')
