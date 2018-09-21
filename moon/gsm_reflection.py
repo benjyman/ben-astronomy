@@ -121,6 +121,7 @@ if not plot_only:
       earth_mwa_dec_deg=(-1.0*(moon_centre_dec.to(u.deg)/u.deg))
       
       #So we want to imagine there is an observatory on Earth with zenith pointing at this RA DEC
+      #and define a 'moon observatory with zenith facing the MWA
       moon_observatory_lat=earth_mwa_dec_deg
       
       #work out the longitude from HA = UTC - observer_lon - RA
@@ -132,9 +133,12 @@ if not plot_only:
       #print t_degrees
       #print earth_mwa_RA_deg
       
-      moon_observatory_lon=float(t_degrees[0])-float(earth_mwa_RA_deg)
-      #print "moon_observatory_lat %s" %moon_observatory_lat
-      #print "moon_observatory_lon %s" %moon_observatory_lon
+      #Not sure why we need to use the time again here - hasn't the time been factored in above when computing the moon position?
+      #Naybe it is just moon_observatory_lon = earth_mwa_RA_deg ?                          
+      #moon_observatory_lon=float(t_degrees[0])-float(earth_mwa_RA_deg)
+      moon_observatory_lon = float(earth_mwa_RA_deg)
+      print "moon_observatory_lat %s" %moon_observatory_lat
+      print "moon_observatory_lon %s" %moon_observatory_lon
       
       
       
