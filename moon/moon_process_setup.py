@@ -8,7 +8,6 @@ import string
 import glob
 from casacore.tables import table,tablecolumn,tablerow
 import numpy as np
-from fpdf import FPDF
 import subprocess
 
 sidereal_day_sec = 86164
@@ -384,6 +383,7 @@ def setup_moon_process(options):
    machine=options.machine
    if machine=='namorrodor':
       mwa_dir = '/md0/moon/data/MWA/'
+      from fpdf import FPDF
    else:
       mwa_dir = '/astro/mwaeor/MWA/data/'
    base_dir=options.base_dir

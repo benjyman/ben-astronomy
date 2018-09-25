@@ -2277,9 +2277,10 @@ def model_moon(options):
    #logx = np.log10(freq_array)
    
    #Print for Sing
-   #for freq_index,freq in enumerate(big_freq_array[48:52]):
-   #   string = "%0.2f   %0.2f   %0.2f" % (freq,Tb[freq_index+48],Tb_error[freq_index+48]) 
-   #   print string
+   print "For Sing:"
+   for freq_index,freq in enumerate(big_freq_array):
+      string = "%0.2f   %0.2f   %0.2f" % (freq,Tb[freq_index],Tb_error[freq_index]) 
+      print string
 
    #only do this fitting if Tb is all positive:
    dont_do_negative = False
