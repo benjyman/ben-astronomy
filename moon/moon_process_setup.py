@@ -8,8 +8,8 @@ import string
 import glob
 from casacore.tables import table,tablecolumn,tablerow
 import numpy as np
-
-
+from fpdf import FPDF
+import subprocess
 
 sidereal_day_sec = 86164
 sourcelist='srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
@@ -27,8 +27,6 @@ def copy_images_from_magnus(filename):
       cmd = "rsync -a bmckinley@magnus.pawsey.org.au:%s*psf*.fits %s" % (filepath.rstrip(),namorrodor_image_dir)
       print cmd
       os.system(cmd)
-
-      
    
 #Functions
 def write_obs_list(epoch_ID,on_moon_date,off_moon_date,chan,on_off_moon_dir):
@@ -395,8 +393,8 @@ def setup_moon_process(options):
    database_name="/group/mwaeor/bmckinley/%s.sqlite" % (moon_exp_filename_base)
    download_database_name="/group/mwaeor/bmckinley/%s_download.sqlite" % (moon_exp_filename_base)
    #get the epoch_IDs and on_moon_dat off_moon_date
-   chan_list=[69]
-   #chan_list=[69,93,121,145,169]
+   #chan_list=[69]
+   chan_list=[69,93,121,145,169]
    on_moon_and_off_moon=["on_moon","off_moon"]
    epoch_ID_list=[]
    on_moon_date_list=[]
@@ -455,11 +453,11 @@ def setup_moon_process(options):
 
             if ((machine=='magnus' or machine=='galaxy') and options.setup_gator_download):
                obsid_filename="%s%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,on_off_moon_string,chan)
-               if on_off_moon_string=='off_moon':
-                  #cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
-                  cmd = "gator_add_to_database.rb %s -d --db %s --conversion-options='job_type=c, timeres=8, freqres=80, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true'" % (obsid_filename,download_database_name)
-                  print cmd
-                  os.system(cmd) 
+               #if on_off_moon_string=='off_moon':
+               #cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
+               cmd = "gator_add_to_database.rb %s -d --db %s --conversion-options='job_type=c, timeres=8, freqres=80, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true'" % (obsid_filename,download_database_name)
+               print cmd
+               os.system(cmd)
               
             if options.purge_ms:
                on_off_moon_string=on_off_moon_dir.strip().split('/')[-2]
@@ -634,11 +632,11 @@ def setup_moon_process(options):
                   #collect new statistics
                   cmd = "aoquality collect %s" % (on_moon_ms_name)
                   print cmd
-                  #os.system(cmd)
+                  os.system(cmd)
                   
                   cmd = "aoquality collect %s" % (off_moon_ms_name)
                   print cmd
-                  #os.system(cmd)
+                  os.system(cmd)
                   
                   
                   #save a png of the aoqplot output for StandardDeviation
@@ -671,10 +669,20 @@ def setup_moon_process(options):
             print cmd
             os.system(cmd)
 
-   #combine qa into one pdf here
+   #combine qa into two pdfs (on and off moon)  here
    if (options.ms_quality_check and machine=="namorrodor"):
-      print "combine qa into one pdf here"
+      figname = "aoqplot_std_dev_baselines_combined_on_moon_%s.pdf" % epoch_ID
+      pdf = FPDF('P', 'mm', 'A4')
+      cmd = '/usr/bin/montage *on_moon*baselines.pdf -mode concatenate -tile 3x5 %s' % (figname)
+      print cmd
+      os.system(cmd)
 
+      figname = "aoqplot_std_dev_baselines_combined_off_moon_%s.pdf" % epoch_ID
+      pdf = FPDF('P', 'mm', 'A4')
+      cmd = '/usr/bin/montage *off_moon*baselines.pdf -mode concatenate -tile 3x5 %s' % (figname)
+      print cmd
+      os.system(cmd)
+      
    if (machine=='magnus' or machine=='galaxy') and options.ms_download:
       #launch gator
       cmd='nohup gator_rts_daemon.rb -d %s --cotter --ms_download &' % (database_name)
