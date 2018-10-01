@@ -54,6 +54,8 @@ def image_concat_ms(obsid,track_off_moon_string,options):
       pol_string = ' -pol '+ options.pol
       if (options.pol == 'xx,yy,xy,yx' or options.pol == 'xx,yy,yx,xy' or options.pol == 'yy,xx,xy,yx' or options.pol == 'yy,xx,yx,xy' or options.pol == 'xx,xy,yx,yy' or options.pol == 'yy,xy,yx,xx' or options.pol == 'xx,yx,xy,yy' or options.pol == 'yy,yx,xy,xx'):
          pol_string = ' -pol '+ options.pol+ ' -joinpolarizations '
+      if (options.pol == 'I')
+         pol_string +=  ' -apply-primary-beam -pb-undersampling 4 '
    else:
       pol_string = '  '
 
