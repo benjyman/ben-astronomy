@@ -14,6 +14,7 @@ import datetime
 def selfcal_concat_ms(obsid,track_off_moon_string,options):
    #tagname=options.tagname
    epoch_ID=options.epoch_ID
+   n_sources = options.n_sources
    
    machine=options.machine
    if machine=='namorrodor':
@@ -51,11 +52,11 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
 
    if (options.sourcelist and not options.model):
       #make an ao model 
-      ao_model_name_cwd=options.sourcelist.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt" 
+      ao_model_name_cwd=options.sourcelist.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal%s.txt" % n_sources
       ao_model_name="%s%s" % (data_dir,ao_model_name_cwd)
       if (not os.path.exists(data_dir+ao_model_name_cwd)):
          print "making %s " % ao_model_name
-         cmd='srclist_by_beam.py -x --aocalibrate -m %s -n 1000 -s %s ' % (metafits_file_name,options.sourcelist)
+         cmd='srclist_by_beam.py -x --aocalibrate -m %s -n %s -s %s ' % (metafits_file_name,n_sources,options.sourcelist)
          os.system(cmd)
          cmd="mv %s %s" % (ao_model_name_cwd,data_dir)
          os.system(cmd)
@@ -75,11 +76,11 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    if (options.ionpeel):
       solutions_base_name=solutions_base_name+'_ionpeel'
       ionpeel_sourcelist=options.ionpeel
-      clustered_model_name=data_dir+"clustered_10dirs_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
+      clustered_model_name=data_dir+"clustered_10dirs_" + options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal%s.txt" % n_sources
     
       print "making %s " % clustered_model_name
-      #cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt",clustered_model_name)
-      ao_model_name_cwd=options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal1000.txt"
+      #cmd='cluster %s %s 10 ' % (options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal%s.txt" % n_sources,clustered_model_name)
+      ao_model_name_cwd=options.ionpeel.split("/")[-1].split(".")[0] + "_" + obsid + "_aocal%s.txt" % n_sources
       ao_model_name="%s%s" % (data_dir,ao_model_name_cwd)
       #cluster in just 5 directions to be consistent with what RTS is doing
       cmd='cluster %s %s 5 ' % (ao_model_name,clustered_model_name)
@@ -396,7 +397,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    
       else:
          #run andres calibrate , changed minuv to 30 to be more in line with rts processing (I think)
-         cmd='calibrate -t 1 -minuv 100  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         cmd='calibrate -minuv 100  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
@@ -431,6 +432,7 @@ parser.add_option('--sister_obsid',type='string', dest='sister_obsid',default=''
 parser.add_option('--manta_ray',action='store_true',dest='manta_ray',default=True,help='set if manta_ray used for downloading (need to unzip and chgcentre) [default=%default]') 
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='List of antennas (space separated) to flag after cottering (andre indexing as for rfigui etc)  e.g. --flag_ants="56 60" [default=%default]')
 parser.add_option('--do_flagging',action='store_true',dest='do_flagging',default=False,help='flag tiles and combine flags for on/off moon - now done in moon_process_setup.py by default [default=%default]') 
+parser.add_option('--n_sources',type='string', dest='n_sources',default='500',help='number of sources to use in calibration model e.g. --n_sources="1000" [default=%default]')
 
 
 (options, args) = parser.parse_args()

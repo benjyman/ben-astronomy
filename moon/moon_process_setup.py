@@ -498,10 +498,10 @@ def setup_moon_process(options):
 
                   cmd = "rm -rf %s" % (new_on_moon_ms_name)
                   print cmd 
-                  os.system(cmd)
+                  #os.system(cmd)
                   cmd = "rm -rf %s" % (new_off_moon_ms_name)
                   print cmd 
-                  os.system(cmd)                  
+                  #os.system(cmd)                  
                   cmd = "mv %s %s" % (old_on_moon_ms_name,new_on_moon_ms_name)
                   print cmd 
                   os.system(cmd)
@@ -535,9 +535,16 @@ def setup_moon_process(options):
                   on_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_on_moon_data_dir,on_moon_obsid)
                   off_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_off_moon_data_dir,off_moon_obsid)
                   
+                  if options.flag_ants:
+                        #Flag additional antennas (should only have to flag one ms as flags are combined in next step
+                        cmd="flagantennae %s %s" % (on_moon_ms_name,options.flag_ants)
+                        print cmd
+                        os.system(cmd)
+                        
                   if options.do_flagging:
                      #on moon
                      try:
+                        print on_moon_metafits_file_name
                         HDU_list = fits.open(on_moon_metafits_file_name)
                      except IOError, err:
                         'Cannot open metadata file %s\n' % on_moon_metafits_file_name
@@ -604,12 +611,6 @@ def setup_moon_process(options):
                      cmd="flagantennae %s %s" % (off_moon_ms_name,flag_ant_string)
                      print cmd
                      os.system(cmd)
-               
-                     if options.flag_ants:
-                        #Flag additional antennas (should only have to flag one ms as flags are combined in next step
-                        cmd="flagantennae %s %s" % (on_moon_ms_name,options.flag_ants)
-                        print cmd
-                        os.system(cmd)
                      
                      
                      with table(on_moon_ms_name,readonly=False) as on_moon_table:
@@ -628,26 +629,51 @@ def setup_moon_process(options):
                                      on_moon_table.putcell('FLAG',row_index,on_moon_table_flag[row_index])
                                      off_moon_table.putcell('FLAG',row_index,off_moon_table_flag[row_index])
                      
-
-                  #collect new statistics
-                  cmd = "aoquality collect %s" % (on_moon_ms_name)
-                  print cmd
-                  os.system(cmd)
                   
-                  cmd = "aoquality collect %s" % (off_moon_ms_name)
-                  print cmd
-                  os.system(cmd)
+                  #collect new statistics
+                  if options.post_cal_quality_check:
+                     cmd = "aoquality collect -d CORRECTED_DATA %s" % (on_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+                  
+                     cmd = "aoquality collect -d CORRECTED_DATA %s" % (off_moon_ms_name)
+                     print cmd
+                     os.system(cmd)                     
+                  
+                     #plot cal solutions:
+                     
+                  
+                  else:
+                     cmd = "aoquality collect %s" % (on_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+                  
+                     cmd = "aoquality collect %s" % (off_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
                   
                   
                   #save a png of the aoqplot output for StandardDeviation
-                  cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_paired_with_%s StandardDeviation %s" % (on_moon_obsid,off_moon_obsid,on_moon_ms_name)
-                  print cmd
-                  os.system(cmd)
                   
-                  cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_paired_with_%s StandardDeviation %s" % (off_moon_obsid,on_moon_obsid,off_moon_ms_name)
-                  print cmd
-                  os.system(cmd)
-            
+                  
+                  if options.post_cal_quality_check:
+                     cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s_corrected_data StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+                  
+                     cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s_corrected_data StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+
+                  else:
+                     cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+                  
+                     cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
+                                 
                   
             #can only do this here if you have already made the obslists - redundant now
             #as paired obslist written in make_track_off_moon_file
@@ -671,18 +697,35 @@ def setup_moon_process(options):
 
    #combine qa into two pdfs (on and off moon)  here
    if (options.ms_quality_check and machine=="namorrodor"):
-      figname = "aoqplot_std_dev_baselines_combined_on_moon_%s.pdf" % epoch_ID
-      pdf = FPDF('P', 'mm', 'A4')
-      cmd = '/usr/bin/montage *on_moon*baselines.pdf -mode concatenate -tile 3x5 %s' % (figname)
-      print cmd
-      os.system(cmd)
+      if options.post_cal_quality_check:
+         figname = "aoqplot_std_dev_baselines_combined_on_moon_%s_corrected_data.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *on_moon_%s_corrected_data*baselines.pdf -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
 
-      figname = "aoqplot_std_dev_baselines_combined_off_moon_%s.pdf" % epoch_ID
-      pdf = FPDF('P', 'mm', 'A4')
-      cmd = '/usr/bin/montage *off_moon*baselines.pdf -mode concatenate -tile 3x5 %s' % (figname)
-      print cmd
-      os.system(cmd)
-      
+         figname = "aoqplot_std_dev_baselines_combined_off_moon_%s_corrected_data.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *off_moon_%s_corrected_data*baselines.pdf -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+
+         #also combine cal solution plots
+         
+  
+      else:
+         figname = "aoqplot_std_dev_baselines_combined_on_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *on_moon_%s*baselines.pdf -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+
+         figname = "aoqplot_std_dev_baselines_combined_off_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *off_moon_%s*baselines.pdf -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+               
    if (machine=='magnus' or machine=='galaxy') and options.ms_download:
       #launch gator
       cmd='nohup gator_rts_daemon.rb -d %s --cotter --ms_download &' % (database_name)
@@ -715,6 +758,7 @@ parser.add_option('--copy_images_from_magnus',type='string', dest='copy_images_f
 parser.add_option('--purge_ms',action='store_true',dest='purge_ms',default=False,help='Set to delete all ms and zip files to start again [default=%default]')
 parser.add_option('--rename_ms',action='store_true',dest='rename_ms',default=False,help='Set to rename ms for moon stuff [default=%default]')
 parser.add_option('--ms_quality_check',action='store_true',dest='ms_quality_check',default=False,help='Set to run aoquality and aoqplot on each ms and make a single pdf (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
+parser.add_option('--post_cal_quality_check',action='store_true',dest='post_cal_quality_check',default=False,help='Must use with ms_qualtiy_check. Run checks on calibrated data and plot solutions and make a single pdf (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
 parser.add_option('--do_flagging',action='store_true',dest='do_flagging',default=False,help='Set to do flagging ie flag ants from metafits and combine on/off moon flags (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='flag these antennas (zero-indexed andre style numbering), space separated, used with ms_quality_check only e.g. --flag_ants="56 60" [default=%default]')
 
