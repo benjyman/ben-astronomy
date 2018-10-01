@@ -140,7 +140,7 @@ def generate_namorrodor(options):
        sbatch_file.write('#SBATCH -o image-%A.out\n' )
        sbatch_file.write('##SBATCH --ntasks=1\n')
        sbatch_file.write('#SBATCH --ntasks-per-node=1\n')
-       sbatch_file.write('#SBATCH --time=12:00:00\n')
+       sbatch_file.write('#SBATCH --time=6:00:00\n')
        sbatch_file.write('#SBATCH -J image_%s\n' % (options.epoch_ID))
        #sbatch_file.write('#SBATCH --array=0-%s\n' % (n_obs-1))
        #sbatch_file.write('#SBATCH --clusters=magnus\n')
