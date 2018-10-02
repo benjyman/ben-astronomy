@@ -326,13 +326,18 @@ def image_concat_ms(obsid,track_off_moon_string,options):
             print "wrote  image %s" %  psf_zoom_fitsname
             
             #now for all pol images   
-            for pol in ['XX','XY','XYi','YY']:
+            #for pol in ['XX','XY','XYi','YY']:
+            for pol in ['I']:
                if (i=='MFS'):
-                  moon_fitsname="%s-%s-%s-image.fits" % (concat_image_base,i,pol)
-                  moon_zoom_fitsname="%s-%s-%s-image.fits" % (concat_image_base_cropped,i,pol)
+                  #moon_fitsname="%s-%s-%s-image.fits" % (concat_image_base,i,pol)
+                  #moon_zoom_fitsname="%s-%s-%s-image.fits" % (concat_image_base_cropped,i,pol)
+                  moon_fitsname="%s-%s-image.fits" % (concat_image_base,i)
+                  moon_zoom_fitsname="%s-%s-image.fits" % (concat_image_base_cropped,i)
                else:
-                  moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
-                  moon_zoom_fitsname="%s-%04d-%s-image.fits" % (concat_image_base_cropped,i,pol)
+                  #moon_fitsname="%s-%04d-%s-image.fits" % (concat_image_base,i,pol)
+                  #moon_zoom_fitsname="%s-%04d-%s-image.fits" % (concat_image_base_cropped,i,pol)
+                  moon_fitsname="%s-%04d-image.fits" % (concat_image_base,i)
+                  moon_zoom_fitsname="%s-%04d-image.fits" % (concat_image_base_cropped,i)
                if os.path.isfile(moon_fitsname) and os.access(moon_fitsname, os.R_OK):
                   moon_hdulist = pyfits.open(moon_fitsname)
                else:
