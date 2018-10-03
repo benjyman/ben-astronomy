@@ -497,29 +497,29 @@ def setup_moon_process(options):
                   new_off_moon_ms_name = '%s%s/%s_%s_track_off_moon_paired_%s.ms' % (mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
 
                   cmd = "rm -rf %s" % (new_on_moon_ms_name)
-                  #print cmd 
-                  #os.system(cmd)
+                  print cmd 
+                  os.system(cmd)
                   cmd = "rm -rf %s" % (new_off_moon_ms_name)
-                  #print cmd 
-                  #os.system(cmd)                  
+                  print cmd 
+                  os.system(cmd)                  
                   cmd = "mv %s %s" % (old_on_moon_ms_name,new_on_moon_ms_name)
-                  #print cmd 
-                  #os.system(cmd)
+                  print cmd 
+                  os.system(cmd)
                   cmd = "mv %s %s" % (old_off_moon_ms_name,new_off_moon_ms_name)
+                  print cmd 
+                  os.system(cmd)
+                  #cmd = "ls %s" % (old_on_moon_ms_name)
                   #print cmd 
                   #os.system(cmd)
-                  cmd = "ls %s" % (old_on_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)
-                  cmd = "ls %s" % (old_off_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)
-                  cmd = "ls %s" % (new_on_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)
-                  cmd = "ls %s" % (new_off_moon_ms_name)
-                  print cmd 
-                  os.system(cmd)
+                  #cmd = "ls %s" % (old_off_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
+                  #cmd = "ls %s" % (new_on_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
+                  #cmd = "ls %s" % (new_off_moon_ms_name)
+                  #print cmd 
+                  #os.system(cmd)
 
             if (options.ms_quality_check and machine=="namorrodor"):
                #need to be sshfs'd in:sshfs galaxy:/ /md0/galaxy/ 
