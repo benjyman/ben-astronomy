@@ -548,8 +548,12 @@ def setup_moon_process(options):
                   off_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_off_moon_data_dir,off_moon_obsid)
                   
                   if options.flag_ants:
-                        #Flag additional antennas (should only have to flag one ms as flags are combined in next step
+                        #Flag additional antennas (do both as you may want to just flag ants without do_flagging)
                         cmd="flagantennae %s %s" % (on_moon_ms_name,options.flag_ants)
+                        print cmd
+                        os.system(cmd)
+                        
+                        cmd="flagantennae %s %s" % (off_moon_ms_name,options.flag_ants)
                         print cmd
                         os.system(cmd)
                         
