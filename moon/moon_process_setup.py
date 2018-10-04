@@ -534,7 +534,7 @@ def setup_moon_process(options):
                   print "bad value for on_off_moon_string"
                with open(obslist_file,'r') as f:
                   lines = f.readlines()
-               for line in lines:
+               for line_index,line in enumerate(lines):
                   on_moon_obsid = line.strip()[0:10]
                   off_moon_obsid = line.strip()[10:20]
                   on_moon_ms_name = '%s%s%s/%s_%s_trackmoon.ms' % (galaxy_mount_dir,galaxy_mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
@@ -648,13 +648,15 @@ def setup_moon_process(options):
                   
                   #collect new statistics
                   if options.post_cal_quality_check:
-                     cmd = "aoquality collect -d CORRECTED_DATA %s" % (on_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                     #only do the aoquality stuff for every third obsid (it takes a long time)
+                     if (line_index % 3 == 0):
+                        cmd = "aoquality collect -d CORRECTED_DATA %s" % (on_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                   
-                     cmd = "aoquality collect -d CORRECTED_DATA %s" % (off_moon_ms_name)
-                     print cmd
-                     os.system(cmd)                     
+                        cmd = "aoquality collect -d CORRECTED_DATA %s" % (off_moon_ms_name)
+                        print cmd
+                        os.system(cmd)                     
                   
                      #plot cal solutions:
                      on_moon_solutions_name = '%s%s%s/%s_%s_selfcal_0_concat_solutions_trackmoon.bin' % (galaxy_mount_dir,galaxy_mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
@@ -669,13 +671,14 @@ def setup_moon_process(options):
                      os.system(cmd) 
                   
                   else:
-                     cmd = "aoquality collect %s" % (on_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                     if (line_index % 3 == 0):
+                        cmd = "aoquality collect %s" % (on_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                   
-                     cmd = "aoquality collect %s" % (off_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                        cmd = "aoquality collect %s" % (off_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                   
                   
                   #save a png of the aoqplot output for StandardDeviation
@@ -683,22 +686,24 @@ def setup_moon_process(options):
                   
                   
                   if options.post_cal_quality_check:
-                     cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s_corrected_data StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                     if (line_index % 3 == 0):
+                        cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s_corrected_data StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                   
-                     cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s_corrected_data StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                        cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s_corrected_data StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
 
                   else:
-                     cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                     if (line_index % 3 == 0):
+                        cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                   
-                     cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
-                     print cmd
-                     os.system(cmd)
+                        cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
+                        print cmd
+                        os.system(cmd)
                                  
                   
             #can only do this here if you have already made the obslists - redundant now
