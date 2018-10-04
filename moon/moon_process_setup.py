@@ -657,7 +657,16 @@ def setup_moon_process(options):
                      os.system(cmd)                     
                   
                      #plot cal solutions:
+                     on_moon_solutions_name = '%s%s%s/%s_%s_selfcal_0_concat_solutions_trackmoon.bin' % (galaxy_mount_dir,galaxy_mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
+                     off_moon_solutions_name = '%s%s%s/%s_%s_selfcal_0_concat_solutions_track_off_moon_paired_%s.bin' % (galaxy_mount_dir,galaxy_mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
                      
+                     cmd = "aocal_plot.py %s" % (on_moon_solutions_name)
+                     print cmd
+                     os.system(cmd)
+                     
+                     cmd = "aocal_plot.py %s" % (off_moon_solutions_name)
+                     print cmd
+                     os.system(cmd) 
                   
                   else:
                      cmd = "aoquality collect %s" % (on_moon_ms_name)
@@ -670,6 +679,7 @@ def setup_moon_process(options):
                   
                   
                   #save a png of the aoqplot output for StandardDeviation
+                  
                   
                   
                   if options.post_cal_quality_check:
@@ -727,8 +737,30 @@ def setup_moon_process(options):
          os.system(cmd)
 
          #also combine cal solution plots
+         figname = "phase_solutions_combined_on_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *%s*trackmoon*_phase.png -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
          
-  
+         figname = "amp_solutions_combined_on_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *%s*trackmoon*_amp.png -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+
+         figname = "phase_solutions_combined_off_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *%s*track_off_moon*_phase.png -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+         
+         figname = "amp_solutions_combined_off_moon_%s.pdf" % epoch_ID
+         pdf = FPDF('P', 'mm', 'A4')
+         cmd = '/usr/bin/montage *%s*track_off_moon*_amp.png -mode concatenate -tile 3x5 %s' % (epoch_ID,figname)
+         print cmd
+         os.system(cmd)
+           
       else:
          figname = "aoqplot_std_dev_baselines_combined_on_moon_%s.pdf" % epoch_ID
          pdf = FPDF('P', 'mm', 'A4')
