@@ -51,6 +51,10 @@ def model_moon(options):
    use_model_lfsm=False
    
    base_dir='/mnt/md0/moon/'
+   
+   epoch_ID_dir = "%smagnus_setup_tests/epochs/%s/" % (base_dir,epoch_ID)
+   
+   
    #Choose one only: LFSM or GSM ( or GSM2016)
    if (sky_model_label=='gsm'):
       use_model_gsm=True
@@ -222,19 +226,19 @@ def model_moon(options):
    #big_Srfi_average_stddev_spectrum_npy_filename="big_Srfi_average_stddev_spectrum_%s.npy" % (epoch_ID)
    
    #save before averaging (then load and find std dev later)
-   big_Smoon_data_npy_filename="big_Smoon_data_%s.npy" % (epoch_ID)
-   big_Smoon_data_diffuse_on_fly_npy_filename="big_Smoon_data_diffuse_on_fly_%s.npy" % (epoch_ID)
-   big_Srfi_data_npy_filename="big_Srfi_data_%s.npy" % (epoch_ID)   
+   big_Smoon_data_npy_filename="%sbig_Smoon_data_%s.npy" % (epoch_ID_dir,epoch_ID)
+   big_Smoon_data_diffuse_on_fly_npy_filename="%sbig_Smoon_data_diffuse_on_fly_%s.npy" % (epoch_ID_dir,epoch_ID)
+   big_Srfi_data_npy_filename="%sbig_Srfi_data_%s.npy" % (epoch_ID_dir,epoch_ID)   
    
    #residuals
-   big_rms_residual_images_npy_filename="big_rms_residual_images_%s.npy" % (epoch_ID)
+   big_rms_residual_images_npy_filename="%sbig_rms_residual_images_%s.npy" % (epoch_ID_dir,epoch_ID)
    
-   big_Smoon_predicted_npy_filename="big_Smoon_predicted_%s.npy" % (epoch_ID)
-   big_Ssky_predicted_npy_filename="big_Ssky_predicted_%s.npy" % (epoch_ID)
+   big_Smoon_predicted_npy_filename="%sbig_Smoon_predicted_%s.npy" % (epoch_ID_dir,epoch_ID)
+   big_Ssky_predicted_npy_filename="%sbig_Ssky_predicted_%s.npy" % (epoch_ID_dir,epoch_ID)
    
-   evans_ratio_normalised_filename="evans_ratio_normalised_%s.npy" % epoch_ID
+   evans_ratio_normalised_filename="%sevans_ratio_normalised_%s.npy" % (epoch_ID_dir,epoch_ID)
 
-   big_RFI_vs_time_freq_npy_filename="big_RFI_vs_time_freq_%s.npy" % (epoch_ID)
+   big_RFI_vs_time_freq_npy_filename="%sbig_RFI_vs_time_freq_%s.npy" % (epoch_ID_dir,epoch_ID)
    
    #functions
    def makeGaussian(size, fwhm = 3, center=None):
@@ -779,7 +783,7 @@ def model_moon(options):
      
        on_moon_filename='%smagnus_setup_tests/epochs/%s/%s/on_moon/%s_on_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
        off_moon_filename='%smagnus_setup_tests/epochs/%s/%s/off_moon/%s_off_moon_%s.txt' % (base_dir,epoch_ID,str(centre_chan),epoch_ID,str(centre_chan))
-             
+                  
        print on_moon_filename
        print off_moon_filename
        
@@ -895,14 +899,14 @@ def model_moon(options):
                 
              
              ##output fitsnames:
-             moon_difference_fitsname="difference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-             psf_difference_fitsname="difference_%s_%s_%s_psf_%s-%s-psf.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
-             moon_zoom_fitsname="moon_zoom_%s_%s_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,str(centre_chan),chan_string,stokes)
-             off_moon_zoom_fitsname="off_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
-             rfi_modelled_fitsname="rfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-             rfi_mask_fitsname="rfi_mask_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-             moon_modelled_fitsname="moon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
-             residual_modelled_fitsname="residual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             moon_difference_fitsname="%sdifference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             psf_difference_fitsname="%sdifference_%s_%s_%s_psf_%s-%s-psf.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string)
+             moon_zoom_fitsname="%smoon_zoom_%s_%s_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,str(centre_chan),chan_string,stokes)
+             off_moon_zoom_fitsname="%soff_moon_zoom_%s_%s_paired_with_%s_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,off_moon_obsid,on_moon_obsid,str(centre_chan),chan_string,stokes)
+             rfi_modelled_fitsname="%srfi_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             rfi_mask_fitsname="%srfi_mask_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             moon_modelled_fitsname="%smoon_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
+             residual_modelled_fitsname="%sresidual_modelled_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
      
              #if (use_cropped_images): 
                 #moon_fitsname="images/%s_cotter_20150926_moon_%s_trackmoon_peeled-%s_dirty_applied-I_cropped.fits" % (on_moon_obsid,str(centre_chan),chan_string)

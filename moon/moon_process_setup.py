@@ -455,7 +455,10 @@ def setup_moon_process(options):
                obsid_filename="%s%s_%s_%s.txt" % (on_off_moon_dir,epoch_ID,on_off_moon_string,chan)
                #if on_off_moon_string=='off_moon':
                #cmd='gator_add_to_downloads_table.rb -d %s %s' % (download_database_name,obsid_filename)
-               cmd = "gator_add_to_database.rb %s -d --db %s --conversion-options='job_type=c, timeres=8, freqres=80, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true'" % (obsid_filename,download_database_name)
+               #If you want to do the conversion through ASVO - this is really slow. Took over a week to convert and download one epochID
+               #cmd = "gator_add_to_database.rb %s -d --db %s --conversion-options='job_type=c, timeres=8, freqres=80, edgewidth=80, conversion=ms, allowmissing=false, flagdcchannels=true, noantennapruning=true'" % (obsid_filename,download_database_name)
+               #go back to just downloading gpubox files
+               cmd = "gator_add_to_database.rb %s -d --db %s " % (obsid_filename,download_database_name)
                print cmd
                os.system(cmd)
               
@@ -662,11 +665,11 @@ def setup_moon_process(options):
                      on_moon_solutions_name = '%s%s%s/%s_%s_selfcal_0_concat_solutions_trackmoon.bin' % (galaxy_mount_dir,galaxy_mwa_dir,on_moon_obsid,on_moon_obsid,epoch_ID)
                      off_moon_solutions_name = '%s%s%s/%s_%s_selfcal_0_concat_solutions_track_off_moon_paired_%s.bin' % (galaxy_mount_dir,galaxy_mwa_dir,off_moon_obsid,off_moon_obsid,epoch_ID,on_moon_obsid)
                      
-                     cmd = "aocal_plot.py %s" % (on_moon_solutions_name)
+                     cmd = "aocal_plot.py --outdir=%s --title=%s %s" % (base_dir,on_moon_obsid,on_moon_solutions_name)
                      print cmd
                      os.system(cmd)
                      
-                     cmd = "aocal_plot.py %s" % (off_moon_solutions_name)
+                     cmd = "aocal_plot.py --outdir=%s --title=%s %s" % (base_dir,off_moon_obsid,off_moon_solutions_name)
                      print cmd
                      os.system(cmd) 
                   
