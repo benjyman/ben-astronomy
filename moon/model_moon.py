@@ -892,11 +892,14 @@ def model_moon(options):
                 on_moon_psf_fitsname="%simages/%s_%s_trackmoon-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
                 off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s-%s-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
              else:
-                moon_fitsname="%simages/%s_%s_trackmoon_cropped-%s-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
-                off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+                #moon_fitsname="%simages/%s_%s_trackmoon_cropped-%s-%s.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string,stokes)
+                #off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-%s.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string,stokes)
+                #on_moon_psf_fitsname="%simages/%s_%s_trackmoon_cropped-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
+                #off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
+                moon_fitsname="%simages/%s_%s_trackmoon_cropped-%s-image-pb.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
+                off_moon_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-image-pb.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
                 on_moon_psf_fitsname="%simages/%s_%s_trackmoon_cropped-%s-psf.fits" % (base_dir,on_moon_obsid,epoch_ID,chan_string)
-                off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string)
-                
+                off_moon_psf_fitsname="%simages/%s_%s_track_off_moon_paired_%s_cropped-%s-psf.fits" % (base_dir,off_moon_obsid,epoch_ID,on_moon_obsid,chan_string) 
              
              ##output fitsnames:
              moon_difference_fitsname="%sdifference_%s_%s_%s_on_off_moon_%s-%s-%s.fits" % (epoch_ID_dir,epoch_ID,on_moon_obsid,off_moon_obsid,str(centre_chan),chan_string,stokes)
