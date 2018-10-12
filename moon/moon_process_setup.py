@@ -11,6 +11,7 @@ import numpy as np
 import subprocess
 
 sidereal_day_sec = 86164
+sidereal_day_hours = sidereal_day_sec/60./60.
 sourcelist='srclist_pumav3_EoR0aegean_EoR1pietro+ForA.txt'
 havebeam_string = ''
 namorrodor_image_dir = "/md0/moon/images/"
@@ -325,7 +326,9 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
       LST_remainder = LST_difference % sidereal_day_sec
       LST_difference_in_sidereal_days=abs(LST_remainder/sidereal_day_sec)
+      LST_difference_in_hours=LST_difference_in_sidereal_days*sidereal_day_hours
       print "LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
+      print "LST difference is: %s in hours" % LST_difference_in_hours
       
       metafits_filename='%s%s_metafits_ppds.fits' % (on_moon_directory,on_moon_obsid)
       off_moon_metafits_filename='%s%s_metafits_ppds.fits' % (off_moon_directory,off_moon_obsid)
