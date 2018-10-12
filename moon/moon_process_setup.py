@@ -18,6 +18,25 @@ namorrodor_image_dir = "/md0/moon/images/"
 #get filepaths using gator_read_table_only_peeled.py (need to fix this script for peeled images)
 #or just rsync -a -v bmckinley@magnus.pawsey.org.au:/astro/mwaeor/MWA/data/11273*/2018-08-*/*cropped*I.fits .
 
+def check_metafits_tile_flags(on_moon_metafits_file_name,off_moon_metafits_file_name):
+      #on moon
+   try:
+      print on_moon_metafits_file_name
+      HDU_list = fits.open(on_moon_metafits_file_name)
+   except IOError, err:
+      'Cannot open metadata file %s\n' % on_moon_metafits_file_name
+   data = HDU_list[1].data
+   tile_flags = data['FLAG']
+   tile_flagging_indices = data['ANTENNA']
+   tile_name = data['TILENAME']
+   #print tile_flags
+   
+   flag_antenna_indices_list = []
+   flag_antenna_tilenames_list = []
+   for index,tile_flag in enumerate(tile_flags):
+      if (tile_flag==1):
+         print tile_name[index]
+
 def copy_images_from_magnus(filename):
    for filepath in open(filename):
       cmd = "rsync -a bmckinley@magnus.pawsey.org.au:%s*I.fits %s" % (filepath.rstrip(),namorrodor_image_dir)
@@ -295,6 +314,7 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
       on_moon_data_dir = "%s%s/" % (mwa_dir,on_moon_obsid)
+      off_moon_data_dir = "%s%s/" % (mwa_dir,off_moon_obsid)
       off_moon_obsid=off_moon_obsid_list[obsid_index]
 
       #paired obs list
@@ -308,8 +328,12 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       print "LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
       
       metafits_filename='%s%s_metafits_ppds.fits' % (on_moon_directory,on_moon_obsid)
+      off_moon_metafits_filename='%s%s_metafits_ppds.fits' % (off_moon_directory,off_moon_obsid)
       #download the metafits file
       cmd='wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s' % (metafits_filename,on_moon_obsid)
+      print cmd
+      os.system(cmd)
+      cmd='wget -O %s http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=%s' % (off_moon_metafits_filename,off_moon_obsid)
       print cmd
       os.system(cmd)
       #get the date and time of the observation from the metafits file
@@ -673,15 +697,16 @@ def setup_moon_process(options):
                      print cmd
                      os.system(cmd) 
                   
-                  else:
-                     if (line_index % 3 == 0):
-                        cmd = "aoquality collect %s" % (on_moon_ms_name)
-                        print cmd
-                        os.system(cmd)
-                  
-                        cmd = "aoquality collect %s" % (off_moon_ms_name)
-                        print cmd
-                        os.system(cmd)
+                  #don't need to collect stats as the tables are already written (unaveraged))
+                  #else:
+                  #   if (line_index % 3 == 0):
+                  #      cmd = "aoquality collect %s" % (on_moon_ms_name)
+                  #      print cmd
+                  #      os.system(cmd)
+                  # 
+                  #      cmd = "aoquality collect %s" % (off_moon_ms_name)
+                  #      print cmd
+                  #      os.system(cmd)
                   
                   
                   #save a png of the aoqplot output for StandardDeviation
@@ -699,14 +724,14 @@ def setup_moon_process(options):
                         os.system(cmd)
 
                   else:
-                     if (line_index % 3 == 0):
-                        cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
-                        print cmd
-                        os.system(cmd)
+                     #if (line_index % 3 == 0):
+                     cmd = "aoqplot -save aoqplot_stddev_%s_on_moon_%s StandardDeviation %s" % (on_moon_obsid,epoch_ID,on_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
                   
-                        cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
-                        print cmd
-                        os.system(cmd)
+                     cmd = "aoqplot -save aoqplot_stddev_%s_off_moon_%s StandardDeviation %s" % (off_moon_obsid,epoch_ID,off_moon_ms_name)
+                     print cmd
+                     os.system(cmd)
                                  
                   
             #can only do this here if you have already made the obslists - redundant now

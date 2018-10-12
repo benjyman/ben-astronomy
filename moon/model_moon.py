@@ -768,7 +768,7 @@ def model_moon(options):
        #if epoch_ID=="2015B_05":
        if ('2015' in epoch_ID):
           #rms_threshold=1.0
-          rms_threshold=1.0
+          rms_threshold=2.0
        elif epoch_ID=="2018A_01":
           rms_threshold=10.0
        
