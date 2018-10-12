@@ -354,8 +354,13 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       flag_antenna_tilenames_list = []
       for index,tile_flag in enumerate(tile_flags):
          if (tile_flag==1):
-            flag_antenna_indices_list.append(tile_flagging_indices[index])
-            flag_antenna_tilenames_list.append(tile_name[index])
+            if index==0:
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+            elif (tile_name[index]!=tile_name[index-1]):
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+
             
       print "On Moon tile flags from metafits, total %s:" % str(len(flag_antenna_tilenames_list))
       print flag_antenna_tilenames_list
@@ -376,8 +381,12 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       flag_antenna_tilenames_list = []
       for index,tile_flag in enumerate(tile_flags):
          if (tile_flag==1):
-            flag_antenna_indices_list.append(tile_flagging_indices[index])
-            flag_antenna_tilenames_list.append(tile_name[index])
+            if index==0:
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
+            elif (tile_name[index]!=tile_name[index-1]):
+               flag_antenna_indices_list.append(tile_flagging_indices[index])
+               flag_antenna_tilenames_list.append(tile_name[index])
             
       print "Off Moon tile flags from metafits, total %s:" % str(len(flag_antenna_tilenames_list))
       print flag_antenna_tilenames_list
