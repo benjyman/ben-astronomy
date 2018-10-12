@@ -57,6 +57,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
       if (not os.path.exists(data_dir+ao_model_name_cwd)):
          print "making %s " % ao_model_name
          cmd='srclist_by_beam.py -x --aocalibrate -m %s -n %s -s %s ' % (metafits_file_name,n_sources,options.sourcelist)
+         print cmd
          os.system(cmd)
          cmd="mv %s %s" % (ao_model_name_cwd,data_dir)
          os.system(cmd)
