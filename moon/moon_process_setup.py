@@ -314,9 +314,9 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
       on_moon_data_dir = "%s%s/" % (mwa_dir,on_moon_obsid)
-      off_moon_data_dir = "%s%s/" % (mwa_dir,off_moon_obsid)
       off_moon_obsid=off_moon_obsid_list[obsid_index]
-
+      off_moon_data_dir = "%s%s/" % (mwa_dir,off_moon_obsid)
+      
       #paired obs list
       paired_obs_string="%s%s" % (on_moon_obsid,off_moon_obsid)
       paired_obs_list.append(paired_obs_string) 
