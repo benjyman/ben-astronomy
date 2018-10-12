@@ -340,7 +340,7 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       #copy the metafits files to the data dir if galaxy or magnus
       if (machine == 'galaxy' or machine == 'magnus'):
          on_moon_metafits_data_dir_filename = '%s%s_metafits_ppds.fits' % (on_moon_data_dir,on_moon_obsid)
-         off_moon__metafits_data_dir_filename = '%s%s_metafits_ppds.fits' % (off_moon_data_dir,off_moon_obsid)
+         off_moon_metafits_data_dir_filename = '%s%s_metafits_ppds.fits' % (off_moon_data_dir,off_moon_obsid)
          cmd = "cp %s %s " % (metafits_filename,on_moon_metafits_data_dir_filename)
          print cmd 
          os.system(cmd)
