@@ -398,7 +398,7 @@ def selfcal_concat_ms(obsid,track_off_moon_string,options):
    
       else:
          #run andres calibrate , changed minuv to 30 to be more in line with rts processing (I think)
-         cmd='calibrate -minuv 100  %s %s %s ' % (model_string,concat_vis_name,solutions_name)
+         cmd='calibrate -minuv 100  -ch 4 %s %s %s ' % (model_string,concat_vis_name,solutions_name)
          print cmd
          os.system(cmd)
 
