@@ -466,6 +466,8 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       f.write('\n'.join(paired_obs_list))
    print "wrote paired obsid  file %s" % (paired_obs_list_filename)
 
+   #also overwrite the on and off moon files here
+   
 
 #Main function:
 def setup_moon_process(options):
@@ -644,6 +646,23 @@ def setup_moon_process(options):
                   on_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_on_moon_data_dir,on_moon_obsid)
                   off_moon_metafits_file_name = "%s%s%s_metafits_ppds.fits" % (galaxy_mount_dir,galaxy_off_moon_data_dir,off_moon_obsid)
                   
+                  if options.run_cotter:
+                     if epoch_ID[0:4]=='2015':
+                        time_res=8.0
+                        freq_res=80.0
+                     elif epoch_ID[0:4]=='2018':
+                        time_res=4.0
+                        freq_res=40.0
+                     on_moon_flagfiles_string= " %s%s_%s.mwaf " % (galaxy_on_moon_data_dir,on_moon_obsid,"%%")
+                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (on_moon_flagfiles_string,on_moon_ms_name,on_moon_metafits_file_name,time_res,freq_res,galaxy_on_moon_data_dir)
+                     print cmd
+                     os.system(cmd)
+
+                     off_moon_flagfiles_string= " %s%s_%s.mwaf " % (galaxy_off_moon_data_dir,off_moon_obsid,"%%")
+                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (off_moon_flagfiles_string,off_moon_ms_name,off_moon_metafits_file_name,time_res,freq_res,galaxy_off_moon_data_dir)
+                     print cmd
+                     os.system(cmd)
+                                             
                   if options.flag_ants:
                         #Flag additional antennas (do both as you may want to just flag ants without do_flagging)
                         cmd="flagantennae %s %s" % (on_moon_ms_name,options.flag_ants)
@@ -912,6 +931,7 @@ parser.add_option('--ms_quality_check',action='store_true',dest='ms_quality_chec
 parser.add_option('--post_cal_quality_check',action='store_true',dest='post_cal_quality_check',default=False,help='Must use with ms_qualtiy_check. Run checks on calibrated data and plot solutions and make a single pdf (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
 parser.add_option('--do_flagging',action='store_true',dest='do_flagging',default=False,help='Set to do flagging ie flag ants from metafits and combine on/off moon flags (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
 parser.add_option('--flag_ants',type='string', dest='flag_ants',default='',help='flag these antennas (zero-indexed andre style numbering), space separated, used with ms_quality_check only e.g. --flag_ants="56 60" [default=%default]')
+parser.add_option('--run_cotter',action='store_true',dest='run_cotter',default=False,help='Convert data to ms format with cotter via sshfs (use with --ms_quality_check)  (need to be sshfs in:sshfs galaxy:/ /md0/galaxy/) [default=%default]')
 
 
 
