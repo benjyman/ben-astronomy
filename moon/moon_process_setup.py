@@ -301,6 +301,8 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    off_moon_obsid_filename_no_path=off_moon_obsid_filename.split(off_moon_directory)[1]
    on_moon_obsid_list=[]
    off_moon_obsid_list=[]
+   on_moon_obsid_list_initial=[]
+   off_moon_obsid_list_initial=[]
    paired_obs_list=[]
    track_off_moon_string_list=[]
    track_off_moon_filename='%strack_off_moon_%s' % (off_moon_directory,off_moon_obsid_filename_no_path)
@@ -308,10 +310,31 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
    paired_obs_list_filename="%s%s_on_moon_paired_%s.txt" % (on_moon_directory,epoch_ID,chan)
 
    for line in open(on_moon_obsid_filename):
-      on_moon_obsid_list.append(line.strip()) 
+      on_moon_obsid_list_initial.append(line.strip()) 
    for line in open(off_moon_obsid_filename):
-      off_moon_obsid_list.append(line.strip()) 
+      off_moon_obsid_list_initial.append(line.strip()) 
    n_obs = sum(1 for line in open(on_moon_obsid_filename))
+   
+
+   
+   #first go through both lists of obs and see if they match in LST, get them in the right order
+   for on_moon_obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list_initial): 
+      for off_moon_obsid_index,off_moon_obsid in enumerate(off_moon_obsid_list_initial): 
+         print on_moon_obsid_index
+         print off_moon_obsid_index
+         #Check LSTs
+         LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
+         LST_remainder = LST_difference % sidereal_day_sec
+         LST_difference_in_sidereal_days=abs(LST_remainder/sidereal_day_sec)
+         LST_difference_in_hours=LST_difference_in_sidereal_days*sidereal_day_hours
+         print "initial LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
+         print "initial LST difference is: %s in hours" % LST_difference_in_hours
+         if abs(LST_difference_in_hours > 0.1) or abs(LST_difference_in_hours-24. > 0.1):
+            print "observations not LST matched"
+            continue
+         else:
+            on_moon_obsid_list.append(on_moon_obsid)
+            off_moon_obsid_list.append(off_moon_obsid)
    
    for obsid_index,on_moon_obsid in enumerate(on_moon_obsid_list): 
       on_moon_data_dir = "%s%s/" % (mwa_dir,on_moon_obsid)
@@ -321,14 +344,14 @@ def make_track_off_moon_file(on_moon_obsid_filename,off_moon_obsid_filename,mach
       #paired obs list
       paired_obs_string="%s%s" % (on_moon_obsid,off_moon_obsid)
       paired_obs_list.append(paired_obs_string) 
-
-      #Check LSTs
+      
+      #Check LSTs again
       LST_difference=float(off_moon_obsid)-float(on_moon_obsid)
       LST_remainder = LST_difference % sidereal_day_sec
       LST_difference_in_sidereal_days=abs(LST_remainder/sidereal_day_sec)
       LST_difference_in_hours=LST_difference_in_sidereal_days*sidereal_day_hours
-      print "LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
-      print "LST difference is: %s in hours" % LST_difference_in_hours
+      print "final LST difference is: %s in sidereal_days" % LST_difference_in_sidereal_days
+      print "final LST difference is: %s in hours" % LST_difference_in_hours
       
       metafits_filename='%s%s_metafits_ppds.fits' % (on_moon_directory,on_moon_obsid)
       off_moon_metafits_filename='%s%s_metafits_ppds.fits' % (off_moon_directory,off_moon_obsid)
@@ -653,13 +676,13 @@ def setup_moon_process(options):
                      elif epoch_ID[0:4]=='2018':
                         time_res=4.0
                         freq_res=40.0
-                     on_moon_flagfiles_string= " %s%s_%s.mwaf " % (galaxy_on_moon_data_dir,on_moon_obsid,"%%")
-                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (on_moon_flagfiles_string,on_moon_ms_name,on_moon_metafits_file_name,time_res,freq_res,galaxy_on_moon_data_dir)
+                     on_moon_flagfiles_string= " %s%s%s_%s.mwaf " % (galaxy_mount_dir,galaxy_on_moon_data_dir,on_moon_obsid,"%%")
+                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s%s*gpubox*.fits' % (on_moon_flagfiles_string,on_moon_ms_name,on_moon_metafits_file_name,time_res,freq_res,galaxy_mount_dir,galaxy_on_moon_data_dir)
                      print cmd
                      os.system(cmd)
 
-                     off_moon_flagfiles_string= " %s%s_%s.mwaf " % (galaxy_off_moon_data_dir,off_moon_obsid,"%%")
-                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s*gpubox*.fits' % (off_moon_flagfiles_string,off_moon_ms_name,off_moon_metafits_file_name,time_res,freq_res,galaxy_off_moon_data_dir)
+                     off_moon_flagfiles_string= " %s%s%s_%s.mwaf " % (galaxy_mount_dir,galaxy_off_moon_data_dir,off_moon_obsid,"%%")
+                     cmd = 'cotter4 -flagfiles %s -norfi -noantennapruning -o %s -m %s -timeres %s -freqres %s %s%s*gpubox*.fits' % (off_moon_flagfiles_string,off_moon_ms_name,off_moon_metafits_file_name,time_res,freq_res,galaxy_mount_dir,galaxy_off_moon_data_dir)
                      print cmd
                      os.system(cmd)
                                              
