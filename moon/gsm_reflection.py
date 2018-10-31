@@ -17,7 +17,7 @@ from pygsm import GSMObserver2016
 from datetime import datetime
 
 #set if data is already saved - just need to plot
-plot_only = True
+plot_only = False
 
 
 
@@ -39,8 +39,8 @@ h2r = np.pi/12.0
 #number_coarse_chans=int(5*24+4)
 #big_chan_array=np.arange(number_coarse_chans)+57
 #big_freq_array=big_chan_array*1.28
-#freq_array=np.arange(70,235,5)
-freq_array=[150]
+freq_array=np.arange(50,235,5)
+#freq_array=[150]
 #freq_array_filename="freq_array_%s.npy" % date_time_string
 #np.save(freq_array_filename,freq_array)
 
