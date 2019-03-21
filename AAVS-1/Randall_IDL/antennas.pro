@@ -1,6 +1,4 @@
-################################
-antennas.pro (IDL) from Randall
-################################
+
 ; code for calculating the array antenna response for a square array
 ; of ideal (isotropic) antennas. Randall Wayth, May 2006 +
 
