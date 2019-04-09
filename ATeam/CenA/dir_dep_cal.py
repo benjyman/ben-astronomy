@@ -23,7 +23,7 @@ def create_circular_mask(h, w, centre=None, radius=None):
 
     Y, X = np.ogrid[:h, :w]
     dist_from_centre = np.sqrt((X - centre[0])**2 + (Y - centre[1])**2)
-    mask = dist_from_centre >= radius
+    mask = dist_from_centre <= radius
     return mask*1.
 
 
@@ -41,6 +41,9 @@ for obsid in obsids_2015_2018:
    self_cal_02_sols_name = "%s_%s_selfcal_02.bin" % (obsid,coarse_chan)
    hi_res_image_for_self_cal_03_name = "%s_%s_selfcal_03" % (obsid,coarse_chan)
    self_cal_03_sols_name = "%s_%s_selfcal_03.bin" % (obsid,coarse_chan)
+   hi_res_image_for_self_cal_04_name = "%s_%s_selfcal_04" % (obsid,coarse_chan)
+   self_cal_04_sols_name = "%s_%s_selfcal_04.bin" % (obsid,coarse_chan)
+   normal_res_image_subtr_core_name = "%s_%s_subtr_core" % (obsid,coarse_chan)
    
    hdulist = fits.open(fits_image_filename)
    header = hdulist[0].header
@@ -88,80 +91,131 @@ for obsid in obsids_2015_2018:
       
    #uncorrect image with beam
    cmd = "pbcorrect -uncorrect %s model.fits %s %s" % (uncorrected_image_name,beam_name,pbuncorrect_input_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
  
    #3  make a copy of the ms's
    cmd = "rm -rf %s" % (ms_copy_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
    
    cmd = "rm -rf %s" % (subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
    
    cmd = "cp -r %s %s" % (orig_ms_name,ms_copy_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
    
    cmd = "cp -r %s %s" % (orig_ms_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
    
-   #4. make a uvmodel with the core subtractedi (wsclean -predict)
+   #4. make a uvmodel with only the core (wsclean -predict)
    cmd = "wsclean -predict -name %s -size %s %s -scale %.4f -pol xx,xy,yx,yy %s " % (uncorrected_image_name,int(imsize),int(imsize),abs(float(pixel_scale_deg)),subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
  
    
-   #5. subtract the core-less modell from the visibilities (use subtrmodel -usemodelcol)
+   #5. subtract the core model from the visibilities (use subtrmodel -usemodelcol)
    cmd = "subtrmodel -usemodelcol -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
-
-   cmd = "subtrmodel -usemodelcol -datacolumn DATA %s %s " % (subtr_ms_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
 
    
-   #5a image subtracted model at smaller imsize and higher res (more w terms?) 
-   
-   cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (hi_res_image_for_self_cal_01_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #5a image subtracted model at smaller imsize and higher res (more w terms?) shallow clean 
+   ###Dont do this anymore###############
+   #cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 8 -auto-mask 10 -multiscale -niter 1000000 -mgain 0.85 -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol xx,xy,yx,yy -join-polarizations -channels-out 12 -join-channels  %s" % (hi_res_image_for_self_cal_01_name,subtr_ms_name)
+   #print cmd
+   #os.system(cmd)
    
    #It worked!!
    
    
    #6. Self-cal on the core-only ms
-   cmd = "calibrate -minuv 60 %s %s " % (subtr_ms_name,self_cal_01_sols_name)
-   print cmd
-   os.system(cmd)
+   #cmd = "calibrate -minuv 60 -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_01_sols_name)
+   #print cmd
+   #os.system(cmd)
    
-   cmd = "applysolutions %s %s " % (subtr_ms_name,self_cal_01_sols_name)
-   print cmd
-   os.system(cmd)
+   #cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_01_sols_name)
+   #print cmd
+   #os.system(cmd)
    
-   cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (hi_res_image_for_self_cal_02_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 4 -auto-mask 6 -multiscale -niter 1000000 -mgain 0.85 -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol xx,xy,yx,yy -join-polarizations -channels-out 12 -join-channels  %s" % (hi_res_image_for_self_cal_02_name,subtr_ms_name)
+   #print cmd
+   #os.system(cmd)
    
-   ##selcal again (up to here 10:22am)
-   cmd = "calibrate -minuv 60 %s %s " % (subtr_ms_name,self_cal_02_sols_name)
-   print cmd
-   os.system(cmd)
+   #again
+   #cmd = "calibrate -minuv 60 -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_02_sols_name)
+   #print cmd
+   #os.system(cmd)
    
-   cmd = "applysolutions  %s %s " % (subtr_ms_name,self_cal_02_sols_name)
-   print cmd
-   os.system(cmd)
+   #cmd = "applysolutions  -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_02_sols_name)
+   #print cmd
+   #os.system(cmd)
    
-   cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (hi_res_image_for_self_cal_03_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol xx,xy,yx,yy -join-polarizations -channels-out 12 -join-channels  %s" % (hi_res_image_for_self_cal_03_name,subtr_ms_name)
+   #print cmd
+   #os.system(cmd)
+   
+   #again
+   #cmd = "calibrate -minuv 60 -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_03_sols_name)
+   #print cmd
+   #os.system(cmd)
+   
+   #cmd = "applysolutions  -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_03_sols_name)
+   #print cmd
+   #os.system(cmd)
+   
+   #cmd = "wsclean -name %s -size 2048 2048 -auto-threshold 0.3 -auto-mask 1 -multiscale -niter 1000000 -mgain 0.85 -data-column CORRECTED_DATA -scale 8asec -weight uniform -small-inversion -make-psf -pol xx,xy,yx,yy -join-polarizations -channels-out 12 -join-channels  %s" % (hi_res_image_for_self_cal_04_name,subtr_ms_name)
+   #print cmd
+   #os.system(cmd)
    
    #7. Reimage the 'just core' at higher angular res
    #8. Do another self cal
-   #9. Apply these solutions to the 'unsubtracted ms'
-   #10 re-image at full image size
+   
+   #take a look at the cal sols
+   #cmd = "aocal_plot.py %s" % self_cal_01_sols_name
+   #print cmd
+   #os.system(cmd)
+   
+   #cmd = "aocal_plot.py %s" % self_cal_02_sols_name
+   #print cmd
+   #os.system(cmd)
+   
+   #cmd = "aocal_plot.py %s" % self_cal_03_sols_name
+   #print cmd
+   #os.system(cmd)
+   ######################################################################
+   
+   #9. Subtract the model from the unsubtracted ms    subtrmodel <model> <ms>
+   #nno this doesnt work
+   #cmd = "subtrmodel -usemodelcol -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,ms_copy_name)
+   #print cmd
+   #os.system(cmd)
+   
+   
+   #10 re-image at full image size 
+   cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (normal_res_image_subtr_core_name,subtr_ms_name)
+   #print cmd
+   #os.system(cmd)
 
+   #It seemed to work, try self cal, BUT you are probably going to have to peel Cen B (big source out of image to south)
+   cmd = "calibrate -minuv 60 -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_01_sols_name)
+   #print cmd
+   #os.system(cmd)
+   
+   cmd = "applysolutions  -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,self_cal_01_sols_name)
+   #print cmd
+   #os.system(cmd)
+   
+   cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (hi_res_image_for_self_cal_01_name,subtr_ms_name)
+   print cmd
+   os.system(cmd)
+   
+   
+   
+   
+   
+   
 
