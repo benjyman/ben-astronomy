@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #python code to model moon spectrum, remove rfi component ets.
 import matplotlib
 matplotlib.use('Agg')
@@ -1648,6 +1649,8 @@ def model_moon(options):
       rfi_channel=options.plot_rfi_channel
       rfi_freq_MHz=1.28*np.float(rfi_channel)
       rfi_channel_index=int(rfi_channel)-57
+      print "big_RFI_vs_time_freq_array.shape"
+      print big_RFI_vs_time_freq_array.shape
       specular_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,0]
       diffuse_rfi_chan_spectrum=big_RFI_vs_time_freq_array[rfi_channel_index,:,1] 
       #total RFI?
