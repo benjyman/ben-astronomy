@@ -43,6 +43,7 @@ eta = 1
 #pointing dec for uvgen (needs to be zenith at each lst)
 pointing_dec = "-26.7"
 
+
 #global signal params
 #From Cath feasibility study (look at edges papers?)
 #S_21 = C*nu + A*exp((nu - nu_c)**2/(2*delta_nu)**2)
@@ -51,7 +52,6 @@ A = -150./1000.
 delta_nu = 10.
 nu_c = 70.
 
-recompute_ffts = False
 
 add_diffuse_model = True
 add_global_signal = True
@@ -73,8 +73,8 @@ plot_average_beam = False
 #date_time_string = '2018_09_25_00_00_00'
 #lst_list = ['00', '03', '06', '09', '12', '15', '18', '21']
 #lst_list = ['00']
-#lst_list_array = np.arange(0,2,0.066667)
-lst_list_array = np.arange(0,1,0.066667)
+lst_list_array = np.arange(0,2,0.066667)
+#lst_list_array = np.arange(0,0.066667,0.066667)
 lst_list = lst_list_array.astype(str)
 #lst_list = ['0.120']
 #lst_list = ['12']
@@ -101,7 +101,7 @@ template_imsize = 512
 template_cell_size_asec = 180./template_imsize*60.*60.
 #amount to zero pad beam image for FFT
 #want this to be big so we have good resolution in Fourier space (needed for close to zeros spacings)
-padding_factor = 50
+padding_factor = 25
 uvdist_wavelength_cutoff = 1.0
 zero_spacing_leakage_threshold = 0.1
 
@@ -162,6 +162,11 @@ def cleanup_images_and_vis(lst,freq_MHz,pol):
    print cmd
    os.system(cmd)
          
+   beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
+   beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
+   cmd = "rm -rf %s %s " % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name)
+   print cmd
+   os.system(cmd)        
 
 #for lst in lst_list: 
 #   cleanup_images_and_vis(lst)
@@ -175,6 +180,8 @@ def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    plt.clf()
    map_title="S_21 vs freq"
    plt.plot(nu_array,S_21)
+   plt.ylabel("Tb (K)")
+   plt.xlabel("freq (MHz)")
    fig_name="s_21_vs_freq.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -206,115 +213,318 @@ def write_beam_fits_sin(cart_image,fitsname,lst=None):
    fits.update(fitsname,cart_image,header=header)
    print "wrote image %s" %  fitsname
 
-def plot_from_beam_image(beam_image_name):
-   profile_plot_length = 500
-   plot_basename = beam_image_name.split(".")[0]
-   fft_savename = plot_basename + "_beam_fft2.npy"
-   fft_savename_shift = plot_basename + "_beam_fft2_shift.npy"
-   wavelength = 300./70.
-   hdulist = fits.open(beam_image_name)
-   image_data = hdulist[0].data
-   image_header = hdulist[0].header
-   plt.clf()
-   map_title="beam"
-   plt.imshow(image_data)
-   #plt.ylabel("log abs(vis)")
-   #plt.xlabel("UU (lambda)")
-   fig_name= plot_basename + "_beam.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+def recompute_ffts(pol,freq_MHz):
+
+   if pol=='X':
+      beam_image_name = "model_%s_MHz_xx.fits" % int(freq_MHz)
+   else:
+      beam_image_name = "model_%s_MHz_yy.fits" % int(freq_MHz)
+   
+   beam_plot_basename = beam_image_name.split('.')[0]
+   #fft_savename = beam_plot_basename + "_beam_fft2.npy"
+   #fft_savename_shift = beam_plot_basename + "_beam_fft2_shift.npy"
+   
+   #fft fits name
+   fits_name_real = beam_plot_basename + "_beam_fft2_real_shift.fits"
+   fits_name_imag = beam_plot_basename + "_beam_fft2_imag_shift.fits"
+   fits_name_abs = beam_plot_basename + "_beam_fft2_abs_shift.fits"
+   
+   with fits.open(beam_image_name) as beam_hdulist:
+      #beam_hdulist = fits.open(beam_image_name)
+      beam_image_data = beam_hdulist[0].data
+      beam_image_header = beam_hdulist[0].header
+   
+   #the first row and column are -0 for some reason leading to a non-symetric beam - remove the first row and first column (then you also end up with odd numbers...)
+   
+   #beam_image_data = beam_image_data[1:,1:]
    
    #Fourier response:
-   #zero pd to get better resolution in Fourier space:
-   image_data_shape = image_data.shape
+   image_data_shape = beam_image_data.shape
+   #print image_data_shape
+   beam_image_length = image_data_shape[0]
+   image_centre = int(beam_image_length/2)
+
+   ##test_data_1d = np.array([3.,2.,1.,0.,1.,2.])
+   ##test_data_1d_fft = np.fft.fft(test_data_1d)
+   ##print test_data_1d
+   ##print test_data_1d_fft
+   
+   #pix_from_centre = 2
+   pix_from_centre = int(beam_image_length/2)
+   
+   ##image_data_test = beam_image_data[image_centre-pix_from_centre:image_centre+pix_from_centre,image_centre-pix_from_centre:image_centre+pix_from_centre]
+   ##print image_data_test
+   ##image_data_test_fft2 = np.fft.fft2(image_data_test)
+   ##print image_data_test_fft2
+   ##image_data_test_fft2_imag = np.imag(image_data_test_fft2)
+   ##print image_data_test_fft2_imag
+   ##print np.max(abs(image_data_test_fft2_imag))
+ 
+   #beam_image_data = beam_image_data[image_centre-pix_from_centre:image_centre+pix_from_centre,image_centre-pix_from_centre:image_centre+pix_from_centre]
+ 
+   #zero pad the beam image for later multiplication
+   #pad_width = int(padding_factor/2. * image_data_shape[0] - (image_data_shape[0]/2.)) 
+   #beam_image_data_padded = np.pad(beam_image_data,pad_width,'constant', constant_values=0)
+   #print "beam_image_data_padded size %s" % beam_image_data_padded.shape[0]
+   #image_centre_padded = int(beam_image_data_padded.shape[0]/2.)
+   
    padding = padding_factor*np.asarray(image_data_shape)
+   #padding -= 1
+   #print 'padding'
+   #print padding
    
-   if recompute_ffts:
-      beam_fft2 = np.fft.fft2(image_data,s=padding)
-      beam_fft2_shift = np.fft.fftshift(beam_fft2)
-      #save the fft
-      np.save(fft_savename,beam_fft2)
-      np.save(fft_savename_shift,beam_fft2_shift)
-   else:
-      beam_fft2 = np.load(fft_savename)
-      beam_fft2_shift = np.load(fft_savename_shift)
+   #####Ronniys recipe:
+   #####beam_image = gaussian
+   #####padded_beam = numpy.pad(beam_image, padding_length)
+   #####shifted_beam = numpy.fftshift(padded_beam)
+   #####shifted_FT_beam = numpy.fft2(shifted_beam)
+   #####FT_beam = numpy.ifftshift(shifted_FT_beam)
+
+   padded_beam = np.pad(beam_image_data, (padding,padding),'constant', constant_values=(0, 0))
+   shifted_beam = np.fft.fftshift(padded_beam)
+   shifted_beam_fft2 = np.fft.fft2(shifted_beam)
+   beam_fft2 = np.fft.ifftshift(shifted_beam_fft2)
+   ##beam_fft2 = np.fft.fft2(beam_image_data,s=[180,180])
+   ##beam_fft2 = np.fft.fft2(beam_image_data,s=padding)
+   ##beam_fft2 = np.fft.fft2(beam_image_data)
+   ##beam_fft2_shift = np.fft.fftshift(beam_fft2)
+   beam_fft2_real = np.real(beam_fft2)
+   beam_fft2_imag = np.imag(beam_fft2)
+   print beam_fft2_imag
+   print np.max(abs(beam_fft2_imag))
+   beam_fft2_abs = abs(beam_fft2)
+
+   #beam_fft2_real_shift_norm = beam_fft2_real_shift/np.max(beam_fft2_real_shift)
+   pyfits.writeto(fits_name_real,beam_fft2_real,clobber=True)
+   print "saved %s" % fits_name_real
+   
+   pyfits.writeto(fits_name_imag,beam_fft2_imag,clobber=True)
+   print "saved %s" % fits_name_imag
+
+   pyfits.writeto(fits_name_abs,beam_fft2_abs,clobber=True)
+   print "saved %s" % fits_name_abs 
+   #save the fft? - these are like a gig each - dont save!
+   #np.save(fft_savename,beam_fft2)
+   #np.save(fft_savename_shift,beam_fft2_shift)
+   #print "saved %s" % fft_savename_shift
+   #print "saved %s" % fft_savename
       
+def plot_beam_and_weights(pol,freq_MHz):
+   wavelength = 300./freq_MHz
+   profile_plot_length = 500
    
-   beam_fft2_abs = np.abs(beam_fft2)
-   beam_fft2_abs_shift = np.abs(beam_fft2_shift)
-   beam_fft2_abs_shift_log = np.log10(beam_fft2_abs_shift)
+   if pol=='X':
+      beam_image_name = "model_%s_MHz_xx.fits" % int(freq_MHz)
+   else:
+      beam_image_name = "model_%s_MHz_yy.fits" % int(freq_MHz)
    
-   #FreqCompRows = np.fft.fftfreq(FFTData.shape[0],d=2)
-   #FreqCompCols = np.fft.fftfreq(FFTData.shape[1],d=2)
+   beam_plot_basename = beam_image_name.split('.')[0]
+   #fft_savename = beam_plot_basename + "_beam_fft2.npy"
+   #fft_savename_shift = beam_plot_basename + "_beam_fft2_shift.npy"
    
-   #no pad
-   beam_image_length = image_data.shape[0]
-   #image_centre = int(beam_image_length/2)
+   with fits.open(beam_image_name) as beam_hdulist:
+      #beam_hdulist = fits.open(beam_image_name)
+      beam_image_data = beam_hdulist[0].data
+      beam_image_header = beam_hdulist[0].header
    
-   image_centre_padded = int(beam_fft2_shift.shape[0]/2.)
-   
-   ##at phase centre angle is small sin(theta) = theta
-   ##l_step = 1.0/(beam_image_length/2.)
-   theta_step_rad = 1.0/(beam_image_length/2.)
-   D_step_m = wavelength * theta_step_rad
-   D_step_wavelengths = D_step_m/wavelength
-   spatial_frequencies_cols = np.fft.fftfreq(beam_fft2.shape[1],d=D_step_wavelengths)
-   #spatial_frequencies_rows = np.fft.fftfreq(beam_fft2.shape[0],d=D_step_wavelengths)
-   spatial_frequencies_cols_fftshift = np.fft.fftshift(spatial_frequencies_cols)
-   
-   #pad - this is wrong I think:
-   #padded_beam_image_length = padding[0]
-   #padded_theta_step_rad = 1.0/(padded_beam_image_length/2.)
-   #D_step_m = wavelength * padded_theta_step_rad
-   #D_step_wavelengths = D_step_m/wavelength
-   #spatial_frequencies_cols = np.fft.fftfreq(beam_fft2.shape[1],d=D_step_wavelengths)
+   #print beam_image_data[90,:]
    
    
    plt.clf()
-   map_title="beam fft2"
-   plt.imshow(beam_fft2_abs_shift_log)
+   map_title="beam"
+   plt.imshow(beam_image_data)
    #plt.ylabel("log abs(vis)")
    #plt.xlabel("UU (lambda)")
-   fig_name= plot_basename + "_beam_fft2.png"
+   fig_name= beam_plot_basename + "_beam.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+
+   #Fourier response real part:
+   fits_name_real = beam_plot_basename + "_beam_fft2_real_shift.fits"  
+   beam_fft2_real_shift_hdu_list = fits.open(fits_name_real)
+   #print "opened %s" % fits_name
+   beam_fft2_real_shift = beam_fft2_real_shift_hdu_list[0].data
+   beam_fft2_real_shift_norm = beam_fft2_real_shift/beam_fft2_real_shift.max()
+    
+   fits_name_abs = beam_plot_basename + "_beam_fft2_abs_shift.fits"  
+   beam_fft2_abs_shift_hdu_list = fits.open(fits_name_abs)
+   #print "opened %s" % fits_name
+   beam_fft2_abs_shift = beam_fft2_abs_shift_hdu_list[0].data
+   beam_fft2_abs_shift_norm = beam_fft2_abs_shift/beam_fft2_abs_shift.max()  
+
+   beam_image_length = beam_image_data.shape[0]
+   beam_fft2_length = beam_fft2_real_shift.shape[0]
+   #print beam_image_length
+   #print beam_fft2_real_length
+   fft_centre_padded = int(beam_fft2_length/2.)
+   ##at phase centre angle is small sin(theta) = theta
+   #sine projection so half beam image corresponds to sin(90 deg) = 1
+   theta_step_rad = 1.0/(beam_image_length/2.)
+   spatial_frequencies_cols = np.fft.fftfreq(beam_fft2_real_shift.shape[1],d=theta_step_rad)
+   spatial_frequencies_cols_fftshift = np.fft.fftshift(spatial_frequencies_cols)
+   #rows same as cols as image is square
+   ##spatial_frequencies_rows = np.fft.fftfreq(beam_fft2.shape[0],d=D_step_wavelengths)
+ 
+
+   #real
+   
+   plt.clf()
+   map_title="beam fft2 real"
+   plt.imshow(beam_fft2_real_shift)
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_real.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
    
-   #fits
-   fits_name= plot_basename + "_beam_fft2.fits"
-   pyfits.writeto(fits_name,beam_fft2_abs_shift_log,clobber=True)
-   print "saved %s" % fits_name
-
    #profile of beam response at v=something
    plt.clf()
-   map_title="beam fft2 profile"
+   map_title="beam fft2 real profile"
    #u or v?
    #beam_fft2_profile = beam_fft2_abs_shift_log[:,image_centre_padded]
-   beam_fft2_profile = beam_fft2_abs_shift_log[image_centre_padded,:]
+   beam_fft2_profile = beam_fft2_real_shift_norm[fft_centre_padded,:]
+   beam_fft2_profile_other = beam_fft2_real_shift_norm[:,fft_centre_padded]
    
-   #print beam_fft2_profile
-   plt.plot(spatial_frequencies_cols_fftshift,beam_fft2_profile)
+   #inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile real inner" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   ##plt.plot(UU_array_wavelengths[0:profile_plot_length],beam_fft2_profile[fft_centre_padded:fft_centre_padded+profile_plot_length])
    #plt.ylabel("log abs(vis)")
    #plt.xlabel("UU (lambda)")
-   fig_name= plot_basename + "_beam_fft2_profile.png"
+   fig_name= beam_plot_basename + "_beam_fft2_profile_real_inner.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
 
    #inner profile of beam response at v=something
    plt.clf()
-   map_title="beam fft2 profile inner" 
+   map_title="beam fft2 profile log abs real inner" 
    #print 'image centre %s' % image_centre
    #print 'profile plot length %s' % 100
-   plt.plot(spatial_frequencies_cols_fftshift[image_centre_padded:image_centre_padded+profile_plot_length],beam_fft2_profile[image_centre_padded:image_centre_padded+profile_plot_length])
+   beam_fft2_profile_abs_log = np.log10(np.abs(beam_fft2_profile))
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_abs_log[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   
+   #plt.plot(UU_array_wavelengths[0:profile_plot_length],beam_fft2_profile_abs_log[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylim([0, 4.5])
    #plt.ylabel("log abs(vis)")
    #plt.xlabel("UU (lambda)")
-   fig_name= plot_basename + "_beam_fft2_profile_inner.png"
+   fig_name= beam_plot_basename + "_beam_fft2_profile_real_log_abs_inner.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+      
+   #other axis inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile real inner other" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_other[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_real_inner_other.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
 
+   #inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile log abs real inner other" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   beam_fft2_profile_abs_log_other = np.log10(np.abs(beam_fft2_profile_other))
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_abs_log_other[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylim([0, 4.5])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_real_log_abs_inner_other.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+   #abs
+   
+   plt.clf()
+   map_title="beam fft2 abs"
+   plt.imshow(beam_fft2_abs_shift)
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_abs.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   #profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 abs profile"
+   #u or v?
+   #beam_fft2_profile = beam_fft2_abs_shift_log[:,image_centre_padded]
+   beam_fft2_profile = beam_fft2_abs_shift_norm[fft_centre_padded,:]
+   beam_fft2_profile_other = beam_fft2_abs_shift_norm[:,fft_centre_padded]
+   
+   #inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile abs inner" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   #plt.plot(spatial_frequencies_cols_fftshift_wavelength[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_abs_inner.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+   #inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile log abs inner" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   beam_fft2_profile_abs_log = np.log10(np.abs(beam_fft2_profile))
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_abs_log[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylim([0, 4.5])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_abs_log_inner.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+      
+   #other axis inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile abs inner other" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_other[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_abs_inner_other.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+   #inner profile of beam response at v=something
+   plt.clf()
+   map_title="beam fft2 profile log abs inner other" 
+   #print 'image centre %s' % image_centre
+   #print 'profile plot length %s' % 100
+   beam_fft2_profile_abs_log_other = np.log10(np.abs(beam_fft2_profile_other))
+   plt.plot(spatial_frequencies_cols_fftshift[fft_centre_padded:fft_centre_padded+profile_plot_length],beam_fft2_profile_abs_log_other[fft_centre_padded:fft_centre_padded+profile_plot_length])
+   #plt.ylim([0, 4.5])
+   #plt.ylabel("log abs(vis)")
+   #plt.xlabel("UU (lambda)")
+   fig_name= beam_plot_basename + "_beam_fft2_profile_abs_log_inner_other.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   
 def find_nearest(array, value):
     array = np.asarray(array)
     index = (np.abs(array - value)).argmin()
@@ -327,8 +537,8 @@ def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
    eda_model_noise_uvfits_name = "eda_model_noise_LST_%03d_%s_%s_MHz.uvfits" % (lst_deg,pol,int(freq_MHz))  
    #print sky_uvfits_name
    hdulist = fits.open(sky_uvfits_name)
-   hdulist.info()
-   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+   #hdulist.info()
+   #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
    #print info_string
    uvtable = hdulist[0].data
    uvtable_header = hdulist[0].header
@@ -376,59 +586,27 @@ def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
       beam_image_header = beam_hdulist[0].header
    
    #Fourier response:
-   image_data_shape = beam_image_data.shape
-   beam_image_length = image_data_shape[0]
-   #image_centre = int(beam_image_length/2)
-      
-   fits_name= beam_plot_basename + "_beam_fft2_abs_shift_norm.fits"
-   
-   if recompute_ffts:
+   fits_name= beam_plot_basename + "_beam_fft2_real_shift.fits"  
 
+   beam_fft2_real_shift_hdu_list = fits.open(fits_name)
+   #print "opened %s" % fits_name
+   beam_fft2_real_shift = beam_fft2_real_shift_hdu_list[0].data
       
-      #zero pad the beam image for later multiplication
-      pad_width = int(padding_factor/2. * image_data_shape[0] - (image_data_shape[0]/2.)) 
-      beam_image_data_padded = np.pad(beam_image_data,pad_width,'constant', constant_values=0)
-      #print "beam_image_data_padded size %s" % beam_image_data_padded.shape[0]
-      image_centre_padded = int(beam_image_data_padded.shape[0]/2.)
-    
-      padding = padding_factor*np.asarray(image_data_shape)
-      
-      beam_fft2 = np.fft.fft2(beam_image_data,s=padding)
-      beam_fft2_abs = np.abs(beam_fft2)
-      beam_fft2_abs_shift = np.abs(beam_fft2_shift)
-      beam_fft2_abs_shift_norm = beam_fft2_abs_shift/np.max(beam_fft2_abs_shift)
-      pyfits.writeto(fits_name,beam_fft2_abs_shift_norm,clobber=True)
-      print "saved %s" % fits_name 
-      #save the fft? - these are like a gig each - dont save!
-      #np.save(fft_savename,beam_fft2)
-      #np.save(fft_savename_shift,beam_fft2_shift)
-      #print "saved %s" % fft_savename_shift
-      #print "saved %s" % fft_savename
-   else:
-      #beam_fft2 = np.load(fft_savename)
-      beam_fft2_abs_shift_norm_hdu_list = fits.open(fits_name)
-      #print "opened %s" % fits_name
-      beam_fft2_abs_shift_norm = beam_fft2_abs_shift_norm_hdu_list[0].data
-      
-   beam_fft2_abs_shift_log = np.log10(beam_fft2_abs_shift_norm)
+   beam_fft2_real_shift_norm = beam_fft2_real_shift/beam_fft2_real_shift.max()
         
- 
    #fits_name= beam_plot_basename + "_beam_fft2_abs_shift_log.fits"
    #pyfits.writeto(fits_name,beam_fft2_abs_shift_log,clobber=True)
    #print "saved %s" % fits_name        
             
    beam_image_length = beam_image_data.shape[0]
-   beam_fft2_abs_length = beam_fft2_abs_shift_norm.shape[0]
+   beam_fft2_real_length = beam_fft2_real_shift.shape[0]
+   fft_centre_padded = int(beam_fft2_real_length/2.)
    ##at phase centre angle is small sin(theta) = theta
-   ##l_step = 1.0/(beam_image_length/2.)
+   #sine projection so half beam image corresponds to sin(90 deg) = 1
    theta_step_rad = 1.0/(beam_image_length/2.)
-   D_step_m = wavelength * theta_step_rad
-   D_step_wavelengths = D_step_m/wavelength
-   spatial_frequencies_cols = np.fft.fftfreq(beam_fft2_abs_shift_norm.shape[1],d=D_step_wavelengths)
+   spatial_frequencies_cols = np.fft.fftfreq(beam_fft2_real_shift.shape[1],d=theta_step_rad)
    spatial_frequencies_cols_fftshift = np.fft.fftshift(spatial_frequencies_cols)
-   #spatial_frequencies_rows = np.fft.fftfreq(beam_fft2.shape[0],d=D_step_wavelengths)
    
- 
    UU_wavelength_array = UU_m_array / wavelength
    VV_wavelength_array = VV_m_array / wavelength   
    
@@ -496,16 +674,18 @@ def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
          
          
          #don't have to actually do any convolution or fft, just use the shifting theorem and read off the correct pixel in the beam fft image!
-         UU_cheat_index = int((beam_fft2_abs_length/2.)-(nearest_UU_index-(beam_fft2_abs_length/2.)))
-         VV_cheat_index = int((beam_fft2_abs_length/2.)-(nearest_VV_index-(beam_fft2_abs_length/2.)))
+         UU_cheat_index = int((beam_fft2_real_length/2.)-(nearest_UU_index-(beam_fft2_real_length/2.)))
+         VV_cheat_index = int((beam_fft2_real_length/2.)-(nearest_VV_index-(beam_fft2_real_length/2.)))
          
          #print "UU_cheat_index is %s, VV_cheat_index is %s " % (UU_cheat_index,VV_cheat_index)
          
-         zero_spacing_leakage_cheat = beam_fft2_abs_shift_norm[VV_cheat_index,UU_cheat_index]
+         #are these around the right way?
+         zero_spacing_leakage_cheat = beam_fft2_real_shift_norm[VV_cheat_index,UU_cheat_index]
+         ###zero_spacing_leakage_cheat = beam_fft2_real_shift_norm[UU_cheat_index,VV_cheat_index]
          #print "zero_spacing_leakage using cheat is %s " % zero_spacing_leakage_cheat
          
-         
-         if zero_spacing_leakage_cheat > zero_spacing_leakage_threshold:
+         #put this check in the extract_signal function (so we still record the smaller and negative weights and can plot them to check against the beam )
+         #if zero_spacing_leakage_cheat > zero_spacing_leakage_threshold:
             #print "zero_spacing_leakage is %s, using this baseline (%s of %s, chan %s)" % (zero_spacing_leakage_cheat,UU_wavelength_index,n_vis,int(freq_MHz))
             #don't write a FITS file unless doing a subset i.e. making images for a talk
             #fits_name= plot_basename + "_beam_footprint_fourier.fits"
@@ -513,7 +693,7 @@ def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
             #print "saved %s" % fits_name            
             
             #now work out what to do with these weights! save in an array for now
-            weights_array[UU_wavelength_index] = zero_spacing_leakage_cheat
+         weights_array[UU_wavelength_index] = zero_spacing_leakage_cheat
          #else:
             #print "zero_spacing_leakage is %s, skipping this baseline (%s of %s, chan %s)" % (zero_spacing_leakage_cheat,UU_wavelength_index,n_vis,int(freq_MHz))
       #else:
@@ -533,14 +713,22 @@ def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
 def extract_signal(lst_list,signal_type_list=['sky','global','noise'],outbase_name='extracted_1_'):
    for signal_type in signal_type_list:
       for pol_index,pol in enumerate(pol_list):
-         signal_array_short_baselines = np.full((n_pol,n_chan),0)
+         signal_array_short_baselines = np.full((n_pol,n_chan),0.0)
          signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_%s_pol.npy" % (signal_type,pol)
-         number_baselines_used_array = np.full((n_pol,n_chan),0)
+         signal_array_short_baselines_weighted = np.full((n_pol,n_chan),0.0)
+         signal_array_short_baselines_weighted_filename = outbase_name + "%s_signal_array_short_baselines_weighted_%s_pol.npy" % (signal_type,pol)
+         number_baselines_used_array = np.full((n_pol,n_chan),0.0)
          number_baselines_used_array_filename = outbase_name + "%s_number_baselines_used_%s_pol.npy" % (signal_type,pol)
+         #chan_sum_of_weights = 0.0
+         #chan_vis_real_sum_weighted = 0.0
          for chan_index,freq_MHz in enumerate(freq_MHz_list):
-            lst_vis_real_sum = 0
-            #sum_of_weights = 0
-            number_baselines_used = 0
+            number_baselines_used_sum = 0.0
+            chan_sum_of_weights = 0.0
+            chan_vis_real_sum_weighted = 0.0
+            chan_vis_real_sum = 0.0
+            #lst_vis_real_sum = 0.0
+            #lst_vis_real_sum_weighted = 0.0
+            chan_vis_used = 0.0
             for lst in lst_list:  
                lst_deg = (float(lst)/24.)*360.
                if signal_type == 'sky':
@@ -556,14 +744,24 @@ def extract_signal(lst_list,signal_type_list=['sky','global','noise'],outbase_na
                hdulist = fits.open(uvfits_name)
                hdulist.info()
                info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-               print info_string
+               #print info_string
                uvtable = hdulist[0].data
                uvtable_header = hdulist[0].header
                visibilities = uvtable['DATA']
+               
+               #get the UU and VV so we can check whether we are using short baselines
+               UU_s_array = uvtable['UU']
+               UU_m_array = UU_s_array * c   
+               VV_s_array = uvtable['VV']
+               VV_m_array = VV_s_array * c
+               
+               #print "VV_m_array.shape" 
+               #print VV_m_array.shape
+               
                #print visibilities.shape
                n_vis = visibilities.shape[0]
                n_timesteps = n_vis/n_baselines
-               print "n_timesteps %s " % n_timesteps
+               #print "n_timesteps %s " % n_timesteps
                timestep_array = np.arange(0,n_timesteps,1)
                #this is too many timesteps, can average to 30 sec from 2 sec!
                weights_array_filename = "weights_LST_%03d_%s_%s_MHz.npy" % (lst_deg,pol,int(freq_MHz))
@@ -575,8 +773,10 @@ def extract_signal(lst_list,signal_type_list=['sky','global','noise'],outbase_na
                wavelength = 300./freq_MHz
                #print freq_MHz
                #keep in mind pol_index may be wrong (need to rerun sims with pol=xx,yy only, and not sure what the last index is even for ... real imag weight?)
-               timestep_vis_real_sum = 0
+               timestep_vis_real_sum = 0.
+               timestep_vis_real_sum_weighted = 0.
                for timestep in timestep_array:
+                  timestep_baselines_used = 0.
                   vis_start_index = int(timestep*n_baselines)
                   timestep_visibilities = visibilities[vis_start_index:int(vis_start_index+n_baselines),0,0,0,0,:]
                   for timestep_visibility_index,timestep_visibility_real in enumerate(timestep_visibilities[:,0]):
@@ -602,59 +802,94 @@ def extract_signal(lst_list,signal_type_list=['sky','global','noise'],outbase_na
                      
                      #weighted: (this is equivalent to gridding), finding the value that the visibility would be it u,v=0 after convolving with a Fourier beam kernel:
                      visibility_index = vis_start_index + timestep_visibility_index
+                     #print "visibility_index" 
+                     #print visibility_index
                      uv_zero_weighting = weights_array[visibility_index]
+                     #print "weights_array shape" 
+                     #print weights_array.shape
+                     #get rid of if statement to use all baselines
                      if not np.isnan(uv_zero_weighting):
-                        #print "uv_zero_weighting %s for baseline %s"  % (uv_zero_weighting,visibility_index)
-                        #complex_vis_weighted = uv_zero_weighting*complex_vis
-                        #abs_vis_weighted = uv_zero_weighting*abs_vis
-                        #abs_vis_weighted = np.abs(complex_vis_weighted)
-                        #print "complex_vis_weighted %s" % complex_vis_weighted
-                        #signal_array_weighted[pol_index,chan_index,0] += complex_vis_weighted
-                        timestep_vis_real_sum += timestep_visibility_real
-                        number_baselines_used += 1
-                        
-               timestep_vis_real_average = timestep_vis_real_sum/n_timesteps
-               lst_vis_real_sum += timestep_vis_real_average
-                   
-            lst_vis_real_average = lst_vis_real_sum/len(lst_list)
-            signal_array_short_baselines[pol_index,chan_index] = lst_vis_real_average
-            number_baselines_used_array[pol_index,chan_index] = number_baselines_used            
-      
-            #sum_of_weights += uv_zero_weighting
-            #no_baselines_weighted += 1
-            
-            #print "sum_of_weights %s" % sum_of_weights
+                        if uv_zero_weighting > 0.1:
+                           #print "uv_zero_weighting %s for baseline %s"  % (uv_zero_weighting,visibility_index)
+                           #complex_vis_weighted = uv_zero_weighting*complex_vis
+                           #abs_vis_weighted = uv_zero_weighting*abs_vis
+                           #abs_vis_weighted = np.abs(complex_vis_weighted)
+                           #print "complex_vis_weighted %s" % complex_vis_weighted
+                           #signal_array_weighted[pol_index,chan_index,0] += complex_vis_weighted
+                           
+                           #timestep_vis_real_sum += timestep_visibility_real
+                           #timestep_vis_real_sum_weighted += timestep_visibility_real * uv_zero_weighting
+                           chan_vis_real_sum += timestep_visibility_real
+                           chan_vis_real_sum_weighted += timestep_visibility_real * uv_zero_weighting
+                           #timestep_baselines_used += 1.
+                           chan_vis_used += 1.
+                           number_baselines_used_sum += 1.
+                           chan_sum_of_weights += uv_zero_weighting
+                           #if timestep_visibility_real<0:
+                           #  print "timestep_visibility_real %s at LST %s %s MHz" % (timestep_visibility_real,lst,freq_MHz)
+                           #  print "for baseline U %s V %s at visibility index %s and uv_zero_weighting %s" % (UU_m_array[visibility_index],VV_m_array[visibility_index],visibility_index,uv_zero_weighting)
+                  #
+                      
+                  #timestep_vis_real_sum_weighted_norm = timestep_vis_real_sum_weighted*chan_sum_of_weights**2
                
-            #print abs(signal_array[pol_index,chan_index,0])
+                       
+               #timestep_vis_real_average = timestep_vis_real_sum/n_timesteps
+               
+               #timestep_vis_real_sum_weighted_norm_average = timestep_vis_real_sum_weighted_norm/n_timesteps
+               #timestep_vis_real_average_baseline_norm = timestep_vis_real_average/timestep_baselines_used
+               #lst_vis_real_sum += timestep_vis_real_average
+               #lst_vis_real_sum_weighted += timestep_vis_real_sum_weighted_norm_average
+                   
+            #lst_vis_real_average = lst_vis_real_sum/len(lst_list)
+            #lst_vis_real_average_weighted = lst_vis_real_sum_weighted/len(lst_list)
+            if chan_vis_used>0.:
+               chan_vis_real_average = chan_vis_real_sum/chan_vis_used
+               chan_vis_real_weighted_average = chan_vis_real_sum_weighted/chan_sum_of_weights
             
-            #normalise by dividing by the sum of the weights_array
-            #print "sum_of_weights %s at freq %s MHz with %s baselines" % (sum_of_weights,freq_MHz,no_baselines_weighted)
-            #signal_array_weighted_norm = signal_array_weighted/sum_of_weights
+               number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
+               print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+            
+            
+               #signal_array_short_baselines[pol_index,chan_index] = lst_vis_real_average
+               #signal_array_short_baselines_weighted[pol_index,chan_index] = lst_vis_real_average_weighted
+               signal_array_short_baselines[pol_index,chan_index] = chan_vis_real_average
+               signal_array_short_baselines_weighted[pol_index,chan_index] = chan_vis_real_weighted_average
+            
+               #number_baselines_used_array[pol_index,chan_index] = chan_vis_used            
+               number_baselines_used_array[pol_index,chan_index] = number_baselines_used_average 
+            
+               #sum_of_weights += uv_zero_weighting
+               #no_baselines_weighted += 1
+            
+               #print "sum_of_weights %s" % sum_of_weights
+               
+               #print abs(signal_array[pol_index,chan_index,0])
+            
+               #normalise by dividing by the sum of the weights_array
+               #print "sum_of_weights %s at freq %s MHz with %s baselines" % (sum_of_weights,freq_MHz,no_baselines_weighted)
+               #signal_array_weighted_norm = signal_array_weighted/sum_of_weights
                  
-            #plt.clf()
-            #map_title="unweighted real vis vs freq x pol"
-            #plt.plot(freq_MHz_list,np.real(signal_array_unweighted[0,:,0]))
-            #plt.ylabel("unweighted sum vis real Jy")
-            #plt.xlabel("freq (MHz)")
-            #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
-            #figmap = plt.gcf()
-            #figmap.savefig(fig_name)
-            #print "saved %s" % fig_name       
- 
-                  
+               #plt.clf()
+               #map_title="unweighted real vis vs freq x pol"
+               #plt.plot(freq_MHz_list,np.real(signal_array_unweighted[0,:,0]))
+               #plt.ylabel("unweighted sum vis real Jy")
+               #plt.xlabel("freq (MHz)")
+               #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
+               #figmap = plt.gcf()
+               #figmap.savefig(fig_name)
+               #print "saved %s" % fig_name       
+         
          np.save(signal_array_short_baselines_filename,signal_array_short_baselines)
+         np.save(signal_array_short_baselines_weighted_filename,signal_array_short_baselines_weighted)
          np.save(number_baselines_used_array_filename,number_baselines_used_array)
 
                
-def plot_from_uvfits(uvfits_name):
+def plot_from_uvfits(uvfits_name, freq_MHz):
                
    plot_basename = uvfits_name.split('.')[0]
    
-   chan = 0
-   freq_MHz1 = 50.+chan*1.0
-   wavelength1 = 300./freq_MHz1
-   #freq_MHz_array = np.arange(50,200,1)
-   freq_MHz_list = np.arange(50,200,1)
+   freq_MHz = float(freq_MHz)
+   wavelength = 300.0 / freq_MHz
    
    hdulist = fits.open(uvfits_name)
    hdulist.info()
@@ -668,13 +903,24 @@ def plot_from_uvfits(uvfits_name):
    #a[super_threshold_indices] = 0
    
    print uvtable['DATA'].shape
-   visibilities_at_freq_MHz1 = uvtable['DATA'][:,0,0,0,0,0,0]
-   abs_vis = abs(visibilities_at_freq_MHz1)
+   real_visibilities_at_freq_MHz1 = uvtable['DATA'][:,0,0,0,0,0]
+   abs_vis = abs(real_visibilities_at_freq_MHz1)
    log_abs_vis = np.log10(abs_vis)
    UU_s = uvtable['UU']
    UU_m = UU_s * c
+   VV_s = uvtable['VV']
+   VV_m = VV_s * c
    
-   UU_lambda = UU_m/wavelength1
+   uvdist_m = np.sqrt(UU_m**2 + VV_m**2)
+   
+   print "min abs uvdist_m"
+   print np.abs(uvdist_m).min()
+   print "max abs uvdist_m"
+   print np.abs(uvdist_m).max()
+   
+   
+   UU_lambda = UU_m/wavelength
+   uvdist_lambda = uvdist_m/wavelength
    plt.clf()
    map_title="abs vis vs UU"
    plt.plot(UU_lambda,log_abs_vis,linestyle='none',marker='.')
@@ -684,6 +930,32 @@ def plot_from_uvfits(uvfits_name):
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
+
+   plt.clf()
+   map_title="real vis vs UU"
+   plt.plot(uvdist_lambda,real_visibilities_at_freq_MHz1,linestyle='none',marker='.')
+   plt.ylabel("real vis Jy")
+   plt.xlabel("uvdist (lambda)")
+   fig_name= plot_basename + "real_vis_vs_uvdist.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   #print UU_lambda.shape
+   uvdist_lambda_short_indices = np.where(abs(uvdist_lambda) < 2.)
+   uvdist_lambda_short = uvdist_lambda[uvdist_lambda_short_indices]
+   real_visibilities_at_freq_MHz1_short = real_visibilities_at_freq_MHz1[uvdist_lambda_short_indices]
+   #print real_visibilities_at_freq_MHz1_short.shape
+   plt.clf()
+   map_title="real vis vs uvdist zoom"
+   plt.plot(uvdist_lambda_short,real_visibilities_at_freq_MHz1_short,linestyle='none',marker='.')
+   plt.ylabel("real vis Jy")
+   plt.xlabel("uvdist (lambda)")
+   fig_name= plot_basename + "real_vis_vs_uvdist_zoom.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
    
    #for signal extraction only interested in short baselines (work out what this threshold should be based on U=0 leakage value later)
    threshold = 4.0
@@ -691,22 +963,22 @@ def plot_from_uvfits(uvfits_name):
    #short baselines only - as a function of frequency
 
    #for now, just take the max value of the visibilities at each freq
-   max_vis_vs_freq_list = []
-   for chan_index in np.arange(0,150):
-      max_vis = np.max(uvtable['DATA'][:,0,0,0,chan_index,0,0])
-      max_vis_vs_freq_list.append(max_vis)
-   max_vis_vs_freq_array = np.asarray(max_vis_vs_freq_list)
-   abs_max_vis_vs_freq_array = abs(max_vis_vs_freq_array)
-   log_abs_max_vis_vs_freq_array = np.log10(max_vis_vs_freq_array)
-   plt.clf()
-   map_title="abs vis vs freq for short baselines"
-   plt.plot(freq_MHz_list,log_abs_max_vis_vs_freq_array,linestyle='none',marker='.')
-   plt.ylabel("log abs(max vis)")
-   plt.xlabel("freq (MHz)")
-   fig_name= plot_basename + "log_abs_max_vis_vs_freq.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print "saved %s" % fig_name   
+   #max_vis_vs_freq_list = []
+   #for chan_index in np.arange(0,150):
+   #   max_vis = np.max(uvtable['DATA'][:,0,0,0,chan_index,0,0])
+   #   max_vis_vs_freq_list.append(max_vis)
+   #max_vis_vs_freq_array = np.asarray(max_vis_vs_freq_list)
+   #abs_max_vis_vs_freq_array = abs(max_vis_vs_freq_array)
+   #log_abs_max_vis_vs_freq_array = np.log10(max_vis_vs_freq_array)
+   #plt.clf()
+   #map_title="abs vis vs freq for short baselines"
+   #plt.plot(freq_MHz_list,log_abs_max_vis_vs_freq_array,linestyle='none',marker='.')
+   #plt.ylabel("log abs(max vis)")
+   #plt.xlabel("freq (MHz)")
+   #fig_name= plot_basename + "log_abs_max_vis_vs_freq.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print "saved %s" % fig_name   
  
    #plt.clf()
    #map_title="log abs vis vs freq"
@@ -717,16 +989,7 @@ def plot_from_uvfits(uvfits_name):
    #print "saved %s" % fig_name
 
 
-
-#plot_from_uvfits('global_eda_model_LST_00_X_pol_concat.uvfits')
-#plot_from_uvfits('eda_model_LST_00_X_pol_concat.uvfits')
-#sys.exit()
-
-
-
-
-
-def concat_uvfits(uvfits_list,outname):
+def concat_uvfits(uvfits_list,outname,delete=False):
    tmp_uv = UVData()
    first_filename = uvfits_list[0]
    fits.setval(first_filename, 'TELESCOP', value='MWA')
@@ -754,20 +1017,21 @@ def concat_uvfits(uvfits_list,outname):
    tmp_uv.write_uvfits(outname)
    print "wrote %s" % outname
    #delete all the temporary uvfits files
-   for uvfits_name in uvfits_list:
-      cmd = "rm -rf %s" % (uvfits_name)
-      print cmd
-      os.system(cmd)
-      #also delete the miriad vis file
-      vis_name = uvfits_name.split('.')[0] + '.vis'
-      cmd = "rm -rf %s" % (vis_name)
-      print cmd
-      os.system(cmd)
+   if delete:
+      for uvfits_name in uvfits_list:
+         cmd = "rm -rf %s" % (uvfits_name)
+         print cmd
+         os.system(cmd)
+         #also delete the miriad vis file
+         vis_name = uvfits_name.split('.')[0] + '.vis'
+         cmd = "rm -rf %s" % (vis_name)
+         print cmd
+         os.system(cmd)
       
-#list = ['global_eda_model_LST_000_X_pol_concat.uvfits','global_eda_model_LST_001_X_pol_concat.uvfits']  
-#outname = 'test_concat_time.uvfits'
-#concat_uvfits(list,outname)
-#sys.exit()
+list = ['eda_model_plus_global_LST_014_X_pol_86_MHz.uvfits','eda_model_noise_LST_014_X_86_MHz.uvfits','eda_model_plus_sky_LST_014_X_pol_86_MHz.uvfits']  
+outname = 'test_all3_concat_LST_014_X_pol_86_MHz.uvfits'
+concat_uvfits(list,outname)
+sys.exit()
   
 def concat_vis(vis_list,outname):
    tmp_list = []
@@ -1134,7 +1398,7 @@ def simulate():
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
          print(freq_MHz)
          #and datetime of observation (eventually do this for many dates)
-         year=1900
+         year=2000
          month=1
          day=1
          hour=np.floor(float(lst))
@@ -1161,6 +1425,7 @@ def simulate():
          #lna_impedance_aavs1_filename = "/data/code/git/ben-astronomy/AAVS-1/AAVS1_LNA_impedance_180718.txt"
          
          eda_model_vis_name = "eda_model_LST_%03d_%s_MHz.vis" % (lst_deg,int(freq_MHz))
+         eda_model_uvfits_name = "eda_model_LST_%03d_%s_MHz.uvfits" % (lst_deg,int(freq_MHz))
          eda_model_no_source_image_name = "eda_no_source_LST_%03d_%s_MHz.map" % (lst_deg,int(freq_MHz))
          eda_model_no_source_beam_name = "eda_no_source_LST_%03d_%s_MHz.beam" % (lst_deg,int(freq_MHz))
          eda_model_no_source_image_fits_name = "eda_no_source_LST_%03d_%s_MHz.fits" % (lst_deg,int(freq_MHz))
@@ -1221,7 +1486,12 @@ def simulate():
             os.system(cmd)
            
             #need to change this so that each uvgen call has phase centre at zenith (RA = LST)
-            cmd = "uvgen source=$MIRCAT/no.source ant='/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=i  " % (miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec,harange_string,eda_model_vis_name)
+            cmd = "uvgen source=$MIRCAT/no.source ant='/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec,harange_string,eda_model_vis_name)
+            print(cmd)
+            os.system(cmd)
+            
+            #output the no source uvfits file for checking
+            cmd = "fits in=%s out=%s op=uvout" % (eda_model_vis_name,eda_model_uvfits_name)
             print(cmd)
             os.system(cmd)
             
@@ -1229,7 +1499,7 @@ def simulate():
             print(cmd)
             os.system(cmd)
             
-            cmd = "invert vis=%s map=%s beam=%s imsize=%s cell=%s stokes=i options=mfs" % (eda_model_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,template_imsize,template_cell_size_asec)
+            cmd = "invert vis=%s map=%s beam=%s imsize=%s cell=%s stokes=xx options=mfs" % (eda_model_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,template_imsize,template_cell_size_asec)
             print(cmd)
             os.system(cmd)
          
@@ -1416,22 +1686,29 @@ def simulate():
             #power_pattern_average_interp_sin_regrid_gsm_fits_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.fits' % (pol,int(freq_MHz))
                  
             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
+            beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
             beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
             
-            cmd = "rm -rf %s %s " % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name)
+            cmd = "rm -rf %s %s %s " % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name, beam_image_sin_projected_puthd_fits_name)
             print(cmd)
             os.system(cmd)
-         
+            
             cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
             print(cmd)
             os.system(cmd)
-         
+            
+            
             #put in the correct ra in the header (ra = lst for zenith) 
             #puthd in="$beam/crval1" value=$lst_degs
-            cmd = 'puthd in="%s/crval1" value=%0.4f' % (beam_image_sin_projected_im_name,lst_deg)
+            cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name,lst_deg)
             print(cmd)
             os.system(cmd)         
-         
+            
+            #write out as a fits file to check header
+            cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name)
+            print(cmd)
+            os.system(cmd)
+            
             #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
             cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name)
             print(cmd)
@@ -1453,8 +1730,10 @@ def simulate():
    
             #Repeat for global signal
             apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
+            apparent_global_signal_fits_name_cropped = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.fits" % (lst_deg,pol,int(freq_MHz))
+            apparent_global_signal_im_name_cropped = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz_cropped.im" % (lst_deg,pol,int(freq_MHz))
          
-            cmd = "rm -rf %s " % apparent_global_signal_im_name
+            cmd = "rm -rf %s %s %s" % (apparent_global_signal_im_name,apparent_global_signal_fits_name_cropped,apparent_global_signal_im_name_cropped)
             print(cmd)
             os.system(cmd)
          
@@ -1462,7 +1741,17 @@ def simulate():
             print(cmd)
             os.system(cmd)
             
-                  
+            ##crop the image
+            ##output a cropped fits file
+            #cmd = "fits in=%s out=%s region=quarter op=xyout" % (apparent_global_signal_im_name,apparent_global_signal_fits_name_cropped)
+            #print(cmd)
+            #os.system(cmd)            
+            #
+            ##read it back in
+            #cmd = "fits in=%s out=%s region=quarter op=xyin" % (apparent_global_signal_fits_name_cropped,apparent_global_signal_im_name_cropped)
+            #print(cmd)
+            #os.system(cmd)
+                              
          
             #then put into the vis 
    
@@ -1525,7 +1814,7 @@ def simulate():
                print(cmd)
                os.system(cmd)
             
-               cmd = "uvgen source=$MIRCAT/no.source ant='/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 systemp=%s jyperk=%s out=%s stokes=i  " % (miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec, harange_string, systemp, JperK, eda_model_noise_vis_name)
+               cmd = "uvgen source=$MIRCAT/no.source ant='/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 systemp=%s jyperk=%s out=%s stokes=xx  " % (miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec, harange_string, systemp, JperK, eda_model_noise_vis_name)
                print(cmd)
                os.system(cmd)
             
@@ -1730,14 +2019,16 @@ def simulate():
 
 
 
-
-
-
 #calculate the global 21cm signal:
-#s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
+s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
 
 #simulate()
 
+#for pol in pol_list:
+#   for freq_MHz in freq_MHz_list:
+#      recompute_ffts(pol,freq_MHz)
+#      #plot_beam_and_weights(pol,freq_MHz)
+#
 #for lst in lst_list:
 #   lst_deg = (float(lst)/24.)*360.
 #   for pol in pol_list:
@@ -1746,9 +2037,22 @@ def simulate():
 #         compute_weights(lst_deg,pol,freq_MHz)
 
 
-extract_signal(lst_list=lst_list[0:1,],outbase_name='extracted_short_')
+#plot_from_uvfits('eda_model_LST_000_180_MHz.uvfits',180)
+#plot_from_uvfits('eda_model_plus_global_LST_000_X_pol_100_MHz.uvfits',100)
+#plot_from_uvfits('eda_model_noise_LST_000_X_100_MHz.uvfits',100)
 
-outbase_name = "extracted_short_"
+
+#extract_signal(lst_list=lst_list,outbase_name='extracted_short_2hr_')
+ 
+#extract_signal(lst_list=lst_list[0:1],outbase_name='extracted_short_8min_')
+
+
+
+outbase_name = "extracted_short_8min_"
+maxchan = 150
+freq_MHz_list = freq_MHz_list[0:maxchan]
+
+s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
 
 plt.clf()
 signal_type_list=['sky','global','noise']
@@ -1759,14 +2063,55 @@ for pol_index,pol in enumerate(pol_list):
       signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_%s_pol.npy" % (signal_type,pol)
         
       signal_short_baselines = np.load(signal_array_short_baselines_filename)
-      signal_short_baselines_log = np.log10(signal_short_baselines[0,:])
-      plt.plot(freq_MHz_list,signal_short_baselines_log,label=signal_type)
+      signal_short_baselines_log = np.log10(abs(signal_short_baselines[0,:]))
+      plt.plot(freq_MHz_list,signal_short_baselines_log[0:maxchan],label=signal_type)
+   
+   map_title="short baselines log abs real vis vs freq %s pol" % (pol)
+   plt.ylabel("log sum abs real vis Jy")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s%s_pol_log_abs_real_vis_vs_freq_short_baselines_log.png" % (outbase_name,pol)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+
+plt.clf()
+signal_type_list=['global','noise']
+for pol_index,pol in enumerate(pol_list):
+   for signal_type in signal_type_list:
+   
+      signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_%s_pol.npy" % (signal_type,pol)
+        
+      signal_short_baselines = np.load(signal_array_short_baselines_filename)
+      #signal_short_baselines_log = np.log10(signal_short_baselines[0,:])
+      plt.plot(freq_MHz_list,signal_short_baselines[0,:][0:maxchan],label=signal_type)
    
    map_title="short baselines real vis vs freq %s pol" % (pol)
    plt.ylabel("sum vis real Jy")
    plt.xlabel("freq (MHz)")
    plt.legend(loc=1)
-   fig_name= "%s%s_pol_real_vis_vs_freq_short_baselines_log.png" % (outbase_name,pol)
+   fig_name= "%s%s_pol_real_vis_vs_freq_short_baselines_global_noise.png" % (outbase_name,pol)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+plt.clf()
+signal_type_list=['global','noise']
+for pol_index,pol in enumerate(pol_list):
+   for signal_type in signal_type_list:
+   
+      signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_weighted_%s_pol.npy" % (signal_type,pol)
+        
+      signal_short_baselines = np.load(signal_array_short_baselines_filename)
+      #signal_short_baselines_log = np.log10(signal_short_baselines[0,:])
+      plt.plot(freq_MHz_list,signal_short_baselines[0,:][0:maxchan],label=signal_type)
+   
+   map_title="short baselines weighted real vis vs freq %s pol" % (pol)
+   plt.ylabel("sum vis real Jy")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s%s_pol_real_vis_vs_freq_short_baselines_weighted_global_noise.png" % (outbase_name,pol)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
@@ -1777,10 +2122,52 @@ signal_type_list=['sky','global','noise']
 for pol_index,pol in enumerate(pol_list):
    for signal_type in signal_type_list:
    
+      signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_weighted_%s_pol.npy" % (signal_type,pol)
+        
+      signal_short_baselines = np.load(signal_array_short_baselines_filename)
+      signal_short_baselines_log = np.log10(abs(signal_short_baselines[0,:]))
+      plt.plot(freq_MHz_list,signal_short_baselines_log[0:maxchan],label=signal_type)
+   
+   map_title="weighted short baselines log abs real vis vs freq %s pol" % (pol)
+   plt.ylabel("log sum abs real vis Jy")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s%s_pol_log_abs_real_vis_vs_freq_short_baselines_weighted_log.png" % (outbase_name,pol)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   
+plt.clf()
+signal_type_list=['sky']
+for pol_index,pol in enumerate(pol_list):
+   for signal_type in signal_type_list:
+   
+      signal_array_short_baselines_filename = outbase_name + "%s_signal_array_short_baselines_%s_pol.npy" % (signal_type,pol)
+        
+      signal_short_baselines = np.load(signal_array_short_baselines_filename)
+      #signal_short_baselines_log = np.log10(signal_short_baselines[0,:])
+      plt.plot(freq_MHz_list,signal_short_baselines[0,:][0:maxchan],label=signal_type)
+   
+   map_title="short baselines real vis vs freq %s pol" % (pol)
+   plt.ylabel("sum vis real Jy")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s%s_pol_real_vis_vs_freq_short_baselines_sky.png" % (outbase_name,pol)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+plt.clf()
+signal_type_list=['sky','global','noise']
+#signal_type_list=['sky']
+for pol_index,pol in enumerate(pol_list):
+   for signal_type in signal_type_list:
+   
       number_baselines_used_array_filename = outbase_name + "%s_number_baselines_used_%s_pol.npy" % (signal_type,pol)
       
       number_baselines_used_array = np.load(number_baselines_used_array_filename)
-      plt.plot(freq_MHz_list,number_baselines_used_array[0,:],label=signal_type)
+      plt.plot(freq_MHz_list,number_baselines_used_array[0,:][0:maxchan],label=signal_type)
    
    map_title="Number of short baselines used %s pol" % (pol)
    plt.ylabel("Number of baselines")
