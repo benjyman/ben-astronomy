@@ -11,6 +11,7 @@
 import numpy as np
 import healpy as hp
 from pygsm import GSMObserver2016
+from pygsm import GSMObserver
 from datetime import datetime, date
 import matplotlib.pyplot as plt
 import os,sys
@@ -21,7 +22,7 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 from scipy.ndimage import map_coordinates
 from scipy import signal
-
+import numpy.polynomial.polynomial as poly
 from pyuvdata import UVData
 import math
 
@@ -75,9 +76,12 @@ lst_list = lst_list_array.astype(str)
 #lst_list = ['0.120']
 #lst_list = ['12']
 #pol_list = ['X','Y']
+sky_model = 'gsm'
+#sky_model = 'gsm2016'
 pol_list = ['X']
 #signal_type_list=['global','diffuse','noise','gain_errors']
 signal_type_list=['diffuse']
+poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -126,9 +130,9 @@ def cleanup_images_and_vis(lst,freq_MHz,pol):
       
    date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
   
-   gsm_hpx_fits_name = "gsm_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
-   reprojected_gsm_fitsname = "gsm_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
-   reprojected_gsm_im_name = "gsm_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
+   gsm_hpx_fits_name = "%s_map_LST_%03d_%s_MHz_hpx.fits" % (sky_model,lst_deg,int(freq_MHz))
+   reprojected_gsm_fitsname = "%s_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
+   reprojected_gsm_im_name = "%s_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
    
    global_signal_hpx_fits_name = "global_signal_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
    reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
@@ -141,7 +145,7 @@ def cleanup_images_and_vis(lst,freq_MHz,pol):
    eda_model_no_source_beam_name = "eda_no_source_LST_%03d_%s_MHz.beam" % (lst_deg,int(freq_MHz))
    eda_model_no_source_image_fits_name = "eda_no_source_LST_%03d_%s_MHz.fits" % (lst_deg,int(freq_MHz))
    
-   reprojected_gsm_im_Jy_per_pix_name =  "gsm_map_%s_%s_MHz_reprojected_Jy_pix.im" % (date_time_string,int(freq_MHz))
+   reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
    reprojected_global_signal_im_Jy_per_pix_name =  "global_map_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
    
    cmd = "rm -rf %s %s %s %s %s %s %s %s %s %s %s %s" % (gsm_hpx_fits_name,reprojected_gsm_fitsname,reprojected_gsm_im_name,global_signal_hpx_fits_name,reprojected_global_signal_fitsname,reprojected_global_signal_im_name,base_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,eda_model_no_source_image_fits_name,reprojected_gsm_im_Jy_per_pix_name,reprojected_global_signal_im_Jy_per_pix_name)
@@ -536,7 +540,7 @@ def find_nearest(array, value):
    
    
 #def compute_weights(lst_deg,pol,freq_MHz,recompute_fits=False):
-def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors']):
+def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],sky_model='gsm'):
    n_chan = len(freq_MHz_list)
    n_lst = len(lst_list)
    n_pol = len(pol_list)
@@ -548,7 +552,7 @@ def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse',
       if 'noise' in signal_type_list:
           model_vis_name_base += '_noise'
       if 'diffuse' in signal_type_list:
-          model_vis_name_base += '_diffuse'
+          model_vis_name_base += '_diffuse_%s' % sky_model
       if 'global' in signal_type_list:
           model_vis_name_base += '_global' 
       if 'gain_errors' in signal_type_list:
@@ -743,9 +747,61 @@ def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse',
 #      for freq_MHz in freq_MHz_list[0:2]:
 #         compute_weights(lst_deg,pol,freq_MHz)
 
-         
+def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],outbase_name='extracted_1_',poly_order=4,sky_model='gsm'):
+   #for signal_type in signal_type_list:
+   freq_MHz_end = freq_MHz_list[-1]
+   lst_end = lst_list[-1]
+   lst_deg_end = (float(lst_end)/24.)*360.
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   for pol_index,pol in enumerate(pol_list):
+         model_vis_name_base = "eda_model_LST_%03d_%s_%s_MHz" % (lst_deg_end,pol,int(freq_MHz_end))
+         if 'noise' in signal_type_list:
+             model_vis_name_base += '_noise'
+         if 'diffuse' in signal_type_list:
+             model_vis_name_base += '_diffuse_%s' % sky_model
+         if 'global' in signal_type_list:
+             model_vis_name_base += '_global'
+         if 'gain_errors' in signal_type_list:
+             model_vis_name_base += '_gain_errors'         
 
-def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],outbase_name='extracted_1_'):
+         signal_array_short_baselines_filename = outbase_name + "%s_signal.npy" % (model_vis_name_base)
+         signal_array_short_baselines = np.load(signal_array_short_baselines_filename)
+         signal_array_all_baselines_filename = outbase_name + "%s_signal_all_baselines.npy" % (model_vis_name_base)
+         signal_array_all_baselines = np.load(signal_array_all_baselines_filename)
+         signal_array_all_baselines_filename_abs = outbase_name + "%s_signal_all_baselines_abs.npy" % (model_vis_name_base)
+         signal_array_all_baselines_abs = np.load(signal_array_all_baselines_filename_abs)
+         signal_array_short_baselines_weighted_filename = outbase_name + "%s_signal_weighted.npy" % (model_vis_name_base)
+         signal_array_short_baselines_weighted = np.load(signal_array_short_baselines_weighted_filename)
+
+         coefs = poly.polyfit(freq_MHz_array, signal_array_all_baselines_abs[0,:], poly_order)
+         ffit = poly.polyval(freq_MHz_array, coefs)
+
+         plt.clf()
+         plt.plot(freq_MHz_array,ffit,label='model fit')
+         plt.plot(freq_MHz_array,signal_array_all_baselines_abs[0,:],label='data')
+         map_title="Polynomial order %s fit to diffuse %s" % (poly_order,sky_model)
+         plt.ylabel("sum vis (Jy)")
+         plt.xlabel("freq (MHz)")
+         plt.legend(loc=1)
+         fig_name= "%s%s_model_signal_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print "saved %s" % fig_name
+
+         residual = ffit - signal_array_all_baselines_abs[0,:]
+     
+         plt.clf()
+         plt.plot(freq_MHz_array,residual,label='residual')
+         map_title="Residual for polynomial order %s fit to diffuse" % poly_order
+         plt.ylabel("Residual sum vis (Jy)")
+         plt.xlabel("freq (MHz)")
+         plt.legend(loc=1)
+         fig_name= "%s%s_residual_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print "saved %s" % fig_name
+
+def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],outbase_name='extracted_1_',sky_model='gsm'):
    #for signal_type in signal_type_list:
    freq_MHz_end = freq_MHz_list[-1]
    lst_end = lst_list[-1]
@@ -755,7 +811,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
          if 'noise' in signal_type_list:
              model_vis_name_base += '_noise'
          if 'diffuse' in signal_type_list:
-             model_vis_name_base += '_diffuse'
+             model_vis_name_base += '_diffuse_%s' % sky_model
          if 'global' in signal_type_list:
              model_vis_name_base += '_global' 
          if 'gain_errors' in signal_type_list:
@@ -777,6 +833,8 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
          signal_array_short_baselines_filename = outbase_name + "%s_signal.npy" % (model_vis_name_base)
          signal_array_all_baselines = np.full((n_pol,n_chan),0.0)
          signal_array_all_baselines_filename = outbase_name + "%s_signal_all_baselines.npy" % (model_vis_name_base)
+         signal_array_all_baselines_abs = np.full((n_pol,n_chan),0.0)
+         signal_array_all_baselines_filename_abs = outbase_name + "%s_signal_all_baselines_abs.npy" % (model_vis_name_base)
          signal_array_short_baselines_weighted = np.full((n_pol,n_chan),0.0)
          signal_array_short_baselines_weighted_filename = outbase_name + "%s_signal_weighted.npy" % (model_vis_name_base)
          number_baselines_used_array = np.full((n_pol,n_chan),0.0)
@@ -789,6 +847,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
             chan_vis_real_sum_weighted = 0.0
             chan_vis_real_sum = 0.0
             chan_vis_real_sum_all_baselines = 0.0
+            chan_vis_abs_sum_all_baselines = 0.0
             #lst_vis_real_sum = 0.0
             #lst_vis_real_sum_weighted = 0.0
             chan_vis_used = 0.0
@@ -839,11 +898,12 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
                   for timestep_visibility_index,timestep_visibility_real in enumerate(timestep_visibilities[:,0]):
                      #this is wrong as the visibilities are ungridded
                      ##print visibility_real
-                     ##timestep_visibility_imag = timestep_visibilities[timestep_visibility_index,0,0,0,0,1]
+                     #print timestep_visibilities.shape
+                     timestep_visibility_imag = timestep_visibilities[timestep_visibility_index,1]
                      ###visibility_weight = visibilities[visibility_index,0,0,0,2]
                      ##print " %s %s i, weight:%s " % (visibility_real,visibility_imag,visibility_weight)
-                     ##complex_vis = np.complex(timestep_visibility_real,timestep_visibility_imag)
-                     ##abs_vis = np.abs(complex_vis)
+                     complex_vis = np.complex(timestep_visibility_real,timestep_visibility_imag)
+                     abs_vis = abs(complex_vis)
                      ##print "complex_vis %s" % complex_vis
                      ##signal_array_unweighted[pol_index,chan_index,0] += complex_vis
                      #if signal_type == 'sky':
@@ -866,6 +926,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
                      #print weights_array.shape
                      #all baselines:
                      chan_vis_real_sum_all_baselines += timestep_visibility_real
+                     chan_vis_abs_sum_all_baselines += abs_vis
                      #only short baselines
                      if not np.isnan(uv_zero_weighting):
                         if uv_zero_weighting > 0.1:
@@ -904,6 +965,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
             
             #all_baselines:
             signal_array_all_baselines[pol_index,chan_index] = chan_vis_real_sum_all_baselines
+            signal_array_all_baselines_abs[pol_index,chan_index] = chan_vis_abs_sum_all_baselines
             
             if chan_vis_used>0.:
                chan_vis_real_average = chan_vis_real_sum/chan_vis_used
@@ -946,6 +1008,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list=['
          
          np.save(signal_array_short_baselines_filename,signal_array_short_baselines)
          np.save(signal_array_all_baselines_filename,signal_array_all_baselines)
+         np.save(signal_array_all_baselines_filename_abs,signal_array_all_baselines_abs)
          np.save(signal_array_short_baselines_weighted_filename,signal_array_short_baselines_weighted)
          np.save(number_baselines_used_array_filename,number_baselines_used_array)
 
@@ -1478,7 +1541,7 @@ def generate_new_average_beam():
 
 
 #main program
-def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
+def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
    #Do this stuff for each lst and each freq:     
    #model_sky_uvfits_list_X_lsts = []
    #model_global_signal_uvfits_list_X_lsts = []
@@ -1526,9 +1589,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
          wavelength = 300./freq_MHz
          freq_GHz = freq_MHz/1000.
          
-         gsm_hpx_fits_name = "gsm_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
-         reprojected_gsm_fitsname = "gsm_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
-         reprojected_gsm_im_name = "gsm_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
+         gsm_hpx_fits_name = "%s_map_LST_%03d_%s_MHz_hpx.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_fitsname = "%s_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_im_name = "%s_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
          
          global_signal_hpx_fits_name = "global_signal_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
@@ -1584,8 +1647,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
          #2. Sky model
          #Need a pb-attenuated gsm image in slant-orthographic projection
          # - obtain gsm image at desired frequency and datetime (healpix)
-   
-         ov = GSMObserver2016()
+         if sky_model == 'gsm2016': 
+            ov = GSMObserver2016()
+         elif  sky_model == 'gsm':
+            ov = GSMObserver()
+         else:
+            print 'unknown sky_model'
+            sys.exit()
          ov.lon = longitude_degrees
          ov.lat = latitude_degrees
          ov.elev = elevation_m
@@ -1677,7 +1745,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
             #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
             hp.orthview(map=gsm_map,half_sky=False,title=map_title)
             #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-            fig_name="gsm_map_%s_%sMHz.png" % (date_time_string,int(freq_MHz))
+            fig_name="%s_map_%s_%sMHz.png" % (sky_model,date_time_string,int(freq_MHz))
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
             print "saved %s" % fig_name
@@ -1740,7 +1808,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
          scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
          print "scale map by %s to get to Jy/pix" % scale
          
-         reprojected_gsm_im_Jy_per_pix_name =  "gsm_map_%s_%s_MHz_reprojected_Jy_pix.im" % (date_time_string,int(freq_MHz))
+         reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
          
          cmd = "rm -rf %s" % reprojected_gsm_im_Jy_per_pix_name
          print(cmd)
@@ -1935,7 +2003,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
             
             if 'diffuse' in signal_type_list:
             
-               model_vis_name_base += '_diffuse'
+               model_vis_name_base += '_diffuse_%s' % sky_model
                out_vis_name = model_vis_name_base + '.vis'
                
                cmd = "rm -rf %s" % out_vis_name
@@ -2214,7 +2282,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
             if 'noise' in signal_type_list:
                model_vis_name_base += '_noise'
             if 'diffuse' in signal_type_list:
-               model_vis_name_base += '_diffuse'
+               model_vis_name_base += '_diffuse_%s' % sky_model
             if 'global' in signal_type_list:
                model_vis_name_base += '_global' 
             if 'gain_errors' in signal_type_list:
@@ -2236,7 +2304,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list):
             
             
             
-def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],outbase_name='extracted_1_'):
+def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','global','noise','gain_errors'],outbase_name='extracted_1_',sky_model='gsm'):
    freq_MHz_end = freq_MHz_list[-1]
    lst_end = lst_list[-1]
    lst_deg_end = (float(lst_end)/24.)*360.
@@ -2245,7 +2313,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
       if 'noise' in signal_type_list:
           model_vis_name_base += '_noise'
       if 'diffuse' in signal_type_list:
-          model_vis_name_base += '_diffuse'
+          model_vis_name_base += '_diffuse_%s' % sky_model
       if 'global' in signal_type_list:
           model_vis_name_base += '_global' 
       if 'gain_errors' in signal_type_list:
@@ -2255,6 +2323,8 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
       signal_short_baselines = np.load(signal_array_short_baselines_filename)
       signal_array_all_baselines_filename = outbase_name + "%s_signal_all_baselines.npy" % (model_vis_name_base)
       signal_all_baselines = np.load(signal_array_all_baselines_filename)
+      signal_array_all_baselines_filename_abs = outbase_name + "%s_signal_all_baselines_abs.npy" % (model_vis_name_base)
+      signal_all_baselines_abs = np.load(signal_array_all_baselines_filename_abs)
       signal_array_short_baselines_weighted_filename = outbase_name + "%s_signal_weighted.npy" % (model_vis_name_base)
       signal_short_baselines_weighted = np.load(signal_array_short_baselines_weighted_filename)
       number_baselines_used_array_filename = outbase_name + "%s_number_baselines_used.npy" % (model_vis_name_base)
@@ -2262,6 +2332,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
 
       signal_short_baselines_log = np.log10(abs(signal_short_baselines[0,:]))
       signal_all_baselines_log = np.log10(abs(signal_all_baselines[0,:]))
+      signal_all_baselines_abs_log = np.log10(signal_all_baselines_abs[0,:])
       signal_short_baselines_weighted_log = np.log10(abs(signal_short_baselines_weighted[0,:]))
       
       #short baselines real
@@ -2335,6 +2406,30 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name
+
+      #all baselines abs
+      plt.clf()
+      plt.plot(freq_MHz_list,signal_all_baselines_abs[0,:])
+      map_title="all baselines abs vis vs freq %s pol" % (pol)
+      plt.ylabel("sum vis real Jy")
+      plt.xlabel("freq (MHz)")
+      plt.legend(loc=1)
+      fig_name= "%s%s_abs_vis_vs_freq_all_baselines.png" % (outbase_name,model_vis_name_base)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name
+      
+      #all baselines abs log
+      plt.clf()
+      plt.plot(freq_MHz_list,signal_all_baselines_abs_log)
+      map_title="all baselines log abs vis vs freq %s pol" % (pol)
+      plt.ylabel("log sum abs vis Jy")
+      plt.xlabel("freq (MHz)")
+      plt.legend(loc=1)
+      fig_name= "%s%s_log_abs_vis_vs_freq_all_baseline.png" % (outbase_name,model_vis_name_base)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name
       
       #number of baselines
       plt.clf()
@@ -2354,16 +2449,19 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
 #calculate the global 21cm signal:
 s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
 
-simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list)
+simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
 #sys.exit() 
 
-compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list)
+compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
 #sys.exit()
 
-extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='test_concat_')
+extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='test_concat_',sky_model=sky_model)
 #sys.exit()
 
-plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='test_concat_')
+model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='test_concat_',poly_order=poly_order,sky_model=sky_model)
+
+plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='test_concat_',sky_model=sky_model)
+
 
 #list = ['eda_model_plus_global_LST_000_X_pol_50_MHz.uvfits','eda_model_noise_LST_000_X_50_MHz.uvfits','eda_model_plus_sky_LST_000_X_pol_50_MHz.uvfits']  
 #list = ['eda_model_plus_global_LST_000_X_pol_50_MHz.uvfits','eda_model_plus_global_LST_001_X_pol_50_MHz.uvfits']
@@ -2382,29 +2480,4 @@ plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,sign
 #      for freq_MHz in freq_MHz_list:
 #         #cleanup_images_and_vis(lst,freq_MHz,pol)
 #         compute_weights(lst_deg,pol,freq_MHz)
-
-
-#plot_from_uvfits('eda_model_LST_000_180_MHz.uvfits',180)
-#plot_from_uvfits('eda_model_plus_global_LST_000_X_pol_100_MHz.uvfits',100)
-#plot_from_uvfits('eda_model_noise_LST_000_X_100_MHz.uvfits',100)
-
-
-
-
-
-   
-   
-   
-   
-   
-   
-   
-   
-       
-       
-       
-    
- 
- 
- 
 
