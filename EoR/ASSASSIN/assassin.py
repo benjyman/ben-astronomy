@@ -55,7 +55,7 @@ A = -150./1000.
 delta_nu = 10.
 nu_c = 70.
 
-do_cleanup_images_and_vis = False
+do_cleanup_images_and_vis = True
 use_analytic_beam = True
 generate_new_hpx = True
 plot_gsm_map_hpx = False
@@ -82,11 +82,13 @@ plot_average_beam = False
 #8_min_lst_0:
 lst_list_array = np.arange(0,0.1333333,0.066667)
 lst_list = lst_list_array.astype(str)
+outbase_name = 'concat_8_min_'
 #lst_list = ['0.120']
 #lst_list = ['12']
 #pol_list = ['X','Y']
-sky_model = 'gsm'
+#sky_model = 'gsm'
 #sky_model = 'gsm2016'
+sky_model = 'gmoss'
 pol_list = ['X']
 #signal_type_list=['global','diffuse','noise','gain_errors']
 signal_type_list=['diffuse']
@@ -2043,6 +2045,22 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
          elif  sky_model == 'gsm':
             #ov = GSMObserver()
             gsm = GlobalSkyModel()
+         elif sky_model == 'gmoss':
+            gmoss_data_text_file_name = "/data/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
+            #from Mayuri: The data is in HEALPIX Nested Scheme with NSIDE 16 and 5 degrees resolution. 
+            #It contains GMOSS spectra generated at the 3072 pixels. The first row gives the frequency [GHz] 
+            #going from 0.04 GHz to 0.2 GHz in steps of 0.001 GHz. Sky spectra are in Kelvin units
+            sky_model_lines_list = []
+            with open(gmoss_data_text_file_name, 'r') as f:
+               sky_model_lines = f.readlines()
+            for line in sky_model_lines:
+               sky_model_lines_list.append(line.split())
+            sky_model_data_array = np.full((len(sky_model_lines_list),len(sky_model_lines_list[0])),np.nan)
+            for line_values_index,line_vales in enumerate(sky_model_lines_list):
+               sky_model_data_array[line_values_index,:] = [float(i.strip()) for i in sky_model_lines_list[line_values_index]]
+            gmoss_freqs_GHz = sky_model_data_array[0]
+            #gmoss_freqs_GHz = np.asarray(gmoss_freqs_GHz)
+            gmoss_freqs_MHz = gmoss_freqs_GHz*1000.
          else:
             print 'unknown sky_model'
             sys.exit()
@@ -2124,12 +2142,21 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
             cmd = "rm -rf %s %s" % (gsm_hpx_fits_name,reprojected_gsm_im_name)
             print(cmd)
             os.system(cmd)
-
-            gsm_map = gsm.generate(freq_MHz)
-
-            hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
+            if sky_model == 'gmoss':
+               gmoss_freq_index, gmoss_freq_value = find_nearest(gmoss_freqs_MHz,freq_MHz)
+               #print "gmoss_freq_index, gmoss_freq_value %s %s" % (gmoss_freq_index, gmoss_freq_value)
+               sky_model_data_nested = sky_model_data_array[:,gmoss_freq_index][1:]
+               hp.write_map(gsm_hpx_fits_name,sky_model_data_nested,coord='G',nest=True)
+               gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
+            else:
+               gsm_map = gsm.generate(freq_MHz)
+               hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
          else:
-            gsm_map = hp.read_map(gsm_hpx_fits_name)
+            if sky_model == 'gmoss':
+               sky_model_data_nested = hp.read_map(gsm_hpx_fits_name,nest=True)
+               gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
+            else:
+               gsm_map = hp.read_map(gsm_hpx_fits_name)
          
          #plot?
          if plot_gsm_map_hpx:
@@ -2931,18 +2958,18 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
 #calculate the global 21cm signal:
 s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
 
-#simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
+simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
 #sys.exit() 
 
 #compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
 #sys.exit()
 
-extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='threshold_0p5_8_min_',sky_model=sky_model)
+extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model)
 #sys.exit()
 
-plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='threshold_0p5_8_min_',sky_model=sky_model)
+plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model)
 
-model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name='threshold_0p5_8_min_',poly_order=poly_order,sky_model=sky_model)
+model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model)
 
 
 
