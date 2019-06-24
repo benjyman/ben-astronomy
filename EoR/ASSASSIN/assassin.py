@@ -88,12 +88,12 @@ outbase_name = 'concat_8_min_'
 #pol_list = ['X','Y']
 #sky_model = 'gsm'
 #sky_model = 'gsm2016'
-sky_model = 'gmoss'
+sky_model = 'gsm'
 pol_list = ['X']
 #signal_type_list=['global','diffuse','noise','gain_errors']
 signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
-poly_order = 8
+poly_order = 5
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -167,8 +167,10 @@ def cleanup_images_and_vis(lst,freq_MHz,pol):
    os.system(cmd)
    
    apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
+   apparent_sky_im_Tb_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.im" % (lst_deg,pol,int(freq_MHz))
+   apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
    apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
-   cmd = "rm -rf %s %s" % (apparent_sky_im_name,apparent_global_signal_im_name)
+   cmd = "rm -rf %s %s %s %s" % (apparent_sky_im_name,apparent_global_signal_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
    print cmd
    os.system(cmd)
    
@@ -861,6 +863,92 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','gl
          signal_array_short_baselines_weighted_Tb_filename = outbase_name + "%s_signal_weighted_Tb.npy" % (model_vis_name_base)
          signal_array_short_baselines_weighted_Tb = np.load(signal_array_short_baselines_weighted_Tb_filename)
         
+         if 'diffuse' in signal_type_list:
+            if pol == 'X':
+               sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam_X.npy" % model_vis_name_base
+            else:
+               sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam_Y.npy" % model_vis_name_base
+            sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % model_vis_name_base
+            sky_averaged_diffuse_array_beam_lsts = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+            sky_averaged_diffuse_array_no_beam_lsts = np.load(sky_averaged_diffuse_array_no_beam_lsts_filename)
+         
+            ##########
+            #Sky - average from sky model stuff (not simulated through assassin sim, just sky time beam and average)
+            #with beam
+            coefs = poly.polyfit(freq_MHz_array, sky_averaged_diffuse_array_beam_lsts, poly_order)
+            ffit = poly.polyval(freq_MHz_array, coefs)
+   
+            residual = ffit - sky_averaged_diffuse_array_beam_lsts
+   
+            
+            plt.clf()
+            plt.plot(freq_MHz_array,residual,label='residual')
+            map_title="Residual for polynomial order %s fit to diffuse" % poly_order
+            plt.ylabel("Residual Tb (K)")
+            plt.xlabel("freq (MHz)")
+            plt.legend(loc=1)
+            fig_name= "%s%s_residual_sky_average_no_beam_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print "saved %s" % fig_name
+   
+            ##no beam
+            #coefs = poly.polyfit(freq_MHz_array, sky_averaged_diffuse_array_no_beam_lsts, poly_order)
+            #ffit = poly.polyval(freq_MHz_array, coefs)
+   
+            #residual = ffit - sky_averaged_diffuse_array_no_beam_lsts
+   
+            
+            #plt.clf()
+            #plt.plot(freq_MHz_array,residual,label='residual')
+            #map_title="Residual for polynomial order %s fit to diffuse" % poly_order
+            #plt.ylabel("Residual Tb (K)")
+            #plt.xlabel("freq (MHz)")
+            #plt.legend(loc=1)
+            #fig_name= "%s%s_residual_sky_average_beam_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print "saved %s" % fig_name
+         
+            #in log log space:
+            log_sky_array = np.log10(sky_averaged_diffuse_array_beam_lsts)
+            log_freq_MHz_array = np.log10(freq_MHz_array)
+            coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+            ffit = poly.polyval(log_freq_MHz_array, coefs)
+            ffit_linear = 10**ffit
+            
+            #log_residual = log_signal_array_short_baselines - log_ffit
+            residual_of_log_fit = ffit_linear - sky_averaged_diffuse_array_beam_lsts
+            
+            
+            #plt.clf()
+            #plt.plot(log_freq_MHz_array,log_residual,label='residual of log fit')
+            #map_title="Log Residual for polynomial order %s fit to diffuse" % poly_order
+            #plt.ylabel("Log residual Tb (K)")
+            #plt.xlabel("log freq (MHz)")
+            #plt.legend(loc=1)
+            #fig_name= "%s%s_log_fit_residual_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print "saved %s" % fig_name         
+            
+            #convert back to linear
+            #inverse_log_residual = 10.**log_residual
+            
+            plt.clf()
+            plt.plot(freq_MHz_array,residual_of_log_fit,label='residual of log fit')
+            map_title="Residual for log polynomial order %s fit to diffuse" % poly_order
+            plt.ylabel("Residual Tb (K)")
+            plt.xlabel("freq (MHz)")
+            plt.legend(loc=1)
+            fig_name= "%s%s_log_fit_residual_sky_average_poly_%s.png" % (outbase_name,model_vis_name_base,poly_order)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print "saved %s" % fig_name 
+
+         
+         
+         
          ###################
          #all baselines abs
          #can't use the nan values:
@@ -1933,6 +2021,8 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
 
 #main program
 def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
+   n_chan = len(freq_MHz_list)
+   n_lsts = len(lst_list)
    #Do this stuff for each lst and each freq:     
    #model_sky_uvfits_list_X_lsts = []
    #model_global_signal_uvfits_list_X_lsts = []
@@ -1942,6 +2032,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
    #model_noise_uvfits_list_Y_lsts = []
    model_vis_uvfits_list_X_lsts = []
    model_vis_uvfits_list_Y_lsts = []
+   
+   sky_averaged_diffuse_array_beam_X_lsts = np.full((n_chan),0.0)
+   sky_averaged_diffuse_array_beam_Y_lsts = np.full((n_chan),0.0)
+   sky_averaged_diffuse_array_no_beam_lsts = np.full((n_chan),0.0)
+   
    
    for lst in lst_list:
       #model_sky_vis_list_X = []
@@ -2214,6 +2309,10 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
          reprojected_gsm_map,footprint = reproject_from_healpix(hdu_gsm, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
          #reprojected_gsm_map,footprint = reproject_from_healpix((data_gsm,'galactic'), target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',nested=False)
          
+         #calc sky-average temp, no beam
+         sky_average_temp_no_beam = np.nanmean(reprojected_gsm_map)
+         print sky_average_temp_no_beam
+         sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
          
          #write the map to fits
          pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
@@ -2355,15 +2454,37 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
             #now multiply them to get the apparent sky and put that into uvmodel, 
          
             apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
-         
-            cmd = "rm -rf %s " % apparent_sky_im_name
+            apparent_sky_im_Tb_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.im" % (lst_deg,pol,int(freq_MHz))
+            apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
+            
+            cmd = "rm -rf %s %s %s " % (apparent_sky_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
             print(cmd)
             os.system(cmd)
          
             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_Jy_per_pix_name,apparent_sky_im_name)
             print(cmd)
             os.system(cmd)
-   
+            
+            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
+            print(cmd)
+            os.system(cmd)
+            
+            cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
+            print(cmd)
+            os.system(cmd)
+            
+            #just for sky-averaged temp plotting:
+            with fits.open(apparent_sky_im_Tb_fits_name) as hdu_list:
+               data = hdu_list[0].data
+            sky_average_temp_beam = np.nanmean(data)
+            if pol=='X':
+               sky_averaged_diffuse_array_beam_X_lsts[freq_MHz_index] += sky_average_temp_beam
+            else:
+               sky_averaged_diffuse_array_beam_Y_lsts[freq_MHz_index] += sky_average_temp_beam
+            
+            
+            
+            
             #Repeat for global signal
             apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
             apparent_global_signal_fits_name_cropped = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.fits" % (lst_deg,pol,int(freq_MHz))
@@ -2686,6 +2807,25 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
    #DON'T Concat into a 2-hour chunk (this fails anyway because of pyuvdata and different antenna positions for different lsts for some reason)
    #Data will likely come in a number of 'snapshot' uvfits files so might as well just digest these individually in extract signal etc
    
+   #get the average diffuse over all lsts
+   sky_averaged_diffuse_array_no_beam_lsts_filename =  "%s_sky_averaged_diffuse_no_beam.npy" % model_vis_name_base
+   sky_averaged_diffuse_array_no_beam_lsts = sky_averaged_diffuse_array_no_beam_lsts/n_lsts
+   np.save(sky_averaged_diffuse_array_no_beam_lsts_filename,sky_averaged_diffuse_array_no_beam_lsts)
+   for pol in pol_list:
+      if pol == 'X':
+         sky_averaged_diffuse_array_beam_X_lsts = sky_averaged_diffuse_array_beam_X_lsts/n_lsts
+         sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam_X.npy" % model_vis_name_base
+         np.save(sky_averaged_diffuse_array_beam_X_lsts_filename,sky_averaged_diffuse_array_beam_X_lsts)
+      else:
+         sky_averaged_diffuse_array_beam_Y_lsts = sky_averaged_diffuse_array_beam_Y_lsts/n_lsts
+         sky_averaged_diffuse_array_beam_Y_lsts_filename = "%s_sky_averaged_diffuse_beam_Y.npy" % model_vis_name_base
+         np.save(sky_averaged_diffuse_array_beam_Y_lsts_filename,sky_averaged_diffuse_array_beam_Y_lsts)
+         
+     
+   
+   
+   
+   
    #concat the lsts together in 2-hour chunk
    for pol in pol_list:
       output_concat_vis_pyuvdata_name_lsts = "%s_concat_lsts.vis" % model_vis_name_base
@@ -2729,6 +2869,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model='gsm'):
          cmd = "rm -rf %s %s" % (output_concat_vis_pyuvdata_name,output_concat_uvfits_pyuvdata_name)
          print(cmd)
          os.system(cmd)
+    
+    
             
             
             
@@ -2773,6 +2915,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
       signal_all_baselines_log = np.log10(abs(signal_all_baselines[0,:]))
       signal_all_baselines_abs_log = np.log10(signal_all_baselines_abs[0,:])
       signal_short_baselines_weighted_log = np.log10(abs(signal_short_baselines_weighted[0,:]))
+      
       
       ##all baselines Tb real
       #plt.clf()
@@ -2953,12 +3096,17 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse','glo
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name
-      
+    
+
+            
+            
+
 
 #calculate the global 21cm signal:
 s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
 
-simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
+
+#simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
 #sys.exit() 
 
 #compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
@@ -2967,7 +3115,7 @@ simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_
 extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model)
 #sys.exit()
 
-plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model)
+#plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model)
 
 model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model)
 
