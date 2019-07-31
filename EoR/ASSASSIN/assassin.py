@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#ASSASSIN: (All Sky SigAl Short SPacing INterferometer)
+#ASSASSIN: (All Sky SignAl Short Spacing INterferometer)
 #Script to replicate Cath's global step simulations
 #
 #Daniel:
@@ -89,25 +89,19 @@ chan_width = 1.0
 if array_ant_locations == 'eda2':
    array_ant_locations_filename = '/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
    array_label = 'eda_model'
-   n_ants = 256
 elif array_ant_locations == 'eda2_sub48':
    array_ant_locations_filename = '/data/code/git/ben-astronomy/EoR/ASSASSIN/EDA2_sub_array_48.txt'
    array_label = 'eda_sub48_model'
-   n_ants = 48
 elif array_ant_locations == 'eda2_sim_compact_seed_123':
    array_ant_locations_filename = 'sim_array_seed_123_diameter_17_m_n_ants_256_min_spacing_75cm.txt'
    array_label = 'eda2_sim_compact_seed_123'
-   n_ants = 256
 elif array_ant_locations == 'eda2_sim_compact_seed_124':
    array_ant_locations_filename = 'sim_array_seed_124_diameter_17_m_n_ants_256_min_spacing_75cm.txt'
    array_label = 'eda2_sim_compact_seed_124'
-   n_ants = 256
 else:
    array_ant_locations_filename = ''
    array_label = 'array'
-   n_ants = 16
 
-n_baselines = n_ants*(n_ants-1) / 2. 
 
 eda2_data_dir = '/md0/EoR/ASSASSIN/data_eda2/eda2_sub48/'
 eda2_data_uvfits_name_list = ['chan_204_20190611T024741.uvfits']
@@ -132,9 +126,9 @@ lst_list = lst_list_array.astype(str)
 sky_model = 'gmoss'
 pol_list = ['X']
 #signal_type_list=['global','diffuse','noise','gain_errors']
-signal_type_list=['global','diffuse','noise']
+signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
-poly_order = 7
+poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -160,7 +154,7 @@ padding_factor = 25
 uvdist_wavelength_cutoff = 1.0
 min_imaging_uvdist_wavelength = 0.5
 max_imaging_uvdist_wavelength = 35.0
-zero_spacing_leakage_threshold = 0.5
+zero_spacing_leakage_threshold = 0.1
 
 outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
 
@@ -1180,6 +1174,10 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
          
          
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
+   with open(array_ant_locations_filename,'r') as f:
+      lines = f.readlines()
+   n_ants = int(len(lines))
+   n_baselines = n_ants*(n_ants-1) / 2. 
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -1511,7 +1509,234 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
             np.save(sum_of_weights_all_baselines_array_filename,sum_of_weights_all_baselines_array)
             np.save(sum_of_weights_short_baselines_array_filename,sum_of_weights_short_baselines_array)
             
+def extract_signal_from_sims_multi_coherent(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label,n_arrays,min_spacing_m):
+   min_spacing_cm = min_spacing_m * 100.
+   concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
+   concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   for pol_index,pol in enumerate(pol_list):
+         if 'noise' in signal_type_list:
+            concat_output_name_base_X += '_N'
+            concat_output_name_base_Y += '_N'
+         if 'diffuse' in signal_type_list:
+            concat_output_name_base_X += '_D_%s' % sky_model
+            concat_output_name_base_Y += '_D_%s' % sky_model
+         if 'global' in signal_type_list:
+            concat_output_name_base_X += '_G' 
+            concat_output_name_base_Y += '_G'
+         if 'gain_errors' in signal_type_list:
+            concat_output_name_base_X += '_GE'
+            concat_output_name_base_Y += '_GE'
+         
+         if do_image_and_subtr_from_simulated_data:
+            uv_type_list = ['original','subtracted']
+         else:
+            uv_type_list = ['original']
+         
+         for uv_type in uv_type_list:
+            if pol=='X':  
+               if uv_type=='original':                      
+                  model_vis_name_base = concat_output_name_base_X
+               else:
+                  model_vis_name_base = concat_output_name_base_X + '_sub'
+            else:
+               if uv_type=='original':
+                  model_vis_name_base = concat_output_name_base_Y
+               else:
+                  model_vis_name_base = concat_output_name_base_Y + '_sub'
+            model_vis_name_base += "_thresh_%0.2f" % (zero_spacing_leakage_threshold)
+
+            signal_array_short_baselines_weighted = np.full((n_pol,n_chan),0.0)
+            signal_array_short_baselines_weighted_Tb = np.full((n_pol,n_chan),0.0)
+            signal_array_short_baselines_weighted_Tb_filename = "%s_signal_weighted_Tb_multi.npy" % (model_vis_name_base)
+            number_baselines_used_array = np.full((n_pol,n_chan),0.0)
+            number_baselines_used_array_filename = "%s_number_baselines_used_multi.npy" % (model_vis_name_base)
+            sum_of_weights_short_baselines_array = np.full((n_pol,n_chan),np.nan)
+            sum_of_weights_short_baselines_array_filename = "%s_sum_of_weights_short_baselines_multi.npy" % (model_vis_name_base)
             
+            for chan_index,freq_MHz in enumerate(freq_MHz_list):
+               wavelength = 300./freq_MHz
+               
+               if pol=='X':
+                  beam_image_name = "model_%s_MHz_xx.fits" % int(freq_MHz)
+               else:
+                  beam_image_name = "model_%s_MHz_yy.fits" % int(freq_MHz)
+               
+               beam_plot_basename = beam_image_name.split('.')[0]
+               
+               with fits.open(beam_image_name) as beam_hdulist:
+                  beam_image_data = beam_hdulist[0].data
+                  beam_image_header = beam_hdulist[0].header
+               
+               #Fourier response:
+               fits_name= beam_plot_basename + "_beam_fft2_real_shift.fits"  
+               
+               beam_fft2_real_shift_hdu_list = fits.open(fits_name)
+               beam_fft2_real_shift = beam_fft2_real_shift_hdu_list[0].data   
+               beam_fft2_real_shift_norm = beam_fft2_real_shift/beam_fft2_real_shift.max()
+                    
+               beam_image_length = beam_image_data.shape[0]
+               beam_fft2_real_length = beam_fft2_real_shift.shape[0]
+               fft_centre_padded = int(beam_fft2_real_length/2.)
+               ##at phase centre angle is small sin(theta) = theta
+               #sine projection so half beam image corresponds to sin(90 deg) = 1
+               theta_step_rad = 1.0/(beam_image_length/2.)
+               spatial_frequencies_cols = np.fft.fftfreq(beam_fft2_real_shift.shape[1],d=theta_step_rad)
+               spatial_frequencies_cols_fftshift = np.fft.fftshift(spatial_frequencies_cols)
+               
+               u_max = np.abs(spatial_frequencies_cols_fftshift[0])
+               v_max = np.abs(spatial_frequencies_cols_fftshift[0])
+               resolution = np.abs(spatial_frequencies_cols_fftshift[0] - spatial_frequencies_cols_fftshift[1])
+               u_range = np.arange(-u_max,u_max,resolution)
+               v_range = np.arange(-v_max,v_max,resolution)
+                           
+               number_baselines_used_sum = 0.0
+               chan_sum_of_weights_all_baselines = 0.0
+               chan_sum_of_weights_short_baselines = 0.0
+               chan_vis_real_sum_weighted = 0.0
+               chan_vis_real_sum = 0.0
+               chan_vis_real_sum_all_baselines = 0.0
+               chan_vis_abs_sum_all_baselines = 0.0
+               chan_vis_used = 0.0
+               
+               
+               for array_number in range(n_arrays):
+                  array_label = 'array%03d_sep_%03d' % (array_number,min_spacing_cm)
+                  concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
+                  concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
+                  if 'noise' in signal_type_list:
+                     concat_output_name_base_X += '_N'
+                     concat_output_name_base_Y += '_N'
+                  if 'diffuse' in signal_type_list:
+                     concat_output_name_base_X += '_D_%s' % sky_model
+                     concat_output_name_base_Y += '_D_%s' % sky_model
+                  if 'global' in signal_type_list:
+                     concat_output_name_base_X += '_G' 
+                     concat_output_name_base_Y += '_G'
+                  if 'gain_errors' in signal_type_list:
+                     concat_output_name_base_X += '_GE'
+                     concat_output_name_base_Y += '_GE'
+            
+                  if pol=='X':  
+                     if uv_type=='original':                      
+                        uvfits_name = "%s_concat_lsts.uvfits" % concat_output_name_base_X
+                     else:
+                        uvfits_name = "%s_concat_lsts_sub.uvfits" % concat_output_name_base_X
+                  else:
+                     if uv_type=='original':
+                        uvfits_name = "%s_concat_lsts.uvfits" % concat_output_name_base_Y
+                     else:
+                        uvfits_name = "%s_concat_lsts_sub.uvfits" % concat_output_name_base_Y
+      
+                  print uvfits_name           
+                  hdulist = fits.open(uvfits_name)
+                  #hdulist.info()
+                  info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+                  #print info_string
+                  uvtable = hdulist[0].data
+                  uvtable_header = hdulist[0].header
+                  visibilities = uvtable['DATA']
+                  #print visibilities.shape
+                  visibilities_shape = visibilities.shape
+                  print "visibilities shape"
+                  print visibilities_shape
+                  
+                  #get the UU and VV so we can check whether we are using short baselines
+                  UU_s_array = uvtable['UU']
+                  UU_m_array = UU_s_array * c   
+                  VV_s_array = uvtable['VV']
+                  VV_m_array = VV_s_array * c
+                  
+                  n_vis = visibilities.shape[0]
+                  n_timesteps = n_vis/n_baselines
+                  #print "n_timesteps %s " % n_timesteps
+                  timestep_array = np.arange(0,n_timesteps,1)
+            
+                  UU_wavelength_array = UU_m_array / wavelength
+                  VV_wavelength_array = VV_m_array / wavelength
+                  
+                  for lst_index,lst in enumerate(lst_list):  
+                     lst_deg = (float(lst)/24.)*360.         
+                     print "lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+                     #keep in mind pol_index may be wrong (need to rerun sims with pol=xx,yy only, and not sure what the last index is even for ... real imag weight?)
+                     timestep_vis_real_sum = 0.
+                     timestep_vis_real_sum_weighted = 0.
+                     for timestep in timestep_array:
+                        timestep_baselines_used = 0.
+                        vis_start_index = int(timestep*n_baselines)
+                        timestep_visibilities = visibilities[vis_start_index:int(vis_start_index+n_baselines),0,0,0,chan_index,0,:]
+                        #print timestep_visibilities.shape
+                        for timestep_visibility_index,timestep_visibility_real in enumerate(timestep_visibilities[:,0]):
+                           visibility_index = vis_start_index + timestep_visibility_index
+                           #only proceed with all this compute-expensive stuff if the uvdist is small i.e. less than 2 wavelengths
+                           UU_wavelength = UU_wavelength_array[visibility_index]
+                           VV_wavelength = VV_wavelength_array[visibility_index]
+                           uvdist_wavelengths = np.sqrt(UU_wavelength**2 + VV_wavelength**2)
+                           if uvdist_wavelengths < uvdist_wavelength_cutoff:
+                              #print timestep_visibility_index
+                              timestep_visibility_imag = timestep_visibilities[timestep_visibility_index,1]
+                              ###visibility_weight = visibilities[visibility_index,0,0,0,2]
+                              ##print " %s %s i, weight:%s " % (visibility_real,visibility_imag,visibility_weight)
+                              complex_vis = np.complex(timestep_visibility_real,timestep_visibility_imag)
+                              abs_vis = abs(complex_vis)                 
+   
+                              nearest_UU_index, nearest_UU_value = find_nearest(spatial_frequencies_cols_fftshift,UU_wavelength)
+                              nearest_VV_index, nearest_VV_value = find_nearest(spatial_frequencies_cols_fftshift,VV_wavelength)
+   
+                              U_offset = nearest_UU_value - UU_wavelength
+                              V_offset = nearest_VV_value - VV_wavelength
+                                 
+                              #using mine:
+                              UU_cheat_index = int((beam_fft2_real_length/2.)-(nearest_UU_index-(beam_fft2_real_length/2.)))
+                              VV_cheat_index = int((beam_fft2_real_length/2.)-(nearest_VV_index-(beam_fft2_real_length/2.)))                           
+                              
+                              #are these around the right way?
+                              uv_zero_weighting = beam_fft2_real_shift_norm[VV_cheat_index,UU_cheat_index]
+                              #uv_zero_weighting_symmetric = beam_fft2_real_shift_norm[nearest_VV_index,nearest_UU_index]
+      
+                              #print "uv_zero_weighting %s" % uv_zero_weighting
+                              #print "uv_zero_weighting symmetric %s" % uv_zero_weighting_symmetric
+                              
+                              #all baselines signal add to weights array                        
+                              chan_sum_of_weights_all_baselines += uv_zero_weighting
+                              if uv_zero_weighting > zero_spacing_leakage_threshold:                              
+                                 #timestep_vis_real_sum += timestep_visibility_real
+                                 #timestep_vis_real_sum_weighted += timestep_visibility_real * uv_zero_weighting
+                                 chan_vis_real_sum += timestep_visibility_real
+                                 chan_vis_real_sum_weighted += timestep_visibility_real * uv_zero_weighting
+                                 #timestep_baselines_used += 1.
+                                 chan_vis_used += 1.
+                                 number_baselines_used_sum += 1.
+                                 chan_sum_of_weights_short_baselines += uv_zero_weighting
+               
+               #weights:
+               sum_of_weights_short_baselines_array[pol_index,chan_index] = chan_sum_of_weights_short_baselines
+               if chan_vis_used>0.:
+                  #chan_vis_real_average = chan_vis_real_sum/chan_vis_used
+                  print "chan_vis_real_sum"
+                  print chan_vis_real_sum
+                  #chan_vis_real_weighted_average = chan_vis_real_sum_weighted/chan_sum_of_weights
+               
+                  number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
+                  print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+               
+                  signal_array_short_baselines_weighted[pol_index,chan_index] = chan_vis_real_sum_weighted
+                  
+                  #number_baselines_used_array[pol_index,chan_index] = chan_vis_used            
+                  number_baselines_used_array[pol_index,chan_index] = number_baselines_used_average 
+                  
+         
+            #convert to brightness temp
+            wavelength_array = 300./freq_MHz_array
+            jy_to_tb_short_baselines = (wavelength_array**2) / (2. * k * 1.0e26 * sum_of_weights_short_baselines_array) 
+            #jy_to_tb = (wavelength_array**2) / (2. * k * 1.0e26)
+
+            signal_array_short_baselines_weighted_Tb = signal_array_short_baselines_weighted * jy_to_tb_short_baselines
+               
+            np.save(signal_array_short_baselines_weighted_Tb_filename,signal_array_short_baselines_weighted_Tb)
+            np.save(number_baselines_used_array_filename,number_baselines_used_array)
+            np.save(sum_of_weights_short_baselines_array_filename,sum_of_weights_short_baselines_array)     
+
 def extract_signal_from_multiple(uvfits_list_filename):
    #read the txt file containing list of uvfits files
    uvfits_filename_list = []
@@ -4071,10 +4296,14 @@ def plot_antenna_array(array_layout_filename):
    plt.title(antenna_position_plot_title)
    plt.savefig(antenna_position_plot_figname,dpi = 300)
    print "saved %s" % antenna_position_plot_figname
+   plt.close()
 
-def grow_new_array(seed,diameter,n_ants,min_spacing_m):
-   min_spacing_cm = int(min_spacing_m * 100)
-   new_ant_array_locations_filename = 'sim_array_seed_%s_diameter_%s_m_n_ants_%s_min_spacing_%scm.txt' % (seed,diameter,n_ants,min_spacing_cm)
+def grow_new_array(seed,n_ants,min_spacing_m):
+   #want to pack them in as tight as possible, so work out diameter (4/pi comes from ration of area of a square to a circle)
+   diameter = (4./math.pi) * min_spacing_m * math.sqrt(n_ants)
+   print "diameter of array with %s ants is %0.2f m" % (int(n_ants),diameter)
+   min_spacing_cm = int(min_spacing_m*100.)
+   new_ant_array_locations_filename = 'sim_array_seed_%03d_s_%03d_a_%03d.txt' % (seed,min_spacing_cm,n_ants)
    x_offset_list = []
    y_offset_list = []
    radius=diameter/2.
@@ -4120,17 +4349,31 @@ def grow_new_array(seed,diameter,n_ants,min_spacing_m):
    #print x_offset_list
    #print y_offset_list
    
-def model_average_from_arrays(n_arrays):
+def model_average_from_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_threshold,addition_type,n_ants):
+   #addition_type can be 'simple' or 'coherent'
+   #simple just averages each array signal that has been extracted seperately
+   #coherent uses the outputs from cohently adding the weighted signal previously using extract_signal_from_sims_multi
+   min_spacing_cm = int(min_spacing_m*100.)
    freq_MHz_array = np.asarray(freq_MHz_list)
-   model_vis_name_base = 'test_%02d_arrays' % n_arrays
-   signal_filename_01 = 'array00_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_0.50_signal_weighted_Tb.npy'
-   signal_array_01 = np.load(signal_filename_01)
-   signal_array_average = signal_array_01 * 0.0
-   for subarray in range(0,n_arrays):
-      signal_filename = 'array%02d_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_0.50_signal_weighted_Tb.npy' % subarray
-      signal_array = np.load(signal_filename)
-      signal_array_average += signal_array
-   signal_array_average = signal_array_average/n_arrays
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   model_vis_name_base = 'test_%03d_arrays_%03d_s_%03d_a_%03d_pc_thresh_%s' % (n_arrays,min_spacing_cm,n_ants,zero_spacing_leakage_threshold_percent,addition_type)
+   if addition_type == 'simple':
+      #signal_filename_01 = 'array000_sep_%03d_%03d_ants_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_%0.2f_signal_weighted_Tb.npy' % (min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      #signal_filename_01 = "array000_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_%0.2f_signal_weighted_Tb.npy" % (min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      signal_filename_01 = "array000_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy" % (min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      signal_array_01 = np.load(signal_filename_01)
+      signal_array_average = signal_array_01 * 0.0
+      for subarray in range(0,n_arrays):
+         #signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_%0.2f_signal_weighted_Tb.npy' % (subarray,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+         signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (subarray,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+         signal_array = np.load(signal_filename)
+         signal_array_average += signal_array
+      signal_array_average = signal_array_average/n_arrays
+   elif addition_type == 'coherent':
+      #signal_filename = 'array%03d_sep_%03d_%03d_ants_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_%0.2f_signal_weighted_Tb_multi.npy' % (n_arrays-1,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      #signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_N_D_gmoss_G_thresh_%0.2f_signal_weighted_Tb_multi.npy' % (n_arrays-1,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb_multi.npy' % (n_arrays-1,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      signal_array_average = np.load(signal_filename)
    
    #can't use the nan values:
    good_idx = np.isfinite(signal_array_average[0,:]) & np.isfinite(signal_array_average[0,:])
@@ -4166,13 +4409,188 @@ def model_average_from_arrays(n_arrays):
    
    return rms_of_residuals
 
-def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m):
-   min_spacing_cm = min_spacing_m*100.
-   model_vis_name_base = 'test_%02d_arrays_%03d_cm_min_spacing' % (n_arrays,min_spacing_cm)
+def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spacing_leakage_threshold,n_ants):
+   min_spacing_cm = int(min_spacing_m*100.)
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   final_plot_name_base = 'test_%03d_layouts_%03d_s_%03d_a_%03d_pc_thresh' % (n_arrays,min_spacing_cm,n_ants,zero_spacing_leakage_threshold_percent)
+   rms_of_residuals_list = []
+   random_array_number_list = []
+   for subarray in range(0,n_arrays):
+      plot_name_base = 'test_%03d_layout_%03d_s_%03d_a_%03d_pc_thresh' % (subarray,min_spacing_cm,n_ants,zero_spacing_leakage_threshold_percent)
+      signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (subarray,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      signal_array = np.load(signal_filename)
+
+      #can't use the nan values:
+      good_idx = np.isfinite(signal_array[0,:]) & np.isfinite(signal_array[0,:])
+      good_signal_array_short_baselines_Tb = signal_array[0,:][good_idx]
+   
+      good_freq_MHz_array = freq_MHz_array[good_idx]
+   
+      coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+      ffit = poly.polyval(good_freq_MHz_array, coefs)
+   
+      #in log log space:
+      log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+      log_freq_MHz_array = np.log10(good_freq_MHz_array)
+      coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+   
+      #residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+   
+      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      rms_of_residuals_list.append(rms_of_residuals)
+      random_array_number_list.append(subarray)
+      
+   
+      plt.clf()
+      plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
+      map_title="Weighted residual for log polynomial order %s fit" % poly_order
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("freq (MHz)")
+      plt.legend(loc=1)
+      fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (plot_name_base,poly_order)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name 
+   
+   rms_of_residuals_array = np.asarray(rms_of_residuals_list)
+   random_array_number_array = np.asarray(random_array_number_list)
+   
+   plt.clf()
+   plt.plot(random_array_number_array,rms_of_residuals_array,label='residual from log fit')
+
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.xlabel("random array layout number")
+   plt.ylabel("rms residuals (K)")
+   plt.legend(loc=1)
+   #plt.ylim([0, 3.5])
+   fig_name= "%s_n_layouts_vs_residuals_poly_%s.png" % (final_plot_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   
+   #now go through and selectively add arrays
+   #find the lowest rms array:
+   #index_min = np.argmin(rms_of_residuals_array)
+   #random_array_number_of_lowest_rms = random_array_number_array[index_min]
+   
+   #sort the rms array and array number array by order of ascending rms
+   #zip the two arrays:
+   rms_array_number_zip = zip(rms_of_residuals_array,random_array_number_array)
+   #sort ascending according to rms
+   rms_array_number_zip.sort()
+   #print rms_array_number_zip
+   #array_number_sorted = [x for y, x in rms_array_number_zip]
+   rms_of_residuals_array_sorted = zip(*rms_array_number_zip)[0]
+   random_array_number_array_sorted = zip(*rms_array_number_zip)[1]
+   #print rms_of_residuals_array_sorted
+   #print random_array_number_array_sorted
+  
+   random_array_number_of_lowest_rms = int(random_array_number_array_sorted[0])
+   lowest_rms = rms_of_residuals_array_sorted[0]
+   
+   rms_of_residuals_selective_list = []
+   random_array_numbers_used_selective_list = []
+   
+   first_signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (random_array_number_of_lowest_rms,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+   first_signal_array = np.load(first_signal_filename)
+   selective_sum_signal_array = first_signal_array*0.0
+   
+   #can't use the nan values:
+   good_idx = np.isfinite(first_signal_array[0,:]) & np.isfinite(first_signal_array[0,:])
+   good_signal_array_short_baselines_Tb = first_signal_array[0,:][good_idx]
+   
+   good_freq_MHz_array = freq_MHz_array[good_idx]
+   
+   coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+   ffit = poly.polyval(good_freq_MHz_array, coefs)
+   
+   #in log log space:
+   log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+   log_freq_MHz_array = np.log10(good_freq_MHz_array)
+   coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   ffit_linear = 10**ffit
+   
+   #residual = log_signal_array_short_baselines - log_ffit
+   residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+   
+   rms_of_residuals_selective = np.sqrt(np.mean(residual_of_log_fit**2))
+   rms_of_residuals_selective_list.append(rms_of_residuals_selective)
+   random_array_numbers_used_selective_list.append(random_array_number_of_lowest_rms)
+   
+   selective_sum_signal_array += first_signal_array
+   current_rms = rms_of_residuals_selective
+   current_n_arrays_used = 1.0
+   
+   #Then step through all the rest of the arrays:
+   for array_number in random_array_number_array_sorted[1:]:
+      new_signal_filename = 'array%03d_s_%03d_a_%03d_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (array_number,min_spacing_cm,n_ants,zero_spacing_leakage_threshold)
+      new_signal_array = np.load(new_signal_filename)
+      new_selective_sum_signal_array = selective_sum_signal_array + new_signal_array
+      new_selective_average_signal_array = new_selective_sum_signal_array / (current_n_arrays_used + 1.0)
+      
+      #can't use the nan values:
+      good_idx = np.isfinite(new_selective_average_signal_array[0,:]) & np.isfinite(new_selective_average_signal_array[0,:])
+      good_signal_array_short_baselines_Tb = new_selective_average_signal_array[0,:][good_idx]
+      
+      good_freq_MHz_array = freq_MHz_array[good_idx]
+      
+      coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+      ffit = poly.polyval(good_freq_MHz_array, coefs)
+      
+      #in log log space:
+      log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+      log_freq_MHz_array = np.log10(good_freq_MHz_array)
+      coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+      
+      #residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+      new_rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      
+      #only append if rms has been lowered
+      if (new_rms_of_residuals < current_rms):
+         current_rms = new_rms_of_residuals
+         current_n_arrays_used += 1.0
+         selective_sum_signal_array = new_selective_sum_signal_array
+         rms_of_residuals_selective_list.append(current_rms)
+         random_array_numbers_used_selective_list.append(array_number)
+   
+   rms_of_residuals_selective_array = np.asarray(rms_of_residuals_selective_list)
+   #print rms_of_residuals_selective_list
+   #print random_array_numbers_used_selective_list
+         
+   #expect noise to go down as sqrt of n_ants? - probly not
+   n_arrays_array = np.arange(1,int(len(random_array_numbers_used_selective_list))+1)
+   expected_residuals = rms_of_residuals_selective_list[0]/np.sqrt(n_arrays_array)
+   
+   plt.clf()
+   plt.plot(n_arrays_array,rms_of_residuals_selective_array,label='residual from log fit')
+   plt.plot(n_arrays_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.xlabel("number of arrays used")
+   plt.ylabel("rms residuals (K)")
+   plt.legend(loc=1)
+   plt.ylim([0, lowest_rms+0.2])
+   fig_name= "%s_n_arrays_vs_residuals_poly_%s_selective.png" % (final_plot_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name     
+   
+def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_threshold,addition_type,n_ants):
+   #addition_type can be 'simple' or 'coherent'
+   min_spacing_cm = int(min_spacing_m*100.)
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   model_vis_name_base = 'test_%03d_arrays_combined_%03d_s_%03d_a_%03d_pc_thresh_%s' % (n_arrays,min_spacing_cm,n_ants,zero_spacing_leakage_threshold_percent,addition_type)
    rms_of_residuals_list = []
    n_arrays_list = []
    for n_subarrays in range(1,n_arrays+1):
-      rms_of_residuals = model_average_from_arrays(n_subarrays)
+      rms_of_residuals = model_average_from_arrays(n_subarrays,min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type=addition_type,n_ants=n_ants)
       rms_of_residuals_list.append(rms_of_residuals)
       n_arrays_list.append(n_subarrays)
       rms_of_residuals_array = np.asarray(rms_of_residuals_list)
@@ -4189,11 +4607,44 @@ def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m):
    plt.xlabel("number of sub arrays")
    plt.ylabel("rms residuals (K)")
    plt.legend(loc=1)
+   plt.ylim([0, 3.5])
    fig_name= "%s_n_arrays_vs_residuals_poly_%s.png" % (model_vis_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
+
+
+def plot_rms_residuals_for_n_ants(n_ant_min,n_ant_max,min_spacing_m,zero_spacing_leakage_threshold):
+   min_spacing_cm = int(min_spacing_m*100.)
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   model_vis_name_base = 'test_%03d_min_ant_%03d_max_ant_%03d_s_%03d_pc_thresh' % (n_ant_min,n_ant_max,min_spacing_cm,zero_spacing_leakage_threshold_percent)
+   rms_of_residuals_list = []
+   n_ants_list = []
+   for n_ants in range(n_ant_min,n_ant_max+1):
+      rms_of_residuals = model_average_from_arrays(1,min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type='simple',n_ants=n_ants)
+      rms_of_residuals_list.append(rms_of_residuals)
+      n_ants_list.append(n_ants)
+   rms_of_residuals_array = np.asarray(rms_of_residuals_list)
+   n_ants_array = np.asarray(n_ants_list)
+    
+    
+   #expect noise to go down as sqrt of n_ants? - probly not
+   #expected_residuals = rms_of_residuals_array[0]/np.sqrt(n_arrays_array)
    
+   plt.clf()
+   plt.plot(n_ants_array,rms_of_residuals_array,label='residual from log fit')
+   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.xlabel("number of ants in subarray")
+   plt.ylabel("rms residuals (K)")
+   plt.legend(loc=1)
+   plt.ylim([0, 20])
+   fig_name= "%s_n_ants_vs_residuals_poly_%s.png" % (model_vis_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+
+    
 #SIMS
 
 #calculate the global 21cm signal:
@@ -4239,26 +4690,39 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 
 ##############################
 #Test to see how residuals behave as you increase the number of antenna stations, using 16 ant stations
+
+#n_ants = 16
+n_ant_min = 17
+n_ant_max = 50
+#n_arrays = 200
 n_arrays = 20
 min_spacing_m = 0.75
 min_spacing_cm = min_spacing_m * 100.
-if min_spacing_m == 1.5:
-   diameter = 8.
-elif min_spacing_m == 0.75:
-   diameter = 4. 
-for subarray in range(6,n_arrays):
-   array_label = 'array%02d_sep_%03d' % (subarray,min_spacing_cm)
-   new_array = grow_new_array(seed=subarray,diameter=diameter,n_ants=16,min_spacing_m=min_spacing_m)
-   plot_antenna_array(array_layout_filename=new_array)
-   simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=new_array,array_label=array_label)
-   extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
-   plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
-   model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+
+for n_ants in range(n_ant_min,n_ant_max+1):
+   for subarray in range(0,n_arrays):
+      array_label = 'array%03d_s_%03d_a_%03d' % (subarray,min_spacing_cm,n_ants)
+      new_array = grow_new_array(seed=subarray,n_ants=n_ants,min_spacing_m=min_spacing_m)
+      plot_antenna_array(array_layout_filename=new_array)
+      simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=new_array,array_label=array_label)
+      extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+      #extract_signal_from_sims_multi_coherent(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label,n_arrays=subarray+1,min_spacing_m=min_spacing_m)
+      plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+      model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+   
+   plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type='simple',n_ants=n_ants)
+
+   model_and_plot_random_array_layout_residuals(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,n_ants=n_ants)
+
+
 
 #before trying to add coherently, just average the 8 ones that worked
 #model_average_from_arrays(n_arrays=8)
 
-plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m)
+
+#plot_rms_residuals_for_n_ants(n_ant_min=4,n_ant_max=n_ant_max-1,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold)
+
+#plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type='coherent',n_ants=n_ants)
 
 
 #extract_signal_from_multiple('test_uvfits_list.txt')
@@ -4267,10 +4731,4 @@ plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m)
 #######
 #no longer used:
 #compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
-
-
-
-
-
-
 
