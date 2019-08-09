@@ -4260,7 +4260,7 @@ def image_eda2_data(eda2_data_uvfits_name_list):
          os.system(cmd)
 
          
-def plot_antenna_array(array_layout_filename):
+def plot_antenna_array(array_layout_filename,ylim=18):
    # txt file needs to be miriad format (E W U)
    antenna_layout_basename = array_layout_filename.split('/')[-1].split('.')[0]
    antenna_name_list = range(1,257)
@@ -4291,13 +4291,14 @@ def plot_antenna_array(array_layout_filename):
 
    plt.xlabel('X offset from centre (m) ')
    plt.ylabel('Y offset from centre (m) ')
-   plt.xlim((-18,18))
-   plt.ylim((-18,18))
+   plt.xlim((-ylim,ylim))
+   plt.ylim((-ylim,ylim))
    plt.title(antenna_position_plot_title)
    plt.savefig(antenna_position_plot_figname,dpi = 300)
    print "saved %s" % antenna_position_plot_figname
    plt.close()
 
+     
 def grow_new_array(seed,n_ants,min_spacing_m):
    #want to pack them in as tight as possible, so work out diameter (4/pi comes from ration of area of a square to a circle)
    diameter = (4./math.pi) * min_spacing_m * math.sqrt(n_ants)
@@ -4581,6 +4582,333 @@ def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spa
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name     
+
+def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length_m,zero_spacing_leakage_threshold):
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   max_arm_length_cm = (max_arm_length_m * 100.)
+   min_arm_length_cm = (min_arm_length_m * 100.)
+   final_plot_name_base = 'assassin_%02d_ants_per_m_%02d_circles_%03d_to_%03d_length_%03d_pc_thresh' % (n_ants_per_m_of_circumference,n_circles,min_arm_length_cm,max_arm_length_cm,zero_spacing_leakage_threshold_percent)
+   rms_of_residuals_list = []
+   array_number_list = []
+   array_length_list = []
+   array_angle_list = []
+   #angles are anticlockwise from East
+   radial_spacing = (max_arm_length_m - min_arm_length_m) / (n_circles-1)
+   array_number = 0
+   for circle_number in range(0,n_circles):
+      #circle 1 is the smallest
+      radius = (min_arm_length_m + circle_number * radial_spacing) 
+      diameter = radius * 2.
+      diameter_cm = int(diameter*100.)
+      #work out circumference 
+      circumference = math.pi * diameter
+      #print diameter
+      n_angles = int(round(circumference * n_ants_per_m_of_circumference))
+      angle_increment = (2.*math.pi)/n_angles
+      #(remember only need half of them!)
+      angle_array_rad = np.arange(1,n_angles/2+1) * angle_increment
+      #angle_array_deg = angle_array_rad / math.pi * 180.
+      #print angle_array_deg
+      for angle_rad in angle_array_rad:
+         array_number += 1
+         angle_deg = int(angle_rad/np.pi*180.)
+         signal_filename = 'assassin_%03d_deg_%03d_cm_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (angle_deg,diameter_cm,zero_spacing_leakage_threshold)
+         signal_array = np.load(signal_filename)
+   
+         #can't use the nan values:
+         good_idx = np.isfinite(signal_array[0,:]) & np.isfinite(signal_array[0,:])
+         good_signal_array_short_baselines_Tb = signal_array[0,:][good_idx]
+      
+         good_freq_MHz_array = freq_MHz_array[good_idx]
+      
+         coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+         ffit = poly.polyval(good_freq_MHz_array, coefs)
+      
+         #in log log space:
+         log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+         log_freq_MHz_array = np.log10(good_freq_MHz_array)
+         coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+         ffit = poly.polyval(log_freq_MHz_array, coefs)
+         ffit_linear = 10**ffit
+      
+         #residual = log_signal_array_short_baselines - log_ffit
+         residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+      
+         rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+         rms_of_residuals_list.append(rms_of_residuals)
+         array_length_list.append(diameter_cm)
+         array_angle_list.append(angle_deg)
+         array_number_list.append(array_number)
+         
+
+   rms_of_residuals_array = np.asarray(rms_of_residuals_list)
+   array_number_array = np.asarray(array_number_list)
+   array_length_array = np.asarray(array_length_list)
+   array_angle_array = np.asarray(array_angle_list)
+   
+   array_length_angle_zip = zip(array_length_array,array_angle_array)
+   
+   #now go through and selectively add arrays
+   #find the lowest rms array:
+   #index_min = np.argmin(rms_of_residuals_array)
+   #random_array_number_of_lowest_rms = random_array_number_array[index_min]
+   
+   #sort the rms array and array number array by order of ascending rms
+   #zip the two arrays:
+   rms_array_number_zip = zip(rms_of_residuals_array,array_number_array)
+   rms_array_length_zip = zip(rms_of_residuals_array,array_length_array)
+   rms_array_angle_zip = zip(rms_of_residuals_array,array_angle_array)
+   
+   #sort ascending according to rms
+   rms_array_number_zip.sort()
+   rms_array_length_zip.sort()
+   rms_array_angle_zip.sort()
+   
+   #print rms_array_number_zip
+   #array_number_sorted = [x for y, x in rms_array_number_zip]
+   rms_of_residuals_array_sorted = zip(*rms_array_number_zip)[0]
+   array_number_array_sorted = zip(*rms_array_number_zip)[1]
+   array_length_array_sorted = zip(*rms_array_length_zip)[1]
+   array_angle_array_sorted = zip(*rms_array_angle_zip)[1]
+
+   #print rms_of_residuals_array_sorted
+   #print array_number_array_sorted
+   #print array_length_array_sorted
+   #print array_angle_array_sorted
+   
+   #print rms_of_residuals_array_sorted
+   #print random_array_number_array_sorted
+  
+   array_number_of_lowest_rms = int(array_number_array_sorted[0])
+   array_length_of_lowest_rms = int(array_length_array_sorted[0])
+   array_angle_of_lowest_rms = int(array_angle_array_sorted[0])
+
+   lowest_rms = rms_of_residuals_array_sorted[0]
+   
+   rms_of_residuals_selective_list = []
+   array_numbers_used_selective_list = []
+   array_lengths_used_selective_list = []
+   array_angles_used_selective_list = []
+
+   first_signal_filename = 'assassin_%03d_deg_%03d_cm_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (array_angle_of_lowest_rms,array_length_of_lowest_rms,zero_spacing_leakage_threshold)
+   
+   first_signal_array = np.load(first_signal_filename)
+   selective_sum_signal_array = first_signal_array*0.0
+   
+   #can't use the nan values:
+   good_idx = np.isfinite(first_signal_array[0,:]) & np.isfinite(first_signal_array[0,:])
+   good_signal_array_short_baselines_Tb = first_signal_array[0,:][good_idx]
+   
+   good_freq_MHz_array = freq_MHz_array[good_idx]
+   
+   coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+   ffit = poly.polyval(good_freq_MHz_array, coefs)
+   
+   #in log log space:
+   log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+   log_freq_MHz_array = np.log10(good_freq_MHz_array)
+   coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   ffit_linear = 10**ffit
+   
+   #residual = log_signal_array_short_baselines - log_ffit
+   residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+   
+   best_residual_of_log_fit = residual_of_log_fit
+   
+   rms_of_residuals_selective = np.sqrt(np.mean(residual_of_log_fit**2))
+   rms_of_residuals_selective_list.append(rms_of_residuals_selective)
+   array_numbers_used_selective_list.append(array_number_of_lowest_rms)
+   array_lengths_used_selective_list.append(array_length_of_lowest_rms)
+   array_angles_used_selective_list.append(array_angle_of_lowest_rms)
+   
+   selective_sum_signal_array += first_signal_array
+   current_rms = rms_of_residuals_selective
+   current_n_arrays_used = 1.0
+   
+   print "first signal:"
+   print first_signal_filename
+   
+   print current_rms
+   
+   #Then step through all the rest of the arrays:
+   for array_number_index,array_number in enumerate(array_number_array_sorted[1:]):
+      array_length = array_length_array_sorted[1:][array_number_index]
+      array_angle = array_angle_array_sorted[1:][array_number_index]
+      new_signal_filename = 'assassin_%03d_deg_%03d_cm_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (array_angle,array_length,zero_spacing_leakage_threshold)
+      print new_signal_filename
+      new_signal_array = np.load(new_signal_filename)
+      new_selective_sum_signal_array = selective_sum_signal_array + new_signal_array
+      new_selective_average_signal_array = new_selective_sum_signal_array / (current_n_arrays_used + 1.0)
+      
+      #can't use the nan values:
+      good_idx = np.isfinite(new_selective_average_signal_array[0,:]) & np.isfinite(new_selective_average_signal_array[0,:])
+      good_signal_array_short_baselines_Tb = new_selective_average_signal_array[0,:][good_idx]
+      
+      good_freq_MHz_array = freq_MHz_array[good_idx]
+      
+      coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+      ffit = poly.polyval(good_freq_MHz_array, coefs)
+      
+      #in log log space:
+      log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+      log_freq_MHz_array = np.log10(good_freq_MHz_array)
+      coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+      
+      #residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+      new_rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      
+      print new_rms_of_residuals
+      
+      #only append if rms has been lowered
+      if (new_rms_of_residuals < current_rms):
+         best_residual_of_log_fit = residual_of_log_fit
+         current_rms = new_rms_of_residuals
+         current_n_arrays_used += 1.0
+         selective_sum_signal_array = new_selective_sum_signal_array
+         rms_of_residuals_selective_list.append(current_rms)
+         array_numbers_used_selective_list.append(array_number)
+   
+   rms_of_residuals_selective_array = np.asarray(rms_of_residuals_selective_list)
+   #print rms_of_residuals_selective_list
+   #print random_array_numbers_used_selective_list
+         
+   #expect noise to go down as sqrt of n_ants? - probly not
+   n_arrays_array = np.arange(1,int(len(array_numbers_used_selective_list))+1)
+   expected_residuals = rms_of_residuals_selective_list[0]/np.sqrt(n_arrays_array)
+   
+   plt.clf()
+   plt.plot(n_arrays_array,rms_of_residuals_selective_array,label='residual from log fit')
+   plt.plot(n_arrays_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.xlabel("number of arrays used")
+   plt.ylabel("rms residuals (K)")
+   plt.legend(loc=1)
+   plt.ylim([0, lowest_rms+0.2])
+   fig_name= "%s_n_arrays_vs_residuals_poly_%s_selective.png" % (final_plot_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   good_idx = np.isfinite(best_residual_of_log_fit) & np.isfinite(best_residual_of_log_fit)
+   good_best_residual_of_log_fit = best_residual_of_log_fit[good_idx]  
+   good_freq_MHz_array = freq_MHz_array[good_idx]
+   
+   #plot the final best residual plot 
+   plt.clf()
+   plt.plot(good_freq_MHz_array,best_residual_of_log_fit,label='residual from log fit')
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s_best_log_fit_residual_poly_%s_selective.png" % (final_plot_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+
+def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length_m,zero_spacing_leakage_threshold):
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   zero_spacing_leakage_threshold_percent = zero_spacing_leakage_threshold*100.
+   max_arm_length_cm = (max_arm_length_m * 100.)
+   min_arm_length_cm = (min_arm_length_m * 100.)
+   final_plot_name_base = 'assassin_%02d_ants_per_m_%02d_circles_%03d_to_%03d_length_%03d_pc_thresh' % (n_ants_per_m_of_circumference,n_circles,min_arm_length_cm,max_arm_length_cm,zero_spacing_leakage_threshold_percent)
+   rms_of_residuals_list = []
+   array_number_list = []
+   array_length_list = []
+   array_angle_list = []
+   #angles are anticlockwise from East
+   radial_spacing = (max_arm_length_m - min_arm_length_m) / (n_circles-1)
+   array_number = 0
+   
+   signal_array_sum = np.zeros((1,n_chan))
+   signal_array_sum_nan_to_num = np.zeros((1,n_chan))
+   arrays_used_per_freq_sum = np.zeros((1,n_chan))
+   
+   
+   for circle_number in range(0,n_circles):
+      #circle 1 is the smallest
+      radius = (min_arm_length_m + circle_number * radial_spacing) 
+      diameter = radius * 2.
+      diameter_cm = int(diameter*100.)
+      #work out circumference 
+      circumference = math.pi * diameter
+      #print diameter
+      n_angles = int(round(circumference * n_ants_per_m_of_circumference))
+      angle_increment = (2.*math.pi)/n_angles
+      #(remember only need half of them!)
+      angle_array_rad = np.arange(1,n_angles/2+1) * angle_increment
+      #angle_array_deg = angle_array_rad / math.pi * 180.
+      #print angle_array_deg
+      for angle_rad in angle_array_rad:
+         array_number += 1
+         angle_deg = int(angle_rad/np.pi*180.)
+         signal_filename = 'assassin_%03d_deg_%03d_cm_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (angle_deg,diameter_cm,zero_spacing_leakage_threshold)
+         signal_array = np.load(signal_filename)
+         
+         arrays_used_per_freq = signal_array*0
+         arrays_used_per_freq[signal_array>=0] = 1
+         arrays_used_per_freq[signal_array<0] = 1
+         arrays_used_per_freq_nan_to_num = np.nan_to_num(arrays_used_per_freq)
+         arrays_used_per_freq_sum += arrays_used_per_freq_nan_to_num
+         #
+         signal_array_nan_to_num = np.nan_to_num(signal_array)
+         signal_array_sum_nan_to_num += signal_array_nan_to_num
+         
+         signal_array_sum += signal_array
+         array_length_list.append(diameter_cm)
+         array_angle_list.append(angle_deg)
+         array_number_list.append(array_number)
+         
+   n_arrays = float(len(array_number_list))
+   ##signal_array_average = signal_array_sum/n_arrays
+   signal_array_average = signal_array_sum_nan_to_num/arrays_used_per_freq_sum
+   
+   print signal_array_average
+   
+   array_number_array = np.asarray(array_number_list)
+   array_length_array = np.asarray(array_length_list)
+   array_angle_array = np.asarray(array_angle_list)
+   
+   
+   #can't use the nan values:
+   good_idx = np.isfinite(signal_array_average[0,:]) & np.isfinite(signal_array_average[0,:])
+   good_signal_array_short_baselines_Tb = signal_array_average[0,:][good_idx]
+   
+   good_freq_MHz_array = freq_MHz_array[good_idx]
+   
+   coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_short_baselines_Tb, poly_order)
+   ffit = poly.polyval(good_freq_MHz_array, coefs)
+   
+   #in log log space:
+   log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
+   log_freq_MHz_array = np.log10(good_freq_MHz_array)
+   coefs = poly.polyfit(log_freq_MHz_array, log_signal_array_short_baselines, poly_order)
+   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   ffit_linear = 10**ffit
+   
+   #residual = log_signal_array_short_baselines - log_ffit
+   residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
+   
+   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+
+   print 'rms of residuals %0.3f ' % rms_of_residuals
+   
+   #plot the final best residual plot 
+   plt.clf()
+   plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
+   map_title="Weighted residual for log polynomial order %s fit" % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   fig_name= "%s_log_fit_residual_poly_%s_all.png" % (final_plot_name_base,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
    
 def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_threshold,addition_type,n_ants):
    #addition_type can be 'simple' or 'coherent'
@@ -4644,11 +4972,59 @@ def plot_rms_residuals_for_n_ants(n_ant_min,n_ant_max,min_spacing_m,zero_spacing
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
 
+def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length):
+   #angles are anticlockwise from East
+   radial_spacing = (max_arm_length_m - min_arm_length) / (n_circles-1)
+   for circle_number in range(0,n_circles):
+      #circle 1 is the smallest
+      radius = (min_arm_length + circle_number * radial_spacing) 
+      diameter = radius * 2.
+      diameter_cm = int(diameter*100.)
+      #work out circumference 
+      circumference = math.pi * diameter
+      #print diameter
+      n_angles = int(round(circumference * n_ants_per_m_of_circumference))
+      angle_increment = (2.*math.pi)/n_angles
+      #(remember only need half of them!)
+      angle_array_rad = np.arange(1,n_angles/2+1) * angle_increment
+      #angle_array_deg = angle_array_rad / math.pi * 180.
+      #print angle_array_deg
+      for angle_rad in angle_array_rad:
+         angle_deg = int(angle_rad/np.pi*180.)
+         antenna_position_filename = "assassin_baseline_%03d_deg_%03d_cm.txt" % (angle_deg,diameter_cm)
+         ant_1_x_offset = radius * np.cos(angle_rad)
+         ant_1_y_offset = radius * np.sin(angle_rad)
+         ant_1_position_string = "%0.3f   %0.3f   0\n" % (ant_1_x_offset,ant_1_y_offset)
+         ant_2_angle = angle_rad + np.pi
+         ant_2_x_offset = radius * np.cos(ant_2_angle)
+         ant_2_y_offset = radius * np.sin(ant_2_angle)
+         ant_2_position_string = "%0.3f   %0.3f   0" % (ant_2_x_offset,ant_2_y_offset)         
+         with open(antenna_position_filename,'w') as f:
+            f.write(ant_1_position_string)
+            f.write(ant_2_position_string)
+         print "wrote %s" % antenna_position_filename
+      
+         array_label = "assassin_%03d_deg_%03d_cm" % (angle_deg,diameter_cm)
+         plot_antenna_array(array_layout_filename=antenna_position_filename,ylim=2)
+         simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
+         extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
     
+         
+
+
 #SIMS
 
 #calculate the global 21cm signal:
 s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
+
+#assassin:
+#simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length=0.325)
+#sys.exit()
+model_and_plot_assassin_residuals(n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold)
+sys.exit()
+
+
+
 
 #simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 
@@ -4692,8 +5068,10 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 #Test to see how residuals behave as you increase the number of antenna stations, using 16 ant stations
 
 #n_ants = 16
-n_ant_min = 17
-n_ant_max = 50
+n_ant_min = 16
+n_ant_max = 16
+#n_ant_min = 16
+#n_ant_max = 16
 #n_arrays = 200
 n_arrays = 20
 min_spacing_m = 0.75
