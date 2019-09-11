@@ -7,119 +7,167 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import optimize
 import pylab as py
+import datetime
+from matplotlib.dates import  DateFormatter
 
-date_time_string="2015_09_26_16_55_28"
+#date_time_string_list = ["2015_01_01_13_15_28","2015_02_01_14_35_13","2015_03_01_13_20_34","2015_04_01_14_16_25","2015_05_01_14_21_19","2015_06_01_15_21_38"]
+#date_time_string_list = ["2015_09_10_01_50_58","2015_09_22_11_01_11","2015_09_12_03_20_25","2015_09_24_12_51_17","2015_09_14_04_45_40","2015_09_26_14_43_16","2015_09_16_06_10_48","2015_09_28_16_35_52","2015_09_18_07_40_00"]
+date_time_string_list = ["2015_09_26_10_00_00","2015_09_26_14_00_00","2015_09_26_18_00_00","2015_09_26_11_00_00","2015_09_26_15_00_00","2015_09_26_19_00_00","2015_09_26_12_00_00","2015_09_26_16_00_00","2015_09_26_13_00_00","2015_09_26_17_00_00"]
 
-#load the data
-temp_data_filename="disk_av_temp_array_%s.npy" % date_time_string
-freq_points_filename="freq_array_%s.npy" % date_time_string
+spectral_index_list = []
+spectral_index_err_list = []
+temp_at_150_list = []
+temp_at_150_err_list = []
 
-#freq_array=np.load(freq_points_filename)
-#freq array didnt get saved for some reason...
-freq_array=np.arange(70,235,5)
+for date_time_string in date_time_string_list:
+   #date_time_string="2015_09_26_16_55_28"
+   
+   #load the data
+   temp_data_filename="disk_av_temp_array_%s.npy" % date_time_string
+   freq_points_filename="freq_array_%s.npy" % date_time_string
+   
+   #freq_array=np.load(freq_points_filename)
+   #freq array didnt get saved for some reason...
+   freq_array=np.arange(50,250,10)
+   
+   temp_data=np.load(temp_data_filename)
+   #temp_data=[173.093941475,144.998397717,122.860088014,105.153099257,90.9457504818,79.2771243913,69.5934418787,61.48155601,54.6287724985,48.7950326681,43.7939026617,39.4789253548,35.7338994194,32.4658118914,29.5994825419,27.0737087829,24.8382947245,22.9438511781,21.2473600338,19.7228808664,18.3485262771,17.105723973,15.9786484377,14.9537375587,14.0193313371,13.1653627638,12.383101946,11.6649549463,11.0042897956,10.395295178,9.83286501804,9.31249915369,8.8302181769]
+   temp_data=np.asarray(temp_data)
+   temp_error=0.1*temp_data
+   
+   
+   
+   #fit line
+   
+   # Power-law fitting is best done by first converting
+   # to a linear equation and then fitting to a straight line.
+   # Note that the `logyerr` term here is ignoring a constant prefactor.
+   #
+   #  y = a * x^b
+   #  log(y) = log(a) + b*log(x)
+   #
+   
+   #We want the amplitude to be the amp at 150 MHz so use
+   #logx = np.log10(freq_array)
+   logx=np.log10(freq_array/150.0)
+   logy = np.log10(temp_data)
+   logyerr = temp_error / temp_data
+   
+   powerlaw = lambda x, amp, index: amp * (x**index)
+   
+   # define our (line) fitting function
+   fitfunc = lambda p, x: p[0] + p[1] * x
+   errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
+   
+   pinit = [1.0, -1.0]
+   out = optimize.leastsq(errfunc, pinit,
+                          args=(logx, logy, logyerr), full_output=1)
+   
+   pfinal = out[0]
+   covar = out[1]
+   print pfinal
+   print covar
+   
+   index = pfinal[1]
+   amp = 10.0**pfinal[0]
+   
+   
+   indexErr = np.sqrt( covar[1][1] )
+   ampErr = np.sqrt( covar[0][0] ) * amp
+   
+   spectral_index_list.append(index)
+   spectral_index_err_list.append(indexErr)
+   temp_at_150_list.append(amp)
+   temp_at_150_err_list.append(ampErr)
+   
+   #plot
+   #plt.clf()
+   #plot_filename="T_av_reflected_Moon_%s.png" % (date_time_string)
+   #temp_plot=plt.figure(1)
+   ##plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
+   #plt.plot(freq_array,temp_data)
+   #plt.title('Disk average Moon Temp vs frequency for MWA')
+   #plt.ylabel('Disk Avergaged Moon Temp (K)')
+   #plt.xlabel('Frequency (MHz)')
+   #temp_plot.savefig(plot_filename)
+   
+   plt.clf()
+   plot_filename="best_fit_powerlaw_reflection_%s.png" % date_time_string
+   fit_plot=plt.figure(1)
+   plt.subplot(2, 1, 1)
+   plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index))     # Fit
+   plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.')  # Data
+   plt.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
+   plt.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
+   plt.title('Best Fit Power Law Moon Reflection')
+   plt.xlabel('Frequency (MHz)')
+   plt.ylabel('Disk-Averaged Reflected Moon Temp (K)')
+   plt.xlim(70, 240)
+   
+   plt.subplot(2, 1, 2)
+   plt.loglog(freq_array, powerlaw(freq_array/150.0, amp, index))
+   plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.')  # Data
+   plt.xlabel('Frequency (log scale)')
+   plt.ylabel('Temp (log scale)')
+   plt.xlim(70, 240)
+   
+   fit_plot.savefig(plot_filename)
+   
+   
+   py.clf()
+   Tb_plot=py.figure()
+   Tb_plot_figname="reflected_gsm_powerlaw_fit_%s.png" % date_time_string
+   #py.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured",elinewidth=0.5)
+   plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.',elinewidth=0.5)  # Data
+   #py.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit",linewidth=1,linestyle='--')
+   plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index),label="Powerlaw fit",linewidth=1,linestyle='--')     # Fit
+   axes = py.gca()
+   #axes.set_xlim([xmin,xmax])
+   axes.set_ylim([0,200])
+   py.title('Reflected galactic brightness temperature vs frequency for MWA and Moon')
+   py.ylabel('Reflected brightness temperature (K)')
+   py.xlabel('Frequency (MHz)')
+   #py.text(150, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
+   #py.text(150, 250, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
+   py.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
+   py.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
+   
+   py.legend(loc=1)
+   Tb_plot.savefig(Tb_plot_figname, format='png', dpi=900)
+   print "saved figure %s" % Tb_plot_figname
+   py.close()
+         
+datetimes = [datetime.datetime.strptime(t, "%Y_%m_%d_%H_%M_%S") for t in date_time_string_list]
+formatter = DateFormatter('%m:%d')
 
-#temp_data=np.load(temp_data_filename)
-temp_data=[173.093941475,144.998397717,122.860088014,105.153099257,90.9457504818,79.2771243913,69.5934418787,61.48155601,54.6287724985,48.7950326681,43.7939026617,39.4789253548,35.7338994194,32.4658118914,29.5994825419,27.0737087829,24.8382947245,22.9438511781,21.2473600338,19.7228808664,18.3485262771,17.105723973,15.9786484377,14.9537375587,14.0193313371,13.1653627638,12.383101946,11.6649549463,11.0042897956,10.395295178,9.83286501804,9.31249915369,8.8302181769]
-temp_data=np.asarray(temp_data)
-temp_error=0.1*temp_data
-
-
-
-#fit line
-
-# Power-law fitting is best done by first converting
-# to a linear equation and then fitting to a straight line.
-# Note that the `logyerr` term here is ignoring a constant prefactor.
-#
-#  y = a * x^b
-#  log(y) = log(a) + b*log(x)
-#
-
-#We want the amplitude to be the amp at 150 MHz so use
-#logx = np.log10(freq_array)
-logx=np.log10(freq_array/150.0)
-logy = np.log10(temp_data)
-logyerr = temp_error / temp_data
-
-powerlaw = lambda x, amp, index: amp * (x**index)
-
-# define our (line) fitting function
-fitfunc = lambda p, x: p[0] + p[1] * x
-errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
-
-pinit = [1.0, -1.0]
-out = optimize.leastsq(errfunc, pinit,
-                       args=(logx, logy, logyerr), full_output=1)
-
-pfinal = out[0]
-covar = out[1]
-print pfinal
-print covar
-
-index = pfinal[1]
-amp = 10.0**pfinal[0]
-
-
-indexErr = np.sqrt( covar[1][1] )
-ampErr = np.sqrt( covar[0][0] ) * amp
-
-
-#plot
-#plt.clf()
-#plot_filename="T_av_reflected_Moon_%s.png" % (date_time_string)
-#temp_plot=plt.figure(1)
-##plt.errorbar(freq_array,Smoon_average_stddev_spectrum[:,0],yerr=Smoon_average_stddev_spectrum[:,1])
-#plt.plot(freq_array,temp_data)
-#plt.title('Disk average Moon Temp vs frequency for MWA')
-#plt.ylabel('Disk Avergaged Moon Temp (K)')
-#plt.xlabel('Frequency (MHz)')
-#temp_plot.savefig(plot_filename)
+#print(datetimes)
 
 plt.clf()
-plot_filename="best_fit_powerlaw_reflection_%s.png" % date_time_string
-fit_plot=plt.figure(1)
-plt.subplot(2, 1, 1)
-plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index))     # Fit
-plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.')  # Data
-plt.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
-plt.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
-plt.title('Best Fit Power Law Moon Reflection')
-plt.xlabel('Frequency (MHz)')
-plt.ylabel('Disk-Averaged Reflected Moon Temp (K)')
-plt.xlim(70, 240)
-
-plt.subplot(2, 1, 2)
-plt.loglog(freq_array, powerlaw(freq_array/150.0, amp, index))
-plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.')  # Data
-plt.xlabel('Frequency (log scale)')
-plt.ylabel('Temp (log scale)')
-plt.xlim(70, 240)
-
-fit_plot.savefig(plot_filename)
-
-
-py.clf()
-Tb_plot=py.figure()
-Tb_plot_figname="reflected_gsm_powerlaw_fit.png" 
+fig, ax = plt.subplots()
+plot_figname="alpha_and_T150_vs_time.png" 
+title="Alpha and T_150 of reflected signal vs time"
 #py.errorbar(big_freq_array,Tb,yerr=Tb_error,label="Measured",elinewidth=0.5)
-plt.errorbar(freq_array, temp_data, yerr=temp_error, fmt='k.',elinewidth=0.5)  # Data
+#plt.errorbar(date_time_string_list, spectral_index_list, yerr=spectral_index_err_list, fmt='k.',elinewidth=0.5)  # Data
 #py.plot(big_freq_array,T_sky_measured_fit,label="Powerlaw fit",linewidth=1,linestyle='--')
-plt.plot(freq_array, powerlaw(freq_array/150.0, amp, index),label="Powerlaw fit",linewidth=1,linestyle='--')     # Fit
-axes = py.gca()
-#axes.set_xlim([xmin,xmax])
-axes.set_ylim([0,200])
-py.title('Reflected galactic brightness temperature vs frequency for MWA and Moon')
-py.ylabel('Reflected brightness temperature (K)')
-py.xlabel('Frequency (MHz)')
-#py.text(150, 300, 'Temp_150MHz = %5.1f +/- %3.1f' % (T_150_measured, T_150_measured_err))
-#py.text(150, 250, 'Index = %5.2f +/- %4.2f' % (alpha_gal_measured, alpha_gal_measured_err))
-py.text(150, 100, 'Temp_150MHz = %5.2f +/- %5.2f' % (amp, ampErr))
-py.text(150, 80, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
+ax.plot(datetimes, spectral_index_list,label="Spectral index",linewidth=1,linestyle='--') 
+ax.xaxis.set_major_formatter(formatter)
+ax.set_ylim([-2.,-3.])
+ax.legend(loc=1)
+ax2 = ax.twinx()    
+ax2.plot(datetimes, temp_at_150_list,label="T_150 (K)",linewidth=1,linestyle='-') 
+ax2.set_ylim(0,30)
+ax2.legend(loc=4)
+plt.xlabel('Date DD:MM ')
+plt.ylabel('alpha')
+plt.title(title)
+plt.savefig(plot_figname,format='png', dpi=300)
+plt.close()
+print "saved %s" % (plot_figname)
 
-py.legend(loc=1)
-Tb_plot.savefig(Tb_plot_figname, format='png', dpi=900)
-print "saved figure %s" % Tb_plot_figname
-py.close()
-      
-#plot maps
-
+print temp_at_150_list
+print spectral_index_list   
+   
+   
+   
+   
+   
