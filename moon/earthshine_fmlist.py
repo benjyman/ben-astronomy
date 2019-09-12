@@ -14,6 +14,8 @@ import math
 import sys
 from mpl_toolkits.basemap import Basemap
 from itertools import chain
+from datetime import datetime, timedelta, date, time
+import matplotlib.dates as mdates
 
 def draw_map(m, scale=0.2):
     # draw a shaded-relief image
@@ -32,7 +34,10 @@ def draw_map(m, scale=0.2):
     for line in all_lines:
         line.set(linestyle='-', alpha=0.3, color='w')
         
-plot_only = False
+plot_only = True
+fmlist_data_filename = '/md0/moon/lauren/moonraker.csv'
+#These are numpy arrays. When you open them with python numpy you will see they have a shape of (124,50,3). This corresponds to (n_channels, n_observations, 3), the 3 is because there is specular, diffuse, and observation ID.
+mwa_data_filename = '/md0/moon/lauren/big_RFI_vs_time_freq_2015B_05.npy'
 
 time_delta=np.linspace(0, 24, 96)*u.hour
 start_time_utc = Time('2015-09-26 00:00:00')
@@ -67,7 +72,7 @@ dilution_factor = transmitter_BW/MWA_bandwidth
 #newdf=df[["id","lat", "long", "mhz","erpkw"]]
 
 #newdf = pd.read_csv('moonraker.txt',sep=';',header=2,usecols=["id","lat", "long", "mhz","erpkw"])
-newdf = pd.read_csv('moonraker.csv',header=2,sep=',',index_col=False,engine='python',usecols=["id","lat","long", "mhz","erpkw"],error_bad_lines=True)
+newdf = pd.read_csv(fmlist_data_filename,header=2,sep=',',index_col=False,engine='python',usecols=["id","lat","long", "mhz","erpkw"],error_bad_lines=True)
 
 lats = newdf["lat"]
 longs = newdf["long"]
@@ -120,15 +125,46 @@ print("saved %s" % figname)
 
 if plot_only:
    powers_sum_timestep_array_janskys = np.load(powers_sum_timestep_array_janskys_filename)
-   figname="flux_density_vs_time_for_earthsine.png"
+   mwa_data = np.load(mwa_data_filename)
+   
+   freq_100_MHz_index = 22
+   mwa_data_100_Mz_specular = mwa_data[freq_100_MHz_index,:,0]
+   mwa_obsid_array_100_MHz=mwa_data[freq_100_MHz_index,:,2]
+   #work out the UT time of the gps time stamps
+   mwa_time_list=[]
+   for gps_time in mwa_obsid_array_100_MHz:
+      #utc = 1980-01-06UTC + (gps - (leap_count(2014) - leap_count(1980)))
+      #from http://maia.usno.navy.mil/ser7/tai-utc.dat
+      leap_count_1980=19
+      leap_count_2015=36
+      if not np.isnan(gps_time):
+         utc = datetime(1980, 1, 6) + timedelta(seconds=gps_time - (leap_count_2015 - leap_count_1980))
+         utc_for_print_src=utc.strftime('%d/%m/%Y %H:%M:%S')
+         mwa_time_list.append(utc)
+
+   
+   print mwa_time_list
+   print time_delta[45:64]
+
+
+   figname="moon_flux_density_vs_time_for_earthsine_mwa.png"
    plt.clf()
-   plt.plot(time_delta, powers_sum_timestep_array_janskys)
+   plt.plot(mwa_time_list, mwa_data_100_Mz_specular[0:len(mwa_time_list)])
+   plt.xlabel("24 Hour UTC time on 2015-09-26")
+   plt.ylabel("Flux Density of Moon (Jy)")
+   plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+   plt.gcf().autofmt_xdate()
+   plt.savefig(figname)
+   print("saved %s" % figname)
+   
+   figname="moon_flux_density_vs_time_for_earthsine_sim.png"
+   plt.clf()
+   plt.plot(time_delta[45:64], powers_sum_timestep_array_janskys[45:64])
    plt.xlabel("24 Hour UTC time on 2015-09-26")
    plt.ylabel("Flux Density of Moon (Jy)")
    plt.savefig(figname)
    print("saved %s" % figname)
 
-   print(powers_sum_timestep_array_janskys)
 
    sys.exit()
    
@@ -206,4 +242,4 @@ print("saved %s" % figname)
 #plot just where Moon is above horizon
 
 
-     
+
