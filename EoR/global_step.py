@@ -7,7 +7,20 @@ import numpy as np
 import healpy as hp
 import cmath
 from astropy.wcs.docstrings import phi0
+from datetime import datetime, date
+from pygsm import GSMObserver
+import sys
 
+#This must be a 'feature' of gsmobserver() - lat and long need to be put in as strings, elevation can be a float (I think)...this is terrible (is my previous gsm_reflection work wrong? rerun?)
+mwa_latitude_pyephem = "-26:42.199"
+mwa_longitude_pyephem = "116:40.2488"
+
+
+#in m
+#mwa_elevation = 377.83
+mwa_elevation = 378
+
+freq_MHz = 100.
 #start with an interferometer array layout. E.g. text file with x,y,z coordinates of antennas
 
 #definitions: 
@@ -49,14 +62,45 @@ baseline_length_lambda_array = baseline_length_m/wavelength_array
 print baseline_length_lambda_array[34]
 #print baseline_length_lambda_array
 
-#sky map
+#sky map - global
 sky_map =  np.ones(hp.nside2npix(NSIDE))
 
+#sky map - GSM (use instead of GMOSS as you can use pyGSM with Observer() to generate a sky for different times, allowing you to rotate the sky)
+year,month,day,hour,minute,second = 2019,1,1,0,0,0
+
+latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
+#Parkes (pygsm example)
+#latitude, longitude, elevation = '-32.998370', '148.263659', 100
+ov = GSMObserver()
+ov.lon = longitude
+ov.lat = latitude
+ov.elev = elevation
+   
+for hour in range(0,24):
+   date_obs = datetime(year, month, day, hour, minute, second)
+   ov.date = date_obs
+   print date_obs
+   print ov.date
+   gsm_map=ov.generate(freq_MHz)
+   
+   
+   #d = ov.view(logged=True)
+   
+   plt.clf()
+   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
+   ov.view()
+   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=500)
+   print "saved %s" % fig_name
+   plt.close()
+   
 #beam maps
 #isotropic case:
 iso_beam_map = np.ones(hp.nside2npix(NSIDE))
 
-
+sys.exit()
 
 #short dipole beam map for parallel case
 short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
@@ -241,19 +285,19 @@ visibility_amp_list_log_four = visibility_amp_list_log_four/np.nanmax(visibility
 
 plt.clf()
 plot=plt.figure()
-#plot_title="Visibility amplitude vs baseline length"
-plot_title="Vis ampl vs freq baseline:%0.1fm and sep %0.1fm" % (baseline_length_m,linear_array_ant_separation)
-#plot_figname="visibility_amp_vs_baseline_length.png"
-plot_figname="visibility_amp_vs_frequency_baseline_%0.1fm_ant_sep_%0.1fm.png" % (baseline_length_m,linear_array_ant_separation)
+plot_title="Visibility amplitude vs baseline length"
+#plot_title="Vis ampl vs freq baseline:%0.1fm and sep %0.1fm" % (baseline_length_m,linear_array_ant_separation)
+plot_figname="visibility_amp_vs_baseline_length.png"
+#plot_figname="visibility_amp_vs_frequency_baseline_%0.1fm_ant_sep_%0.1fm.png" % (baseline_length_m,linear_array_ant_separation)
 #plt.errorbar(freq_array_band,Tb_band_1,yerr=Tb_error_band_1,label="Measured")
 #plt.plot(baseline_length_lambda_array,visibility_amp_list_iso,label="single isotropic")
-#plt.plot(baseline_length_lambda_array,visibility_amp_list_short_para,label="single short para")
+plt.plot(baseline_length_lambda_array,visibility_amp_list_short_para,label="single short para")
 #plt.plot(baseline_length_lambda_array,visibility_amp_list_short_para_four,label="four short para")
-plt.plot(freq_MHz_array,visibility_amp_list_iso,label="single isotropic")
-plt.plot(freq_MHz_array,visibility_amp_list_log,label="single log-periodic")
-plt.plot(freq_MHz_array,visibility_amp_list_short_para,label="single short para")
-plt.plot(freq_MHz_array,visibility_amp_list_short_para_four,label="four short para")
-plt.plot(freq_MHz_array,visibility_amp_list_log_four,label="four log-periodic")
+#plt.plot(freq_MHz_array,visibility_amp_list_iso,label="single isotropic")
+#plt.plot(freq_MHz_array,visibility_amp_list_log,label="single log-periodic")
+#plt.plot(freq_MHz_array,visibility_amp_list_short_para,label="single short para")
+#plt.plot(freq_MHz_array,visibility_amp_list_short_para_four,label="four short para")
+#plt.plot(freq_MHz_array,visibility_amp_list_log_four,label="four log-periodic")
 
 #plt.scatter(baseline_length_21CMA_90_MHz_lambda,vis_amp_21CMA_90_MHz,label="21 CMA short para 90 MHz",marker='+',c='r')
 plt.title(plot_title)
