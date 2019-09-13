@@ -14,7 +14,7 @@ import math
 import sys
 from mpl_toolkits.basemap import Basemap
 from itertools import chain
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, timedelta, date
 import matplotlib.dates as mdates
 
 def draw_map(m, scale=0.2):
@@ -34,7 +34,7 @@ def draw_map(m, scale=0.2):
     for line in all_lines:
         line.set(linestyle='-', alpha=0.3, color='w')
         
-plot_only = True
+plot_only = False
 fmlist_data_filename = '/md0/moon/lauren/moonraker.csv'
 #These are numpy arrays. When you open them with python numpy you will see they have a shape of (124,50,3). This corresponds to (n_channels, n_observations, 3), the 3 is because there is specular, diffuse, and observation ID.
 mwa_data_filename = '/md0/moon/lauren/big_RFI_vs_time_freq_2015B_05.npy'
@@ -103,21 +103,15 @@ plt.xlabel("Power Transmitted (kW)")
 plt.savefig(figname)
 print("saved %s" % figname)
 
-# create new figure, axes instances.
-
-nylat = 40.78
-nylon = -73.98
 
 figname='FM_transmitters_on_Earth.png'
-fig = plt.figure(figsize=(8, 6), edgecolor='w')
+fig = plt.figure(figsize=(100, 75), edgecolor='w')
 m = Basemap(projection='cyl', resolution=None,
             llcrnrlat=-90, urcrnrlat=90,
             llcrnrlon=-180, urcrnrlon=180, )
-m.scatter(longs, lats, latlon=True)
+m.scatter(longs, lats,s=2, marker='o',color='blue',latlon=True)
 #m.scatter(nylon, nylat, latlon=True)
 draw_map(m)
-
-# nylat, nylon are lat/lon of New York
 
 fig.savefig(figname,dpdi=500)
 print("saved %s" % figname)
@@ -165,8 +159,16 @@ if plot_only:
    plt.savefig(figname)
    print("saved %s" % figname)
 
+   figname="flux_density_vs_time_for_earthsine_24hrs.png"
+   plt.clf()
+   plt.plot(time_delta, powers_sum_timestep_array_janskys)
+   plt.xlabel("24 Hour UTC time on 2015-09-26")
+   plt.ylabel("Flux Density of Moon (Jy)")
+   plt.savefig(figname)
+   print("saved %s" % figname)
 
    sys.exit()
+   
    
 #print(newdf["erpkw"])
 #print(newdf["erpkw"]*2)
@@ -178,6 +180,9 @@ if plot_only:
 powers_per_timestep_array = np.zeros(len(utc_times))
 
 for timestep_index, timestep in enumerate(utc_times):
+     
+     timestep_string = timestep.datetime.strftime("%Y_%m_%d_%H_%M_%S")
+
      print("timestep %0.2f of %0.2f" % (timestep_index,len(utc_times)))
      print("Time is %s" % timestep)
     
@@ -189,7 +194,32 @@ for timestep_index, timestep in enumerate(utc_times):
      print moon_alt
      
      if moon_alt < 0.:
+     
+        #make progressive plots (zero)
+        powers_sum_timestep_array_janskys = powers_per_timestep_array/1e-26
+        figname="flux_density_vs_time_for_earthsine_%s.png" % timestep_string
+        plt.clf()
+        plt.plot(time_delta, powers_sum_timestep_array_janskys)
+        plt.xlabel("24 Hour UTC time on 2015-09-26")
+        plt.ylabel("Flux Density of Moon (Jy)")
+        plt.ylim=[0,460]
+        plt.savefig(figname)
+        print("saved %s" % figname)
+        
+        
+        figname='FM_transmitters_on_Earth_timestep_%s.png' % (timestep_string)
+        fig = plt.figure(figsize=(100, 75), edgecolor='w')
+        m = Basemap(projection='cyl', resolution=None,
+                    llcrnrlat=-90, urcrnrlat=90,
+                    llcrnrlon=-180, urcrnrlon=180, )
+        m.scatter(longs, lats,s=2, marker='o',color='blue',latlon=True)
+        draw_map(m)
+        
+        fig.savefig(figname,dpdi=500)
+        print("saved %s" % figname)
+        
         continue
+        
      else:   
         city_Locations=EarthLocation(lat=(newdf["lat"])*u.deg, lon=(newdf["long"])*u.deg)
         #print(city_Locations)
@@ -201,8 +231,8 @@ for timestep_index, timestep in enumerate(utc_times):
         
         print(len(cities_alt))
         
-        powers_received_city_above_horiz = Powers_Recieved_per_Hz[cities_alt > 0]
-        
+        powers_received_city_above_horiz = Powers_Recieved_per_Hz[np.nan_to_num(cities_alt) > 0]
+
         print(len(powers_received_city_above_horiz))
         
         #print(powers_received_city_above_horiz)
@@ -211,7 +241,38 @@ for timestep_index, timestep in enumerate(utc_times):
 
         powers_per_timestep_array[timestep_index] = timestep_powers_sum
         
+        powers_sum_timestep_array_janskys = powers_per_timestep_array/1e-26
+        
+        #make progressive plots
+        figname="flux_density_vs_time_for_earthsine_%s.png" % timestep_string
+        plt.clf()
+        plt.plot(time_delta, powers_sum_timestep_array_janskys)
+        plt.xlabel("24 Hour UTC time on 2015-09-26")
+        plt.ylabel("Flux Density of Moon (Jy)")
+        plt.ylim=[0,460]
+        plt.savefig(figname)
+        print("saved %s" % figname)
 
+
+
+        ##plot cities on the map that have Moon above horiz.
+        longs_above = longs[cities_alt > 0]
+        lats_above = lats[cities_alt > 0]
+        longs_below = longs[cities_alt <= 0]
+        lats_below = lats[cities_alt <= 0]
+        figname='FM_transmitters_on_Earth_timestep_%s.png' % (timestep_string)
+        fig = plt.figure(figsize=(100, 75), edgecolor='w')
+        m = Basemap(projection='cyl', resolution=None,
+                    llcrnrlat=-90, urcrnrlat=90,
+                    llcrnrlon=-180, urcrnrlon=180, )
+        longs_above_m, lats_above_m = m(longs_above, lats_above)
+        longs_below_m, lats_below_m = m(longs_below, lats_below)
+        m.scatter(longs_above_m, lats_above_m,s=2, marker='o',color='red')
+        m.scatter(longs_below_m, lats_below_m,s=2, marker='o',color='blue')
+        draw_map(m)
+        
+        fig.savefig(figname,dpdi=500)
+        print("saved %s" % figname)
 
 
 
@@ -236,6 +297,7 @@ plt.clf()
 plt.plot(time_delta, powers_sum_timestep_array_janskys)
 plt.xlabel("24 Hour UTC time on 2015-09-26")
 plt.ylabel("Flux Density of Moon (Jy)")
+plt.ylim=[0,460]
 plt.savefig(figname)
 print("saved %s" % figname)
 
