@@ -20,7 +20,7 @@ import PIL
 
 tile_only = False
 
-def draw_map(m, scale=0.2):
+def draw_map(m,scale=1):
     # draw a shaded-relief image
     #m.shadedrelief(scale=scale)
     m.bluemarble(scale=scale)
@@ -166,7 +166,7 @@ m.scatter(longs, lats,s=2, marker='o',color='orange',latlon=True)
 #m.scatter(nylon, nylat, latlon=True)
 draw_map(m)
 
-fig.savefig(figname,dpdi=500)
+fig.savefig(figname,dpdi=500,bbox_inches='tight')
 print("saved %s" % figname)
 plt.close()
 
@@ -286,7 +286,7 @@ for timestep_index, timestep in enumerate(utc_times):
         m.scatter(longs, lats,s=2, marker='o',color='orange',latlon=True)
         draw_map(m)
         
-        fig.savefig(figname,dpdi=500)
+        fig.savefig(figname,dpdi=500,bbox_inches='tight')
         print("saved %s" % figname)
         
         #plot Moon alt
@@ -304,7 +304,7 @@ for timestep_index, timestep in enumerate(utc_times):
         print("saved %s" % figname)
         plt.close()
         
-        continue
+        
         
      else:   
         city_Locations=EarthLocation(lat=(newdf["lat"])*u.deg, lon=(newdf["long"])*u.deg)
@@ -359,9 +359,9 @@ for timestep_index, timestep in enumerate(utc_times):
         longs_below_m, lats_below_m = m(longs_below, lats_below)
         m.scatter(longs_above_m, lats_above_m,s=2, marker='o',color='red')
         m.scatter(longs_below_m, lats_below_m,s=2, marker='o',color='orange')
-        draw_map(m)
+
         
-        fig.savefig(figname,dpdi=500)
+        fig.savefig(figname,dpdi=500,bbox_inches='tight')
         print("saved %s" % figname)
         plt.close()
 
@@ -406,7 +406,8 @@ for timestep_index, timestep in enumerate(utc_times):
      imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
      imgs_comb = PIL.Image.fromarray( imgs_comb)
      trifecta_name = 'trifecta_%s.png' % (timestep_string) 
-     imgs_comb.save(trifecta_name)   
+     imgs_comb.save(trifecta_name) 
+     print "saved %s" % (trifecta_name)
      
 #        #print(powers_sum)
 #     powers_sum_timestep_array[timestep_index] = powers_sum
