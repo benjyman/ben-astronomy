@@ -46,6 +46,9 @@ print "saved %s" % out_filename
 #cv2.waitKey(10)
 #cv2.destroyAllWindows()
 
+#Do filtering stuff here!
+
+
 #regrid back!
 polar_image_undone = cv2.linearPolar(polar_image,(img.shape[0]/2, img.shape[1]/2), value, cv2.WARP_INVERSE_MAP)
 
