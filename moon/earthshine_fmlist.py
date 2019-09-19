@@ -359,7 +359,7 @@ for timestep_index, timestep in enumerate(utc_times):
         longs_below_m, lats_below_m = m(longs_below, lats_below)
         m.scatter(longs_above_m, lats_above_m,s=2, marker='o',color='red')
         m.scatter(longs_below_m, lats_below_m,s=2, marker='o',color='orange')
-
+        draw_map(m)
         
         fig.savefig(figname,dpdi=500,bbox_inches='tight')
         print("saved %s" % figname)
