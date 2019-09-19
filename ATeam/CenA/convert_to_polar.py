@@ -7,7 +7,10 @@ matplotlib.use('Agg')
 import cv2
 import numpy as np
 
-source = cv2.imread('C:/Users/selwyn77/Desktop/sun.jpg', 1)
+image_filename = "/md0/ATeam/CenA/stripes/polar/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
+out_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_polar.fits"
+
+source = cv2.imread(image_filename, 1)
 
 #--- ensure image is of the type float ---
 img = source.astype(np.float32)
@@ -21,5 +24,5 @@ polar_image = cv2.linearPolar(img,(img.shape[0]/2, img.shape[1]/2), value, cv2.W
 polar_image = polar_image.astype(np.uint8)
 cv2.imshow("Polar Image", polar_image)
 
-cv2.waitKey(0)
+cv2.waitKey(10)
 cv2.destroyAllWindows()
