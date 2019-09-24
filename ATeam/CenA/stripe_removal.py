@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 from astropy.io import fits
-from scipy import fftpack
+from scipy import fftpack,ndimage
+from PIL import Image
 
 image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_polar.fits"
 out_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_polar_filtered.fits"
+polar_rotated_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_polar_rotated.fits"
 
 crop_x1, crop_x2, crop_y1, crop_y2 = 1750, 2000, 3100, 3350
 
@@ -18,43 +20,163 @@ hdulist = fits.open(image_filename)
 img = hdulist[0].data
 #img = img[0,0,:,:]
 
-#Add 0.5 to image so there are no negatives (be sure to undo this later)
-img += 0.5
- 
+##Add 0.5 to image so there are no negatives (be sure to undo this later)
+#img += 0.5
+# 
+#
+##needs to be in Uint 8 for Canny
+##Will need to do some thresholding/clipping and or select a 'quiet' part of the image 
+##to be able to get sufficient dynamic range to detect the lines
+##img_max = np.max(img)
+##print img_max
+##img_min = np.min(img)
+##print img_min
+##img_norm = img/img_max
+#
+#img_clipped = np.clip(img,a_min=0,a_max=1)
+#
+#img_clipped_max = np.max(img_clipped)
+#img_clipped_norm = img_clipped/img_clipped_max
+#
+#img_uint8 = (img_clipped_norm*255).astype(np.uint8)
+#
+##check conversion
+#test_filename = 'test.fits'
+#fits.writeto(test_filename,img_uint8,clobber=True)
+#print "saved %s" % test_filename
+#
+##select a small region to find lines (250 pix is about 1 degree on the image)
+#img_uint8_cropped = img_uint8[crop_y1:crop_y2,crop_x1:crop_x2]
+#
+#
+#subtr_mean_image = np.full((img_uint8_cropped.shape[0],img_uint8_cropped.shape[1]),np.nan)
+#
+##fit a (low-order) polynomial to each column and subtract it.
+#column_pixel_numbers = np.arange(0,img_uint8_cropped.shape[0])
+#for column_index in column_pixel_numbers:
+#   column_data = img_uint8_cropped[:,int(column_index)]
+#   #find the mean and std dev and clip anything more than 3 sigma
+#   sigma = np.std(column_data)
+#   mean = np.mean(column_data)
+#   column_data[column_data > (mean+3*sigma)] = mean
+#   
+#   #fit polynomial 
+#   z = np.polyfit(column_pixel_numbers, column_data, 8)
+#   p = np.poly1d(z)
+#   fit_line = p(column_pixel_numbers)
+#   
+#   #figname="poly_fit_column_%04d.png" % column_index
+#   #plt.clf()
+#   #plt.plot(column_pixel_numbers,fit_line,label='fit')
+#   #plt.plot(column_pixel_numbers,column_data,label='data')
+#   #plt.xlabel("pixel number")
+#   #plt.ylabel("data value")
+#   #plt.savefig(figname)
+#   #print("saved %s" % figname)
+#   #plt.close()
+#   
+#   #subtract fit line
+#   new_column_data = column_data - fit_line
+#
+#   subtr_mean_image[:,int(column_index)] = new_column_data
+#
+#filename = 'subtr_mean_image.fits'
+#fits.writeto(filename,subtr_mean_image,clobber=True)
+#print "saved %s" % test_filename
+#
+#
+## Take the fourier transform of the image.
+#F1 = fftpack.fft2(subtr_mean_image)
+#
+#print F1
+#
+## Now shift the quadrants around so that low spatial frequencies are in
+## the center of the 2D fourier transformed image.
+#F2 = fftpack.fftshift(F1)
+## Calculate a 2D power spectrum
+#psd2D = np.abs(F2)**2
+#F2_real = F2.real
+#F2_imag = F2.imag
+#
+##print psd2D
+#
+#fitsname = "fft_psd_polar_image_mean_subtr.fits"
+#fits.writeto(fitsname,psd2D,clobber=True)
+#print "saved %s" % fitsname
+#
+#fitsname = "fft_real_polar_image_mean_subtr.fits"
+#fits.writeto(fitsname,F2_real,clobber=True)
+#print "saved %s" % fitsname
+#
+#fitsname = "fft_image_polar_image_mean_subtr.fits"
+#fits.writeto(fitsname,F2_imag,clobber=True)
+#print "saved %s" % fitsname
+#
+##find the indices of the four highest values
+#max_val_1_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
+#psd2D[max_val_1_index] = 0
+#max_val_2_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
+#psd2D[max_val_2_index] = 0
+#max_val_3_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
+#psd2D[max_val_3_index] = 0
+#max_val_4_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
+#psd2D[max_val_4_index] = 0
+#
+#fft_filter = np.full(psd2D.shape,0.)
+#fft_filter[max_val_1_index] = 1
+#fft_filter[max_val_2_index] = 1
+#fft_filter[max_val_3_index] = 1
+#fft_filter[max_val_4_index] = 1
+#
+#fitsname = "fft_filter.fits"
+#fits.writeto(fitsname,fft_filter,clobber=True)
+#print "saved %s" % fitsname
+#
+##fft_shift the filter and fft it to see if the stripes match
+#fft_filter_shift = fftpack.ifftshift(fft_filter)
+#
+#fitsname = "fft_filter_shift.fits"
+#fits.writeto(fitsname,fft_filter_shift,clobber=True)
+#print "saved %s" % fitsname
+#
+#fft_filter_shift_inverse = fftpack.ifft2(fft_filter_shift)
+#fft_filter_shift_inverse_real = fft_filter_shift_inverse.real
+#fft_filter_shift_inverse_imag = fft_filter_shift_inverse.imag
+#fft_filter_shift_inverse_abs = np.abs(fft_filter_shift_inverse)
+#
+#fitsname = "fft_filter_shift_inverse_real.fits"
+#fits.writeto(fitsname,fft_filter_shift_inverse_real,clobber=True)
+#print "saved %s" % fitsname
+#
+#fitsname = "fft_filter_shift_inverse_imag.fits"
+#fits.writeto(fitsname,fft_filter_shift_inverse_imag,clobber=True)
+#print "saved %s" % fitsname
+#
+#fitsname = "fft_filter_shift_inverse_abs.fits"
+#fits.writeto(fitsname,fft_filter_shift_inverse_abs,clobber=True)
+#print "saved %s" % fitsname
+#
+#######################
+#
 
-#needs to be in Uint 8 for Canny
-#Will need to do some thresholding/clipping and or select a 'quiet' part of the image 
-#to be able to get sufficient dynamic range to detect the lines
-#img_max = np.max(img)
-#print img_max
-#img_min = np.min(img)
-#print img_min
-#img_norm = img/img_max
+fitsname = "img.fits"
+fits.writeto(fitsname,img,clobber=True)
+print "saved %s" % fitsname
 
-img_clipped = np.clip(img,a_min=0,a_max=1)
+img = img.astype(float)
+img_FFT = fftpack.fft2(img)
+img_FFT_shift = fftpack.fftshift(img_FFT)
+img_FFT_shift_abs = np.abs(img_FFT_shift)
 
-img_clipped_max = np.max(img_clipped)
-img_clipped_norm = img_clipped/img_clipped_max
-
-img_uint8 = (img_clipped_norm*255).astype(np.uint8)
-
-#check conversion
-test_filename = 'test.fits'
-fits.writeto(test_filename,img_uint8,clobber=True)
-print "saved %s" % test_filename
-
-#select a small region to find lines (250 pix is about 1 degree on the image)
-img_uint8_cropped = img_uint8[crop_y1:crop_y2,crop_x1:crop_x2]
-test_filename = 'cropped.fits'
-fits.writeto(test_filename,img_uint8_cropped,clobber=True)
-print "saved %s" % test_filename
-
-subtr_mean_image = np.full((img_uint8_cropped.shape[0],img_uint8_cropped.shape[1]),np.nan)
+fitsname = "img_FFT_shift_abs.fits"
+fits.writeto(fitsname,img_FFT_shift_abs,clobber=True)
+print "saved %s" % fitsname
 
 #fit a (low-order) polynomial to each column and subtract it.
-column_pixel_numbers = np.arange(0,img_uint8_cropped.shape[0])
+subtr_poly_image = np.full(img.shape,np.nan)
+column_pixel_numbers = np.arange(0,img.shape[0])
 for column_index in column_pixel_numbers:
-   column_data = img_uint8_cropped[:,int(column_index)]
+   column_data = img[:,int(column_index)]
    #find the mean and std dev and clip anything more than 3 sigma
    sigma = np.std(column_data)
    mean = np.mean(column_data)
@@ -78,84 +200,163 @@ for column_index in column_pixel_numbers:
    #subtract fit line
    new_column_data = column_data - fit_line
 
-   subtr_mean_image[:,int(column_index)] = new_column_data
+   subtr_poly_image[:,int(column_index)] = new_column_data
 
-filename = 'subtr_mean_image.fits'
-fits.writeto(filename,subtr_mean_image,clobber=True)
-print "saved %s" % test_filename
+filename = 'subtr_poly_full_image.fits'
+fits.writeto(filename,subtr_poly_image,clobber=True)
+print "saved %s" % filename
 
 
 # Take the fourier transform of the image.
-F1 = fftpack.fft2(subtr_mean_image)
+F1 = fftpack.fft2(subtr_poly_image)
 
-print F1
+#print F1
 
-# Now shift the quadrants around so that low spatial frequencies are in
-# the center of the 2D fourier transformed image.
+## Now shift the quadrants around so that low spatial frequencies are in
+## the center of the 2D fourier transformed image.
 F2 = fftpack.fftshift(F1)
-# Calculate a 2D power spectrum
+## Calculate a 2D power spectrum
 psd2D = np.abs(F2)**2
 F2_real = F2.real
 F2_imag = F2.imag
 
-#print psd2D
+##print psd2D
 
-fitsname = "fft_psd_polar_image_mean_subtr.fits"
-fits.writeto(fitsname,psd2D,clobber=True)
+filename = "fft_psd_polar_image_poly_subtr_full.fits"
+fits.writeto(filename,psd2D,clobber=True)
+print "saved %s" % filename
+
+centre_pix_num = int(img.shape[0]/2.)
+#By eye from FT of poly_subtr image, can clearly see where artifacts are
+#make filter
+filter_width = 5
+filter_middle_part = 252
+filter_length = 700
+horiz_line_filter = np.full(img.shape,1.)
+horiz_line_filter[centre_pix_num+filter_middle_part:centre_pix_num+filter_middle_part+filter_length,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
+horiz_line_filter[centre_pix_num-filter_middle_part-filter_length:centre_pix_num-filter_middle_part,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
+
+print np.max(horiz_line_filter)
+print np.min(horiz_line_filter)
+
+fitsname = "horiz_line_filter.fits"
+fits.writeto(fitsname,horiz_line_filter,clobber=True)
 print "saved %s" % fitsname
 
-fitsname = "fft_real_polar_image_mean_subtr.fits"
-fits.writeto(fitsname,F2_real,clobber=True)
+#Apply filter to image FFT
+#filtered_image_FFT_shift = F2 * horiz_line_filter
+filtered_image_FFT_shift = horiz_line_filter * img_FFT_shift
+filtered_image_FFT_shift_abs = np.abs(filtered_image_FFT_shift)
+
+fitsname = "filtered_image_FFT_shift_abs.fits"
+fits.writeto(fitsname,filtered_image_FFT_shift_abs,clobber=True)
 print "saved %s" % fitsname
 
-fitsname = "fft_image_polar_image_mean_subtr.fits"
-fits.writeto(fitsname,F2_imag,clobber=True)
+#shift back
+filtered_image_FFT_shift_back = fftpack.ifftshift(filtered_image_FFT_shift)
+
+#FFT back
+filtered_image_FFT_shift_back_inverse = fftpack.ifft2(filtered_image_FFT_shift_back).real
+
+fitsname = "filtered_image_FFT_shift_back_inverse.fits"
+fits.writeto(fitsname,filtered_image_FFT_shift_back_inverse,clobber=True)
 print "saved %s" % fitsname
 
-#find the indices of the four highest values
-max_val_1_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
-psd2D[max_val_1_index] = 0
-max_val_2_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
-psd2D[max_val_2_index] = 0
-max_val_3_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
-psd2D[max_val_3_index] = 0
-max_val_4_index = np.unravel_index(np.argmax(psd2D, axis=None), psd2D.shape)
-psd2D[max_val_4_index] = 0
 
-fft_filter = np.full(psd2D.shape,0.)
-fft_filter[max_val_1_index] = 1
-fft_filter[max_val_2_index] = 1
-fft_filter[max_val_3_index] = 1
-fft_filter[max_val_4_index] = 1
+#lowpass = ndimage.gaussian_filter(img, 5)
+#gauss_highpass = img - lowpass
 
-fitsname = "fft_filter.fits"
-fits.writeto(fitsname,fft_filter,clobber=True)
-print "saved %s" % fitsname
+#fitsname = "lowpass.fits"
+#fits.writeto(fitsname,lowpass,clobber=True)
+#print "saved %s" % fitsname
 
-#fft_shift the filter and fft it to see if the stripes match
-fft_filter_shift = fftpack.ifftshift(fft_filter)
+#fitsname = "gauss_highpass.fits"
+#fits.writeto(fitsname,gauss_highpass,clobber=True)
+#print "saved %s" % fitsname
 
-fitsname = "fft_filter_shift.fits"
-fits.writeto(fitsname,fft_filter_shift,clobber=True)
-print "saved %s" % fitsname
+#print gauss_highpass.shape
+#gauss_highpass_FFT =  fftpack.fft2(gauss_highpass)
 
-fft_filter_shift_inverse = fftpack.ifft2(fft_filter_shift)
-fft_filter_shift_inverse_real = fft_filter_shift_inverse.real
-fft_filter_shift_inverse_imag = fft_filter_shift_inverse.imag
-fft_filter_shift_inverse_abs = np.abs(fft_filter_shift_inverse)
+#gauss_highpass_FFT_shift =  fftpack.fftshift(gauss_highpass_FFT)
+#gauss_highpass_FFT_shift_abs = np.abs(gauss_highpass_FFT_shift)
 
-fitsname = "fft_filter_shift_inverse_real.fits"
-fits.writeto(fitsname,fft_filter_shift_inverse_real,clobber=True)
-print "saved %s" % fitsname
+#fitsname = "gauss_highpass_FFT_shift_abs.fits"
+#fits.writeto(fitsname,gauss_highpass_FFT_shift_abs,clobber=True)
+#print "saved %s" % fitsname
 
-fitsname = "fft_filter_shift_inverse_imag.fits"
-fits.writeto(fitsname,fft_filter_shift_inverse_imag,clobber=True)
-print "saved %s" % fitsname
 
-fitsname = "fft_filter_shift_inverse_abs.fits"
-fits.writeto(fitsname,fft_filter_shift_inverse_abs,clobber=True)
-print "saved %s" % fitsname
+##FFT the original cropped image, find those four peaks and set them to be the average of the surrounding pix
+#img_uint8_cropped_FFT = fftpack.fft2(img_uint8_cropped)
+##img_uint8_cropped_FFT_inverse = fftpack.ifft2(img_uint8_cropped_FFT).real
+##img_uint8_cropped_FFT_inverse_real = img_uint8_cropped_FFT_inverse.real
+#
+#
+#img_uint8_cropped_FFT_shift =  fftpack.fftshift(img_uint8_cropped_FFT)
+#
+#
+##test_filename = 'cropped.fits'
+##fits.writeto(test_filename,img_uint8_cropped,clobber=True)
+##print "saved %s" % test_filename
+#
+#
+##img_uint8_cropped_FFT_shift_psd2D = np.abs(img_uint8_cropped_FFT_shift)**2
+#
+#
+##fitsname = "img_uint8_cropped_FFT_shift_psd2D.fits"
+##fits.writeto(fitsname,img_uint8_cropped_FFT_shift_psd2D,clobber=True)
+##print "saved %s" % fitsname
+##max_value_index_list = [max_val_1_index,max_val_2_index,max_val_3_index,max_val_4_index]
+##for max_val_index in max_value_index_list:
+##
+##   #print img_uint8_cropped_FFT[max_val_index[0]-1:img_uint8_cropped_FFT[max_val_index[0]+2
+##   sum_surrounding_values = np.sum(img_uint8_cropped_FFT[max_val_index[0]-1:max_val_index[0]+2,max_val_index[1]-1:max_val_index[1]+2] - img_uint8_cropped_FFT[max_val_index])
+##   mean_surrounding_values = sum_surrounding_values/8.
+##   img_uint8_cropped_FFT_shift[max_val_index] = 0
+#
+#img_uint8_cropped_FFT_shift[:,125] = 0
+#img_uint8_cropped_FFT_shift[:,126] = 0
+#img_uint8_cropped_FFT_shift[:,124] = 0
+#
+#img_uint8_cropped_FFT_shiftback =  fftpack.ifftshift(img_uint8_cropped_FFT_shift)
+#
+#img_uint8_cropped_FFT_shiftback_inverse = fftpack.ifft2(img_uint8_cropped_FFT_shiftback)
+#img_uint8_cropped_FFT_shiftback_inverse_real = img_uint8_cropped_FFT_shiftback_inverse.real
+#
+#fitsname = "img_uint8_cropped_FFT_shiftback_inverse_real.fits"
+#fits.writeto(fitsname,img_uint8_cropped_FFT_shiftback_inverse_real,clobber=True)
+#print "saved %s" % fitsname
+#
+##Try with full image
+#
+##FFT the original cropped image, find those four peaks and set them to be the average of the surrounding pix
+#img = img.astype(float)
+#img_FFT = fftpack.fft2(img)
+#
+#img_FFT_shift =  fftpack.fftshift(img_FFT)
+#
+#print img_FFT_shift.shape
+#
+#img_FFT_shift[:,2048] = 0
+##img_FFT_shift[:,2047] = 0
+##img_FFT_shift[:,2049] = 0
+#
+#
+#img_FFT_shiftback =  fftpack.ifftshift(img_FFT_shift)
+#
+#img_FFT_shiftback_inverse = fftpack.ifft2(img_FFT_shiftback)
+#img_FFT_shiftback_inverse_real = img_FFT_shiftback_inverse.real
+#
+#fitsname = "img_FFT_shiftback_inverse_real.fits"
+#fits.writeto(fitsname,img_FFT_shiftback_inverse_real,clobber=True)
+#print "saved %s" % fitsname
 
+
+##rotate the image so that stripes are horizontal
+#
+#pil_image = Image.fromarray(polar_image)
+#rotated_image = np.asarray(pil_image.rotate(45))
+#fits.writeto(polar_rotated_filename,rotated_image,clobber=True)
+#print "saved %s" % polar_rotated_filename
 
 
 #Maybe we don't need all this hough transform stufff

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #script to calculate sensitivity of interferometers to a global signal
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import healpy as hp
@@ -88,7 +88,7 @@ visibility_imag_array_short_para_norm_angular_sum = np.full(len(baseline_length_
       
       
 # do all this stuff for each hour over 12 hours
-for hour_index, hour in enumerate(np.arange(0,12)):
+for hour_index, hour in enumerate(np.arange(12,24)):
    time_string = "%02d_%02d_%02d" % (hour,minute,second)
    print time_string
    date_obs = datetime(year, month, day, hour, minute, second)
@@ -170,8 +170,11 @@ for hour_index, hour in enumerate(np.arange(0,12)):
          short_dipole_parallel_beam_map[hpx_index] = power_parallel
          
          #set sky map to zero below the horizon
-         if (theta > np.pi/2.):
-            sky_map[hpx_index]=0.
+         #(don't actually want to do this to compare to Sing as they put it in space with no horizon. But makes no difference here as this is just for global 
+         #signal so will be identical above and below horiz (not true for angular structure)))
+         #if (theta > np.pi/2.):
+         #   sky_map[hpx_index]=0.
+         
          #make the arrays vertical by changing where the sky is!
          #if (np.pi/2. < phi < 3*np.pi/2.):
          #   print phi
@@ -441,6 +444,8 @@ for hour_index, hour in enumerate(np.arange(0,12)):
    #plt.xlabel('Frequency (MHz)')
    #plt.xticks(np.arange(min(baseline_length_lambda_array), max(baseline_length_lambda_array)+1, 1.0))
    plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(-0.8, 1.1)
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close()   
@@ -452,7 +457,7 @@ for hour_index, hour in enumerate(np.arange(0,12)):
    #plot_title="Vis ampl vs freq baseline:%0.1fm and sep %0.1fm" % (baseline_length_m,linear_array_ant_separation)
    plot_figname="visibility_amp_abs_vs_baseline_length_%s.png" % (time_string)
    plt.plot(baseline_length_lambda_array,visibility_real_array_short_para_norm_abs,label="global real")
-   plt.plot(baseline_length_lambda_array,visibility_imag_array_short_para_norm_abs,label="global real")
+   plt.plot(baseline_length_lambda_array,visibility_imag_array_short_para_norm_abs,label="global imag")
    plt.plot(baseline_length_lambda_array,visibility_real_array_short_para_angular_norm_abs,label="angular real")
    plt.plot(baseline_length_lambda_array,visibility_imag_array_short_para_angular_norm_abs,label="angular imag")
    
@@ -462,6 +467,8 @@ for hour_index, hour in enumerate(np.arange(0,12)):
    #plt.xlabel('Frequency (MHz)')
    #plt.xticks(np.arange(min(baseline_length_lambda_array), max(baseline_length_lambda_array)+1, 1.0))
    plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(0, 1.1)
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close() 
@@ -480,6 +487,8 @@ for hour_index, hour in enumerate(np.arange(0,12)):
    plt.ylabel('Visibility amplitude')
    plt.xlabel('Baseline length (lambda)')
    plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(-0.8, 1.1)
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close()   
@@ -498,6 +507,8 @@ for hour_index, hour in enumerate(np.arange(0,12)):
    plt.ylabel('Visibility amplitude (abs)')
    plt.xlabel('Baseline length (lambda)')
    plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(0, 1.1)
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close() 

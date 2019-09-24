@@ -9,15 +9,19 @@ import cv2
 import numpy as np
 from astropy.io import fits
 
+
 image_filename = "/md0/ATeam/CenA/stripes/polar/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
 out_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_polar.fits"
 polar_undone_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_polar_undone.fits"
+
 
 hdulist = fits.open(image_filename)
 img = hdulist[0].data
 img = img[0,0,:,:]
 
 img = img.astype(np.float32)
+
+ 
 
 #test_fitsname = 'image.fits'
 #fits.writeto(test_fitsname,img,clobber=True)
@@ -54,3 +58,12 @@ polar_image_undone = cv2.linearPolar(polar_image,(img.shape[0]/2, img.shape[1]/2
 
 fits.writeto(polar_undone_filename,polar_image_undone,clobber=True)
 print "saved %s" % polar_undone_filename
+
+
+
+
+
+
+
+
+
