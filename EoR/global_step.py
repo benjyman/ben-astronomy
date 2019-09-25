@@ -10,6 +10,7 @@ from astropy.wcs.docstrings import phi0
 from datetime import datetime, date
 from pygsm import GSMObserver
 import sys
+import math
 
 plot_only = False
 
@@ -17,13 +18,19 @@ plot_only = False
 mwa_latitude_pyephem = "-26:42.199"
 mwa_longitude_pyephem = "116:40.2488"
 
-
+#horizon?
+horizon=True
+#ground plane ?
+use_ground_plane=True
+#if using ground plane - dipole height (normally use 0.3 m for MWA tile dipoles)
+dipole_height_m = 0.3
 
 #in m
 #mwa_elevation = 377.83
 mwa_elevation = 0
 
 freq_MHz = 100.
+wavelength = 300./freq_MHz
 #start with an interferometer array layout. E.g. text file with x,y,z coordinates of antennas
 
 #definitions: 
@@ -88,7 +95,7 @@ visibility_imag_array_short_para_norm_angular_sum = np.full(len(baseline_length_
       
       
 # do all this stuff for each hour over 12 hours
-for hour_index, hour in enumerate(np.arange(12,24)):
+for hour_index, hour in enumerate(np.arange(0,24)):
    time_string = "%02d_%02d_%02d" % (hour,minute,second)
    print time_string
    date_obs = datetime(year, month, day, hour, minute, second)
@@ -158,23 +165,47 @@ for hour_index, hour in enumerate(np.arange(12,24)):
       iso_beam_map = np.ones(hp.nside2npix(NSIDE))
    
    
-      #short dipole beam map for parallel case
+      #short dipole beam map for parallel case (no ground plane)
+      #and also with ground plane
       short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
       for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
          theta,phi=hp.pix2ang(NSIDE,hpx_index)
          #populate the dipole model assuming a short dipole (see "New comparison of MWA tile beams" by Benjamin McKinley on Twiki)
          #parallel
-         theta_parallel=np.arccos(np.sin(theta)*np.sin(phi))
-         voltage_parallel=np.sin(theta_parallel)
+         theta_parallel=np.arccos(np.sin(theta)*np.sin(phi)) 
+         if use_ground_plane==True:
+            #with ground plane see randall's idl code
+            #; calculate the E field response of a 2-element end-fire antenna with
+            #; isotropic receivers separated by d, and opposite phase
+            #; which is the same as a single element with 
+            #; a groundplane and distance d/2 above ground.
+            #; separation of antennas: d (wavelengths)
+            #; angle of incoming radiation = th (radian, from line joining
+            #; antennas)
+            #; see Krauss equation 4-10, section 4-2.
+            #function end_fire_2element,d,th
+            #  return,sin(!pi*d*cos(th))*2.0
+            #end
+            #d is twice the dipole height in wavelengths
+            d_in_lambda = (2. * dipole_height_m)/wavelength
+            gp_effect = 2.*math.sin(math.pi*d_in_lambda*math.cos(theta))
+            voltage_parallel=np.sin(theta_parallel) * gp_effect
+         else:
+            voltage_parallel=np.sin(theta_parallel)
+
          power_parallel=voltage_parallel**2
          short_dipole_parallel_beam_map[hpx_index] = power_parallel
+         
+
          
          #set sky map to zero below the horizon
          #(don't actually want to do this to compare to Sing as they put it in space with no horizon. But makes no difference here as this is just for global 
          #signal so will be identical above and below horiz (not true for angular structure)))
-         #if (theta > np.pi/2.):
-         #   sky_map[hpx_index]=0.
-         
+         if horizon==True:
+            if (theta > np.pi/2.):
+               sky_map[hpx_index]=0.
+               gsm_map_full_sky_mean_subtr[hpx_index]=0.
+               
          #make the arrays vertical by changing where the sky is!
          #if (np.pi/2. < phi < 3*np.pi/2.):
          #   print phi
@@ -200,6 +231,46 @@ for hour_index, hour in enumerate(np.arange(12,24)):
          beam_value=np.exp(-( theta_deg_x**2./(2.*sigma_x**2.) + theta_deg_y**2./(2.*sigma_y**2.)))
          gaussian_parallel_beam_map[hpx_index] = beam_value
         
+      #save sky map images and data:
+      #global
+      fitsname="global_sky_map.fits"
+      hp.write_map(fitsname,sky_map,dtype=np.float32, overwrite=True)
+      
+      figname="global_sky_map.png"
+      title = "global sky map"
+      #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+      #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
+      #iso_beam_map = hp.read_map(beam_map_fitsname)
+      map_projected=hp.orthview(map=sky_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,90))
+
+      plt.imshow(map_projected)
+      plt.title(title)
+      plt.colorbar()
+      figmap = plt.gcf()
+      figmap.savefig(figname) 
+      print "saved figure: %s" % figname
+      plt.close()
+
+      #angular
+      fitsname="angular_sky_map.fits"
+      hp.write_map(fitsname,gsm_map_full_sky_mean_subtr,dtype=np.float32, overwrite=True)
+      
+      figname="angular_sky_map.png"
+      title = "angular sky map"
+      #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+      #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
+      #iso_beam_map = hp.read_map(beam_map_fitsname)
+      map_projected=hp.orthview(map=gsm_map_full_sky_mean_subtr,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,90))
+
+      plt.imshow(map_projected)
+      plt.title(title)
+      plt.colorbar()
+      figmap = plt.gcf()
+      figmap.savefig(figname) 
+      print "saved figure: %s" % figname
+      plt.close()
+    
+      
       
       #plot the beam maps:
       beam_map_fitsname="iso_beam_map.fits"
@@ -216,8 +287,9 @@ for hour_index, hour in enumerate(np.arange(12,24)):
       #figmap = plt.gcf()
       #figmap.savefig(beam_map_figname) 
       #print "saved figure: %s" % beam_map_figname
-      #plt.clf()
-   
+      #plt.close()
+      
+      plt.clf()    
       #Short dipole
       beam_map_fitsname="short_dipole_para_beam_map.fits"
       beam_map_figname="short_dipole_para_beam_map.png"
@@ -233,8 +305,9 @@ for hour_index, hour in enumerate(np.arange(12,24)):
       figmap = plt.gcf()
       figmap.savefig(beam_map_figname) 
       print "saved figure: %s" % beam_map_figname
-      plt.clf()
+      plt.close()
       
+      plt.clf()
       #log periodic dipole
       beam_map_fitsname="log_periodic_para_beam_map.fits"
       beam_map_figname="log_periodic_para_beam_map.png"
@@ -250,6 +323,8 @@ for hour_index, hour in enumerate(np.arange(12,24)):
       figmap = plt.gcf()
       figmap.savefig(beam_map_figname) 
       print "saved figure: %s" % beam_map_figname
+      plt.close()
+      
       plt.clf()
    
       visibility_element_array_iso = np.empty_like(iso_beam_map,dtype=complex)
