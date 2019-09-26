@@ -8,7 +8,15 @@ import numpy as np
 from astropy.io import fits
 from scipy import fftpack,ndimage
 from PIL import Image
+import sys
 
+do_subtract_poly = False
+
+# define normalized 2D gaussian
+def gaus2d(x=0, y=0, mx=0, my=0, sx=1, sy=1):
+    super_power=4
+    return 1. / (2. * np.pi * sx * sy) * np.exp(-((x - mx)**2. / (2. * sx**2.) + (y - my)**2. / (2. * sy**2.))**super_power)
+    
 image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_polar.fits"
 out_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_polar_filtered.fits"
 polar_rotated_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_polar_rotated.fits"
@@ -172,76 +180,126 @@ fitsname = "img_FFT_shift_abs.fits"
 fits.writeto(fitsname,img_FFT_shift_abs,clobber=True)
 print "saved %s" % fitsname
 
-#fit a (low-order) polynomial to each column and subtract it.
-subtr_poly_image = np.full(img.shape,np.nan)
-column_pixel_numbers = np.arange(0,img.shape[0])
-for column_index in column_pixel_numbers:
-   column_data = img[:,int(column_index)]
-   #find the mean and std dev and clip anything more than 3 sigma
-   sigma = np.std(column_data)
-   mean = np.mean(column_data)
-   column_data[column_data > (mean+3*sigma)] = mean
+if do_subtract_poly:
+   #fit a (low-order) polynomial to each column and subtract it.
+   subtr_poly_image = np.full(img.shape,np.nan)
+   column_pixel_numbers = np.arange(0,img.shape[0])
+   for column_index in column_pixel_numbers:
+      column_data = img[:,int(column_index)]
+      #find the mean and std dev and clip anything more than 3 sigma
+      sigma = np.std(column_data)
+      mean = np.mean(column_data)
+      column_data[column_data > (mean+3*sigma)] = mean
+      
+      #fit polynomial 
+      z = np.polyfit(column_pixel_numbers, column_data, 8)
+      p = np.poly1d(z)
+      fit_line = p(column_pixel_numbers)
+      
+      #figname="poly_fit_column_%04d.png" % column_index
+      #plt.clf()
+      #plt.plot(column_pixel_numbers,fit_line,label='fit')
+      #plt.plot(column_pixel_numbers,column_data,label='data')
+      #plt.xlabel("pixel number")
+      #plt.ylabel("data value")
+      #plt.savefig(figname)
+      #print("saved %s" % figname)
+      #plt.close()
+      
+      #subtract fit line
+      new_column_data = column_data - fit_line
    
-   #fit polynomial 
-   z = np.polyfit(column_pixel_numbers, column_data, 8)
-   p = np.poly1d(z)
-   fit_line = p(column_pixel_numbers)
+      subtr_poly_image[:,int(column_index)] = new_column_data
    
-   #figname="poly_fit_column_%04d.png" % column_index
-   #plt.clf()
-   #plt.plot(column_pixel_numbers,fit_line,label='fit')
-   #plt.plot(column_pixel_numbers,column_data,label='data')
-   #plt.xlabel("pixel number")
-   #plt.ylabel("data value")
-   #plt.savefig(figname)
-   #print("saved %s" % figname)
-   #plt.close()
+   filename = 'subtr_poly_full_image.fits'
+   fits.writeto(filename,subtr_poly_image,clobber=True)
+   print "saved %s" % filename
    
-   #subtract fit line
-   new_column_data = column_data - fit_line
+   
+   # Take the fourier transform of the image.
+   F1 = fftpack.fft2(subtr_poly_image)
+   
+   #print F1
 
-   subtr_poly_image[:,int(column_index)] = new_column_data
+   ## Now shift the quadrants around so that low spatial frequencies are in
+   ## the center of the 2D fourier transformed image.
+   F2 = fftpack.fftshift(F1)
+   ## Calculate a 2D power spectrum
+   psd2D = np.abs(F2)**2
+   F2_real = F2.real
+   F2_imag = F2.imag
+   
+   ##print psd2D
+   
+   filename = "fft_psd_polar_image_poly_subtr_full.fits"
+   fits.writeto(filename,psd2D,clobber=True)
+   print "saved %s" % filename
 
-filename = 'subtr_poly_full_image.fits'
-fits.writeto(filename,subtr_poly_image,clobber=True)
-print "saved %s" % filename
 
 
-# Take the fourier transform of the image.
-F1 = fftpack.fft2(subtr_poly_image)
-
-#print F1
-
-## Now shift the quadrants around so that low spatial frequencies are in
-## the center of the 2D fourier transformed image.
-F2 = fftpack.fftshift(F1)
-## Calculate a 2D power spectrum
-psd2D = np.abs(F2)**2
-F2_real = F2.real
-F2_imag = F2.imag
-
-##print psd2D
-
-filename = "fft_psd_polar_image_poly_subtr_full.fits"
-fits.writeto(filename,psd2D,clobber=True)
-print "saved %s" % filename
-
+###messing around with filters
 centre_pix_num = int(img.shape[0]/2.)
 #By eye from FT of poly_subtr image, can clearly see where artifacts are
 #make filter
-filter_width = 5
-filter_middle_part = 252
-filter_length = 700
-horiz_line_filter = np.full(img.shape,1.)
-horiz_line_filter[centre_pix_num+filter_middle_part:centre_pix_num+filter_middle_part+filter_length,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
-horiz_line_filter[centre_pix_num-filter_middle_part-filter_length:centre_pix_num-filter_middle_part,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
+filter_width = 200 #5
+filter_middle_part =  1000 #252
+filter_length = 4096 #700
 
-print np.max(horiz_line_filter)
-print np.min(horiz_line_filter)
+
+
+#stoopid basic filter
+#horiz_line_filter[centre_pix_num+filter_middle_part:centre_pix_num+filter_middle_part+filter_length,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
+#horiz_line_filter[centre_pix_num-filter_middle_part-filter_length:centre_pix_num-filter_middle_part,centre_pix_num-filter_width:centre_pix_num+filter_width] = 0.
+
+#use 2d gaussian
+#https://docs.scipy.org/doc/numpy/reference/generated/numpy.meshgrid.html
+centre_pix = img.shape[0]/2 
+
+x = np.arange(-centre_pix, centre_pix,1)
+y = np.arange(-centre_pix, centre_pix,1)
+#x = np.linspace(-5, 5)
+#y = np.linspace(-5, 5)
+xx, yy = np.meshgrid(x, y, sparse=True) 
+centre_x = 0
+centre_y = 0
+horiz_line_filter_1 = gaus2d(x=xx, y=yy, mx=centre_x, my=centre_y, sx=filter_width, sy=filter_length)
+horiz_line_filter_1 = horiz_line_filter_1/np.max(horiz_line_filter_1)
+
+horiz_line_filter_2 = gaus2d(x=xx, y=yy, mx=centre_x, my=centre_y, sx=filter_width, sy=filter_middle_part)
+horiz_line_filter_2 = horiz_line_filter_2/np.max(horiz_line_filter_2)
+
+
+horiz_line_filter = horiz_line_filter_1 - horiz_line_filter_2
+
+horiz_line_filter = 1. - horiz_line_filter
+
+###
+#horiz_line_filter = np.full(img.shape,1.)
+#horiz_line_filter[:,centre_pix-filter_width/2:centre_pix+filter_width/2] = 0
+###
+
+#
+horiz_line_filter = gaus2d(x=xx, y=yy, mx=0, my=0, sx=150, sy=200)
+horiz_line_filter = horiz_line_filter / np.max(horiz_line_filter)
+
+#
+
 
 fitsname = "horiz_line_filter.fits"
 fits.writeto(fitsname,horiz_line_filter,clobber=True)
 print "saved %s" % fitsname
+
+
+#invert the filter to have a look in image space
+horiz_line_filter_invert = 1. - horiz_line_filter
+horiz_line_filter_shift = fftpack.ifftshift(horiz_line_filter_invert)
+horiz_line_filter_shift_inverse = fftpack.ifft2(horiz_line_filter_shift)
+horiz_line_filter_shift_inverse_real = horiz_line_filter_shift_inverse.real
+
+fitsname = "horiz_line_filter_shift_inverse_real.fits"
+fits.writeto(fitsname,horiz_line_filter_shift_inverse_real,clobber=True)
+print "saved %s" % fitsname
+
 
 #Apply filter to image FFT
 #filtered_image_FFT_shift = F2 * horiz_line_filter
@@ -261,6 +319,15 @@ filtered_image_FFT_shift_back_inverse = fftpack.ifft2(filtered_image_FFT_shift_b
 fitsname = "filtered_image_FFT_shift_back_inverse.fits"
 fits.writeto(fitsname,filtered_image_FFT_shift_back_inverse,clobber=True)
 print "saved %s" % fitsname
+
+
+#regrid back!
+value = np.sqrt(((img.shape[0]/2.0)**2.0)+((img.shape[1]/2.0)**2.0))
+polar_image_undone = cv2.linearPolar(filtered_image_FFT_shift_back_inverse,(img.shape[0]/2, img.shape[1]/2), value, cv2.WARP_INVERSE_MAP)
+polar_undone_filename = "filtered_image_polar_undone.fits"
+
+fits.writeto(polar_undone_filename,polar_image_undone,clobber=True)
+print "saved %s" % polar_undone_filename
 
 
 #lowpass = ndimage.gaussian_filter(img, 5)
