@@ -11,23 +11,34 @@ from datetime import datetime, date
 from pygsm import GSMObserver
 import sys
 import math
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw 
 
 plot_only = False
+in_orbit = True
 
 #This must be a 'feature' of gsmobserver() - lat and long need to be put in as strings, elevation can be a float (I think)...this is terrible (is my previous gsm_reflection work wrong? rerun?)
 mwa_latitude_pyephem = "-26:42.199"
 mwa_longitude_pyephem = "116:40.2488"
+orbit_latitude_pyephem = "00:00.00"
+orbit_longitude_pyephem = "00:00.00"
 
 #horizon?
-horizon=True
+horizon=False
 #ground plane ?
-use_ground_plane=True
+use_ground_plane=False
+
 #if using ground plane - dipole height (normally use 0.3 m for MWA tile dipoles)
 dipole_height_m = 0.3
 
 #in m
 #mwa_elevation = 377.83
 mwa_elevation = 0
+orbit_elevation = 35786000
+
+sky_map_orthview_min = -400
+sky_map_orthview_max = 2000
 
 freq_MHz = 100.
 wavelength = 300./freq_MHz
@@ -101,12 +112,15 @@ iso_beam_map = np.ones(hp.nside2npix(NSIDE))
 
 #short dipole beam map for parallel case (no ground plane)
 #and also with ground plane
+if (horizon==False):
+   use_ground_plane=False
 short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
 for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
    theta,phi=hp.pix2ang(NSIDE,hpx_index)
    #populate the dipole model assuming a short dipole (see "New comparison of MWA tile beams" by Benjamin McKinley on Twiki)
-   #parallel
-   theta_parallel=np.arccos(np.sin(theta)*np.sin(phi)) 
+   #parallel dipoles, they are placed in an EW baseline config, so the dipoles must be yy NOT XX!)
+   #theta_parallel_xx=np.arccos(np.sin(theta)*np.sin(phi)) 
+   theta_parallel=np.arccos(np.sin(theta)*np.cos(phi)) 
    if use_ground_plane==True:
       #with ground plane see randall's idl code
       #; calculate the E field response of a 2-element end-fire antenna with
@@ -125,13 +139,22 @@ for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
       gp_effect = 2.*math.sin(math.pi*d_in_lambda*math.cos(theta))
       voltage_parallel=np.sin(theta_parallel) * gp_effect
       
+      ##randall's code uses this (they are the same):
+      #voltage_parallel = sqrt(1-(sin(az[p])*sin(za[p]))^2) * gp_effect
+      #sin_theta_parallel = np.sin(theta_parallel)
+      #randall_proj_x = np.sqrt(1-(math.sin(phi)*math.sin(theta))**2)
+      #proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
+      #print 'sin_theta_parallel %s' % sin_theta_parallel
+      #print 'randall_proj_x %s' % randall_proj_x
+      
    else:
       voltage_parallel=np.sin(theta_parallel)
    
    #TEST for comparing to Randalls, add in 1/cos(za) factor
-   factor = 1./math.cos(theta)
+   #as I thought, this makes the beam wider and therefore its Fourier footprint narrower - not what we want!
+   #factor = 1./math.cos(theta)
       
-   power_parallel=voltage_parallel**2 * factor
+   power_parallel=voltage_parallel**2       #* factor
    short_dipole_parallel_beam_map[hpx_index] = power_parallel
    
    if horizon==True:
@@ -200,7 +223,7 @@ beam_map_title = "short dipole para beam map"
 #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
 #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
 #iso_beam_map = hp.read_map(beam_map_fitsname)
-short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,90))
+short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,0,0))
 
 figmap = plt.gcf()
 figmap.savefig(beam_map_figname,bbox_inches='tight') 
@@ -215,13 +238,29 @@ beam_map_title = "log periodic para beam map"
 #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
 #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
 #iso_beam_map = hp.read_map(beam_map_fitsname)
-gaussian_parallel_beam_map_projected=hp.orthview(map=gaussian_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,90))
+gaussian_parallel_beam_map_projected=hp.orthview(map=gaussian_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,0,0))
 
 figmap = plt.gcf()
 figmap.savefig(beam_map_figname,bbox_inches='tight') 
 print "saved figure: %s" % beam_map_figname
 plt.close()
-  
+
+#for 'in orbit' just use a single gsm map, and rotate the antennas (beams)
+if in_orbit==True:
+   latitude, longitude, elevation = orbit_latitude_pyephem, orbit_longitude_pyephem, orbit_elevation
+   #Parkes (pygsm example)
+   #latitude, longitude, elevation = '-32.998370', '148.263659', 100
+   ov_orbit = GSMObserver()
+   ov_orbit.lon = longitude
+   ov_orbit.lat = latitude
+   ov_orbit.elev = elevation
+   gsm_map_full_sky=ov_orbit.generate(freq_MHz)
+   #Want to just seee the response to angular variations on the sky (subtract mean)
+   gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
+   gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
+   sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
+   
+   
 # do all this stuff for each hour over 12 hours
 for hour_index, hour in enumerate(np.arange(0,24)):
    time_string = "%02d_%02d_%02d" % (hour,minute,second)
@@ -229,57 +268,59 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    date_obs = datetime(year, month, day, hour, minute, second)
    ov.date = date_obs
    #hack pygsm to do full sky (no masking below horizom)
-   gsm_map_full_sky=ov.generate(freq_MHz)
    
-   plt.clf()
-   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-   hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
-   #ov.view()
-   fig_name="sky_from_mwa_at_h_m_s_%s_full_sky.png" % (time_string)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-   print "saved %s" % fig_name
-   plt.close()
-   
-   #Want to just seee the response to angular variations on the sky (subtract mean)
-   gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
-   gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
-   
-   plt.clf()
-   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-   hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
-   #ov.view()
-   fig_name="sky_from_mwa_at_h_m_s_%s_full_sky_mean_subtr.png" % (time_string)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-   print "saved %s" % fig_name
-   plt.close()
-   
-   #global
-   #sky map - global - this needs to be the average of the sky map so we can compare with the angular response
-   #sky_map =  np.ones(hp.nside2npix(NSIDE))
-   sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
-   
-   #average over a night  
-   #for hour in range(0,24):
-   #   date_obs = datetime(year, month, day, hour, minute, second)
-   #   ov.date = date_obs
-   #   print date_obs
-   #   print ov.date
-   #   gsm_map=ov.generate(freq_MHz)
-   #   
-   #   
-   #   #d = ov.view(logged=True)
-   #   
-   #   plt.clf()
-   #   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-   #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
-   #   ov.view()
-   #   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
-   #   figmap = plt.gcf()
-   #   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-   #   print "saved %s" % fig_name
-   #   plt.close()
+   if not in_orbit:
+      gsm_map_full_sky=ov.generate(freq_MHz)
+      
+      plt.clf()
+      map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+      hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0),min=0,max=sky_map_orthview_max)
+      #ov.view()
+      fig_name="sky_from_mwa_at_h_m_s_%s_full_sky.png" % (time_string)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+      print "saved %s" % fig_name
+      plt.close()
+      
+      #Want to just seee the response to angular variations on the sky (subtract mean)
+      gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
+      gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
+      
+      plt.clf()
+      map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+      hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
+      #ov.view()
+      fig_name="sky_from_mwa_at_h_m_s_%s_full_sky_mean_subtr.png" % (time_string)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+      print "saved %s" % fig_name
+      plt.close()
+      
+      #global
+      #sky map - global - this needs to be the average of the sky map so we can compare with the angular response
+      #sky_map =  np.ones(hp.nside2npix(NSIDE))
+      sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
+      
+      #average over a night  
+      #for hour in range(0,24):
+      #   date_obs = datetime(year, month, day, hour, minute, second)
+      #   ov.date = date_obs
+      #   print date_obs
+      #   print ov.date
+      #   gsm_map=ov.generate(freq_MHz)
+      #   
+      #   
+      #   #d = ov.view(logged=True)
+      #   
+      #   plt.clf()
+      #   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+      #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
+      #   ov.view()
+      #   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
+      #   figmap = plt.gcf()
+      #   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+      #   print "saved %s" % fig_name
+      #   plt.close()
 
    visibility_amp_array_iso_filename = "visibility_amp_list_iso_%s.npy" % (time_string)
    visibility_real_array_short_para_filename = "visibility_amp_array_short_para_%s.npy" % (time_string)
@@ -299,13 +340,69 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=sky_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,90))
+   map_projected=hp.orthview(map=sky_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0))
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
    print "saved figure: %s" % figname
    plt.close()
    
+   #if 'in orbit rotate the beam by hour*15 degrees'
+   if in_orbit==True:
+      short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
+      for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
+         theta,phi=hp.pix2ang(NSIDE,hpx_index)
+         phi += (float(hour_index)*15./360)*(2.*math.pi)
+         #populate the dipole model assuming a short dipole (see "New comparison of MWA tile beams" by Benjamin McKinley on Twiki)
+         #parallel dipoles, they are placed in an EW baseline config, so the dipoles must be yy NOT XX!)
+         #theta_parallel_xx=np.arccos(np.sin(theta)*np.sin(phi)) 
+         theta_parallel=np.arccos(np.sin(theta)*np.cos(phi)) 
+         if use_ground_plane==True:
+            #with ground plane see randall's idl code
+            #; calculate the E field response of a 2-element end-fire antenna with
+            #; isotropic receivers separated by d, and opposite phase
+            #; which is the same as a single element with 
+            #; a groundplane and distance d/2 above ground.
+            #; separation of antennas: d (wavelengths)
+            #; angle of incoming radiation = th (radian, from line joining
+            #; antennas)
+            #; see Krauss equation 4-10, section 4-2.
+            #function end_fire_2element,d,th
+            #  return,sin(!pi*d*cos(th))*2.0
+            #end
+            #d is twice the dipole height in wavelengths
+            d_in_lambda = (2. * dipole_height_m)/wavelength
+            gp_effect = 2.*math.sin(math.pi*d_in_lambda*math.cos(theta))
+            voltage_parallel=np.sin(theta_parallel) * gp_effect
+            
+            ##randall's code uses this (they are the same):
+            #voltage_parallel = sqrt(1-(sin(az[p])*sin(za[p]))^2) * gp_effect
+            #sin_theta_parallel = np.sin(theta_parallel)
+            #randall_proj_x = np.sqrt(1-(math.sin(phi)*math.sin(theta))**2)
+            #proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
+            #print 'sin_theta_parallel %s' % sin_theta_parallel
+            #print 'randall_proj_x %s' % randall_proj_x
+            
+         else:
+            voltage_parallel=np.sin(theta_parallel)
+         
+         #TEST for comparing to Randalls, add in 1/cos(za) factor
+         #as I thought, this makes the beam wider and therefore its Fourier footprint narrower - not what we want!
+         #factor = 1./math.cos(theta)
+            
+         power_parallel=voltage_parallel**2       #* factor
+         short_dipole_parallel_beam_map[hpx_index] = power_parallel
+         
+         if horizon==True:
+            if (theta > np.pi/2.):
+               short_dipole_parallel_beam_map[hpx_index]=0.
+      
+      #normalise
+      beam_max = np.max(short_dipole_parallel_beam_map)
+      short_dipole_parallel_beam_map = short_dipole_parallel_beam_map/beam_max
+
+ 
+    
    #show the sky maps multiplied by the beam
    #global
    global_sky_with_beam = sky_map * short_dipole_parallel_beam_map
@@ -319,7 +416,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=global_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,90))
+   map_projected=hp.orthview(map=global_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0))
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
@@ -339,7 +436,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=angular_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,90))
+   map_projected=hp.orthview(map=angular_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
@@ -367,8 +464,11 @@ for hour_index, hour in enumerate(np.arange(0,24)):
          print baseline_length_lambda
       
          baseline_theta = np.pi/2.
-      
-         baseline_phi = 0.
+         
+         if in_orbit==True:
+            baseline_phi = 0. + (float(hour_index)*15./360)*(2.*math.pi)
+         else:
+            baseline_phi = 0.
          baseline_vector=baseline_length_m*hp.ang2vec(baseline_theta,baseline_phi)
          #print baseline_vector
          #baseline_vector=np.array([baseline_length_m,0,0])
@@ -567,7 +667,31 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close() 
+
+   #abs log
+   plt.clf()
+   plot=plt.figure()
+   plot_title="Visibility amplitude log abs vs baseline length"
+   #plot_title="Vis ampl vs freq baseline:%0.1fm and sep %0.1fm" % (baseline_length_m,linear_array_ant_separation)
+   plot_figname="visibility_amp_abs_vs_baseline_length_%s_log.png" % (time_string)
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_real_array_short_para_norm_abs),label="global real")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_imag_array_short_para_norm_abs),label="global imag")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_real_array_short_para_angular_norm_abs),label="angular real")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_imag_array_short_para_angular_norm_abs),label="angular imag")
    
+   plt.title(plot_title)
+   plt.ylabel('Log10 visibility amplitude (abs)')
+   plt.xlabel('Baseline length (lambda)')
+   #plt.xlabel('Frequency (MHz)')
+   #plt.xticks(np.arange(min(baseline_length_lambda_array), max(baseline_length_lambda_array)+1, 1.0))
+   plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(-4, 0.1)
+   plot.savefig('%s' % plot_figname)
+   print "saved %s" % plot_figname
+   plt.close() 
+      
+
    #average
    plt.clf()
    plot=plt.figure()
@@ -607,10 +731,80 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    plot.savefig('%s' % plot_figname)
    print "saved %s" % plot_figname
    plt.close() 
+
+   #average abs log
+   plt.clf()
+   plot=plt.figure()
+   plot_title="Log visibility amplitude abs vs baseline length"
+   plot_figname="visibility_amp_abs_vs_baseline_length_average_to_%s_log.png" % (time_string)
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_real_array_short_para_norm_average_abs),label="global real")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_imag_array_short_para_norm_average_abs),label="global real")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_real_array_short_para_angular_norm_average_abs),label="angular real")
+   plt.plot(baseline_length_lambda_array,np.log10(visibility_imag_array_short_para_angular_norm_average_abs),label="angular imag")
    
+   plt.title(plot_title)
+   plt.ylabel('Log10 visibility amplitude (abs)')
+   plt.xlabel('Baseline length (lambda)')
+   plt.legend(loc=1)
+   ax = plt.gca()
+   ax.set_ylim(-4, 0.1)
+   plot.savefig('%s' % plot_figname)
+   print "saved %s" % plot_figname
+   plt.close() 
+    
+   #Add some text to the image(s)
+   #img = Image.open("%s_yy_restor.png" % out_image_basename)
+   #draw = ImageDraw.Draw(img)
+   ## font = ImageFont.truetype(<font-file>, <font-size>)
+   ##font = ImageFont.truetype("sans-serif.ttf", 16)
+   #font = ImageFont.truetype('FreeSans.ttf',30)
+   ## draw.text((x, y),"Sample Text",(r,g,b))
+   #draw.text((10, 10),"YY Channel %s (%.0f MHz)" % (chan,freq_MHz),(0,0,0),font=font)
+   ##draw.text((256, 256),"Channel %s" % chan,(0,0,0))
+   #img.save("%s_yy_restor.png" % out_image_basename)
+            
+            
+   #Tile images together at each timestep
    
-   
-   
+   #Tile images together at each timestep
+
+   sky_figname="angular_sky_with_beam_h_m_s_%s.png" % (time_string)
+   response_figname="visibility_amp_abs_vs_baseline_length_%s.png" % (time_string)
+   av_response_abs_log_figname="visibility_amp_abs_vs_baseline_length_average_to_%s_log.png" % (time_string)
+   bottom_figname = "bottom_%s.png" % (time_string)
+
+   bottom_list_im = [response_figname, av_response_abs_log_figname]
+
+   imgs    = [ Image.open(i) for i in bottom_list_im ]
+   ## pick the image which is the smallest, and resize the others to match it (can be arbitrary image shape here)
+   min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
+
+   ##horiz:
+   imgs_comb = np.hstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
+   imgs_comb = Image.fromarray( imgs_comb)
+   imgs_comb.save(bottom_figname)
+   #
+   ##then combine top and bottom vertically
+   ## for a vertical stacking it is simple: use vstack
+   top_list_im = [sky_figname,bottom_figname]
+   imgs    = [ Image.open(i) for i in top_list_im ]
+   min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
+   imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
+   imgs_comb = Image.fromarray( imgs_comb)
+   trifecta_name = 'trifecta_%03d.png' % (hour_index)
+   imgs_comb.save(trifecta_name)
+   print "saved %s" % (trifecta_name)
+
+#stitch together images into movie
+
+filename_base = 'trifecta_%03d.png'
+movie_name = 'global_step.mp4'
+
+cmd = "ffmpeg -framerate 6 -i %s -c:v libx264 -r 30 -pix_fmt yuv420p %s" % (filename_base,movie_name)
+print cmd
+os.system(cmd)
+print('made movie %s' % movie_name)
+
    
    
    
