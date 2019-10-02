@@ -10,6 +10,10 @@ from scipy import fftpack,ndimage
 from PIL import Image
 import sys
 
+##Check tis out: https://vzaguskin.github.io/fourielines1/
+#and https://dsp.stackexchange.com/questions/20061/removing-periodic-noise-from-image-using-fourier-transform
+
+
 do_subtract_poly = False
 
 # define normalized 2D gaussian

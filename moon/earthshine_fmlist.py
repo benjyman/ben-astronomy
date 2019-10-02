@@ -16,7 +16,10 @@ from mpl_toolkits.basemap import Basemap
 from itertools import chain
 from datetime import datetime, timedelta, date
 import matplotlib.dates as mdates
-import PIL
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw 
+
 
 tile_only = False
 
@@ -67,28 +70,28 @@ if tile_only:
       #Tile images together at each timestep
       top_list_im = [flux_figname, moon_figname]
       
-      imgs    = [ PIL.Image.open(i) for i in top_list_im ]
+      imgs    = [ Image.open(i) for i in top_list_im ]
       # pick the image which is the smallest, and resize the others to match it (can be arbitrary image shape here)
       min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
       
       #horiz:
       imgs_comb = np.hstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
-      imgs_comb = PIL.Image.fromarray( imgs_comb)
+      imgs_comb = Image.fromarray( imgs_comb)
       imgs_comb.save(top_figname)   
       
       #then combine top and bottom vertically
       # for a vertical stacking it is simple: use vstack
       bottom_list_im = [top_figname,transmitters_figname]
-      imgs    = [ PIL.Image.open(i) for i in bottom_list_im ]
+      imgs    = [ Image.open(i) for i in bottom_list_im ]
       min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
       imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
-      imgs_comb = PIL.Image.fromarray( imgs_comb)
-      trifecta_name = 'trifecta_%s.png' % (timestep_string) 
+      imgs_comb = Image.fromarray( imgs_comb)
+      trifecta_name = 'trifecta_%03d.png' % (timestep_index) 
       imgs_comb.save(trifecta_name)
 
       
       ## save that beautiful picture
-      #imgs_comb = PIL.Image.fromarray( imgs_comb)
+      #imgs_comb = Image.fromarray( imgs_comb)
       #imgs_comb.save( 'trifecta.png' )    
       
 
@@ -389,23 +392,23 @@ for timestep_index, timestep in enumerate(utc_times):
       
      top_list_im = [flux_figname, moon_figname]
      
-     imgs    = [ PIL.Image.open(i) for i in top_list_im ]
+     imgs    = [ Image.open(i) for i in top_list_im ]
      # pick the image which is the smallest, and resize the others to match it (can be arbitrary image shape here)
      min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
      
      #horiz:
      imgs_comb = np.hstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
-     imgs_comb = PIL.Image.fromarray( imgs_comb)
+     imgs_comb = Image.fromarray( imgs_comb)
      imgs_comb.save(top_figname)   
      
      #then combine top and bottom vertically
      # for a vertical stacking it is simple: use vstack
      bottom_list_im = [top_figname,transmitters_figname]
-     imgs    = [ PIL.Image.open(i) for i in bottom_list_im ]
+     imgs    = [ Image.open(i) for i in bottom_list_im ]
      min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
      imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
-     imgs_comb = PIL.Image.fromarray( imgs_comb)
-     trifecta_name = 'trifecta_%s.png' % (timestep_string) 
+     imgs_comb = Image.fromarray( imgs_comb)
+     trifecta_name = 'trifecta_%03d.png' % (timestep_index) 
      imgs_comb.save(trifecta_name) 
      print "saved %s" % (trifecta_name)
      
@@ -450,7 +453,15 @@ plt.savefig(figname)
 print("saved %s" % figname)
 #plot just where Moon is above horizon
 
+#stitch together images into movie
 
+filename_base = 'trifecta_%03d.png'
+movie_name = 'earthshine.mp4'
+
+cmd = "ffmpeg -framerate 6 -i %s -c:v libx264 -r 30 -pix_fmt yuv420p %s" % (filename_base,movie_name)
+print cmd
+os.system(cmd)
+print('made movie %s' % movie_name)
 
 
 
