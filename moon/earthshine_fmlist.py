@@ -19,6 +19,8 @@ import matplotlib.dates as mdates
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
+from astropy.io import fits
+import os
 
 
 tile_only = False
@@ -244,6 +246,11 @@ powers_per_timestep_array = np.full(len(utc_times), np.nan)
 moon_alt_per_timestep = np.full(len(utc_times), np.nan)
 zero_alt_timestep = np.zeros(len(utc_times))
 
+#for waterfall plot
+n_bins = 100
+waterfall = np.full((len(utc_times),n_bins),np.nan)
+
+
 for timestep_index, timestep in enumerate(utc_times):
      
      timestep_string = timestep.datetime.strftime("%Y_%m_%d_%H_%M_%S")
@@ -259,6 +266,8 @@ for timestep_index, timestep in enumerate(utc_times):
      moon_alt_per_timestep[timestep_index] = moon_alt/u.deg
      
      print moon_alt
+     
+     
      
      if moon_alt < 0.:
         
@@ -307,7 +316,8 @@ for timestep_index, timestep in enumerate(utc_times):
         print("saved %s" % figname)
         plt.close()
         
-        
+        powers_received_city_above_horiz = Powers_Recieved_per_Hz * 0.0
+        powers_received_city_above_horiz_freqs = frequencies
         
      else:   
         city_Locations=EarthLocation(lat=(newdf["lat"])*u.deg, lon=(newdf["long"])*u.deg)
@@ -321,9 +331,9 @@ for timestep_index, timestep in enumerate(utc_times):
         print(len(cities_alt))
         
         powers_received_city_above_horiz = Powers_Recieved_per_Hz[np.nan_to_num(cities_alt) > 0]
-
         print(len(powers_received_city_above_horiz))
         
+        powers_received_city_above_horiz_freqs = frequencies[np.nan_to_num(cities_alt) > 0]
         #print(powers_received_city_above_horiz)
      
         timestep_powers_sum = np.sum(powers_received_city_above_horiz)
@@ -412,9 +422,78 @@ for timestep_index, timestep in enumerate(utc_times):
      imgs_comb.save(trifecta_name) 
      print "saved %s" % (trifecta_name)
      
-#        #print(powers_sum)
-#     powers_sum_timestep_array[timestep_index] = powers_sum
+     #waterfall stuff
+     n,bins,patches = plt.hist(frequencies,bins=n_bins)
+     power_at_freqs_array=np.full(n_bins,0.0)
+     power_at_freq =0.0
+     for i in range(0, n_bins):
+        minfreq=bins[i]
+        #print 'min freq %s' % (minfreq)
+        maxfreq=bins[i+1]
+        #print 'max freq %s' % (maxfreq)
+        freq_indices = np.where(np.logical_and(powers_received_city_above_horiz_freqs>=minfreq, powers_received_city_above_horiz_freqs<maxfreq))
+        #print freq_indices
+        power_at_freq = np.sum(np.nan_to_num(np.array(powers_received_city_above_horiz)[freq_indices]))
+        #print power_at_freq
+        power_at_freqs_array[i]=power_at_freq
+     
+     waterfall[timestep_index,:]=power_at_freqs_array
+     waterfall_jy = waterfall/10**(-26)
+     
+     #save a progressive waterfall figure
+     filename = 'waterfall_%s.fits' % timestep_string
+     fits.writeto(filename,waterfall_jy,overwrite=True)
+     print "wrote %s" % filename
+     
+     plot_figname = 'waterfall_%s.png' % timestep_string
+     fig = plt.figure()
+     cur_axes = plt.gca()
+     img = cur_axes.matshow(waterfall_jy)
+     plt.grid(None) 
+     #get rid of labels
+     
+     cur_axes.axes.get_xaxis().set_ticklabels([])
+     cur_axes.axes.get_yaxis().set_ticklabels([])
+     #get rid of ticks
+     cur_axes = plt.gca()
+     cur_axes.axes.get_xaxis().set_ticks([])
+     cur_axes.axes.get_yaxis().set_ticks([])
+     plt.colorbar(img, ax=cur_axes)
+     
+     plt.savefig('%s' % plot_figname, overwrite=True)
+     print "saved %s" % plot_figname
+     plt.close()
+
+     #tile the waterfalls with the earth map and moon alt
+     
+     waterfall_figname='waterfall_%s.png' % timestep_string
+     transmitters_figname='FM_transmitters_on_Earth_timestep_%s.png' % (timestep_string)
+     moon_figname="moon_alt_at_MWA_%s.png"  % (timestep_string)
+     top_figname = "top_%s.png" % (timestep_string)
       
+     top_list_im = [waterfall_figname, moon_figname]
+     
+     imgs    = [ Image.open(i) for i in top_list_im ]
+     # pick the image which is the smallest, and resize the others to match it (can be arbitrary image shape here)
+     min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
+     
+     #horiz:
+     imgs_comb = np.hstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
+     imgs_comb = Image.fromarray( imgs_comb)
+     imgs_comb.save(top_figname)   
+     
+     #then combine top and bottom vertically
+     # for a vertical stacking it is simple: use vstack
+     bottom_list_im = [top_figname,transmitters_figname]
+     imgs    = [ Image.open(i) for i in bottom_list_im ]
+     min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs])[0][1]
+     imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
+     imgs_comb = Image.fromarray( imgs_comb)
+     trifecta_name = 'waterfall_trifecta_%03d.png' % (timestep_index) 
+     imgs_comb.save(trifecta_name) 
+     print "saved %s" % (trifecta_name)
+     
+
 #print(powers_sum_timestep_array)  
 powers_sum_timestep_array_janskys = powers_per_timestep_array/1e-26
 
@@ -463,5 +542,13 @@ print cmd
 os.system(cmd)
 print('made movie %s' % movie_name)
 
+#stitch together images into movie waterfall version
 
+filename_base = 'waterfall_trifecta_%03d.png'
+movie_name = 'earthshine_waterfall.mp4'
+
+cmd = "ffmpeg -framerate 6 -i %s -c:v libx264 -r 30 -pix_fmt yuv420p %s" % (filename_base,movie_name)
+print cmd
+os.system(cmd)
+print('made movie %s' % movie_name)
 
