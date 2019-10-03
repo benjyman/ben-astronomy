@@ -117,6 +117,7 @@ if (horizon==False):
 short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
 for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
    theta,phi=hp.pix2ang(NSIDE,hpx_index)
+      
    #populate the dipole model assuming a short dipole (see "New comparison of MWA tile beams" by Benjamin McKinley on Twiki)
    #parallel dipoles, they are placed in an EW baseline config, so the dipoles must be yy NOT XX!)
    #theta_parallel_xx=np.arccos(np.sin(theta)*np.sin(phi)) 
@@ -188,7 +189,7 @@ sigma_y=fwhm_deg_y/2.355
 gaussian_parallel_beam_map=np.empty_like(iso_beam_map)
 for hpx_index,beam_value in enumerate(gaussian_parallel_beam_map):
    theta,phi=hp.pix2ang(NSIDE,hpx_index)
-
+   
    theta_deg=theta/np.pi*180.
    theta_deg_x = theta_deg*np.cos(phi)
    theta_deg_y = theta_deg*np.sin(phi)
@@ -204,7 +205,7 @@ beam_map_fitsname="iso_beam_map.fits"
 beam_map_figname="iso_beam_map.png"
 beam_map_title = "iso beam map"
 #plt.clf()
-#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
 #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
 #iso_beam_map = hp.read_map(beam_map_fitsname)
 #iso_beam_map_projected=hp.orthview(map=iso_beam_map,return_projected_map=True,coord='C')
@@ -220,10 +221,10 @@ plt.clf()
 beam_map_fitsname="short_dipole_para_beam_map.fits"
 beam_map_figname="short_dipole_para_beam_map.png"
 beam_map_title = "short dipole para beam map"
-#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
 #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
 #iso_beam_map = hp.read_map(beam_map_fitsname)
-short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,0,0))
+short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,0))
 
 figmap = plt.gcf()
 figmap.savefig(beam_map_figname,bbox_inches='tight') 
@@ -235,10 +236,10 @@ plt.clf()
 beam_map_fitsname="log_periodic_para_beam_map.fits"
 beam_map_figname="log_periodic_para_beam_map.png"
 beam_map_title = "log periodic para beam map"
-#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+#short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
 #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
 #iso_beam_map = hp.read_map(beam_map_fitsname)
-gaussian_parallel_beam_map_projected=hp.orthview(map=gaussian_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,0,0))
+gaussian_parallel_beam_map_projected=hp.orthview(map=gaussian_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=beam_map_title,rot=(0,90,0))
 
 figmap = plt.gcf()
 figmap.savefig(beam_map_figname,bbox_inches='tight') 
@@ -274,7 +275,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
       
       plt.clf()
       map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0),min=0,max=sky_map_orthview_max)
+      hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=0,max=sky_map_orthview_max)
       #ov.view()
       fig_name="sky_from_mwa_at_h_m_s_%s_full_sky.png" % (time_string)
       figmap = plt.gcf()
@@ -288,7 +289,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
       
       plt.clf()
       map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
+      hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
       #ov.view()
       fig_name="sky_from_mwa_at_h_m_s_%s_full_sky_mean_subtr.png" % (time_string)
       figmap = plt.gcf()
@@ -314,7 +315,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
       #   
       #   plt.clf()
       #   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,0,0))
+      #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0))
       #   ov.view()
       #   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
       #   figmap = plt.gcf()
@@ -337,72 +338,16 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    plt.clf()
    figname="global_sky_map_h_m_s_%s.png" % (time_string)
    title = "global sky map"
-   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=sky_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0))
+   map_projected=hp.orthview(map=sky_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,0))
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
    print "saved figure: %s" % figname
    plt.close()
-   
-   #if 'in orbit rotate the beam by hour*15 degrees'
-   if in_orbit==True:
-      short_dipole_parallel_beam_map=np.empty_like(iso_beam_map)
-      for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
-         theta,phi=hp.pix2ang(NSIDE,hpx_index)
-         phi += (float(hour_index)*15./360)*(2.*math.pi)
-         #populate the dipole model assuming a short dipole (see "New comparison of MWA tile beams" by Benjamin McKinley on Twiki)
-         #parallel dipoles, they are placed in an EW baseline config, so the dipoles must be yy NOT XX!)
-         #theta_parallel_xx=np.arccos(np.sin(theta)*np.sin(phi)) 
-         theta_parallel=np.arccos(np.sin(theta)*np.cos(phi)) 
-         if use_ground_plane==True:
-            #with ground plane see randall's idl code
-            #; calculate the E field response of a 2-element end-fire antenna with
-            #; isotropic receivers separated by d, and opposite phase
-            #; which is the same as a single element with 
-            #; a groundplane and distance d/2 above ground.
-            #; separation of antennas: d (wavelengths)
-            #; angle of incoming radiation = th (radian, from line joining
-            #; antennas)
-            #; see Krauss equation 4-10, section 4-2.
-            #function end_fire_2element,d,th
-            #  return,sin(!pi*d*cos(th))*2.0
-            #end
-            #d is twice the dipole height in wavelengths
-            d_in_lambda = (2. * dipole_height_m)/wavelength
-            gp_effect = 2.*math.sin(math.pi*d_in_lambda*math.cos(theta))
-            voltage_parallel=np.sin(theta_parallel) * gp_effect
-            
-            ##randall's code uses this (they are the same):
-            #voltage_parallel = sqrt(1-(sin(az[p])*sin(za[p]))^2) * gp_effect
-            #sin_theta_parallel = np.sin(theta_parallel)
-            #randall_proj_x = np.sqrt(1-(math.sin(phi)*math.sin(theta))**2)
-            #proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
-            #print 'sin_theta_parallel %s' % sin_theta_parallel
-            #print 'randall_proj_x %s' % randall_proj_x
-            
-         else:
-            voltage_parallel=np.sin(theta_parallel)
-         
-         #TEST for comparing to Randalls, add in 1/cos(za) factor
-         #as I thought, this makes the beam wider and therefore its Fourier footprint narrower - not what we want!
-         #factor = 1./math.cos(theta)
-            
-         power_parallel=voltage_parallel**2       #* factor
-         short_dipole_parallel_beam_map[hpx_index] = power_parallel
-         
-         if horizon==True:
-            if (theta > np.pi/2.):
-               short_dipole_parallel_beam_map[hpx_index]=0.
       
-      #normalise
-      beam_max = np.max(short_dipole_parallel_beam_map)
-      short_dipole_parallel_beam_map = short_dipole_parallel_beam_map/beam_max
-
- 
-    
    #show the sky maps multiplied by the beam
    #global
    global_sky_with_beam = sky_map * short_dipole_parallel_beam_map
@@ -413,10 +358,10 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    plt.clf()
    figname="global_sky_with_beam_h_m_s_%s.png" % (time_string)
    title = "global sky map"
-   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=global_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0))
+   map_projected=hp.orthview(map=global_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,0))
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
@@ -433,10 +378,10 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    plt.clf()
    figname="angular_sky_with_beam_h_m_s_%s.png" % (time_string)
    title = "angular sky map"
-   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,0,0),return_projected_map=True)
+   #short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
    #hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
    #iso_beam_map = hp.read_map(beam_map_fitsname)
-   map_projected=hp.orthview(map=angular_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,0,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
+   map_projected=hp.orthview(map=angular_sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
 
    figmap = plt.gcf()
    figmap.savefig(figname,dpi=500,bbox_inches='tight') 
@@ -462,13 +407,10 @@ for hour_index, hour in enumerate(np.arange(0,24)):
       
       for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_length_lambda_array):
          print baseline_length_lambda
-      
-         baseline_theta = np.pi/2.
-         
-         if in_orbit==True:
-            baseline_phi = 0. + (float(hour_index)*15./360)*(2.*math.pi)
-         else:
-            baseline_phi = 0.
+       
+         baseline_theta = np.pi/2. 
+         baseline_phi = 0.
+
          baseline_vector=baseline_length_m*hp.ang2vec(baseline_theta,baseline_phi)
          #print baseline_vector
          #baseline_vector=np.array([baseline_length_m,0,0])
