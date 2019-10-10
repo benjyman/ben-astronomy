@@ -126,8 +126,9 @@ lst_list = lst_list_array.astype(str)
 #sky_model = 'gsm2016'
 sky_model = 'gmoss'
 pol_list = ['X']
-#signal_type_list=['global','diffuse','noise','gain_errors']
-signal_type_list=['diffuse']
+#signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_anngular']
+signal_type_list=['diffuse_global']
+#signal_type_list=['global']
 gsm_smooth_poly_order = 5
 poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
@@ -3901,7 +3902,10 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
    if 'gain_errors' in signal_type_list:
        concat_output_name_base_X += '_GE'
        concat_output_name_base_Y += '_GE'
-   
+   if 'diffuse_global' in signal_type_list:
+       concat_output_name_base_X += '_DG'
+       concat_output_name_base_Y += '_DG'
+ 
    sky_averaged_diffuse_array_no_beam_lsts_filename =  "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base_X
    sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
    sky_averaged_diffuse_array_beam_Y_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_Y
@@ -5963,23 +5967,20 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 #model_and_plot_assassin_residuals(n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold)
 
 
-simulate_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325)
-extract_signal_from_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold)
-model_signal_from_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,poly_order=poly_order)
+#simulate_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325)
+#extract_signal_from_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold)
+#model_signal_from_assassin(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length_m=0.325,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,poly_order=poly_order)
+#sys.exit()
 
-sys.exit()
-
-
-
+#EDA2 sims to compare to Singh et al 2015 
 
 
 
+
+#EDA2 Sims
 #simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-
 #extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-
 #plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-
 #model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_label=array_label)
 
 
