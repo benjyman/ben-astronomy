@@ -3981,7 +3981,15 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          gsm_hpx_fits_name = "%s_map_LST_%03d_%s_MHz_hpx.fits" % (sky_model,lst_deg,int(freq_MHz))
          reprojected_gsm_fitsname = "%s_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
          reprojected_gsm_im_name = "%s_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
-         
+
+         gsm_global_hpx_fits_name = "%s_global_map_LST_%03d_%s_MHz_hpx.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_global_fitsname = "%s_global_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_global_im_name = "%s_global_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
+
+         gsm_angular_hpx_fits_name = "%s_angular_map_LST_%03d_%s_MHz_hpx.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_angular_fitsname = "%s_angular_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
+         reprojected_gsm_angular_im_name = "%s_angular_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
+                           
          global_signal_hpx_fits_name = "global_signal_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_im_name = "global_signal_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
@@ -4217,20 +4225,41 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          print sky_average_temp_no_beam
          sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
          
-         #write the map to fits
+         reprojected_gsm_global_map = reprojected_gsm_map * 0. + sky_average_temp_no_beam
+         reprojected_gsm_angular_map = reprojected_gsm_map - sky_average_temp_no_beam
+         
+         
+         
+         #write the reprojected gsm maps to fits
          pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
          pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
          print "wrote image %s" %  reprojected_gsm_fitsname
-         
+
+         pyfits.writeto(reprojected_gsm_global_fitsname,reprojected_gsm_global_map,clobber=True)
+         pyfits.update(reprojected_gsm_global_fitsname,reprojected_gsm_global_map,header=no_source_header)
+         print "wrote image %s" %  reprojected_gsm_global_fitsname
+
+         pyfits.writeto(reprojected_gsm_angular_fitsname,reprojected_gsm_angular_map,clobber=True)
+         pyfits.update(reprojected_gsm_angular_fitsname,reprojected_gsm_angular_map,header=no_source_header)
+         print "wrote image %s" %  reprojected_gsm_angular_fitsname
+                  
          #Do this GSM map stuff here as it doesn't depend on pol
-         cmd = "rm -rf %s" % (reprojected_gsm_im_name)
+         cmd = "rm -rf %s %s %s" % (reprojected_gsm_im_name,reprojected_gsm_global_im_name,reprojected_gsm_angular_im_name)
          print(cmd)
          os.system(cmd)     
          
          cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_fitsname,reprojected_gsm_im_name)
          print(cmd)
          os.system(cmd)
-         
+
+         cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_global_fitsname,reprojected_gsm_global_im_name)
+         print(cmd)
+         os.system(cmd)
+
+         cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_angular_fitsname,reprojected_gsm_angular_im_name)
+         print(cmd)
+         os.system(cmd)
+                 
          #uvmodel requires the model to be in Jy/pix
          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
          
@@ -4238,14 +4267,27 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          print "scale map by %s to get to Jy/pix" % scale
          
          reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+         reprojected_gsm_global_im_Jy_per_pix_name =  "%s_global_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+         reprojected_gsm_angular_im_Jy_per_pix_name =  "%s_angular_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+
          
-         cmd = "rm -rf %s" % reprojected_gsm_im_Jy_per_pix_name
+         cmd = "rm -rf %s %s %s" % (reprojected_gsm_im_Jy_per_pix_name,reprojected_gsm_global_im_Jy_per_pix_name,reprojected_gsm_angular_im_Jy_per_pix_name)
          print(cmd)
          os.system(cmd)
                
          cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_gsm_im_name,reprojected_gsm_im_Jy_per_pix_name)
          print(cmd)
          os.system(cmd)
+
+         cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_gsm_global_im_name,reprojected_gsm_global_im_Jy_per_pix_name)
+         print(cmd)
+         os.system(cmd)
+
+         cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_gsm_angular_im_name,reprojected_gsm_angular_im_Jy_per_pix_name)
+         print(cmd)
+         os.system(cmd)                 
+
+         
          
          ########
          #Repeat the above for the global signal
@@ -4354,6 +4396,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             
          
             #Sweet! finally have a gsm and a beam.
+            
+            #diffuse
             #now multiply them to get the apparent sky and put that into uvmodel, 
          
             apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
@@ -4386,7 +4430,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                sky_averaged_diffuse_array_beam_Y_lsts[freq_MHz_index] += sky_average_temp_beam
             
             
-            
+                 
             
             #Repeat for global signal
             apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
@@ -4411,7 +4455,30 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #cmd = "fits in=%s out=%s region=quarter op=xyin" % (apparent_global_signal_fits_name_cropped,apparent_global_signal_im_name_cropped)
             #print(cmd)
             #os.system(cmd)
-                              
+            
+            #repeat for diffuse global
+            apparent_sky_diffuse_global_im_name = "apparent_DG_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
+ 
+            cmd = "rm -rf %s %s %s " % (apparent_sky_diffuse_global_im_name)
+            print(cmd)
+            os.system(cmd)
+         
+            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_global_im_Jy_per_pix_name,apparent_sky_diffuse_global_im_name)
+            print(cmd)
+            os.system(cmd)
+
+            #repeat for diffuse angular
+            apparent_sky_diffuse_angular_im_name = "apparent_angular_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
+ 
+            cmd = "rm -rf %s %s %s " % (apparent_sky_diffuse_angular_im_name)
+            print(cmd)
+            os.system(cmd)
+         
+            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_angular_im_Jy_per_pix_name,apparent_sky_diffuse_angular_im_name)
+            print(cmd)
+            os.system(cmd)            
+            
+            #UP TO HERE MONTREAL
          
             #then put into the vis 
             
