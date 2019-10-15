@@ -4468,7 +4468,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #repeat for diffuse global
             apparent_sky_diffuse_global_im_name = "apparent_DG_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
  
-            cmd = "rm -rf %s %s %s " % (apparent_sky_diffuse_global_im_name)
+            cmd = "rm -rf %s " % (apparent_sky_diffuse_global_im_name)
             print(cmd)
             os.system(cmd)
          
@@ -4479,7 +4479,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #repeat for diffuse angular
             apparent_sky_diffuse_angular_im_name = "apparent_angular_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
  
-            cmd = "rm -rf %s %s %s " % (apparent_sky_diffuse_angular_im_name)
+            cmd = "rm -rf %s " % (apparent_sky_diffuse_angular_im_name)
             print(cmd)
             os.system(cmd)
          
@@ -4487,7 +4487,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             print(cmd)
             os.system(cmd)            
             
-            #UP TO HERE MONTREAL
          
             #then put into the vis 
             
