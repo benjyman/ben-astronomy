@@ -4056,7 +4056,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #ov = GSMObserver()
             gsm = GlobalSkyModel()
          elif sky_model == 'gmoss':
-            gmoss_data_text_file_name = "/data/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
+            gmoss_data_text_file_name = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
             #from Mayuri: The data is in HEALPIX Nested Scheme with NSIDE 16 and 5 degrees resolution. 
             #It contains GMOSS spectra generated at the 3072 pixels. The first row gives the frequency [GHz] 
             #going from 0.04 GHz to 0.2 GHz in steps of 0.001 GHz. Sky spectra are in Kelvin units
