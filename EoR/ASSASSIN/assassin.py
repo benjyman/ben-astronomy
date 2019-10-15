@@ -75,8 +75,8 @@ generate_new_average_beam = False
 plot_all_beams = False
 plot_average_beam = False
 
-array_ant_locations = 'other'
-#array_ant_locations = 'eda2'
+#array_ant_locations = 'other'
+array_ant_locations = 'eda2'
 #array_ant_locations = 'eda2_sub48'
 #array_ant_locations = 'eda2_sim_compact_seed_123'
 #array_ant_locations = 'eda2_sim_compact_seed_124'
@@ -88,10 +88,10 @@ inst_bw = 30.
 chan_width = 1.0
 
 if array_ant_locations == 'eda2':
-   array_ant_locations_filename = '/data/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
+   array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
    array_label = 'eda_model'
 elif array_ant_locations == 'eda2_sub48':
-   array_ant_locations_filename = '/data/code/git/ben-astronomy/EoR/ASSASSIN/EDA2_sub_array_48.txt'
+   array_ant_locations_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/EDA2_sub_array_48.txt'
    array_label = 'eda_sub48_model'
 elif array_ant_locations == 'eda2_sim_compact_seed_123':
    array_ant_locations_filename = 'sim_array_seed_123_diameter_17_m_n_ants_256_min_spacing_75cm.txt'
