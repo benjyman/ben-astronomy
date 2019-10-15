@@ -3908,7 +3908,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
        concat_output_name_base_Y += '_DG'
    if 'diffuse_angular' in signal_type_list:
        concat_output_name_base_X += '_DA'
-       concat_output_name_base_Y += '_DA
+       concat_output_name_base_Y += '_DA'
  
    sky_averaged_diffuse_array_no_beam_lsts_filename =  "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base_X
    sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
