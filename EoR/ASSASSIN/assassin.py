@@ -3152,20 +3152,16 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
    
    if use_analytic_beam:
       if pol=='X':
-         beam_image_sin_projected_fitsname = "%smodel_%s_MHz_%s.fits" % (beam_image_dir,int(freq_MHz),'xx')
+         beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'xx')
       else:
-         beam_image_sin_projected_fitsname = "%smodel_%s_MHz_%s.fits" % (beam_image_dir,int(freq_MHz),'yy')
+         beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'yy')
    else:
-         beam_image_sin_projected_fitsname = "%spower_pattern_average_%s_%s_MHz_sin_regrid.fits" % (beam_image_dir,pol,int(freq_MHz))
+         beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
    
    #power_pattern_average_interp_sin_im_name = 'power_pattern_average_%s_%s_MHz_interp_sin.im' % (pol,int(freq_MHz))
    #power_pattern_average_interp_sin_regrid_gsm_im_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.im' % (pol,int(freq_MHz))
    #power_pattern_average_interp_sin_regrid_gsm_fits_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.fits' % (pol,int(freq_MHz))
-
-   cmd = "cp %s . " % (beam_image_sin_projected_fitsname)
-   print(cmd)
-   os.system(cmd)
-       
+        
    beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
    beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
    beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
@@ -4373,7 +4369,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #power_pattern_average_interp_sin_im_name = 'power_pattern_average_%s_%s_MHz_interp_sin.im' % (pol,int(freq_MHz))
             #power_pattern_average_interp_sin_regrid_gsm_im_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.im' % (pol,int(freq_MHz))
             #power_pattern_average_interp_sin_regrid_gsm_fits_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.fits' % (pol,int(freq_MHz))
-                 
+
+            cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
+            print(cmd)
+            os.system(cmd)
+                             
             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
             beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
             beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
