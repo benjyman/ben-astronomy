@@ -4270,9 +4270,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
          print "scale map by %s to get to Jy/pix" % scale
          
-         reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
-         reprojected_gsm_global_im_Jy_per_pix_name =  "%s_global_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
-         reprojected_gsm_angular_im_Jy_per_pix_name =  "%s_angular_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+         reprojected_gsm_im_Jy_per_pix_name =  "%s_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+         reprojected_gsm_global_im_Jy_per_pix_name =  "%s_DG_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+         reprojected_gsm_angular_im_Jy_per_pix_name =  "%s_DA_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
 
          
          cmd = "rm -rf %s %s %s" % (reprojected_gsm_im_Jy_per_pix_name,reprojected_gsm_global_im_Jy_per_pix_name,reprojected_gsm_angular_im_Jy_per_pix_name)
