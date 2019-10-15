@@ -911,6 +911,12 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
          if 'diffuse' in signal_type_list:
             concat_output_name_base_X += '_D_%s' % sky_model
             concat_output_name_base_Y += '_D_%s' % sky_model
+         if 'diffuse_global' in signal_type_list:
+             concat_output_name_base_X += '_DG'
+             concat_output_name_base_Y += '_DG'
+         if 'diffuse_angular' in signal_type_list:
+             concat_output_name_base_X += '_DA'
+             concat_output_name_base_Y += '_DA'
          if 'global' in signal_type_list:
             concat_output_name_base_X += '_G' 
             concat_output_name_base_Y += '_G'
@@ -1272,6 +1278,12 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
          if 'diffuse' in signal_type_list:
             concat_output_name_base_X += '_D_%s' % sky_model
             concat_output_name_base_Y += '_D_%s' % sky_model
+         if 'diffuse_global' in signal_type_list:
+             concat_output_name_base_X += '_DG'
+             concat_output_name_base_Y += '_DG'
+         if 'diffuse_angular' in signal_type_list:
+             concat_output_name_base_X += '_DA'
+             concat_output_name_base_Y += '_DA'
          if 'global' in signal_type_list:
             concat_output_name_base_X += '_G' 
             concat_output_name_base_Y += '_G'
@@ -1365,6 +1377,10 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                   beam_image_name = "model_%s_MHz_xx.fits" % int(freq_MHz)
                else:
                   beam_image_name = "model_%s_MHz_yy.fits" % int(freq_MHz)
+               
+               cmd = "cp %s%s ." % (beam_image_dir,beam_image_name)
+               print cmd
+               os.system(cmd)
                
                beam_plot_basename = beam_image_name.split('.')[0]
                
@@ -3898,18 +3914,19 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
    if 'diffuse' in signal_type_list:
        concat_output_name_base_X += '_D_%s' % sky_model
        concat_output_name_base_Y += '_D_%s' % sky_model
-   if 'global' in signal_type_list:
-       concat_output_name_base_X += '_G' 
-       concat_output_name_base_Y += '_G'
-   if 'gain_errors' in signal_type_list:
-       concat_output_name_base_X += '_GE'
-       concat_output_name_base_Y += '_GE'
    if 'diffuse_global' in signal_type_list:
        concat_output_name_base_X += '_DG'
        concat_output_name_base_Y += '_DG'
    if 'diffuse_angular' in signal_type_list:
        concat_output_name_base_X += '_DA'
        concat_output_name_base_Y += '_DA'
+   if 'global' in signal_type_list:
+       concat_output_name_base_X += '_G' 
+       concat_output_name_base_Y += '_G'
+   if 'gain_errors' in signal_type_list:
+       concat_output_name_base_X += '_GE'
+       concat_output_name_base_Y += '_GE'
+
  
    sky_averaged_diffuse_array_no_beam_lsts_filename =  "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base_X
    sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
@@ -4967,6 +4984,12 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
       if 'diffuse' in signal_type_list:
          concat_output_name_base_X += '_D_%s' % sky_model
          concat_output_name_base_Y += '_D_%s' % sky_model
+      if 'diffuse_global' in signal_type_list:
+          concat_output_name_base_X += '_DG'
+          concat_output_name_base_Y += '_DG'
+      if 'diffuse_angular' in signal_type_list:
+          concat_output_name_base_X += '_DA'
+          concat_output_name_base_Y += '_DA'
       if 'global' in signal_type_list:
          concat_output_name_base_X += '_G' 
          concat_output_name_base_Y += '_G'
@@ -6099,11 +6122,12 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 
 
 #EDA2 Sims
-#simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-#extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-#plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-#model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_label=array_label)
+simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
+plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
+model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_label=array_label)
 
+sys.exit()
 
 #calibrate simulated data with noise and errors
 #calibrate_eda2_data(eda2_data_uvfits_name_list=['eda_model_X_lst_2.00_hr_int_0.13_hr_noise_diffuse_gmoss_global_gain_errors_concat_lsts.uvfits'],obs_type='sun',lst_list=[2],freq_list=[],pol_list=[])
@@ -6137,30 +6161,31 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 ##############################
 #Test to see how residuals behave as you increase the number of antenna stations, using 16 ant stations
 
-#n_ants = 16
-n_ant_min = 16
-n_ant_max = 16
+##n_ants = 16
 #n_ant_min = 16
 #n_ant_max = 16
-#n_arrays = 200
-n_arrays = 20
-min_spacing_m = 0.75
-min_spacing_cm = min_spacing_m * 100.
-
-for n_ants in range(n_ant_min,n_ant_max+1):
-   for subarray in range(0,n_arrays):
-      array_label = 'array%03d_s_%03d_a_%03d' % (subarray,min_spacing_cm,n_ants)
-      new_array = grow_new_array(seed=subarray,n_ants=n_ants,min_spacing_m=min_spacing_m)
-      plot_antenna_array(array_layout_filename=new_array)
-      simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=new_array,array_label=array_label)
-      extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
-      #extract_signal_from_sims_multi_coherent(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label,n_arrays=subarray+1,min_spacing_m=min_spacing_m)
-      plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
-      model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
-   
-   plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type='simple',n_ants=n_ants)
-
-   model_and_plot_random_array_layout_residuals(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,n_ants=n_ants)
+##n_ant_min = 16
+##n_ant_max = 16
+##n_arrays = 200
+#n_arrays = 20
+#min_spacing_m = 0.75
+#min_spacing_cm = min_spacing_m * 100.
+#
+#
+#for n_ants in range(n_ant_min,n_ant_max+1):
+#   for subarray in range(0,n_arrays):
+#      array_label = 'array%03d_s_%03d_a_%03d' % (subarray,min_spacing_cm,n_ants)
+#      new_array = grow_new_array(seed=subarray,n_ants=n_ants,min_spacing_m=min_spacing_m)
+#      plot_antenna_array(array_layout_filename=new_array)
+#      simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=new_array,array_label=array_label)
+#      extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+#      #extract_signal_from_sims_multi_coherent(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label,n_arrays=subarray+1,min_spacing_m=min_spacing_m)
+#      plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+#      model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=new_array,array_label=array_label)
+#   
+#   plot_rms_residuals_for_arrays(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,addition_type='simple',n_ants=n_ants)
+#
+#   model_and_plot_random_array_layout_residuals(n_arrays=n_arrays,min_spacing_m=min_spacing_m,zero_spacing_leakage_threshold=zero_spacing_leakage_threshold,n_ants=n_ants)
 
 
 
