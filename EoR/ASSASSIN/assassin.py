@@ -126,7 +126,8 @@ lst_list = lst_list_array.astype(str)
 #sky_model = 'gsm2016'
 sky_model = 'gmoss'
 pol_list = ['X']
-#signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_anngular']
+#can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
+#signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 signal_type_list=['diffuse_global']
 #signal_type_list=['global']
 gsm_smooth_poly_order = 5
@@ -3905,6 +3906,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
    if 'diffuse_global' in signal_type_list:
        concat_output_name_base_X += '_DG'
        concat_output_name_base_Y += '_DG'
+   if 'diffuse_angular' in signal_type_list:
+       concat_output_name_base_X += '_DA'
+       concat_output_name_base_Y += '_DA
  
    sky_averaged_diffuse_array_no_beam_lsts_filename =  "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base_X
    sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
@@ -4541,7 +4545,53 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                #os.system(cmd)            
                
                base_vis_name = out_vis_name
+
+            if 'diffuse_global' in signal_type_list:
+            
+               model_vis_name_base += '_DG_%s' % sky_model
+               out_vis_name = model_vis_name_base + '.vis'
                
+               cmd = "rm -rf %s" % out_vis_name
+               print(cmd)
+               os.system(cmd)
+            
+               cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (base_vis_name,apparent_sky_diffuse_global_im_name,out_vis_name)
+               print(cmd)
+               os.system(cmd)
+   
+               #cmd = "rm -rf %s" % model_sky_uvfits
+               #print(cmd)
+               #os.system(cmd)
+            
+               #cmd = "fits in=%s out=%s op=uvout" % (model_sky_vis,model_sky_uvfits)
+               #print(cmd)
+               #os.system(cmd)            
+               
+               base_vis_name = out_vis_name
+
+            if 'diffuse_angular' in signal_type_list:
+            
+               model_vis_name_base += '_DA_%s' % sky_model
+               out_vis_name = model_vis_name_base + '.vis'
+               
+               cmd = "rm -rf %s" % out_vis_name
+               print(cmd)
+               os.system(cmd)
+            
+               cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (base_vis_name,apparent_sky_diffuse_angular_im_name,out_vis_name)
+               print(cmd)
+               os.system(cmd)
+   
+               #cmd = "rm -rf %s" % model_sky_uvfits
+               #print(cmd)
+               #os.system(cmd)
+            
+               #cmd = "fits in=%s out=%s op=uvout" % (model_sky_vis,model_sky_uvfits)
+               #print(cmd)
+               #os.system(cmd)            
+               
+               base_vis_name = out_vis_name
+                                             
             if 'global' in signal_type_list:
             
                model_vis_name_base += '_G'
