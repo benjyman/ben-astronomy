@@ -14,9 +14,64 @@ import math
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
+import os
+
+
+def plot_different_baselines(antenna_locations_filename):
+   #print antenna_locations_filename
+   
+   #1. calc u,v  from antenna positions
+   with open(antenna_locations_filename) as f:
+      lines = f.readlines()
+   n_ants = len(lines)
+   #print n_ants
+   ant_i_array = np.arange(0,n_ants)
+   ant_j_array = np.arange(0,n_ants)
+   
+   n_baselines = int(n_ants*(n_ants-1.) / 2.)
+   #print n_baselines
+   
+   #visibility array n_baselines * u,v, complex vis
+   visibility_array = np.full([n_baselines,3],(np.nan))
+   
+   visibility_index = 0
+   for ant_i in ant_i_array:
+      for ant_j in ant_j_array:
+         if (ant_j > ant_i):
+            ant_i_x = float(lines[int(ant_i)].split()[0])
+            ant_j_x = float(lines[int(ant_j)].split()[0])
+            u = ant_i_x - ant_j_x
+            
+            ant_i_y = float(lines[int(ant_i)].split()[1])
+            ant_j_y = float(lines[int(ant_j)].split()[1])
+            v = ant_i_y - ant_j_y
+            
+            visibility_index += 1
+            print visibility_index
+            #visibility_array[]
+            
+   print "n_baselines %s" % n_baselines
+   
+   #for each u,v point calc 1/4PI * INTEGRAL( A(r,nu) * e^(-i2PI B dot r / lambda), dOmega) = X
+   # Have system of linear equations V = X Tsky + N
+   
+   #Maximum likelihood (least squares solution):
+   # Tsky = (X^t X)^-1 X^t V
+   
+   #residuals:
+   #covariance matrix:
+   
+   
+   
+
+antenna_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
+
+plot_different_baselines(antenna_locations_filename)
+sys.exit()
+
 
 plot_only = False
-in_orbit = True
+in_orbit = False
 
 #This must be a 'feature' of gsmobserver() - lat and long need to be put in as strings, elevation can be a float (I think)...this is terrible (is my previous gsm_reflection work wrong? rerun?)
 mwa_latitude_pyephem = "-26:42.199"
@@ -25,9 +80,9 @@ orbit_latitude_pyephem = "00:00.00"
 orbit_longitude_pyephem = "00:00.00"
 
 #horizon?
-horizon=False
+horizon=True
 #ground plane ?
-use_ground_plane=False
+use_ground_plane=True
 
 #if using ground plane - dipole height (normally use 0.3 m for MWA tile dipoles)
 dipole_height_m = 0.3
@@ -89,7 +144,8 @@ baseline_length_lambda_array = baseline_length_m/wavelength_array
 #Now to assess sensitivity to angular structure
 
 #sky map - GSM (use instead of GMOSS as you can use pyGSM with Observer() to generate a sky for different times, allowing you to rotate the sky)
-year,month,day,hour,minute,second = 2019,1,1,0,0,0
+#Use October when Galactic plane sets
+year,month,day,hour,minute,second = 2019,10,1,0,0,0
 
 latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
 #Parkes (pygsm example)
@@ -246,7 +302,7 @@ figmap.savefig(beam_map_figname,bbox_inches='tight')
 print "saved figure: %s" % beam_map_figname
 plt.close()
 
-#for 'in orbit' just use a single gsm map, and rotate the antennas (beams)
+
 if in_orbit==True:
    latitude, longitude, elevation = orbit_latitude_pyephem, orbit_longitude_pyephem, orbit_elevation
    #Parkes (pygsm example)
@@ -255,11 +311,7 @@ if in_orbit==True:
    ov_orbit.lon = longitude
    ov_orbit.lat = latitude
    ov_orbit.elev = elevation
-   gsm_map_full_sky=ov_orbit.generate(freq_MHz)
-   #Want to just seee the response to angular variations on the sky (subtract mean)
-   gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
-   gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
-   sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
+
    
    
 # do all this stuff for each hour over 12 hours
@@ -268,60 +320,73 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    print time_string
    date_obs = datetime(year, month, day, hour, minute, second)
    ov.date = date_obs
-   #hack pygsm to do full sky (no masking below horizom)
+   if in_orbit:
+      ov_orbit.date = date_obs
+      #hack pygsm to do full sky (no masking below horizom)
+ 
+      gsm_map_full_sky=ov_orbit.generate(freq_MHz)
+      #Want to just seee the response to angular variations on the sky (subtract mean)
+      gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
+      gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
+      sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
    
-   if not in_orbit:
+   
+   else:
       gsm_map_full_sky=ov.generate(freq_MHz)
-      
-      plt.clf()
-      map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=0,max=sky_map_orthview_max)
-      #ov.view()
-      fig_name="sky_from_mwa_at_h_m_s_%s_full_sky.png" % (time_string)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-      print "saved %s" % fig_name
-      plt.close()
       
       #Want to just seee the response to angular variations on the sky (subtract mean)
       gsm_map_full_sky_mean = np.mean(gsm_map_full_sky)
       gsm_map_full_sky_mean_subtr = gsm_map_full_sky - gsm_map_full_sky_mean
-      
-      plt.clf()
-      map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
-      #ov.view()
-      fig_name="sky_from_mwa_at_h_m_s_%s_full_sky_mean_subtr.png" % (time_string)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-      print "saved %s" % fig_name
-      plt.close()
       
       #global
       #sky map - global - this needs to be the average of the sky map so we can compare with the angular response
       #sky_map =  np.ones(hp.nside2npix(NSIDE))
       sky_map =  np.full(hp.nside2npix(NSIDE),gsm_map_full_sky_mean)
       
-      #average over a night  
-      #for hour in range(0,24):
-      #   date_obs = datetime(year, month, day, hour, minute, second)
-      #   ov.date = date_obs
-      #   print date_obs
-      #   print ov.date
-      #   gsm_map=ov.generate(freq_MHz)
-      #   
-      #   
-      #   #d = ov.view(logged=True)
-      #   
-      #   plt.clf()
-      #   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
-      #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0))
-      #   ov.view()
-      #   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
-      #   figmap = plt.gcf()
-      #   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
-      #   print "saved %s" % fig_name
-      #   plt.close()
+   plt.clf()
+   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+   hp.orthview(map=gsm_map_full_sky,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=0,max=sky_map_orthview_max)
+   #ov.view()
+   fig_name="sky_from_mwa_at_h_m_s_%s_full_sky.png" % (time_string)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+   print "saved %s" % fig_name
+   plt.close()
+   
+
+   
+   plt.clf()
+   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+   hp.orthview(map=gsm_map_full_sky_mean_subtr,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0),min=sky_map_orthview_min,max=sky_map_orthview_max)
+   #ov.view()
+   fig_name="sky_from_mwa_at_h_m_s_%s_full_sky_mean_subtr.png" % (time_string)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+   print "saved %s" % fig_name
+   plt.close()
+   
+
+   
+   #average over a night  
+   #for hour in range(0,24):
+   #   date_obs = datetime(year, month, day, hour, minute, second)
+   #   ov.date = date_obs
+   #   print date_obs
+   #   print ov.date
+   #   gsm_map=ov.generate(freq_MHz)
+   #   
+   #   
+   #   #d = ov.view(logged=True)
+   #   
+   #   plt.clf()
+   #   map_title="Sky from MWA at h:m:s %02d:%02d:%02d" % (hour,minute,second)
+   #   #hp.orthview(map=gsm_map,half_sky=False,xsize=2000,title=map_title,coord='E',rot=(0,90,0))
+   #   ov.view()
+   #   fig_name="sky_from_mwa_at_h_m_s_%02d_%02d_%02d.png" % (hour,minute,second)
+   #   figmap = plt.gcf()
+   #   figmap.savefig(fig_name,dpi=500,bbox_inches='tight')
+   #   print "saved %s" % fig_name
+   #   plt.close()
 
    visibility_amp_array_iso_filename = "visibility_amp_list_iso_%s.npy" % (time_string)
    visibility_real_array_short_para_filename = "visibility_amp_array_short_para_%s.npy" % (time_string)
@@ -711,7 +776,7 @@ for hour_index, hour in enumerate(np.arange(0,24)):
    #Tile images together at each timestep
 
    sky_figname="angular_sky_with_beam_h_m_s_%s.png" % (time_string)
-   response_figname="visibility_amp_abs_vs_baseline_length_%s.png" % (time_string)
+   response_figname="visibility_amp_vs_baseline_length_average_to_%s.png" % (time_string)
    av_response_abs_log_figname="visibility_amp_abs_vs_baseline_length_average_to_%s_log.png" % (time_string)
    bottom_figname = "bottom_%s.png" % (time_string)
 
