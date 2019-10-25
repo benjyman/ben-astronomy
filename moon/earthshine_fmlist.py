@@ -22,8 +22,12 @@ from PIL import ImageDraw
 from astropy.io import fits
 import os
 
-
 tile_only = False
+
+def nearest_ind(items, pivot):
+    time_diff = np.abs([date - pivot for date in items])
+    return time_diff.argmin(0)
+
 
 def draw_map(m,scale=1):
     # draw a shaded-relief image
@@ -44,9 +48,46 @@ def draw_map(m,scale=1):
     for line in all_lines:
         line.set(linestyle='-', alpha=0.3, color='w')
 
+def extract_moon_from_mwa_freq_images(image_dir,mwa_image_name_base_list,nchans,moon_pix,start_freq,freq_step):
+   freq_list = []
+   moon_flux_peak_list = []
+   for image_name_base_index,image_name_base in enumerate(mwa_image_name_base_list):
+      freq_base = start_freq + float(image_name_base_index) * (nchans*freq_step)
+      for image_number in range(0,nchans):
+         freq = freq_base + (float(image_number) * freq_step)
+         freq_list.append(freq)
+         image_name = "%s%s-%04d-image.fits" % (image_dir,image_name_base,image_number)
+         #print image_name
+         with fits.open(image_name) as hdulist:
+            data = hdulist[0].data[0,0,:,:]
+            #print data.shape
+            moon_flux_peak = data[int(moon_pix[1]),int(moon_pix[0])]
+            #print moon_flux_peak
+            moon_flux_peak_list.append(moon_flux_peak)
+   
+   freq_array = np.asarray(freq_list)
+   moon_flux_peak_array = np.asarray(moon_flux_peak_list)  
+   
+   figname="mwa_moon_flux_peak_vs_freq.png"
+   plt.clf()
+   plt.plot(freq_array,moon_flux_peak_array)
+   plt.xlabel("frequency (MHz)")
+   plt.ylabel("Peak flux density of Moon (Jy)")
+   plt.savefig(figname)
+   print("saved %s" % figname)
+   plt.close()
+         
 
+start_freq = 72.355
+freq_step = 0.200
+moon_pix = (525,1107)
+image_dir = "/md0/lspringer/mwa_data/new_download/"
+nchans = 154
+mwa_image_name_base_list = ['1127301352_moon_69']
+extract_moon_from_mwa_freq_images(image_dir,mwa_image_name_base_list,nchans,moon_pix,start_freq,freq_step)
+sys.exit()
         
-plot_only = False
+plot_mwa_data = True
 
 fmlist_data_filename = '/md0/moon/lauren/moonraker.csv'
 #These are numpy arrays. When you open them with python numpy you will see they have a shape of (124,50,3). This corresponds to (n_channels, n_observations, 3), the 3 is because there is specular, diffuse, and observation ID.
@@ -153,6 +194,7 @@ plt.xlabel("frequencies (MHz)")
 #plt.ylabel("Flux Density of Moon (Jy)")
 plt.savefig(figname)
 print("saved %s" % figname)
+plt.close()
 
 figname="transmit_powers_histogram.png"
 plt.clf()
@@ -160,7 +202,7 @@ plt.hist(powers_transmitted_kW)
 plt.xlabel("Power Transmitted (kW)")
 plt.savefig(figname)
 print("saved %s" % figname)
-
+plt.close()
 
 figname='FM_transmitters_on_Earth.png'
 fig = plt.figure(figsize=(100, 75), edgecolor='w')
@@ -177,15 +219,19 @@ plt.close()
 
   
 
-if plot_only:
+if plot_mwa_data:
    powers_sum_timestep_array_janskys = np.load(powers_sum_timestep_array_janskys_filename)
    mwa_data = np.load(mwa_data_filename)
    
    freq_100_MHz_index = 22
    mwa_data_100_Mz_specular = mwa_data[freq_100_MHz_index,:,0]
-   mwa_obsid_array_100_MHz=mwa_data[freq_100_MHz_index,:,2]
+   mwa_data_100_Mz_diffuse = mwa_data[freq_100_MHz_index,:,1]
+   mwa_data_100_Mz_total = mwa_data_100_Mz_specular + mwa_data_100_Mz_diffuse
+   mwa_obsid_array_100_MHz = mwa_data[freq_100_MHz_index,:,2]
    #work out the UT time of the gps time stamps
    mwa_time_list=[]
+   sim_time_list = []
+   powers_sum_timestep_array_janskys_overplot = []
    for gps_time in mwa_obsid_array_100_MHz:
       #utc = 1980-01-06UTC + (gps - (leap_count(2014) - leap_count(1980)))
       #from http://maia.usno.navy.mil/ser7/tai-utc.dat
@@ -195,15 +241,20 @@ if plot_only:
          utc = datetime(1980, 1, 6) + timedelta(seconds=gps_time - (leap_count_2015 - leap_count_1980))
          utc_for_print_src=utc.strftime('%d/%m/%Y %H:%M:%S')
          mwa_time_list.append(utc)
+         print utc
+         sim_index = nearest_ind(utc_times,Time(utc))
+         powers_sum_timestep_array_janskys_overplot.append(powers_sum_timestep_array_janskys[sim_index])
+         sim_time_min = (sim_index + 1) * 15
+         sim_utc =  datetime(2015, 9, 26) + timedelta(minutes=sim_time_min)
+         sim_time_list.append(sim_utc)
 
-   
    print mwa_time_list
-   print time_delta[45:64]
+   print sim_time_list
 
 
    figname="moon_flux_density_vs_time_for_earthsine_mwa.png"
    plt.clf()
-   plt.plot(mwa_time_list, mwa_data_100_Mz_specular[0:len(mwa_time_list)])
+   plt.plot(mwa_time_list, mwa_data_100_Mz_total[0:len(mwa_time_list)])
    plt.xlabel("24 Hour UTC time on 2015-09-26")
    plt.ylabel("Flux Density of Moon (Jy)")
    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
@@ -214,13 +265,28 @@ if plot_only:
    
    figname="moon_flux_density_vs_time_for_earthsine_sim.png"
    plt.clf()
-   plt.plot(time_delta[45:64], powers_sum_timestep_array_janskys[45:64])
+   plt.plot(sim_time_list, powers_sum_timestep_array_janskys_overplot)
    plt.xlabel("24 Hour UTC time on 2015-09-26")
    plt.ylabel("Flux Density of Moon (Jy)")
+   plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+   plt.gcf().autofmt_xdate()
    plt.savefig(figname)
    print("saved %s" % figname)
    plt.close()
    
+   figname="moon_flux_density_vs_time_for_earthsine_sim_and_data.png"
+   plt.clf()
+   plt.plot(sim_time_list, powers_sum_timestep_array_janskys_overplot,label='sims')
+   plt.plot(mwa_time_list, mwa_data_100_Mz_total[0:len(mwa_time_list)],label='data')
+   plt.xlabel("24 Hour UTC time on 2015-09-26")
+   plt.ylabel("Flux Density of Moon (Jy)")
+   plt.legend(loc='upper left')
+   plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y %H:%M'))
+   plt.gcf().autofmt_xdate()
+   plt.savefig(figname)
+   print("saved %s" % figname)
+   plt.close()
+
    figname="flux_density_vs_time_for_earthsine_24hrs.png"
    plt.clf()
    plt.plot(time_delta, powers_sum_timestep_array_janskys)
@@ -230,8 +296,7 @@ if plot_only:
    print("saved %s" % figname)
    plt.close()
    
-   sys.exit()
-   
+   sys.exit() 
    
 #print(newdf["erpkw"])
 #print(newdf["erpkw"]*2)
@@ -448,7 +513,7 @@ for timestep_index, timestep in enumerate(utc_times):
      plot_figname = 'waterfall_%s.png' % timestep_string
      fig = plt.figure()
      cur_axes = plt.gca()
-     img = cur_axes.matshow(waterfall_jy)
+     img = cur_axes.matshow(waterfall_jy,vmin=0,vmax=10)
      plt.grid(None) 
      #get rid of labels
      
