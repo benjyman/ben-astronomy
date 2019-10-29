@@ -49,6 +49,7 @@ eta = 1
 #pointing dec for uvgen (needs to be zenith at each lst)
 pointing_dec = "-26.7"
 
+dipole_height_m = 0.3
 
 #global signal params
 #From Cath feasibility study (look at edges papers?)
@@ -103,7 +104,7 @@ else:
    array_ant_locations_filename = ''
    array_label = 'array'
 
-beam_image_dir = "/md0/EoR/ASSASSIN/"
+beam_image_dir = "/md0/EoR/ASSASSIN/beam_fits/"
 
 eda2_data_dir = '/md0/EoR/ASSASSIN/data_eda2/eda2_sub48/'
 eda2_data_uvfits_name_list = ['chan_204_20190611T024741.uvfits']
@@ -131,6 +132,7 @@ pol_list = ['X']
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 signal_type_list=['diffuse_global']
 #signal_type_list=['global']
+#signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
 poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
@@ -158,7 +160,7 @@ padding_factor = 25
 uvdist_wavelength_cutoff = 1.0
 min_imaging_uvdist_wavelength = 0.5
 max_imaging_uvdist_wavelength = 35.0
-zero_spacing_leakage_threshold = 0.1
+zero_spacing_leakage_threshold = 0.5
 
 outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
 
@@ -944,8 +946,9 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
    
             #signal_array_short_baselines_filename = outbase_name + "%s_signal.npy" % (model_vis_name_base)
             #signal_array_short_baselines = np.load(signal_array_short_baselines_filename)
-            #signal_array_all_baselines_filename = outbase_name + "%s_signal_all_baselines.npy" % (model_vis_name_base)
+            #signal_array_all_baselines_filename = "%s_signal_all_baselines.npy" % (model_vis_name_base)
             #signal_array_all_baselines = np.load(signal_array_all_baselines_filename)
+            #print signal_array_all_baselines
             #signal_array_all_baselines_filename_abs = outbase_name + "%s_signal_all_baselines_abs.npy" % (model_vis_name_base)
             #signal_array_all_baselines_abs = np.load(signal_array_all_baselines_filename_abs)
             #signal_array_short_baselines_weighted_filename = outbase_name + "%s_signal_weighted.npy" % (model_vis_name_base)
@@ -956,8 +959,8 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             signal_array_short_baselines_Tb = np.load(signal_array_short_baselines_Tb_filename)
             signal_array_all_baselines_Tb_filename = "%s_signal_all_baselines_Tb.npy" % (model_vis_name_base)
             signal_array_all_baselines_Tb = np.load(signal_array_all_baselines_Tb_filename)
-            signal_array_all_baselines_filename_abs_Tb = "%s_signal_all_baselines_abs_Tb.npy" % (model_vis_name_base)
-            signal_array_all_baselines_abs_Tb = np.load(signal_array_all_baselines_filename_abs_Tb)
+            #signal_array_all_baselines_filename_abs_Tb = "%s_signal_all_baselines_abs_Tb.npy" % (model_vis_name_base)
+            #signal_array_all_baselines_abs_Tb = np.load(signal_array_all_baselines_filename_abs_Tb)
             signal_array_short_baselines_weighted_Tb_filename = "%s_signal_weighted_Tb.npy" % (model_vis_name_base)
             signal_array_short_baselines_weighted_Tb = np.load(signal_array_short_baselines_weighted_Tb_filename)
         
@@ -1051,26 +1054,26 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             
          
             
-            good_idx = np.isfinite(signal_array_all_baselines_abs_Tb[0,:]) & np.isfinite(signal_array_all_baselines_abs_Tb[0,:])
-            #just use the first 70 frequencies to avoid that nasty sign change of the weights at 130 MHz
-            good_signal_array_all_baselines_abs_Tb = signal_array_all_baselines_abs_Tb[0,:][good_idx][0:70]
+            #good_idx = np.isfinite(signal_array_all_baselines_abs_Tb[0,:]) & np.isfinite(signal_array_all_baselines_abs_Tb[0,:])
+            ##just use the first 70 frequencies to avoid that nasty sign change of the weights at 130 MHz
+            #good_signal_array_all_baselines_abs_Tb = signal_array_all_baselines_abs_Tb[0,:][good_idx][0:70]
             
    
-            good_freq_MHz_array = freq_MHz_array[good_idx][0:70]
-            
-            coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_all_baselines_abs_Tb, poly_order)
-            ffit = poly.polyval(good_freq_MHz_array, coefs)
-            
-            #in log log space:
-            log_good_signal_array_all_baselines_abs_Tb = np.log10(good_signal_array_all_baselines_abs_Tb)
-            log_freq_MHz_array = np.log10(good_freq_MHz_array)
-            coefs = poly.polyfit(log_freq_MHz_array, log_good_signal_array_all_baselines_abs_Tb, poly_order)
-            ffit = poly.polyval(log_freq_MHz_array, coefs)
-            ffit_linear = 10**ffit
-            
-            #log_residual = log_signal_array_short_baselines - log_ffit
-            residual_of_log_fit = ffit_linear - good_signal_array_all_baselines_abs_Tb
-            
+            #good_freq_MHz_array = freq_MHz_array[good_idx][0:70]
+            #
+            #coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_all_baselines_abs_Tb, poly_order)
+            #ffit = poly.polyval(good_freq_MHz_array, coefs)
+            #
+            ##in log log space:
+            #log_good_signal_array_all_baselines_abs_Tb = np.log10(good_signal_array_all_baselines_abs_Tb)
+            #log_freq_MHz_array = np.log10(good_freq_MHz_array)
+            #coefs = poly.polyfit(log_freq_MHz_array, log_good_signal_array_all_baselines_abs_Tb, poly_order)
+            #ffit = poly.polyval(log_freq_MHz_array, coefs)
+            #ffit_linear = 10**ffit
+            #
+            ##log_residual = log_signal_array_short_baselines - log_ffit
+            #residual_of_log_fit = ffit_linear - good_signal_array_all_baselines_abs_Tb
+            #
             #plt.clf()
             #plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual of log fit')
             #map_title="All base abs residual for log polynomial order %s fit to diffuse" % poly_order
@@ -1081,7 +1084,42 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
             #print "saved %s" % fig_name 
-         
+
+            ####################
+            ##all baselines 
+            ##can't use the nan values:
+            #
+            #good_idx = np.isfinite(signal_array_all_baselines[0,:]) & np.isfinite(signal_array_all_baselines[0,:])
+            ###just use the first 70 frequencies to avoid that nasty sign change of the weights at 130 MHz
+            #good_signal_array_all_baselines = signal_array_all_baselines[0,:][good_idx]
+            #
+            #
+            #good_freq_MHz_array = freq_MHz_array[good_idx]
+            #
+            #coefs = poly.polyfit(good_freq_MHz_array, good_signal_array_all_baselines, poly_order)
+            #ffit = poly.polyval(good_freq_MHz_array, coefs)
+            #
+            ##in log log space:
+            #log_good_signal_array_all_baselines = np.log10(good_signal_array_all_baselines)
+            #log_freq_MHz_array = np.log10(good_freq_MHz_array)
+            #coefs = poly.polyfit(log_freq_MHz_array, log_good_signal_array_all_baselines, poly_order)
+            #ffit = poly.polyval(log_freq_MHz_array, coefs)
+            #ffit_linear = 10**ffit
+            
+            ##log_residual = log_signal_array_short_baselines - log_ffit
+            #residual_of_log_fit = ffit_linear - good_signal_array_all_baselines
+            
+            #plt.clf()
+            #plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual of log fit')
+            #map_title="All base residual for log polynomial order %s fit to diffuse" % poly_order
+            #plt.ylabel("All base residual Tb (K)")
+            #plt.xlabel("freq (MHz)")
+            #plt.legend(loc=1)
+            #fig_name= "%s_log_fit_residual_poly_%s_all_base.png" % (model_vis_name_base,poly_order)
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print "saved %s" % fig_name 
+                     
         
             #######Unweighted (real)
             
@@ -1258,9 +1296,140 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       print "saved %s" % fig_name 
            
            
-           
-           
-           
+def solve_for_tsky_from_uvfits(uvfits_filename):
+   print("Solving for Tsky from %s" % uvfits_filename)    
+   
+   #n_baselines_included
+   n_baselines_included = 5
+   
+   
+   #for EDA2
+   n_ants = 256
+   NSIDE=512 #(to match pygsm)
+   n_pix = hp.nside2npix(NSIDE)
+   #print n_pix
+   hpx_index_array = np.arange(0,n_pix,1)
+   
+   n_baselines = n_ants*(n_ants-1) / 2. 
+   
+   #1. Get the u,v points for a single freq
+   hdulist = fits.open(uvfits_filename)
+   hdulist.info()
+   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+   #print info_string
+   uvtable = hdulist[0].data
+   uvtable_header = hdulist[0].header
+   
+   freq_hz = float(uvtable_header['crval4'])
+   freq_MHz = freq_hz/1000000.
+   print "freq is %0.1f " % freq_MHz
+   wavelength = 300./freq_MHz
+   
+   visibilities = uvtable['DATA']
+   visibilities_shape = visibilities.shape
+   real_vis_data = visibilities[:,0,0,0,0,0]
+   #print "real visibilities shape"
+   #print real_vis_data.shape
+   #print real_vis_data[0:5]
+   
+   #get the UU and VV 
+   UU_s_array = uvtable['UU']
+   UU_m_array = UU_s_array * c   
+   VV_s_array = uvtable['VV']
+   VV_m_array = VV_s_array * c
+   
+   #Need to sort by baseline length (then only use short baselines)
+   baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array)
+   
+   baseline_length_array_m_inds = baseline_length_array_m.argsort()
+   baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
+   print baseline_length_array_m[0:5]
+   print baseline_length_array_m_sorted[0:5]
+   
+   UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
+   VV_m_array_sorted = VV_m_array[baseline_length_array_m_inds]
+   real_vis_data_sorted = real_vis_data[baseline_length_array_m_inds]
+   #some sort of beam solid angle ....
+   #real_vis_data_sorted_kelvin = (wavelength**2 / (2.*k) ) * real_vis_data_sorted
+   
+   n_vis = visibilities.shape[0]
+   n_timesteps = n_vis/n_baselines
+   #print "n_timesteps %s " % n_timesteps
+   timestep_array = np.arange(0,n_timesteps,1)
+    
+   #need dummy hpx map to get vectors? - nope
+   #sky_map =  np.full(hp.nside2npix(NSIDE),0.)
+   
+   #iso_beam_map = np.full(hp.nside2npix(NSIDE),1.)
+   #for hpx_index,beam_value in enumerate(short_dipole_parallel_beam_map):
+   
+   theta_array,phi_array = hp.pix2ang(NSIDE,hpx_index_array)
+   
+   #print theta_array[0:10]
+   #print phi_array[0:10]
+   theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   d_in_lambda = (2. * dipole_height_m)/wavelength
+   gp_effect_array = 2.*np.sin(np.pi*d_in_lambda*np.cos(theta_array))
+   voltage_parallel_array=np.sin(theta_parallel_array) * gp_effect_array
+   short_dipole_parallel_beam_map = voltage_parallel_array**2       #* factor
+      
+   baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
+   
+   #print baseline_phi_rad_array[0:10]
+   #print baseline_phi_rad_array.shape
+   baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
+
+   baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+
+   baseline_vector_array = baseline_vector_array_unit * np.transpose([baseline_length_array_m,baseline_length_array_m,baseline_length_array_m])
+   #print baseline_vector_array.shape
+   #print np.linalg.norm(baseline_vector_array[1])
+
+   sky_vector_array=np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+
+   baseline_vector_array = baseline_vector_array[0:n_baselines_included]
+
+   X_short_parallel_array = np.empty(len(baseline_vector_array))
+   for baseline_vector_test_index,baseline_vector_test in enumerate(baseline_vector_array):
+      #Just try doing the integral (sum) all in one go with one baseline
+      #baseline_vector_test = baseline_vector_array[0]
+      
+      baseline_vector_test_for_dot_array = sky_vector_array*0. + baseline_vector_test
+   
+      #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
+      #print b_dot_r_single
+      b_dot_r_array = (baseline_vector_test_for_dot_array * sky_vector_array).sum(axis=1)
+      #print b_dot_r.shape
+      
+      phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+      
+      #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
+      element_short_parallel_array = short_dipole_parallel_beam_map*np.exp(-1j*phase_angle_array)
+      
+      #print element_iso_array[0:5]
+      #visibility_iso = np.sum(element_iso_array)
+      X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array)
+      
+      #print visibility_iso
+      #only interested in the real component (that has the global signal)
+      X_short_parallel_array[baseline_vector_test_index] = X_short_parallel.real
+      
+   #print X_short_parallel_array
+   
+   #Solve for Tsky
+   #From Vedantham et al 2015 Moon and my model_moon.py
+   #theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+   X_transpose = np.transpose(X_short_parallel_array)
+   sum_of_squares = X_transpose.dot(X_short_parallel_array)
+   sum_of_squares_inverse = sum_of_squares**(-1)
+   #print sum_of_squares_inverse
+   sum_of_squares_inverse_Xt = sum_of_squares_inverse * (X_transpose)
+   t_sky = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
+   print "t_sky is %0.2f" % t_sky
+   
+uvfits_filename = "eda_model_LST_030_X_50_MHz_N_D_gmoss_G.uvfits"   
+solve_for_tsky_from_uvfits(uvfits_filename)
+sys.exit()
            
            
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
@@ -1374,22 +1543,26 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                VV_wavelength_array = VV_m_array / wavelength
                
                if pol=='X':
-                  beam_image_name = "model_%s_MHz_xx.fits" % int(freq_MHz)
+                  beam_image_name = "%smodel_%s_MHz_xx.fits" % (beam_image_dir,int(freq_MHz))
                else:
-                  beam_image_name = "model_%s_MHz_yy.fits" % int(freq_MHz)
+                  beam_image_name = "%smodel_%s_MHz_yy.fits" % (beam_image_dir,int(freq_MHz))
                
-               cmd = "cp %s%s ." % (beam_image_dir,beam_image_name)
-               print cmd
-               os.system(cmd)
+               #cmd = "cp %s%s ." % (beam_image_dir,beam_image_name)
+               #print cmd
+               #os.system(cmd)
                
-               beam_plot_basename = beam_image_name.split('.')[0]
+               beam_plot_basename = beam_image_name.split('.')[0].split('/')[-1]
                
                with fits.open(beam_image_name) as beam_hdulist:
                   beam_image_data = beam_hdulist[0].data
                   beam_image_header = beam_hdulist[0].header
                
                #Fourier response:
-               fits_name= beam_plot_basename + "_beam_fft2_real_shift.fits"  
+               fits_name = beam_image_dir + beam_plot_basename + "_beam_fft2_real_shift.fits"  
+               
+               #cmd = "cp %s%s ." % (beam_image_dir,fits_name)
+               #print cmd
+               #os.system(cmd)
                
                beam_fft2_real_shift_hdu_list = fits.open(fits_name)
                beam_fft2_real_shift = beam_fft2_real_shift_hdu_list[0].data   
@@ -2998,7 +3171,7 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
       #ov = GSMObserver()
       gsm = GlobalSkyModel()
    elif sky_model == 'gmoss':
-      gmoss_data_text_file_name = "/data/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
+      gmoss_data_text_file_name = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
       #from Mayuri: The data is in HEALPIX Nested Scheme with NSIDE 16 and 5 degrees resolution. 
       #It contains GMOSS spectra generated at the 3072 pixels. The first row gives the frequency [GHz] 
       #going from 0.04 GHz to 0.2 GHz in steps of 0.001 GHz. Sky spectra are in Kelvin units
@@ -3235,7 +3408,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
          #ov = GSMObserver()
          gsm = GlobalSkyModel()
       elif sky_model == 'gmoss':
-         gmoss_data_text_file_name = "/data/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
+         gmoss_data_text_file_name = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/GMOSS_sky_spectra.txt"
          #from Mayuri: The data is in HEALPIX Nested Scheme with NSIDE 16 and 5 degrees resolution. 
          #It contains GMOSS spectra generated at the 3072 pixels. The first row gives the frequency [GHz] 
          #going from 0.04 GHz to 0.2 GHz in steps of 0.001 GHz. Sky spectra are in Kelvin units
@@ -4016,7 +4189,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_im_name = "global_signal_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
          
-         #lna_impedance_aavs1_filename = "/data/code/git/ben-astronomy/AAVS-1/AAVS1_LNA_impedance_180718.txt"
+         #lna_impedance_aavs1_filename = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_LNA_impedance_180718.txt"
          
          base_vis_name = "%s_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
          #eda_model_uvfits_name = "eda_model_LST_%03d_%s_MHz.uvfits" % (lst_deg,int(freq_MHz))
@@ -6122,10 +6295,10 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 
 
 #EDA2 Sims
-simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_label=array_label)
-model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_label=array_label)
+#simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 
 sys.exit()
 
