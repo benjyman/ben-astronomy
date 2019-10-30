@@ -1308,6 +1308,8 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    NSIDE=512 #(to match pygsm)
    n_pix = hp.nside2npix(NSIDE)
    #print n_pix
+   pixel_solid_angle = (4.*np.pi) / n_pix
+   print("pixel_solid_angle is %0.4f" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
    
    n_baselines = n_ants*(n_ants-1) / 2. 
