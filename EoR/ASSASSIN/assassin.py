@@ -46,6 +46,7 @@ T_180 = 180.0
 beta = -2.5
 eta = 1
 
+
 #pointing dec for uvgen (needs to be zenith at each lst)
 pointing_dec = "-26.7"
 
@@ -1426,8 +1427,13 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    sum_of_squares_inverse = sum_of_squares**(-1)
    #print sum_of_squares_inverse
    sum_of_squares_inverse_Xt = sum_of_squares_inverse * (X_transpose)
-   t_sky = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
-   print "t_sky is %0.2f" % t_sky
+   t_sky_jy = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
+   print "t_sky is %0.2f" % t_sky_jy
+   #convert jy to K
+   jy_to_K = (2*k*pixel_solid_angle) / wavelength**2
+   print("jy_to_K %.4E" % jy_to_K)
+   t_sky_K = jy_to_K * t_sky_jy
+   print("t_sky_K is %0.4E" % t_sky_K)
    
 uvfits_filename = "eda_model_LST_030_X_50_MHz_N_D_gmoss_G.uvfits"   
 solve_for_tsky_from_uvfits(uvfits_filename)
