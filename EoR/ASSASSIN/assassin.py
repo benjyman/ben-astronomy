@@ -30,6 +30,7 @@ import numpy.polynomial.polynomial as poly
 from pyuvdata import UVData
 import math
 import random
+from pygsm import GSMObserver
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -38,9 +39,15 @@ k = 1.38065e-23
 sq_deg_in_1_sr = (180./math.pi)**2
 #Need to specify the location of the observatory (MWA ... put in exact EDA later)
 # Setup observatory location - in this case, MWA, Australia
-latitude_degrees=-26.70331940
-longitude_degrees=116.67081524
-elevation_m=377.83
+#latitude_degrees=-26.70331940
+#longitude_degrees=116.67081524
+#elevation_m=377.83
+
+mwa_latitude_pyephem = "-26:42.199"
+mwa_longitude_pyephem = "116:40.2488"
+mwa_elevation = 0
+
+
 #for uvgen systemp values, sky temp at 180 MHz, beta is spectral index (Frank's 180 at 180), efficiency eta
 T_180 = 180.0
 beta = -2.5
@@ -125,15 +132,15 @@ lst_list = lst_list_array.astype(str)
 #lst_list = ['0.120']
 #lst_list = ['12']
 #pol_list = ['X','Y']
-#sky_model = 'gsm'
+sky_model = 'gsm'
 #sky_model = 'gsm2016'
-sky_model = 'gmoss'
+#sky_model = 'gmoss'
 pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse_global']
+#signal_type_list=['diffuse_global']
 #signal_type_list=['global']
-#signal_type_list=['diffuse']
+signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
 poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
@@ -1297,11 +1304,11 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       print "saved %s" % fig_name 
            
            
-def solve_for_tsky_from_uvfits(uvfits_filename):
+def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_lambda=0.5):
    print("Solving for Tsky from %s" % uvfits_filename)    
    
    #n_baselines_included
-   n_baselines_included = 5
+   #n_baselines_included = 20
    
    
    #for EDA2
@@ -1309,8 +1316,8 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    NSIDE=512 #(to match pygsm)
    n_pix = hp.nside2npix(NSIDE)
    #print n_pix
-   pixel_solid_angle = (4.*np.pi) / n_pix
-   print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
+   #pixel_solid_angle = (4.*np.pi) / n_pix
+   #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
    
    n_baselines = n_ants*(n_ants-1) / 2. 
@@ -1342,12 +1349,18 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    VV_m_array = VV_s_array * c
    
    #Need to sort by baseline length (then only use short baselines)
-   baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array)
+   baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
    
    baseline_length_array_m_inds = baseline_length_array_m.argsort()
    baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
-   print baseline_length_array_m[0:5]
-   print baseline_length_array_m_sorted[0:5]
+   #print baseline_length_array_m[0:5]
+   #print baseline_length_array_m_sorted[0:5]
+   
+   #use only baselines shorter than threshold
+   baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
+   baseline_length_array_lambda_sorted = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+   n_baselines_included = len(baseline_length_array_lambda_sorted)
+   print("n_baselines_included %s" % n_baselines_included)
    
    UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
    VV_m_array_sorted = VV_m_array[baseline_length_array_m_inds]
@@ -1375,7 +1388,14 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    gp_effect_array = 2.*np.sin(np.pi*d_in_lambda*np.cos(theta_array))
    voltage_parallel_array=np.sin(theta_parallel_array) * gp_effect_array
    short_dipole_parallel_beam_map = voltage_parallel_array**2       #* factor
-      
+   
+   #set to zero below horizon
+   short_dipole_parallel_beam_map[theta_array > np.pi/2.]=0.
+   
+   #normalise to one at max
+   beam_max = np.max(short_dipole_parallel_beam_map)
+   short_dipole_parallel_beam_map = short_dipole_parallel_beam_map / beam_max
+   
    baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
    
    #print baseline_phi_rad_array[0:10]
@@ -1384,24 +1404,29 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
 
    baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
 
-   baseline_vector_array = baseline_vector_array_unit * np.transpose([baseline_length_array_m,baseline_length_array_m,baseline_length_array_m])
+   baseline_vector_array = baseline_vector_array_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
    #print baseline_vector_array.shape
    #print np.linalg.norm(baseline_vector_array[1])
 
    sky_vector_array=np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
 
    baseline_vector_array = baseline_vector_array[0:n_baselines_included]
-
    X_short_parallel_array = np.empty(len(baseline_vector_array))
-   for baseline_vector_test_index,baseline_vector_test in enumerate(baseline_vector_array):
+   
+   #print sky_vector_array.shape
+   #print baseline_vector_array.shape
+   
+   for baseline_vector_index in range(0,n_baselines_included):
       #Just try doing the integral (sum) all in one go with one baseline
       #baseline_vector_test = baseline_vector_array[0]
       
-      baseline_vector_test_for_dot_array = sky_vector_array*0. + baseline_vector_test
+      baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
+      baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
+      #print baseline_vector_for_dot_array_mag
    
       #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
       #print b_dot_r_single
-      b_dot_r_array = (baseline_vector_test_for_dot_array * sky_vector_array).sum(axis=1)
+      b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
       #print b_dot_r.shape
       
       phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
@@ -1411,17 +1436,21 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
       
       #print element_iso_array[0:5]
       #visibility_iso = np.sum(element_iso_array)
+      # Maybe this should be (1/2.*np.pi) as we are only looking at half the sky - nup
       X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array)
+
       
       #print visibility_iso
       #only interested in the real component (that has the global signal)
-      X_short_parallel_array[baseline_vector_test_index] = X_short_parallel.real
+      X_short_parallel_array[baseline_vector_index] = X_short_parallel.real
       
    #print X_short_parallel_array
    
    #Solve for Tsky
    #From Vedantham et al 2015 Moon and my model_moon.py
    #theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
+   #for us:
+   # vis = X Tsky + noise
    X_transpose = np.transpose(X_short_parallel_array)
    sum_of_squares = X_transpose.dot(X_short_parallel_array)
    sum_of_squares_inverse = sum_of_squares**(-1)
@@ -1430,15 +1459,109 @@ def solve_for_tsky_from_uvfits(uvfits_filename):
    t_sky_jy = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
    print "t_sky is %0.2f" % t_sky_jy
    #convert jy to K
-   jy_to_K = (2*k*pixel_solid_angle) / wavelength**2
+   jy_to_K = (2*k*(2*np.pi)) / (wavelength**2 * 10**(-26))
    print("jy_to_K %.4E" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
    print("t_sky_K is %0.4E" % t_sky_K)
    
-uvfits_filename = "eda_model_LST_030_X_50_MHz_N_D_gmoss_G.uvfits"   
-solve_for_tsky_from_uvfits(uvfits_filename)
-sys.exit()
-           
+   #Residuals of fit
+   #print real_vis_data_sorted[0:n_baselines_included]
+   #print X_short_parallel_array
+   residuals_jy = real_vis_data_sorted[0:n_baselines_included] - (X_short_parallel_array * t_sky_jy)
+   #print residuals_jy
+   residuals_K = jy_to_K * residuals_jy
+   rms_residual_K = np.sqrt(np.mean(np.square(residuals_K)))
+   #print rms_residual_K
+   
+   parameter_covariance = rms_residual_K**2 * sum_of_squares_inverse
+   print "parameter_covariance"
+   print parameter_covariance
+   
+   t_sky_error_K = np.sqrt(parameter_covariance)
+    
+   print("t_sky_K = %0.4E +- %0.3f K for %s shortest baselines included" % (t_sky_K,t_sky_error_K,n_baselines_included))
+    
+   #Check value is reasonable
+   
+   #180 at 180 rule
+   T_sky_rough = 180.*(freq_MHz/180)**(-2.5)
+   print("180@180 t_sky is %s" % T_sky_rough)
+   
+   lst_deg = (float(lst_hrs)/24.)*360.         
+   print "checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+   #check vale
+   year=2000
+   month=1
+   day=1
+   hour=int(np.floor(float(lst_hrs)))
+   minute=int(np.floor((float(lst_hrs)-hour) * 60.))
+   second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
+   
+   date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
+   #print(date_time_string)
+   latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
+   #Parkes (pygsm example)
+   #latitude, longitude, elevation = '-32.998370', '148.263659', 100
+   ov = GSMObserver()
+   ov.lon = longitude
+   ov.lat = latitude
+   ov.elev = elevation
+   time_string = "%02d_%02d_%02d" % (hour,minute,second)
+   #print time_string
+   date_obs = datetime(year, month, day, hour, minute, second)
+   ov.date = date_obs
+   gsm_map = ov.generate(freq_MHz)
+   
+   #show the sky maps multiplied by the beam
+   
+   gsm_map[theta_array > np.pi/2.]=np.nan
+   
+   av_sky_no_beam = np.nanmean(gsm_map)
+   print("av_sky_no_beam %0.4E" % av_sky_no_beam)
+   
+   sky_with_beam = gsm_map * short_dipole_parallel_beam_map
+   beam_weighted_av_sky = np.nanmean(sky_with_beam)
+   print("beam_weighted_av_sky %0.4E" % beam_weighted_av_sky)
+   
+   #ratio = beam_weighted_av_sky / t_sky_K
+   #print("ratio between beam_weighted_av_sky %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_K,t_sky_error_K,ratio)) 
+   
+   ratio = av_sky_no_beam / t_sky_K
+   print("ratio between av_sky_no_beam %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (av_sky_no_beam,t_sky_K,t_sky_error_K,ratio)) 
+   
+   return(t_sky_K,t_sky_error_K,av_sky_no_beam)
+   
+   
+   #make diagnostic plots
+   
+   #fitsname="sky_with_beam_h_m_s_%s.fits" % (time_string)
+   #hp.write_map(fitsname,sky_with_beam,dtype=np.float32, overwrite=True)
+   #plt.clf()
+   #figname="sky_with_beam_h_m_s_%s.png" % (time_string)
+   #title = "sky map"
+   ##short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
+   ##hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
+   ##iso_beam_map = hp.read_map(beam_map_fitsname)
+   #map_projected=hp.orthview(map=sky_with_beam,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,0))
+   #figmap = plt.gcf()
+   #figmap.savefig(figname,dpi=500,bbox_inches='tight') 
+   #print "saved figure: %s" % figname
+   #plt.close() 
+
+   #fitsname="beam.fits" 
+   #hp.write_map(fitsname,short_dipole_parallel_beam_map,dtype=np.float32, overwrite=True)
+   #plt.clf()
+   #figname="beam.png" 
+   #title = "beam map"
+   ##short_dipole_parallel_beam_map_projected=hp.orthview(map=short_dipole_parallel_beam_map,coord='C',half_sky=True,xsize=400,title=beam_map_title,rot=(0,90,0),return_projected_map=True)
+   ##hp.write_map(beam_map_fitsname, iso_beam_map,dtype=np.float32, overwrite=True)
+   ##iso_beam_map = hp.read_map(beam_map_fitsname)
+   #map_projected=hp.orthview(map=short_dipole_parallel_beam_map,return_projected_map=True,coord='E',half_sky=False,xsize=400,title=title,rot=(0,90,0))
+   #figmap = plt.gcf()
+   #figmap.savefig(figname,dpi=500,bbox_inches='tight') 
+   #print "saved figure: %s" % figname
+   #plt.close()    
+      
            
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
    with open(array_ant_locations_filename,'r') as f:
@@ -5137,7 +5260,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             out_vis_name_sub = model_vis_name_base + '_sub.vis'
             out_vis_uvfits_name_sub = model_vis_name_base + '_sub.uvfits'
             
-            cmd = "rm -rf %s %s %s %s" % (out_vis_name,out_vis_uvfits_name,out_vis_name_sub,out_vis_uvfits_name_sub)
+            #Don't remove the individual uvfits files (may not need concat files in future)
+            #cmd = "rm -rf %s %s %s %s" % (out_vis_name,out_vis_uvfits_name,out_vis_name_sub,out_vis_uvfits_name_sub)
+            cmd = "rm -rf %s %s" % (out_vis_name,out_vis_name_sub)
             print(cmd)
             os.system(cmd)
             
@@ -6300,15 +6425,60 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 #EDA2 sims to compare to Singh et al 2015 
 
 
+#EDA2 sims and new data extraction
+#simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+
+
+t_sky_measured_array = np.empty(len(freq_MHz_list))
+t_sky_measured_error_array = np.empty(len(freq_MHz_list))
+t_sky_theoretical_array = np.empty(len(freq_MHz_list))
+
+t_sky_measured_array_filename = "t_sky_measured_array.npy"
+t_sky_measured_error_array_filename = "t_sky_measured_error_array.npy"
+t_sky_theoretical_array_filename = "t_sky_theoretical_array.npy"
+
+baseline_length_thresh_lambda = 0.5
+
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   uvfits_filename = "eda_model_LST_030_X_%2d_MHz_D_gsm.uvfits" % freq_MHz
+   print uvfits_filename
+   t_sky_measured,t_sky_measured_error,t_sky_theoretical = solve_for_tsky_from_uvfits(uvfits_filename,2,baseline_length_thresh_lambda=baseline_length_thresh_lambda)
+   t_sky_measured_array[freq_MHz_index] = t_sky_measured
+   t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
+   t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
+   
+np.save(t_sky_measured_array_filename,t_sky_measured_array)
+np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
+np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array,t_sky_theoretical_array)
+
+t_sky_measured_array = np.load(t_sky_measured_array_filename)
+t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+t_sky_theoretical_array = np.load(t_sky_theoretical_array_filename)
+
+plt.clf()
+plt.errorbar(freq_MHz_list,t_sky_measured_array,yerr=t_sky_measured_error_array,label='measured')
+plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
+#plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+map_title="t_sky measured" 
+plt.xlabel("freq (MHz)")
+plt.ylabel("t_sky (K)")
+plt.legend(loc=1)
+#plt.ylim([0, 20])
+fig_name= "t_sky_measured.png" 
+figmap = plt.gcf()
+figmap.savefig(fig_name)
+print "saved %s" % fig_name 
+
+#sys.exit()
+
 
 
 #EDA2 Sims
 #simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #plot_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#model_signal(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,poly_order=poly_order,sky_model=sky_model,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 
-sys.exit()
 
 #calibrate simulated data with noise and errors
 #calibrate_eda2_data(eda2_data_uvfits_name_list=['eda_model_X_lst_2.00_hr_int_0.13_hr_noise_diffuse_gmoss_global_gain_errors_concat_lsts.uvfits'],obs_type='sun',lst_list=[2],freq_list=[],pol_list=[])
