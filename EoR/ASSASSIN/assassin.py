@@ -1315,7 +1315,8 @@ def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_la
    n_ants = 256
    NSIDE=512 #(to match pygsm)
    n_pix = hp.nside2npix(NSIDE)
-   #print n_pix
+   print 'n_pix'
+   print n_pix
    #pixel_solid_angle = (4.*np.pi) / n_pix
    #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
@@ -1358,8 +1359,8 @@ def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_la
    
    #use only baselines shorter than threshold
    baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
-   baseline_length_array_lambda_sorted = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
-   n_baselines_included = len(baseline_length_array_lambda_sorted)
+   baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+   n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
    print("n_baselines_included %s" % n_baselines_included)
    
    UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
@@ -1411,7 +1412,22 @@ def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_la
    sky_vector_array=np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
 
    baseline_vector_array = baseline_vector_array[0:n_baselines_included]
-   X_short_parallel_array = np.empty(len(baseline_vector_array))
+   X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
+   
+   #plot amp vs uvdistance for simulated data
+   plt.clf()
+   plt.scatter(baseline_length_array_lambda_sorted,real_vis_data_sorted,s=1,label='real vis data')
+   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="real vis vs uvdistance" 
+   plt.xlabel("uv-distance (lambda)")
+   plt.ylabel("real vis")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "real_vis_vs_uv_dist_%d_MHz.png" % freq_MHz
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   
    
    #print sky_vector_array.shape
    #print baseline_vector_array.shape
@@ -1442,9 +1458,31 @@ def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_la
       
       #print visibility_iso
       #only interested in the real component (that has the global signal)
-      X_short_parallel_array[baseline_vector_index] = X_short_parallel.real
+      X_short_parallel_array[baseline_vector_index] = X_short_parallel
       
    #print X_short_parallel_array
+   #save X_short_parallel_array
+   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz.npy" % freq_MHz
+   np.save(X_short_parallel_array_filename,X_short_parallel_array)
+   print("saved %s" % X_short_parallel_array_filename)
+   
+   plt.clf()
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array,s=1,label='X')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted[0:n_baselines_included],s=1,label='real vis')
+   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="X vs uvdistance" 
+   plt.xlabel("uv-distance (lambda)")
+   plt.ylabel("X")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "X_vs_uv_dist_%d_MHz.png" % freq_MHz
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   
+   
+   #plot X_short_parallel_array vs uvdist
+   
    
    #Solve for Tsky
    #From Vedantham et al 2015 Moon and my model_moon.py
@@ -1457,9 +1495,11 @@ def solve_for_tsky_from_uvfits(uvfits_filename,lst_hrs,baseline_length_thresh_la
    #print sum_of_squares_inverse
    sum_of_squares_inverse_Xt = sum_of_squares_inverse * (X_transpose)
    t_sky_jy = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
-   print "t_sky is %0.2f" % t_sky_jy
+   print "t_sky is %0.2f Jy" % t_sky_jy
    #convert jy to K
-   jy_to_K = (2*k*(2*np.pi)) / (wavelength**2 * 10**(-26))
+   #jy_to_K = (2*k*(2*np.pi)) / (wavelength**2 * 10**(-26))
+   #jy_to_K = (2*k) / (10**(-26))
+   jy_to_K = (wavelength**2 * 10**(-26)) / (2.*k)
    print("jy_to_K %.4E" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
    print("t_sky_K is %0.4E" % t_sky_K)
@@ -6449,7 +6489,7 @@ for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
    
 np.save(t_sky_measured_array_filename,t_sky_measured_array)
 np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
-np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array,t_sky_theoretical_array)
+np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array)
 
 t_sky_measured_array = np.load(t_sky_measured_array_filename)
 t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
