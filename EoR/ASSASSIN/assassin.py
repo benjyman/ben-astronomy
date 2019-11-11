@@ -1304,7 +1304,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       print "saved %s" % fig_name 
            
            
-def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5):
+def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False):
    
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1482,6 +1482,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
 
    baseline_vector_array = baseline_vector_array[0:n_baselines_included]
    X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
+   Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
    
    #plot amp vs uvdistance for simulated data
    plt.clf()
@@ -1498,6 +1499,87 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    print "saved %s" % fig_name 
    
    
+   
+   #First work out what things should look like
+   #need to implement this for each lst - for now just use the last one (i.e. dont modify lst_deg)
+   
+   #Check value is reasonable
+   #180 at 180 rule
+   T_sky_rough = 180.*(freq_MHz/180)**(-2.5)
+   print("180@180 t_sky is %s" % T_sky_rough)
+   
+            
+   print "checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+   #check vale
+   year=2000
+   month=1
+   day=1
+   hour=int(np.floor(float(lst_hrs)))
+   minute=int(np.floor((float(lst_hrs)-hour) * 60.))
+   second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
+   
+   date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
+   #print(date_time_string)
+   latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
+   #Parkes (pygsm example)
+   #latitude, longitude, elevation = '-32.998370', '148.263659', 100
+   ov = GSMObserver()
+   ov.lon = longitude
+   ov.lat = latitude
+   ov.elev = elevation
+   time_string = "%02d_%02d_%02d" % (hour,minute,second)
+   #print time_string
+   date_obs = datetime(year, month, day, hour, minute, second)
+   ov.date = date_obs
+   gsm_map = ov.generate(freq_MHz) * 0.
+   
+   sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
+   freq_MHz_index = int(freq_MHz - 50)
+   diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_X_lsts_filename)
+   diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
+   
+   if include_angular_info:
+      gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+      gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
+      gsm_map_angular_norm = gsm_map_angular / gsm_map_angular_abs_max
+   
+   if 'global' in signal_type_list:
+      global_signal_value = s_21_array[freq_MHz_index]
+      gsm_map += global_signal_value
+   if 'diffuse' in signal_type_list:
+      gsm_map += ov.generate(freq_MHz)
+   if 'diffuse_global' in signal_type_list:
+      if 'diffuse' in signal_type_list:
+         print("can't have diffuse and diffuse global at the same time.")
+         sys.exit()
+      else:
+         gsm_map += diffuse_global_value
+   if 'diffuse_angular' in signal_type_list:
+      if 'diffuse' in signal_type_list:
+         print("can't have diffuse and diffuse angular at the same time.")
+         sys.exit()
+      else:
+         gsm_map += ov.generate(freq_MHz)
+         gsm_map -= diffuse_global_value
+         #print("diffuse_angular not implemented yet")
+         #sys.exit()
+
+   #show the sky maps multiplied by the beam
+   gsm_map[theta_array > np.pi/2.]=np.nan
+   
+   av_sky_no_beam = np.nanmean(gsm_map)
+   print("av_sky_no_beam %0.4E" % av_sky_no_beam)
+   
+   sky_with_beam = gsm_map * short_dipole_parallel_beam_map
+   print(sky_with_beam)
+   sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
+   print(sum_of_beam_weights)
+   beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
+   print("beam_weighted_av_sky at %3d MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
+   
+   
+   ##########
+   
    #print sky_vector_array.shape
    #print baseline_vector_array.shape
    
@@ -1509,7 +1591,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    #haha 800 Gb!
    #big_baseline_vector_for_dot_array = np.full(n_element_for_dot_array,0)
 
-
+   #Then do measurement:
    for baseline_vector_index in range(0,n_baselines_included):
       #Just try doing the integral (sum) all in one go with one baseline
       #baseline_vector_test = baseline_vector_array[0]
@@ -1526,7 +1608,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
       phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
       
       #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
-      element_short_parallel_array = short_dipole_parallel_beam_map*np.exp(-1j*phase_angle_array)
+      element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+      
+      #for angular info
+      if include_angular_info:
+         element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular_norm * np.exp(-1j*phase_angle_array)
       
       #print element_iso_array[0:5]
       #visibility_iso = np.sum(element_iso_array)
@@ -1537,6 +1623,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
       
       #this one gives approximately the right answer ....
       X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+      if include_angular_info:
+         Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+      
       #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (float(n_pix))
       #get rid of 1/4pi?, but divide by 2 cause only 1 polarisation (this is a fudge, I dunno about this unit conversion at all......)
       #X_short_parallel =  (1./2.) * np.sum(element_short_parallel_array)
@@ -1544,6 +1633,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
       #print visibility_iso
       #only interested in the real component (that has the global signal)
       X_short_parallel_array[baseline_vector_index] = X_short_parallel
+      
+      if include_angular_info:
+         Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
       
    #print X_short_parallel_array
    #save X_short_parallel_array
@@ -1608,73 +1700,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    print("t_sky_K = %0.4E +- %0.3f K for %s shortest baselines included" % (t_sky_K,t_sky_error_K,n_baselines_included))
 
 
-   #need to implement this for each lst - for now just use the last one (i.e. dont modify lst_deg)
-   
-   #Check value is reasonable
-   #180 at 180 rule
-   T_sky_rough = 180.*(freq_MHz/180)**(-2.5)
-   print("180@180 t_sky is %s" % T_sky_rough)
-   
-            
-   print "checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
-   #check vale
-   year=2000
-   month=1
-   day=1
-   hour=int(np.floor(float(lst_hrs)))
-   minute=int(np.floor((float(lst_hrs)-hour) * 60.))
-   second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
-   
-   date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-   #print(date_time_string)
-   latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
-   #Parkes (pygsm example)
-   #latitude, longitude, elevation = '-32.998370', '148.263659', 100
-   ov = GSMObserver()
-   ov.lon = longitude
-   ov.lat = latitude
-   ov.elev = elevation
-   time_string = "%02d_%02d_%02d" % (hour,minute,second)
-   #print time_string
-   date_obs = datetime(year, month, day, hour, minute, second)
-   ov.date = date_obs
-   gsm_map = ov.generate(freq_MHz) * 0.
-   
-   freq_MHz_index = int(freq_MHz - 50)
-   if 'global' in signal_type_list:
-      global_signal_value = s_21_array[freq_MHz_index]
-      gsm_map += global_signal_value
-   if 'diffuse' in signal_type_list:
-      gsm_map += ov.generate(freq_MHz)
-   if 'diffuse_global' in signal_type_list:
-      if 'diffuse' in signal_type_list:
-         print("can't have diffuse and diffuse global at the same time.")
-         sys.exit()
-      else:
-         sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
-         diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_X_lsts_filename)
-         diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
-         gsm_map += diffuse_global_value
-   if 'diffuse_angular' in signal_type_list:
-      if 'diffuse' in signal_type_list:
-         print("can't have diffuse and diffuse global at the same time.")
-         sys.exit()
-      else:
-         print("diffuse_angular not implemented yet")
-         sys.exit()
 
-   #show the sky maps multiplied by the beam
-   gsm_map[theta_array > np.pi/2.]=np.nan
-   
-   av_sky_no_beam = np.nanmean(gsm_map)
-   print("av_sky_no_beam %0.4E" % av_sky_no_beam)
-   
-   sky_with_beam = gsm_map * short_dipole_parallel_beam_map
-   print(sky_with_beam)
-   sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
-   print(sum_of_beam_weights)
-   beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
-   print("beam_weighted_av_sky at %3d MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
    
    #ratio = beam_weighted_av_sky / t_sky_K
    #print("ratio between beam_weighted_av_sky %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_K,t_sky_error_K,ratio)) 
@@ -1716,7 +1742,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    #print "saved figure: %s" % figname
    #plt.close()    
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False):
 
    lst_string = '_'.join(lst_hrs_list)
    
@@ -1759,17 +1785,18 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    t_sky_theoretical_array_filename = "t_sky_theoretical_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    n_baselines_used_array_filename = "n_baselines_used_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
-
-   for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-      t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda)
-      t_sky_measured_array[freq_MHz_index] = t_sky_measured
-      t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
-      t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
-      n_baselines_used_array[freq_MHz_index] = n_baselines_used  
-   np.save(t_sky_measured_array_filename,t_sky_measured_array)
-   np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
-   np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array)
-   np.save(n_baselines_used_array_filename,n_baselines_used_array)
+   
+   if not plot_only:
+      for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda)
+         t_sky_measured_array[freq_MHz_index] = t_sky_measured
+         t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
+         t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
+         n_baselines_used_array[freq_MHz_index] = n_baselines_used  
+      np.save(t_sky_measured_array_filename,t_sky_measured_array)
+      np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
+      np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array)
+      np.save(n_baselines_used_array_filename,n_baselines_used_array)
    
    t_sky_measured_array = np.load(t_sky_measured_array_filename)
    t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
@@ -1777,19 +1804,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    n_baselines_used_array = np.load(n_baselines_used_array_filename)
    
    freq_MHz_array = np.asarray(freq_MHz_list)
-   
-   plt.clf()
-   plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='measured')
-   plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
-   map_title="t_sky measured" 
-   plt.xlabel("freq (MHz)")
-   plt.ylabel("t_sky (K)")
-   plt.legend(loc=1)
-   #plt.ylim([0, 20])
-   fig_name= "t_sky_measured_lsts_%s%s.png" % (lst_string,signal_type_postfix)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
    
    #make a plot of diffuse global input  
    if 'diffuse_global' in signal_type_list:
@@ -1807,6 +1821,58 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name
+    
+      #subtract a polynomial fit
+      #in log log space:
+      sky_array = diffuse_global_value_array[t_sky_measured_array>0.]
+      log_sky_array = np.log10(sky_array)
+      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+      log_freq_MHz_array = np.log10(freq_array_cut)
+      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+      
+      #log_residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - sky_array
+      
+      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+      
+      max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+      y_max = 1.5 * max_abs_residuals
+      y_min = 1.5 * -max_abs_residuals
+      
+      plt.clf()
+      plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit')
+      map_title="Residual for log polynomial order %s fit " % poly_order
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("freq (MHz)")
+      plt.legend(loc=1)
+      plt.text(50, 10, "rms=%0.3f" % rms_of_residuals)
+      plt.ylim([y_min, y_max])
+      fig_name= "eda2_log_fit_residual_tsy_input_poly_%s_lsts_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name 
+   
+    
+      
+   plt.clf()
+   plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='measured')
+   plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
+   if 'diffuse_global' in signal_type_list:
+      plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
+   map_title="t_sky measured" 
+   plt.xlabel("freq (MHz)")
+   plt.ylabel("t_sky (K)")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "t_sky_measured_lsts_%s%s.png" % (lst_string,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   
+
       
    #subtract a polynomial fit
    #in log log space:
@@ -1824,6 +1890,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
    print("rms_of_residuals is %0.3f K" % rms_of_residuals)
    
+   max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+   y_max = 1.5 * max_abs_residuals
+   y_min = 1.5 * -max_abs_residuals
+   
    plt.clf()
    plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
    map_title="Residual for log polynomial order %s fit " % poly_order
@@ -1831,12 +1901,25 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    plt.xlabel("freq (MHz)")
    plt.legend(loc=1)
    plt.text(50, 10, "rms=%0.3f" % rms_of_residuals)
-   plt.ylim([-12, 12])
+   plt.ylim([y_min, y_max])
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
-                  
+
+   plt.clf()
+   plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit')
+   map_title="Residual for log polynomial order %s fit " % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   plt.text(50, 10, "rms=%0.3f" % rms_of_residuals)
+   plt.ylim([y_min, y_max])
+   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+                     
    #n baselines plot
    plt.clf()
    plt.plot(freq_MHz_list,n_baselines_used_array)
@@ -6737,7 +6820,7 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 
 #lst_hrs_list = ['2.2','2.4','2.6']
 lst_hrs_list = ['2']
-simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -6746,9 +6829,9 @@ simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,sig
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 0.5
-
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order)
+baseline_length_thresh_lambda = 0.50
+plot_only = False 
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
 
 #take a look at MLE https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
 #especially just looking at your data
