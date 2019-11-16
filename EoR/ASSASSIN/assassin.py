@@ -1362,7 +1362,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    plt.ylabel("y")
    plt.legend(loc=1)
    #plt.ylim([0, 3.5])
-   fig_name= "x_y_OLS_plot_%s_MHz_%s" % (freq_MHz,signal_type_postfix)
+   fig_name= "x_y_OLS_plot_%s_MHz%s.png" % (freq_MHz,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
