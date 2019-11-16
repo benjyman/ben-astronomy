@@ -1362,8 +1362,8 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    fit_string = "y=%0.6fx, t_sky_K=%0.6f" % (t_sky_jy,t_sky_K)
   
    #plot 
-   y_pos = 0.8 * np.max(results.fittedvalues)
-   x_pos = 1.2 * X_short_parallel_array[0]
+   y_pos = 0.6 * np.max(results.fittedvalues)
+   x_pos = 1.2 * np.min(X_short_parallel_array)
    
    plt.clf()
    plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data')
