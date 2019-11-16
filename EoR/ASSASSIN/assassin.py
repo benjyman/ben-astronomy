@@ -1366,7 +1366,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
    plt.clf()
-   plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data',linestyle='None')
+   plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data',linestyle='None',marker='.')
    plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS")
    map_title="Data and OLS fit" 
    plt.xlabel("X")
