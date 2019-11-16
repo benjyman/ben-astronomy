@@ -1351,7 +1351,22 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
    results = model.fit()
    print results.summary()
+  
+   #plot 
    
+   plt.clf()
+   plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data')
+   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS")
+   map_title="Data and OLS fit" % poly_order
+   plt.xlabel("X")
+   plt.ylabel("y")
+   plt.legend(loc=1)
+   #plt.ylim([0, 3.5])
+   fig_name= "x_y_OLS_plot_%s_MHz_%s" % (freq_MHz,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print "saved %s" % fig_name  
            
 def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,weighted=True):
    
@@ -6907,6 +6922,7 @@ def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_th
    fig_name= "%s_n_arrays_vs_residuals_poly_%s.png" % (model_vis_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
+   plt.close()
    print "saved %s" % fig_name 
 
 
@@ -7018,9 +7034,9 @@ baseline_length_thresh_lambda = 0.5
 plot_only = False  
 include_angular_info = False
 weighted = True
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,weighted=weighted)
+#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,weighted=weighted)
 
-#model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
+model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
 #take a look at MLE https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
 #especially just looking at your data
 #try OLS and WLS from here:
