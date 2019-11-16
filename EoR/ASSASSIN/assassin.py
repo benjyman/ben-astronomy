@@ -1346,15 +1346,24 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
-   X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+   #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+   
    model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
    results = model.fit()
    print results.summary()
    parameters = results.params
    print parameters
-   T_sky_Jy = parameters[0]
+   t_sky_jy = parameters[0]
+   
+   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
+   print("jy_to_K %.4E" % jy_to_K)
+   t_sky_K = jy_to_K * t_sky_jy
+   print("t_sky_K is %0.4E" % t_sky_K)
+   fit_string = "y=%0.6fx, t_sky_K=%0.6f" %s (t_sky_jy,t_sky_K)
   
    #plot 
+   y_pos = 0.8 * np.max(results.fittedvalues)
+   x_pos = 1.2 * X_short_parallel_array[0]
    
    plt.clf()
    plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data')
@@ -1363,6 +1372,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    plt.xlabel("X")
    plt.ylabel("y")
    plt.legend(loc=1)
+   plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
    fig_name= "x_y_OLS_plot_%s_MHz%s.png" % (freq_MHz,signal_type_postfix)
    figmap = plt.gcf()
