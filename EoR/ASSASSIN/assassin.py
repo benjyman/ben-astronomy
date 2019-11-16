@@ -1359,7 +1359,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    print("jy_to_K %.4E" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
    print("t_sky_K is %0.4E" % t_sky_K)
-   fit_string = "y=%0.6fx, t_sky_K=%0.6f" %s (t_sky_jy,t_sky_K)
+   fit_string = "y=%0.6fx, t_sky_K=%0.6f" % (t_sky_jy,t_sky_K)
   
    #plot 
    y_pos = 0.8 * np.max(results.fittedvalues)
