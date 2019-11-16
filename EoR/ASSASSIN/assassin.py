@@ -1346,11 +1346,13 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
-   #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
-   
+   X_short_parallel_array = sm.add_constant(X_short_parallel_array)
    model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
    results = model.fit()
    print results.summary()
+   parameters = results.params
+   print parameters
+   T_sky_Jy = parameters[0]
   
    #plot 
    
