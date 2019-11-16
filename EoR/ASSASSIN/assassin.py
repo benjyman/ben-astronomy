@@ -140,7 +140,7 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['global']
-signal_type_list=['diffuse_global','noise']
+signal_type_list=['diffuse_global']
 #signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
 poly_order = 5
