@@ -31,6 +31,7 @@ from pyuvdata import UVData
 import math
 import random
 from pygsm import GSMObserver
+import statsmodels.api as sm
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -139,7 +140,7 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['global']
-signal_type_list=['global','noise']
+signal_type_list=['global']
 #signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
 poly_order = 5
@@ -1302,7 +1303,55 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
-           
+
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array_label):
+   
+   concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
+   output_prefix = "%s" % (array_label)
+   signal_type_postfix = ''
+   if 'noise' in signal_type_list:
+       signal_type_postfix += '_N'
+       concat_output_name_base_X += '_N'
+   if 'diffuse' in signal_type_list:
+       signal_type_postfix += '_D_%s' % sky_model
+       concat_output_name_base_X += '_D_%s' % sky_model
+   if 'diffuse_global' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse_global at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DG_%s' % sky_model
+          concat_output_name_base_X += '_DG_%s' % sky_model
+   if 'diffuse_angular' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse_angular at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DA_%s' % sky_model
+          concat_output_name_base_X += '_DA_%s' % sky_model
+   if 'global' in signal_type_list:
+       signal_type_postfix += '_G' 
+       concat_output_name_base_X += '_G' 
+   if 'gain_errors' in signal_type_list:
+       signal_type_postfix += '_GE'
+       concat_output_name_base_X += '_GE'
+   
+   wavelength = 300./float(freq_MHz)
+
+   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   X_short_parallel_array = np.load(X_short_parallel_array_filename).real
+   print("loaded %s" % X_short_parallel_array_filename)
+   
+   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
+   print("loaded %s" % real_vis_data_sorted_array_filename)
+   
+   #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+   
+   model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+   results = model.fit()
+   print results.summary()
+   
            
 def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,weighted=True):
    
@@ -1643,6 +1692,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    np.save(X_short_parallel_array_filename,X_short_parallel_array)
    print("saved %s" % X_short_parallel_array_filename)
    
+   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
+   print("saved %s" % real_vis_data_sorted_array_filename)
+   
    if include_angular_info:
       Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
       np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
@@ -1962,8 +2015,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
     
       
    plt.clf()
-   #plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='measured')
-   #plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
+   plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='measured')
+   plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
    if 'diffuse_global' in signal_type_list:
       plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    if include_angular_info:
@@ -6962,13 +7015,18 @@ lst_hrs_list = ['2']
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 baseline_length_thresh_lambda = 0.5
-plot_only = True  
+plot_only = False  
 include_angular_info = False
 weighted = True
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,weighted=weighted)
 
+#model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
 #take a look at MLE https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
 #especially just looking at your data
+#try OLS and WLS from here:
+# https://www.statsmodels.org/dev/examples/notebooks/generated/ols.html
+# https://www.statsmodels.org/dev/examples/notebooks/generated/wls.html
+
 
        
 #sys.exit()
