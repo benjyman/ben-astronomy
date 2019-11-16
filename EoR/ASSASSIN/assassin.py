@@ -140,7 +140,7 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['global']
-signal_type_list=['global']
+signal_type_list=['global','noise']
 #signal_type_list=['diffuse']
 gsm_smooth_poly_order = 5
 poly_order = 5
@@ -1356,13 +1356,13 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    t_sky_jy = parameters[0]
    
    jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
-   print("jy_to_K %.4E" % jy_to_K)
+   print("jy_to_K %.4E Jy" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
-   print("t_sky_K is %0.4E" % t_sky_K)
-   fit_string = "y=%0.6fx, t_sky_K=%0.6f" % (t_sky_jy,t_sky_K)
+   print("t_sky_K is %0.4E K" % t_sky_K)
+   fit_string = "y=%0.6fx, t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
   
    #plot 
-   y_pos = 0.6 * np.max(results.fittedvalues)
+   y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
    plt.clf()
