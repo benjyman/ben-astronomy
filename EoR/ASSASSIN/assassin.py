@@ -32,6 +32,10 @@ import math
 import random
 from pygsm import GSMObserver
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+import seaborn as sns
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -140,10 +144,10 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['global']
-signal_type_list=['diffuse_global']
-#signal_type_list=['diffuse']
-gsm_smooth_poly_order = 5
-poly_order = 5
+#signal_type_list=['diffuse_global']
+signal_type_list=['diffuse']
+#gsm_smooth_poly_order = 5
+poly_order = 8
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -1304,7 +1308,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array_label):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array_label,model_type):
    
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1341,44 +1345,145 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
    X_short_parallel_array = np.load(X_short_parallel_array_filename).real
    print("loaded %s" % X_short_parallel_array_filename)
-   
+      
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
    #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
    
-   model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
-   results = model.fit()
-   print results.summary()
-   parameters = results.params
-   print parameters
-   t_sky_jy = parameters[0]
+   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+   print("loaded %s" % Y_short_parallel_angular_array_filename)
+   
+   #plot a histogram of Y values
+   plt.clf()
+   n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+   map_title="Histogram of Y values (angular response)" 
+   fig_name= "hist_Y_angular_%s_MHz%s.png" % (freq_MHz,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print "saved %s" % fig_name  
+   
+   
+   #Assign vis and X values a group according to the Y_angular response
+   Y_angular_group_array = X_short_parallel_array * 0
+   ##use the hist output to split up X according to Y values
+   for Y_bin_index,Y_bin in enumerate(n):
+      start_value = bins[Y_bin_index]
+      end_value = bins[Y_bin_index+1]
+      Y_angular_group_array[(Y_short_parallel_angular_array >= start_value) & (Y_short_parallel_angular_array < end_value)] = Y_bin_index
+    
+   #make a data frame
+   data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array}
+   df = pd.DataFrame(data) 
+   
+   X_short_parallel_array = np.asarray(df['X_global'])
+   real_vis_data_sorted_array = np.asarray(df['real_vis'])
+   
+   if np.nansum(X_short_parallel_array > 0):
+      #random intercept model may work if you split data up into different bins for the value of X
+      #Actually, should calculate the angular response for each baseline, then divide X up according to similar values of the angular response
+      #https://www.statsmodels.org/dev/examples/notebooks/generated/mixed_lm_example.html
+      #tilde in mixedlm mean "predicted by"
+      
+      ##OLS with fixed intercept at zero
+      ##X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+      #Lets use scikit-learn instead of statsmodels (cause there are more tutorials and Kaggle prefers)
+      if model_type=='OLS_fixed_intercept':
+         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+         results = model.fit()
+         ##print results.summary()
+         parameters = results.params
+         ##print parameters
+         t_sky_jy = parameters[0]
+         t_sky_error_jy = results.bse[0]
+      elif model_type=='OLS_with_intercept':
+         X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+         results = model.fit()
+         ##print results.summary()
+         parameters = results.params
+         ##print parameters
+         t_sky_jy = parameters[1]
+         t_sky_error_jy = results.bse[1]
+      elif model_type=='mixedlm':
+         #test_data = sm.datasets.get_rdataset('dietox', 'geepack').data
+         #md = smf.mixedlm("Weight ~ Time", data, groups=data["Pig"])
+         #mdf = md.fit()
+         #print(mdf.summary())
+         #print(test_data.head())
+         md = smf.mixedlm("real_vis ~ X_global", data, groups=data["Y_angular_group"])
+         results = md.fit()
+         print(results.summary()) 
+         parameters = results.params
+         print parameters
+         t_sky_jy = parameters[1]
+         t_sky_error_jy = results.bse[1]
+      elif model_type=='WLS':
+         print('using WLS')
+         sns_plot = sns.regplot(X_short_parallel_array,real_vis_data_sorted_array)
+         fig = sns_plot.get_figure()
+         figname = 'vis_vs_X_sns_regplot'
+         fig.savefig(figname) 
+         print('saved %s ' % figname)
+         
+         #sns_plot_Y = sns.regplot(Y_short_parallel_angular_array,real_vis_data_sorted_array)
+         #fig2 = sns_plot_Y.get_figure()
+         #figname = 'vis_vs_Y_sns_regplot'
+         #fig2.savefig(figname) 
+         #print('saved %s ' % figname)
+         
+         #errors are inversely proportional to X, so can just use X_short_parallel_array is the weights!
+         #also they are inversely proportion to Y 
+         weights_x = [x**2 for x in X_short_parallel_array]
+         weights = weights_x * (Y_short_parallel_angular_array)
+         
+         
+         # reshape for compatibility
+         X_short_parallel_array_reshape = X_short_parallel_array.reshape(-1, 1)
+         WLS = LinearRegression(fit_intercept=False)
+         results = WLS.fit(X_short_parallel_array_reshape, real_vis_data_sorted_array, sample_weight=weights)
+         print(WLS.intercept_, WLS.coef_)         
+         t_sky_jy = WLS.coef_
+         t_sky_error_jy = 0.01
+
+         
+         
+   else:
+      return(np.nan,np.nan)
+      print("X_short_parallel_array all NaNs, returning Tsky NaN")
+      return
    
    jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
    print("jy_to_K %.4E Jy" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
-   print("t_sky_K is %0.4E K" % t_sky_K)
+   t_sky_error_K = jy_to_K * t_sky_error_jy
+   print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
    fit_string = "y=%0.6fx, t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
   
    #plot 
-   y_pos = np.max(results.fittedvalues)
+   
+   #y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
    plt.clf()
-   plt.plot(X_short_parallel_array,real_vis_data_sorted_array,label='data',linestyle='None',marker='.')
-   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS")
+   plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='data',linestyle='None',marker='.')
+   #plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS",linestyle='--',marker='None')
    map_title="Data and OLS fit" 
    plt.xlabel("X")
    plt.ylabel("y")
    plt.legend(loc=1)
-   plt.text(x_pos, y_pos, fit_string)
+   #plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
    fig_name= "x_y_OLS_plot_%s_MHz%s.png" % (freq_MHz,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
    print "saved %s" % fig_name  
+   
+   return t_sky_K,t_sky_error_K
            
 def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,weighted=True):
    
@@ -1845,23 +1950,23 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
       print("ratio between beam_weighted_av_sky %0.4E K and t_sky_wieghted_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_weighted_K,t_sky_weighted_error_K,ratio)) 
   
   
-   #forget this angular info stuff, it doesnt work (or make sense to begin with)
-   if include_angular_info:
-      if n_baselines_included > 0:
-         H_matrix = np.column_stack((X_short_parallel_array.real,Y_short_parallel_angular_array.real))
-         theta_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),real_vis_data_sorted[0:n_baselines_included])
-         print "theta_hat"
-         print theta_hat
-         t_sky_global_K = theta_hat[0] * jy_to_K
-         t_sky_ang_K = theta_hat[1] * jy_to_K
-         print "t_sky_global_K is %E K" % t_sky_global_K
-         print "t_sky_ang_K is %E K" % t_sky_ang_K
-      else:
-         t_sky_global_K = np.nan
-         t_sky_ang_K = np.nan
-   else:
-      t_sky_global_K = np.nan
-      t_sky_ang_K = np.nan
+   #Don't do this here, just save Y as above and then use random intercept LS regression later (Y is used to group X ....)
+   #if include_angular_info:
+   #   if n_baselines_included > 0:
+   #      H_matrix = np.column_stack((X_short_parallel_array.real,Y_short_parallel_angular_array.real))
+   #      theta_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(H_matrix.T,H_matrix)),H_matrix.T),real_vis_data_sorted[0:n_baselines_included])
+   #      print "theta_hat"
+   #      print theta_hat
+   #      t_sky_global_K = theta_hat[0] * jy_to_K
+   #      t_sky_ang_K = theta_hat[1] * jy_to_K
+   #      print "t_sky_global_K is %E K" % t_sky_global_K
+   #      print "t_sky_ang_K is %E K" % t_sky_ang_K
+   #   else:
+   #      t_sky_global_K = np.nan
+   #      t_sky_ang_K = np.nan
+   #else:
+   #   t_sky_global_K = np.nan
+   #   t_sky_ang_K = np.nan
    
    return(t_sky_K,t_sky_error_K,beam_weighted_av_sky,n_baselines_included,t_sky_weighted_K,t_sky_weighted_error_K)
    
@@ -1896,9 +2001,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,signal_type_list,sky_model,
    #print "saved figure: %s" % figname
    #plt.close()    
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,weighted=True):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,weighted=True,model_type='OLS_fixed_intercept'):
 
+   
    lst_string = '_'.join(lst_hrs_list)
+   lst_hrs = lst_hrs_list[0]
    
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1932,28 +2039,37 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    
    t_sky_measured_array = np.full(len(freq_MHz_list),np.nan)
    t_sky_measured_error_array = np.full(len(freq_MHz_list),np.nan)
+   
+   #this replaces all the matrix stuff you do in model_tsky_from_saved_data
+   for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+      
+      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type)
+      t_sky_measured_array[freq_MHz_index] = t_sky_measured
+      t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
+
+
    t_sky_theoretical_array = np.full(len(freq_MHz_list),np.nan)
    n_baselines_used_array = np.full(len(freq_MHz_list),np.nan)
    
    #for including angular info:
-   t_sky_measured_global_array = np.full(len(freq_MHz_list),np.nan)
-   t_sky_measured_angular_array = np.full(len(freq_MHz_list),np.nan)
+   #t_sky_measured_global_array = np.full(len(freq_MHz_list),np.nan)
+   #t_sky_measured_angular_array = np.full(len(freq_MHz_list),np.nan)
    #for including weights
    t_sky_measured_weighted_array = np.full(len(freq_MHz_list),np.nan)
    t_sky_measured_weighted_error_array = np.full(len(freq_MHz_list),np.nan)
    
-   t_sky_measured_array_filename = "t_sky_measured_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
-   t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
+   t_sky_measured_array_filename = "t_sky_measured_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    t_sky_theoretical_array_filename = "t_sky_theoretical_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    n_baselines_used_array_filename = "n_baselines_used_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    
-   #for including angular info:
-   t_sky_measured_global_array_filename = "t_sky_measured_global_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
-   t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
+   ##for including angular info:
+   #t_sky_measured_global_array_filename = "t_sky_measured_global_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
+   #t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    
    #for including weights:
-   t_sky_measured_weighted_array_filename = "t_sky_measured_weighted_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
-   t_sky_measured_weighted_error_array_filename = "t_sky_measured_weighted_error_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
+   t_sky_measured_weighted_array_filename = "t_sky_measured_weighted_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   t_sky_measured_weighted_error_array_filename = "t_sky_measured_weighted_error_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    
    
    if not plot_only:
@@ -1976,13 +2092,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
          np.save(t_sky_measured_weighted_array_filename,t_sky_measured_weighted_array)
          np.save(t_sky_measured_weighted_error_array_filename,t_sky_measured_weighted_error_array) 
          
-   t_sky_measured_array = np.load(t_sky_measured_array_filename)
-   t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+   #t_sky_measured_array = np.load(t_sky_measured_array_filename)
+   #t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
    t_sky_theoretical_array = np.load(t_sky_theoretical_array_filename)
    n_baselines_used_array = np.load(n_baselines_used_array_filename)
-   if include_angular_info:
-      t_sky_measured_global_array = np.load(t_sky_measured_global_array_filename)
-      t_sky_measured_angular_array = np.load(t_sky_measured_angular_array_filename)
+   #if include_angular_info:
+   #   t_sky_measured_global_array = np.load(t_sky_measured_global_array_filename)
+   #   t_sky_measured_angular_array = np.load(t_sky_measured_angular_array_filename)
    if weighted:
       t_sky_measured_weighted_array = np.load(t_sky_measured_weighted_array_filename)
       t_sky_measured_weighted_error_array = np.load(t_sky_measured_weighted_error_array_filename)
@@ -2046,8 +2162,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    plt.plot(freq_MHz_list,t_sky_theoretical_array,label='theoretical')
    if 'diffuse_global' in signal_type_list:
       plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
-   if include_angular_info:
-      plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
+   #if include_angular_info:
+   #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
    if weighted:
       print t_sky_measured_weighted_array
       plt.plot(freq_MHz_list,t_sky_measured_weighted_array,label='weighted')
@@ -2056,7 +2172,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    plt.ylabel("t_sky (K)")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "t_sky_measured_lsts_%s%s.png" % (lst_string,signal_type_postfix)
+   fig_name= "t_sky_measured_lsts_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
@@ -2085,36 +2201,36 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    
    
    #repeat for using angular info
-   if include_angular_info:
-      #subtract a polynomial fit
-      #in log log space:
-      sky_array = t_sky_measured_array[t_sky_measured_array>0.]
-      log_sky_array = np.log10(sky_array)
-      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
-      log_freq_MHz_array = np.log10(freq_array_cut)
-      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
-      ffit = poly.polyval(log_freq_MHz_array, coefs)
-      ffit_linear = 10**ffit
-      
-      #log_residual = log_signal_array_short_baselines - log_ffit
-      residual_of_log_fit_glob_ang = ffit_linear - sky_array
-      
-      rms_of_residuals_glob_ang = np.sqrt(np.mean(residual_of_log_fit_glob_ang**2))
-      print("rms_of_residuals_glob_ang is %0.3f K" % rms_of_residuals_glob_ang)
+   #if include_angular_info:
+   #   #subtract a polynomial fit
+   #   #in log log space:
+   #   sky_array = t_sky_measured_array[t_sky_measured_array>0.]
+   #   log_sky_array = np.log10(sky_array)
+   #   freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+   #   log_freq_MHz_array = np.log10(freq_array_cut)
+   #   coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+   #   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   #   ffit_linear = 10**ffit
+   #   
+   #   #log_residual = log_signal_array_short_baselines - log_ffit
+   #   residual_of_log_fit_glob_ang = ffit_linear - sky_array
+   #   
+   #   rms_of_residuals_glob_ang = np.sqrt(np.mean(residual_of_log_fit_glob_ang**2))
+   #   print("rms_of_residuals_glob_ang is %0.3f K" % rms_of_residuals_glob_ang)
    
    
    
    plt.clf()
    plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
-   if include_angular_info:
-      plt.plot(freq_array_cut,residual_of_log_fit_glob_ang,label='residual of glob ang')
+   #if include_angular_info:
+   #   plt.plot(freq_array_cut,residual_of_log_fit_glob_ang,label='residual of glob ang')
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("freq (MHz)")
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    plt.ylim([y_min, y_max])
-   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
+   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s_%s.png" % (poly_order,lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
@@ -2127,7 +2243,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    plt.ylim([y_min, y_max])
-   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
+   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lsts_%s%s_%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
@@ -2140,7 +2256,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,signal_type_list,sky
    plt.ylabel("number of baselines")
    #plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "n_baselines_included_lsts_%s%s.png" % (lst_string,signal_type_postfix)
+   fig_name= "n_baselines_included_lsts_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
@@ -7043,16 +7159,23 @@ lst_hrs_list = ['2']
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 baseline_length_thresh_lambda = 0.5
-plot_only = False  
-include_angular_info = False
-weighted = True
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,weighted=weighted)
+plot_only = True  
+include_angular_info = True
+weighted = False
+#model_type = 'OLS_with_intercept'
+#model_type = 'mixedlm'
+#model_type = 'OLS_fixed_intercept' 
+model_type = 'WLS'
+#look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,weighted=weighted,model_type=model_type)
 
-model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
+#model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
 #take a look at MLE https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
 #especially just looking at your data
 #try OLS and WLS from here:
 # https://www.statsmodels.org/dev/examples/notebooks/generated/ols.html
+#mixed LM? no since all baselines see all sky vectors the matrices get too big!
+#https://www.statsmodels.org/dev/examples/notebooks/generated/mixed_lm_example.html
 # https://www.statsmodels.org/dev/examples/notebooks/generated/wls.html
 
 
