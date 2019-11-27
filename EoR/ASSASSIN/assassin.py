@@ -7218,8 +7218,8 @@ lst_hrs_list = ['2']
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 2.0
-plot_only = True  
+baseline_length_thresh_lambda = 0.25
+plot_only = False  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
