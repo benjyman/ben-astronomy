@@ -1717,6 +1717,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    beam_max = np.max(short_dipole_parallel_beam_map)
    short_dipole_parallel_beam_map = short_dipole_parallel_beam_map / beam_max
    
+   #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
    baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
    
    baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0.
@@ -1949,28 +1950,29 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       print("saved %s" % Y_short_parallel_angular_array_filename)
    
    
-   #normalise both X and real vis to max 1
-   X_short_parallel_array_max = np.max(X_short_parallel_array)
-   print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
-   X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
-   
-   real_vis_data_sorted_max = np.max(real_vis_data_sorted[0:n_baselines_included])
-   print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
-   real_vis_data_sorted_norm = real_vis_data_sorted[0:n_baselines_included] / real_vis_data_sorted_max
-   
-   plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
-   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_norm,s=1,label='real vis norm')
-   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-   map_title="X vs uvdistance" 
-   plt.xlabel("uv-distance (lambda)")
-   plt.ylabel("X")
-   plt.legend(loc=1)
-   #plt.ylim([0, 20])
-   fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   ##normalise both X and real vis to max 1
+   ##Don't need to do this plot here anymore, it is done later (so that it can be done in plot_only mode)
+   #X_short_parallel_array_max = np.max(X_short_parallel_array)
+   #print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
+   #X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
+   #
+   #real_vis_data_sorted_max = np.max(real_vis_data_sorted[0:n_baselines_included])
+   #print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
+   #real_vis_data_sorted_norm = real_vis_data_sorted[0:n_baselines_included] / real_vis_data_sorted_max
+   #
+   #plt.clf()
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_norm,s=1,label='real vis norm')
+   ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   #map_title="X vs uvdistance" 
+   #plt.xlabel("uv-distance (lambda)")
+   #plt.ylabel("X")
+   #plt.legend(loc=1)
+   ##plt.ylim([0, 20])
+   #fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print "saved %s" % fig_name 
    
    
    #plot X_short_parallel_array vs uvdist
