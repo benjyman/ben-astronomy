@@ -7227,7 +7227,7 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-freq_MHz_list = [50]
+freq_MHz_list = [50.]
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
 #model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
