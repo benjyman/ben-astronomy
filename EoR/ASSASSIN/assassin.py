@@ -147,7 +147,7 @@ pol_list = ['X']
 signal_type_list=['diffuse_global']
 #signal_type_list=['diffuse']
 #gsm_smooth_poly_order = 5
-poly_order = 8
+poly_order = 5
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -1308,7 +1308,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array_label,model_type):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type):
    
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1342,17 +1342,56 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    
    wavelength = 300./float(freq_MHz)
 
-   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    X_short_parallel_array = np.load(X_short_parallel_array_filename).real
    print("loaded %s" % X_short_parallel_array_filename)
       
-   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
+   
+   ##plot X_vs_uvdist for vis and X
+   #normalise both X and real vis to max 1
+   X_short_parallel_array_max = np.max(X_short_parallel_array)
+   print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
+   X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
+   
+   #[0:n_baselines_included]
+   real_vis_data_sorted_max = np.max(real_vis_data_sorted_array)
+   print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
+   real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
+   
+   #offset X and real_vis by some arbitrary amount 0.5?
+   real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
+   
+   baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
+   print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
+   
+   ## plot X and real vis vs baseline length
+   plt.clf()
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
+   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="X vs uvdistance" 
+   plt.xlabel("uv-distance (lambda)")
+   plt.ylabel("X")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   ##
+   
+   
+   
+   
+   
    #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
    
-   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
    print("loaded %s" % Y_short_parallel_angular_array_filename)
    
@@ -1360,7 +1399,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,signal_type_list,sky_model,array
    plt.clf()
    n, bins, patches = plt.hist(Y_short_parallel_angular_array)
    map_title="Histogram of Y values (angular response)" 
-   fig_name= "hist_Y_angular_%s_MHz%s.png" % (freq_MHz,signal_type_postfix)
+   fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
@@ -1537,7 +1576,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #open one uvfits file to get n_timesteps
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
-   uvfits_filename = "%s_LST_%03d_X_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,freq_MHz,signal_type_postfix)
+   uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
    visibilities = uvtable['DATA']
@@ -1548,7 +1587,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    uvfits_filename_list = []
    for lst_hrs in lst_hrs_list:
       lst_deg = (float(lst_hrs)/24.)*360.
-      uvfits_filename = "%s_LST_%03d_X_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,freq_MHz,signal_type_postfix)
+      uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
       uvfits_filename_list.append(uvfits_filename)
    
    real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
@@ -1616,6 +1655,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
    print("n_baselines_included %s" % n_baselines_included)
    
+   #save the baseline length array sorted
+   baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
+   print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
+   
    UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
    VV_m_array_sorted = VV_m_array[baseline_length_array_m_inds]
    real_vis_data_sorted = real_vis_data[baseline_length_array_m_inds]
@@ -1633,12 +1677,17 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #print theta_array[0:10]
    #print phi_array[0:10]
+   
+   #changing the pol broke things ....
    ##This is for YY dipole: !
-   if (pol=='Y'):
-      theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
-   else:
-      #This is for XX dipole!
-      theta_parallel_array=np.arccos(np.sin(theta_array)*np.sin(phi_array)) 
+   #if (pol=='Y'):
+   #   theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   #else:
+   #   #This is for XX dipole!
+   #   theta_parallel_array=np.arccos(np.sin(theta_array)*np.sin(phi_array)) 
+   
+   theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   
    d_in_lambda = (2. * dipole_height_m)/wavelength
    gp_effect_array = 2.*np.sin(np.pi*d_in_lambda*np.cos(theta_array))
    voltage_parallel_array=np.sin(theta_parallel_array) * gp_effect_array
@@ -1653,13 +1702,22 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
    
+   baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0.
+   baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.
+   
    #print baseline_phi_rad_array[0:10]
    #print baseline_phi_rad_array.shape
    baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
 
    baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+   baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
+   baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
 
    baseline_vector_array = baseline_vector_array_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   
+   
    #print baseline_vector_array.shape
    #print np.linalg.norm(baseline_vector_array[1])
 
@@ -1668,6 +1726,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    baseline_vector_array = baseline_vector_array[0:n_baselines_included]
    X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
    Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
+   
+   X_short_parallel_array_pure_parallel = np.empty(len(baseline_vector_array),dtype=complex)
+   X_short_parallel_array_pure_inline = np.empty(len(baseline_vector_array),dtype=complex)
+   
    
    #plot amp vs uvdistance for simulated data
    plt.clf()
@@ -1678,7 +1740,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    plt.ylabel("real vis")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "real_vis_vs_uv_dist_%d_MHz%s.png" % (freq_MHz,signal_type_postfix)
+   fig_name= "real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
@@ -1782,7 +1844,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #baseline_vector_test = baseline_vector_array[0]
       
       baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
-      baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
+      
+      baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
+      baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
+      
+      #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
       #print baseline_vector_for_dot_array_mag
    
       #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
@@ -1790,10 +1856,21 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
       #print b_dot_r.shape
       
+      b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
+      b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
+      
+      
       phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+      
+      phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
+      phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
+      
       
       #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
       element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+      
+      element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+      element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
       
       #for angular info
       if include_angular_info:
@@ -1808,6 +1885,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       
       #this one gives approximately the right answer ....
       X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+      
+      X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+      X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+
+
       if include_angular_info:
          Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
       
@@ -1819,35 +1901,56 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #only interested in the real component (that has the global signal)
       X_short_parallel_array[baseline_vector_index] = X_short_parallel
       
+      X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+      X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+      
+      
       if include_angular_info:
          Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
       
    #print X_short_parallel_array
    #save X_short_parallel_array
-   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    np.save(X_short_parallel_array_filename,X_short_parallel_array)
    print("saved %s" % X_short_parallel_array_filename)
+
+   X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
+   print("saved %s" % X_short_parallel_array_filename_pure_inline)
    
-   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+   X_short_parallel_array_filename_pure_paralell = "X_short_parallel_array_pure_paralell_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   np.save(X_short_parallel_array_filename_pure_paralell,X_short_parallel_array_pure_paralell)
+   print("saved %s" % X_short_parallel_array_filename_pure_paralell)
+   
+   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
    print("saved %s" % real_vis_data_sorted_array_filename)
    
    if include_angular_info:
-      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz%s.npy" % (freq_MHz,signal_type_postfix)
+      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
       np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
       print("saved %s" % Y_short_parallel_angular_array_filename)
    
    
+   #normalise both X and real vis to max 1
+   X_short_parallel_array_max = np.max(X_short_parallel_array)
+   print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
+   X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
+   
+   real_vis_data_sorted_max = np.max(real_vis_data_sorted[0:n_baselines_included])
+   print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
+   real_vis_data_sorted_norm = real_vis_data_sorted[0:n_baselines_included] / real_vis_data_sorted_max
+   
    plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array,s=1,label='X')
-   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted[0:n_baselines_included],s=1,label='real vis')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_norm,s=1,label='real vis norm')
    #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
    map_title="X vs uvdistance" 
    plt.xlabel("uv-distance (lambda)")
    plt.ylabel("X")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "X_vs_uv_dist_%d_MHz%s.png" % (freq_MHz,signal_type_postfix)
+   fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
@@ -2029,7 +2132,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #this replaces all the matrix stuff you do in model_tsky_from_saved_data
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       
-      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type)
+      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type)
       t_sky_measured_array[freq_MHz_index] = t_sky_measured
       t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
   
@@ -7098,8 +7201,8 @@ lst_hrs_list = ['2']
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 0.5
-plot_only = False  
+baseline_length_thresh_lambda = 2.0
+plot_only = True  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
@@ -7107,6 +7210,7 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
+freq_MHz_list = [50]
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
 #model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
