@@ -1389,9 +1389,9 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    ## plot X and real vis vs baseline length
    plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X')
-   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='X parallel')
-   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='X inline')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array,s=1,label='X')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_pure_parallel,label='X parallel')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_pure_inline,label='X inline')
    #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
    #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
    map_title="X vs uvdistance" 
