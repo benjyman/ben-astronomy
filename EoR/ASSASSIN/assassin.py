@@ -1387,6 +1387,8 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
    print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
    
+   #plot X and pure inline and parallel for fig 1 of paper
+   
    ## plot X and real vis vs baseline length
    plt.clf()
    plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array,s=1,label='X')
@@ -1404,6 +1406,23 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
    ##
+   
+   ## plot X and real vis vs baseline length for fig2
+   
+   plt.clf()
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis offset')
+   #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="X vs uvdistance" 
+   plt.xlabel("uv-distance (lambda)")
+   plt.ylabel("X")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "X_and_real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name 
+   
    
    
    #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
