@@ -1347,11 +1347,11 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    print("loaded %s" % X_short_parallel_array_filename)
     
    X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
-   X_short_parallel_array = np.load(X_short_parallel_array_filename_pure_parallel).real
+   X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
    print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
 
    X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
-   X_short_parallel_array = np.load(X_short_parallel_array_filename_pure_inline).real
+   X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
    print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
    
