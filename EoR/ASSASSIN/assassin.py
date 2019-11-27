@@ -1345,7 +1345,16 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    X_short_parallel_array = np.load(X_short_parallel_array_filename).real
    print("loaded %s" % X_short_parallel_array_filename)
-      
+    
+   X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array = np.load(X_short_parallel_array_filename_pure_parallel).real
+   print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
+
+   X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array = np.load(X_short_parallel_array_filename_pure_inline).real
+   print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
+   
+   
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
@@ -1356,6 +1365,15 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_short_parallel_array_max = np.max(X_short_parallel_array)
    print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
    X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
+   
+   X_short_parallel_array_max_pure_inline = np.max(X_short_parallel_array_pure_inline)
+   print("X_short_parallel_array_max_pure_inline %E" % X_short_parallel_array_max_pure_inline)
+   X_short_parallel_array_norm_pure_inline = X_short_parallel_array_pure_inline / X_short_parallel_array_max_pure_inline
+
+   X_short_parallel_array_max_pure_parallel = np.max(X_short_parallel_array_pure_parallel)
+   print("X_short_parallel_array_max_pure_parallel %E" % X_short_parallel_array_max_pure_parallel)
+   X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_parallel  
+   
    
    #[0:n_baselines_included]
    real_vis_data_sorted_max = np.max(real_vis_data_sorted_array)
@@ -1371,8 +1389,10 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    ## plot X and real vis vs baseline length
    plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
-   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='X parallel')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='X inline')
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
    #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
    map_title="X vs uvdistance" 
    plt.xlabel("uv-distance (lambda)")
@@ -1384,9 +1404,6 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
    ##
-   
-   
-   
    
    
    #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
@@ -1918,7 +1935,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
    print("saved %s" % X_short_parallel_array_filename_pure_inline)
    
-   X_short_parallel_array_filename_pure_paralell = "X_short_parallel_array_pure_paralell_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    np.save(X_short_parallel_array_filename_pure_paralell,X_short_parallel_array_pure_paralell)
    print("saved %s" % X_short_parallel_array_filename_pure_paralell)
    
