@@ -1936,8 +1936,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    print("saved %s" % X_short_parallel_array_filename_pure_inline)
    
    X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
-   np.save(X_short_parallel_array_filename_pure_paralell,X_short_parallel_array_pure_paralell)
-   print("saved %s" % X_short_parallel_array_filename_pure_paralell)
+   np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
+   print("saved %s" % X_short_parallel_array_filename_pure_parallel)
    
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
