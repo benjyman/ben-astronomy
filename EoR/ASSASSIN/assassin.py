@@ -143,9 +143,9 @@ sky_model = 'gsm'
 pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['global']
+#signal_type_list=['global']
 #signal_type_list=['diffuse_global']
-#signal_type_list=['diffuse']
+signal_type_list=['global']
 #gsm_smooth_poly_order = 5
 poly_order = 5
 #freq_MHz_list = np.arange(50,200,1)
@@ -1544,10 +1544,10 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    plt.clf()
    plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='data',linestyle='None',marker='.')
-   #plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS",linestyle='--',marker='None')
-   map_title="Data and OLS fit" 
-   plt.xlabel("X")
-   plt.ylabel("y")
+   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS",linestyle='--',marker='None')
+   map_title="Data and fit" 
+   plt.xlabel("Expected global signal response")
+   plt.ylabel("Vis amplitude")
    plt.legend(loc=1)
    #plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
@@ -1738,8 +1738,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
    #TRY it!
-   baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
-   #baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
+   #baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
+   baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
    
    if pol == 'Y':
       baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
@@ -7236,6 +7236,9 @@ s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c
 
 #lst_hrs_list = ['2.2','2.4','2.6']
 lst_hrs_list = ['2']
+
+freq_MHz_list=[50.]
+
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
@@ -7245,7 +7248,7 @@ lst_hrs_list = ['2']
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 0.50
+baseline_length_thresh_lambda = 0.25
 plot_only = False  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
@@ -7253,7 +7256,7 @@ include_angular_info = True
 model_type = 'OLS_fixed_intercept' 
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
-#freq_MHz_list=[50.]
+
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
