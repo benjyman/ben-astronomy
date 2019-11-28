@@ -143,8 +143,8 @@ sky_model = 'gsm'
 pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-#signal_type_list=['global']
-signal_type_list=['diffuse_global']
+signal_type_list=['global']
+#signal_type_list=['diffuse_global']
 #signal_type_list=['diffuse']
 #gsm_smooth_poly_order = 5
 poly_order = 5
@@ -1362,18 +1362,18 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    ##plot X_vs_uvdist for vis and X
    #normalise both X and real vis to max 1
-   X_short_parallel_array_max = np.max(X_short_parallel_array)
-   print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
-   X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max
-   
+
    X_short_parallel_array_max_pure_inline = np.max(X_short_parallel_array_pure_inline)
    print("X_short_parallel_array_max_pure_inline %E" % X_short_parallel_array_max_pure_inline)
    X_short_parallel_array_norm_pure_inline = X_short_parallel_array_pure_inline / X_short_parallel_array_max_pure_inline
-
+   
    X_short_parallel_array_max_pure_parallel = np.max(X_short_parallel_array_pure_parallel)
    print("X_short_parallel_array_max_pure_parallel %E" % X_short_parallel_array_max_pure_parallel)
-   X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_parallel  
-   
+   X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_inline  
+
+   X_short_parallel_array_max = np.max(X_short_parallel_array)
+   print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
+   X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max_pure_inline
    
    #[0:n_baselines_included]
    real_vis_data_sorted_max = np.max(real_vis_data_sorted_array)
@@ -1391,14 +1391,14 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    ## plot X and real vis vs baseline length
    plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array,s=1,label='X')
-   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_pure_parallel,label='X parallel')
-   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_pure_inline,label='X inline')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color='red')
+   plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='inline',color='green')
    #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
    #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-   map_title="X vs uvdistance" 
-   plt.xlabel("uv-distance (lambda)")
-   plt.ylabel("X")
+   map_title="Response to uniform sky vs baseline length" 
+   plt.xlabel("Baseline length (wavelengths)")
+   plt.ylabel("Normalised visibility amplitude")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
    fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
@@ -1410,12 +1410,12 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    ## plot X and real vis vs baseline length for fig2
    
    plt.clf()
-   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='X norm')
-   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis offset')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='Scaled simulated visibility amplitude')
    #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-   map_title="X vs uvdistance" 
-   plt.xlabel("uv-distance (lambda)")
-   plt.ylabel("X")
+   map_title="Response to uniform sky vs baseline length data" 
+   plt.xlabel("Baseline length (wavelengths)")
+   plt.ylabel("Visibility amplitude")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
    fig_name= "X_and_real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
@@ -1716,13 +1716,13 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #changing the pol broke things ....
    ##This is for YY dipole: !
-   #if (pol=='Y'):
-   #   theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
-   #else:
-   #   #This is for XX dipole!
-   #   theta_parallel_array=np.arccos(np.sin(theta_array)*np.sin(phi_array)) 
+   if (pol=='Y'):
+      theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   else:
+   #This is for XX dipole!
+      theta_parallel_array=np.arccos(np.sin(theta_array)*np.sin(phi_array)) 
    
-   theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   #theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
    
    d_in_lambda = (2. * dipole_height_m)/wavelength
    gp_effect_array = 2.*np.sin(np.pi*d_in_lambda*np.cos(theta_array))
@@ -1737,10 +1737,16 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    short_dipole_parallel_beam_map = short_dipole_parallel_beam_map / beam_max
    
    #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
+   #TRY it!
    baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
+   #baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
    
-   baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0.
-   baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.
+   if pol == 'Y':
+      baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
+      baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
+   else:
+      baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
+      baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
    
    #print baseline_phi_rad_array[0:10]
    #print baseline_phi_rad_array.shape
@@ -7239,7 +7245,7 @@ lst_hrs_list = ['2']
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 2.0
+baseline_length_thresh_lambda = 0.50
 plot_only = False  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
@@ -7247,6 +7253,7 @@ include_angular_info = True
 model_type = 'OLS_fixed_intercept' 
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
+#freq_MHz_list=[50.]
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
