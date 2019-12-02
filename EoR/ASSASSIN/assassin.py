@@ -143,7 +143,7 @@ sky_model = 'gsm'
 pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['global']
+signal_type_list=['diffuse','noise','global']
 #signal_type_list=['diffuse_global']
 #signal_type_list=['global']
 #gsm_smooth_poly_order = 5
@@ -7260,7 +7260,7 @@ lst_hrs_list = ['2']
 
 #freq_MHz_list=[50.]
 
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -7270,7 +7270,7 @@ lst_hrs_list = ['2']
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 baseline_length_thresh_lambda = 0.50
-plot_only = True  
+plot_only = False  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
