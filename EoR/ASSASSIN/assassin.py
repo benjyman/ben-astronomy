@@ -142,10 +142,10 @@ sky_model = 'gsm'
 #sky_model = 'gmoss'
 pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
-#signal_type_list=['global','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse','noise','global']
-#signal_type_list=['diffuse_global']
-#signal_type_list=['global']
+#signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
+#signal_type_list=['diffuse','noise','global']
+#signal_type_list=['diffuse_global','noise']
+signal_type_list=['global_EDGES','noise','diffuse_global']
 #gsm_smooth_poly_order = 5
 poly_order = 5
 #freq_MHz_list = np.arange(50,200,1)
@@ -305,6 +305,29 @@ def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    figmap.savefig(fig_name)
    print "saved %s" % fig_name
    return S_21
+   
+def plot_S21_EDGES(nu_array):
+   #Global signal
+   A_EDGES = 0.52
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
+   
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+   
+   plt.clf()
+   map_title="S_21 vs freq"
+   plt.plot(nu_array,S_21_EDGES)
+   plt.ylabel("Tb (K)")
+   plt.xlabel("freq (MHz)")
+   fig_name="s_21_EDGES_vs_freq.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   return S_21_EDGES
+
 
 def write_beam_fits_sin(cart_image,fitsname,lst=None):
    if lst==None:
@@ -1334,8 +1357,15 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
           signal_type_postfix += '_DA_%s' % sky_model
           concat_output_name_base_X += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
-       signal_type_postfix += '_G' 
-       concat_output_name_base_X += '_G' 
+       if 'global_EDGES' in signal_type_list:
+          print("cant have global and global_EDGES in signal_type_list")
+          sys.exit()
+       else:
+          signal_type_postfix += '_G' 
+          concat_output_name_base_X += '_G' 
+   if 'global_EDGES' in signal_type_list:
+       signal_type_postfix += '_ED' 
+       concat_output_name_base_X += '_ED' 
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
        concat_output_name_base_X += '_GE'
@@ -1585,8 +1615,15 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
           signal_type_postfix += '_DA_%s' % sky_model
           concat_output_name_base += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
-       signal_type_postfix += '_G' 
-       concat_output_name_base += '_G' 
+       if 'global_EDGES' in signal_type_list:
+          print("cant have global and global_EDGES in signal_type_list")
+          sys.exit()
+       else:
+          signal_type_postfix += '_G' 
+          concat_output_name_base += '_G' 
+   if 'global_EDGES' in signal_type_list:
+       signal_type_postfix += '_ED' 
+       concat_output_name_base += '_ED'
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
        concat_output_name_base += '_GE'
@@ -1835,8 +1872,19 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #gsm_map_angular_norm = gsm_map_angular / gsm_map_angular_abs_max
    
    if 'global' in signal_type_list:
-      global_signal_value = s_21_array[freq_MHz_index]
-      gsm_map += global_signal_value
+      if 'global_EDGES' in signal_type_list:
+         print("cant have global and global edges in signal_type_list")
+         sys.exit()
+      else:
+         global_signal_value = s_21_array[freq_MHz_index]
+         gsm_map += global_signal_value
+   if 'global_EDGES' in signal_type_list:
+      if 'global' in signal_type_list:
+         print("cant have global and global edges in signal_type_list")
+         sys.exit()
+      else:
+         global_signal_value = s_21_array_EDGES[freq_MHz_index]
+         gsm_map += global_signal_value
    if 'diffuse' in signal_type_list:
       gsm_map += ov.generate(freq_MHz)
    if 'diffuse_global' in signal_type_list:
@@ -2133,8 +2181,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
           signal_type_postfix += '_DA_%s' % sky_model
           concat_output_name_base += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
-       signal_type_postfix += '_G' 
-       concat_output_name_base += '_G' 
+       if 'global_EDGES' in signal_type_list:
+          print('cant have global_EDGES and global in signal_type_list')
+          sys.exit()
+       else:
+          signal_type_postfix += '_G' 
+          concat_output_name_base += '_G' 
+   if 'global_EDGES' in signal_type_list:
+       signal_type_postfix += '_ED' 
+       concat_output_name_base += '_ED' 
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
        concat_output_name_base += '_GE'
@@ -2250,15 +2305,18 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    plt.clf()
    plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
    plt.plot(freq_MHz_list,t_sky_theoretical_array,label='input')
-   if 'diffuse_global' in signal_type_list:
-      plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
+   #if 'diffuse_global' in signal_type_list:
+   #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    #if include_angular_info:
    #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
 
    map_title="t_sky measured" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Sky temperature (K)")
-   plt.legend(loc='lower right')
+   if ('diffuse_global' or 'diffuse' or 'diffuse_angular' in signal_type_list):
+      plt.legend(loc='upper right')
+   else:
+      plt.legend(loc='lower right')
    #plt.ylim([0, 20])
    fig_name= "t_sky_measured_lsts_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
@@ -5020,8 +5078,15 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          concat_output_name_base_X += '_DA_%s' % sky_model
          concat_output_name_base_Y += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
-       concat_output_name_base_X += '_G' 
-       concat_output_name_base_Y += '_G'
+       if 'global_EDGES' in signal_type_list:
+          print("cant have global_EGES and global in signal_type_list")
+          sys.exit()
+       else:
+          concat_output_name_base_X += '_G' 
+          concat_output_name_base_Y += '_G'
+   if 'global_EDGES' in signal_type_list:
+       concat_output_name_base_X += '_ED' 
+       concat_output_name_base_Y += '_ED'
    if 'gain_errors' in signal_type_list:
        concat_output_name_base_X += '_GE'
        concat_output_name_base_Y += '_GE'
@@ -5384,7 +5449,10 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          ########
          #Repeat the above for the global signal
          #make an all sky global signal map here too:
-         s_21_value = s_21_array[freq_MHz_index]
+         if 'global_EDGES' in signal_type_list:
+            s_21_value = s_21_array_EDGES[freq_MHz_index]
+         else:
+            s_21_value = s_21_array[freq_MHz_index]
          s_21_hpx_map = gsm_map * 0.0 + s_21_value
          
          cmd = "rm -rf %s %s" % (global_signal_hpx_fits_name,reprojected_global_signal_im_name)
@@ -5770,6 +5838,36 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                os.system(cmd)
                
                base_vis_name = out_vis_name
+
+            if 'global_EDGES' in signal_type_list:
+            
+               model_vis_name_base += '_ED'
+               out_vis_name = model_vis_name_base + '.vis'
+            
+               cmd = "rm -rf %s" % out_vis_name
+               print(cmd)
+               os.system(cmd)
+               
+               cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (base_vis_name,apparent_global_signal_im_name,out_vis_name)
+               print(cmd)
+               os.system(cmd)
+               
+               #cmd = "rm -rf %s" % model_global_signal_uvfits
+               #print(cmd)
+               #os.system(cmd)
+            
+               #cmd = "fits in=%s out=%s op=uvout" % (model_global_signal_vis,model_global_signal_uvfits)
+               #print(cmd)
+               #os.system(cmd)
+   
+               
+               #remove the previous base_vis
+               cmd = "rm -rf %s" % base_vis_name
+               print(cmd)
+               os.system(cmd)
+               
+               base_vis_name = out_vis_name
+               
         
             if 'gain_errors' in signal_type_list:
                model_vis_name_base += '_GE'
@@ -6077,6 +6175,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                model_vis_name_base += '_D_%s' % sky_model
             if 'global' in signal_type_list:
                model_vis_name_base += '_G' 
+            if 'global_EDGES' in signal_type_list:
+               model_vis_name_base += '_ED' 
             if 'gain_errors' in signal_type_list:
                model_vis_name_base += '_GE'
             
@@ -7236,6 +7336,7 @@ def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circ
 
 #calculate the global 21cm signal:
 s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
+s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 
 #assassin:
 #simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length=0.325)
