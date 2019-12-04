@@ -141,11 +141,12 @@ sky_model = 'gsm'
 #sky_model = 'gsm2016'
 #sky_model = 'gmoss'
 pol_list = ['X']
+#pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-#signal_type_list=['diffuse','noise','global']
+signal_type_list=['diffuse_global','global_EDGES','noise']
 #signal_type_list=['diffuse_global','noise']
-signal_type_list=['global_EDGES','noise','diffuse_global']
+#signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
 poly_order = 5
 #freq_MHz_list = np.arange(50,200,1)
@@ -1565,21 +1566,21 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    t_sky_K = jy_to_K * t_sky_jy
    t_sky_error_K = jy_to_K * t_sky_error_jy
    print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
-   fit_string = "y=%0.6fx, t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+   fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
   
    #plot 
    
-   #y_pos = np.max(results.fittedvalues)
+   y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
    plt.clf()
-   plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='data',linestyle='None',marker='.')
-   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS",linestyle='--',marker='None')
+   plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='simulated data',linestyle='None',marker='.')
+   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    map_title="Data and fit" 
-   plt.xlabel("Expected global signal response")
-   plt.ylabel("Vis amplitude")
+   plt.xlabel("Expected global-signal response")
+   plt.ylabel("Real component of visibility (Jy)")
    plt.legend(loc=1)
-   #plt.text(x_pos, y_pos, fit_string)
+   plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
    fig_name= "x_y_OLS_plot_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
    figmap = plt.gcf()
@@ -2150,6 +2151,55 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #print "saved figure: %s" % figname
    #plt.close()    
 
+def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False):
+
+   pol = pol_list[0]
+   
+   lst_string = '_'.join(lst_hrs_list)
+   lst_hrs = lst_hrs_list[0]
+   
+   concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
+   output_prefix = "%s" % (array_label)
+   signal_type_postfix = ''
+   if 'noise' in signal_type_list:
+       signal_type_postfix += '_N'
+       concat_output_name_base += '_N'
+   if 'diffuse' in signal_type_list:
+       signal_type_postfix += '_D_%s' % sky_model
+       concat_output_name_base += '_D_%s' % sky_model
+   if 'diffuse_global' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse global at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DG_%s' % sky_model
+          concat_output_name_base += '_DG_%s' % sky_model
+   if 'diffuse_angular' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse angular at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DA_%s' % sky_model
+          concat_output_name_base += '_DA_%s' % sky_model
+   if 'global' in signal_type_list:
+       if 'global_EDGES' in signal_type_list:
+          print('cant have global_EDGES and global in signal_type_list')
+          sys.exit()
+       else:
+          signal_type_postfix += '_G' 
+          concat_output_name_base += '_G' 
+   if 'global_EDGES' in signal_type_list:
+       signal_type_postfix += '_ED' 
+       concat_output_name_base += '_ED' 
+   if 'gain_errors' in signal_type_list:
+       signal_type_postfix += '_GE'
+       concat_output_name_base += '_GE'
+
+
+   t_sky_measured_array_filename = "t_sky_measured_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   
+
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept'):
 
    pol = pol_list[0]
@@ -2313,7 +2363,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    map_title="t_sky measured" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Sky temperature (K)")
-   if ('diffuse_global' or 'diffuse' or 'diffuse_angular' in signal_type_list):
+   if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
+      print signal_type_list
       plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
@@ -7361,7 +7412,7 @@ lst_hrs_list = ['2']
 
 #freq_MHz_list=[50.]
 
-simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -7380,7 +7431,15 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'OLS_global_angular'
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
+#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
+
+joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
+
+
+
+
+
+
 
 #model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
 #take a look at MLE https://towardsdatascience.com/a-gentle-introduction-to-maximum-likelihood-estimation-9fbff27ea12f
@@ -7479,4 +7538,19 @@ plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_li
 #######
 #no longer used:
 #compute_weights(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model)
+
+
+#Grid seach, maybe I want to do this:
+#from sklearn.grid_search import ParameterGrid
+#param_grid = {'param1': [value1, value2, value3], 'paramN' : [value1, value2, valueM]}
+#grid = ParameterGrid(param_grid)
+#for params in grid:
+#    your_function(params['param1'], params['param2'])
+
+#Or see: https://stackoverflow.com/questions/13370570/elegant-grid-search-in-python-numpy
+
+#Actually - this is pretty helpful for cure fitting:
+#http://keflavich.github.io/astr2600_notebooks/Lecture23_DataFitting.html#/10
+
+
 
