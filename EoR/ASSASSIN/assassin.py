@@ -295,7 +295,7 @@ def global_sig_func(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    S_21 = C*nu_array + A*np.exp(-(nu_array - nu_c)**2/(2*(delta_nu)**2))
    return S_21
 
-def global_sig_EDGES_func(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.3,w_EDGES = 20.7):
+def global_sig_EDGES_func(nu_array,A_EDGES=0.52,tau_EDGES=6.5,nu_nought_EDGES=78.3,w_EDGES=20.7):
    B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
    S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
 
