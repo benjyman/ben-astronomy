@@ -36,6 +36,7 @@ import statsmodels.formula.api as smf
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import seaborn as sns
+from scipy.optimize import curve_fit
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -290,12 +291,18 @@ def cleanup_images_and_vis_assassin(array_label,lst,freq_MHz,pol):
    print cmd
    os.system(cmd)
 
+def global_sig_func(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
+   S_21 = C*nu_array + A*np.exp(-(nu_array - nu_c)**2/(2*(delta_nu)**2))
+   return S_21
 
-      
+def global_sig_EDGES_func(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.3,w_EDGES = 20.7):
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+
 def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    #Global signal
    #Use S_21 = C*nu + A*exp((nu - nu_c)**2/(2*delta_nu)**2)
-   S_21 = C*nu_array + A*np.exp(-(nu_array - nu_c)**2/(2*(delta_nu)**2))
+   S_21 = global_sig_func(nu_array,C,A,delta_nu,nu_c)
    plt.clf()
    map_title="S_21 vs freq"
    plt.plot(nu_array,S_21)
@@ -307,16 +314,12 @@ def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    print "saved %s" % fig_name
    return S_21
    
-def plot_S21_EDGES(nu_array):
-   #Global signal
-   A_EDGES = 0.52
-   tau_EDGES = 6.5
-   nu_nought_EDGES = 78.3
-   w_EDGES = 20.7
    
-   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.3,w_EDGES = 20.7):
    
-   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+   #B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   #S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+   S_21_EDGES = global_sig_EDGES_func(nu_array,A_EDGES,tau_EDGES,nu_nought_EDGES,w_EDGES)
    
    plt.clf()
    map_title="S_21 vs freq"
