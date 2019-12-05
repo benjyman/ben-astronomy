@@ -145,11 +145,12 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse_global','global_EDGES','noise']
 #signal_type_list=['diffuse_global','noise']
-#signal_type_list=['global_EDGES']
+#signal_type_list=['diffuse_global','noise']
+signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
-poly_order = 5
+#can be 5,6,or 7 for joint fitting
+poly_order = 7
 #freq_MHz_list = np.arange(50,200,1)
 start_chan=50
 n_chan=150
@@ -291,18 +292,76 @@ def cleanup_images_and_vis_assassin(array_label,lst,freq_MHz,pol):
    print cmd
    os.system(cmd)
 
-def global_sig_func(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
+def global_sig_func(nu_array,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    S_21 = C*nu_array + A*np.exp(-(nu_array - nu_c)**2/(2*(delta_nu)**2))
    return S_21
    
-def diffuse_global_foreground_func(poly_order):
-   print poly_order
+#def global_sig_EDGES_func(nu_array,A_EDGES=0.52,tau_EDGES=6.5,nu_nought_EDGES=78.3,w_EDGES=20.7):
+def global_sig_EDGES_func(nu_array,A_EDGES):
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
    
-
-def global_sig_EDGES_func(nu_array,A_EDGES=0.52,tau_EDGES=6.5,nu_nought_EDGES=78.3,w_EDGES=20.7):
    B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
    S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
    return S_21_EDGES
+   
+   #def diffuse_global_foreground_func(nu_array,coeff_list):
+def diffuse_global_foreground_func_order_5(nu_array,a0,a1,a2,a3,a4):
+   #polynomial = np.poly1d(coeff_array)
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5)
+   return polynomial
+
+def diffuse_global_foreground_func_order_6(nu_array,a0,a1,a2,a3,a4,a5):
+   #polynomial = np.poly1d(coeff_array)
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5) + a5 * nu_array**(5-2.5)
+   return polynomial
+
+def diffuse_global_foreground_func_order_7(nu_array,a0,a1,a2,a3,a4,a5,a6):
+   #polynomial = np.poly1d(coeff_array)
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5) + a5 * nu_array**(5-2.5) + a6 * nu_array**(6-2.5)
+   return polynomial   
+
+def global_sig_EDGES_and_diffuse_fg_func_order_5(nu_array,A_EDGES,a0,a1,a2,a3,a4):
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
+   
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5)
+
+   total_signal = S_21_EDGES + polynomial
+   return total_signal
+
+def global_sig_EDGES_and_diffuse_fg_func_order_6(nu_array,A_EDGES,a0,a1,a2,a3,a4,a5):
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
+   
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5) + a5 * nu_array**(5-2.5)
+
+   total_signal = S_21_EDGES + polynomial
+   return total_signal
+
+
+def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4,a5,a6):
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
+   
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+
+   polynomial = a0 * nu_array**(0-2.5) + a1 * nu_array**(1-2.5) + a2 * nu_array**(2-2.5) + a3 * nu_array**(3-2.5) + a4 * nu_array**(4-2.5) + a5 * nu_array**(5-2.5) + a6 * nu_array**(6-2.5)
+
+   total_signal = S_21_EDGES + polynomial
+   return total_signal
+     
    
 def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    #Global signal
@@ -324,7 +383,8 @@ def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.
    
    #B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
    #S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
-   S_21_EDGES = global_sig_EDGES_func(nu_array,A_EDGES,tau_EDGES,nu_nought_EDGES,w_EDGES)
+   
+   S_21_EDGES = global_sig_EDGES_func(nu_array,A_EDGES)
    
    plt.clf()
    map_title="S_21 vs freq"
@@ -2162,6 +2222,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
 def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False):
 
    pol = pol_list[0]
+   freq_MHz_array = np.asarray(freq_MHz_list)
    
    lst_string = '_'.join(lst_hrs_list)
    lst_hrs = lst_hrs_list[0]
@@ -2205,9 +2266,132 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
 
 
    t_sky_measured_array_filename = "t_sky_measured_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-   t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lsts_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    
+   t_sky_measured_array = np.load(t_sky_measured_array_filename)
+   #get rid of nans:
+   #because nan != nan:
+   okay_indices = t_sky_measured_array == t_sky_measured_array
+   t_sky_measured_array_okay = t_sky_measured_array[okay_indices]
+   freq_MHz_array_okay = freq_MHz_array[okay_indices]
+   
+   
+   if (('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list) and ('global' not in signal_type_list and 'global_EDGES' not in signal_type_list)):
+      print('fitting just diffuse model (no global signal)')
+      #jointly fit model to data
+      if poly_order==5:
+         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
+         joint_fit = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,*fitpars)
+      
+      elif poly_order==7:
+         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)
+         joint_fit = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,*fitpars)
+      elif poly_order==6:
+         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
+         joint_fit = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,*fitpars)
 
+      
+   if (('global_EDGES' in signal_type_list) and ('diffuse' not in signal_type_list and 'diffuse_global' not in signal_type_list)):
+      print('fitting just global_EDGES model (no diffuse foreground)')
+      #jointly fit model to data
+      fitpars, covmat = curve_fit(global_sig_EDGES_func,freq_MHz_array_okay,t_sky_measured_array_okay)
+
+      joint_fit = global_sig_EDGES_func(freq_MHz_array_okay,*fitpars)   
+
+   if (('global_EDGES' in signal_type_list) and ('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list)):
+      print('fitting global_EDGES model and diffuse foreground)')
+      #jointly fit model to data
+      if poly_order==5:
+         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
+         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_5(freq_MHz_array_okay,*fitpars)
+         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5])
+
+      elif poly_order==6:
+         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
+         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_6(freq_MHz_array_okay,*fitpars)
+         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6])
+      
+      elif poly_order==7:
+         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)            
+         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_7(freq_MHz_array_okay,*fitpars)     
+         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6],fitpars[7])
+
+      
+    
+      joint_fit_global_EDGES = global_sig_EDGES_func(freq_MHz_array_okay,fitpars[0])
+      
+      #variances = covmat.diagonal()
+      #std_devs = np.sqrt(variances)
+      #print fitpars,std_devs
+    
+      #plot the recovered polynomial and recovered global signal separately 
+      plt.clf()
+      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit')
+      map_title="t_sky gobal EDGES joint fit" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("T_sky (K)")
+      plt.legend(loc="lower right")
+      #plt.ylim([0, 20])
+      fig_name= "t_sky_joint_fit_global_EDGES_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name
+      
+      plt.clf()
+      plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order 7 fit')
+      map_title="t_sky diffuse joint fit" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("T_sky (K)")
+      plt.legend(loc=1)
+      #plt.ylim([0, 20])
+      fig_name= "t_sky_joint_fit_diffuse_global_foreground_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name
+   
+   
+   
+   #residuals from fit:
+   residuals = t_sky_measured_array_okay - joint_fit
+   rms_of_residuals = np.sqrt(np.mean(residuals**2))
+   max_abs_residuals = np.max(np.abs(residuals)) * 0.9
+
+   #plot residuals
+   plt.clf()
+   plt.plot(freq_MHz_array_okay,residuals,label='Residuals')
+   map_title="residuals from joint fitting" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("Residual T_sky (K)")
+   plt.legend(loc=1)
+   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
+   #plt.ylim([0, 20])
+   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+   
+   
+   
+   
+   #these two lines are equivalent
+   #pl.plot(x, sinfunc(x, fitpars[0], fitpars[1]), 'r-')
+   #pl.plot(x, sinfunc(x, *fitpars), 'r-')
+
+   #plot the measured t sky and joint fit
+   plt.clf()
+   plt.plot(freq_MHz_array_okay,t_sky_measured_array_okay,label='Tsky measured')
+   plt.plot(freq_MHz_array_okay,joint_fit,label='Tsky joint fit')
+   map_title="t_sky and joint fit" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("T_sky (K)")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "t_sky_measured_and_joint_fit_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print "saved %s" % fig_name
+    
+   
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept'):
 
    pol = pol_list[0]
@@ -7420,7 +7604,7 @@ lst_hrs_list = ['2']
 
 #freq_MHz_list=[50.]
 
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -7439,7 +7623,7 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'OLS_global_angular'
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
 joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
 
