@@ -228,9 +228,9 @@ def cleanup_images_and_vis(array_label,lst,freq_MHz,pol):
    
    apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
    apparent_sky_im_Tb_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.im" % (lst_deg,pol,int(freq_MHz))
-   apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
+   #apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
    apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
-   cmd = "rm -rf %s %s %s %s" % (apparent_sky_im_name,apparent_global_signal_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
+   cmd = "rm -rf %s %s %s " % (apparent_sky_im_name,apparent_global_signal_im_name,apparent_sky_im_Tb_name)
    print cmd
    os.system(cmd)
    
@@ -1973,15 +1973,56 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #sys.exit()
 
    #show the sky maps multiplied by the beam
-   gsm_map[theta_array > np.pi/2.]=np.nan
+   #gsm_map[theta_array > np.pi/2.]=np.nan
    
-   av_sky_no_beam = np.nanmean(gsm_map)
-   print("av_sky_no_beam %0.4E" % av_sky_no_beam)
+   #av_sky_no_beam = np.nanmean(gsm_map)
+   #print("av_sky_no_beam %0.4E" % av_sky_no_beam)
    
    sky_with_beam = gsm_map * short_dipole_parallel_beam_map
-   print(sky_with_beam)
+   #print(sky_with_beam)
+   
+   print np.max(gsm_map)
+   print np.max(short_dipole_parallel_beam_map)
+   print np.max(sky_with_beam)
+   
+   #make an image of this
+   if np.isclose(freq_MHz, 50):
+      #sky with beam
+      plt.clf()
+      map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
+      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=sky_with_beam,half_sky=False,title=map_title)
+      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+      fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz.png" % (sky_model,lst_hrs,int(freq_MHz))
+      figmap = plt.gcf()
+      figmap.savefig(fig_name,dpi=500)
+      print "saved %s" % fig_name
+      
+      #beam only
+      plt.clf()
+      map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
+      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title)
+      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+      fig_name="check_beam_%s_hrs_LST_%s_MHz.png" % (lst_hrs,int(freq_MHz))
+      figmap = plt.gcf()
+      figmap.savefig(fig_name,dpi=500)
+      print "saved %s" % fig_name      
+      
+      #sky only
+      plt.clf()
+      map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
+      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=gsm_map,half_sky=False,title=map_title)
+      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+      fig_name="check_%s_%s_hrs_LST_%s_MHz.png" % (sky_model,lst_hrs,int(freq_MHz))
+      figmap = plt.gcf()
+      figmap.savefig(fig_name,dpi=500)
+      print "saved %s" % fig_name    
+           
+      
    sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
-   print(sum_of_beam_weights)
+   #print(sum_of_beam_weights)
    beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
    print("beam_weighted_av_sky at %3d MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
    
@@ -2399,42 +2440,50 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    lst_string = '_'.join(lst_hrs_list)
    lst_hrs = lst_hrs_list[0]
    
-   concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
+   concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
+   concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
    if 'noise' in signal_type_list:
        signal_type_postfix += '_N'
-       concat_output_name_base += '_N'
+       concat_output_name_base_X += '_N'
+       concat_output_name_base_Y += '_N'
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
-       concat_output_name_base += '_D_%s' % sky_model
+       concat_output_name_base_X += '_D_%s' % sky_model
+       concat_output_name_base_Y += '_D_%s' % sky_model
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse global at same time")
           sys.exit()
        else:
           signal_type_postfix += '_DG_%s' % sky_model
-          concat_output_name_base += '_DG_%s' % sky_model
+          concat_output_name_base_X += '_DG_%s' % sky_model
+          concat_output_name_base_Y += '_DG_%s' % sky_model
    if 'diffuse_angular' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse angular at same time")
           sys.exit()
        else:
           signal_type_postfix += '_DA_%s' % sky_model
-          concat_output_name_base += '_DA_%s' % sky_model
+          concat_output_name_base_X += '_DA_%s' % sky_model
+          concat_output_name_base_Y += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
        if 'global_EDGES' in signal_type_list:
           print('cant have global_EDGES and global in signal_type_list')
           sys.exit()
        else:
           signal_type_postfix += '_G' 
-          concat_output_name_base += '_G' 
+          concat_output_name_base_X += '_G'
+          concat_output_name_base_Y += '_G'
    if 'global_EDGES' in signal_type_list:
        signal_type_postfix += '_ED' 
-       concat_output_name_base += '_ED' 
+       concat_output_name_base_X += '_ED' 
+       concat_output_name_base_Y += '_ED' 
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
-       concat_output_name_base += '_GE'
+       concat_output_name_base_X += '_GE'
+       concat_output_name_base_Y += '_GE'
    
    t_sky_theoretical_array = np.full(len(freq_MHz_list),np.nan)
    n_baselines_used_array = np.full(len(freq_MHz_list),np.nan)
@@ -2494,11 +2543,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #make a plot of diffuse global input  
    if 'diffuse_global' in signal_type_list:
-      sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
-      diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_X_lsts_filename)
+      sky_averaged_diffuse_array_beam_X_lsts_filename = "x_pol/%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
+      sky_averaged_diffuse_array_beam_Y_lsts_filename = "y_pol/%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_Y
+      diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_X_lsts_filename)
+      diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_Y_lsts_filename)
       
       plt.clf()
-      plt.plot(freq_MHz_array,diffuse_global_value_array,label='sim input')
+      plt.plot(freq_MHz_array,diffuse_global_value_array_X,label='sim input X')
+      plt.plot(freq_MHz_array,diffuse_global_value_array_Y,label='sim input Y')
       map_title="t_sky beam averaged input" 
       plt.xlabel("freq (MHz)")
       plt.ylabel("t_sky (K)")
@@ -2509,9 +2561,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       figmap.savefig(fig_name)
       print "saved %s" % fig_name
     
-      #subtract a polynomial fit
+      #subtract a polynomial fit just do for X for now
       #in log log space:
-      sky_array = diffuse_global_value_array[t_sky_measured_array>0.]
+      sky_array = diffuse_global_value_array_X[t_sky_measured_array>0.]
       log_sky_array = np.log10(sky_array)
       freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
       log_freq_MHz_array = np.log10(freq_array_cut)
@@ -2523,14 +2575,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       residual_of_log_fit = ffit_linear - sky_array
       
       rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-      print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+      print("rms_of_residuals for X is %0.3f K" % rms_of_residuals)
       
       max_abs_residuals = np.max(np.abs(residual_of_log_fit))
       y_max = 1.5 * max_abs_residuals
       y_min = 1.5 * -max_abs_residuals
       
       plt.clf()
-      plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit')
+      plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit X')
       map_title="Residual for log polynomial order %s fit " % poly_order
       plt.ylabel("Residual Tb (K)")
       plt.xlabel("freq (MHz)")
@@ -5579,6 +5631,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
             else:
                gsm_map = gsm.generate(freq_MHz)
+               print np.max(gsm_map)
                hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
          else:
             if sky_model == 'gmoss':
@@ -5637,18 +5690,22 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #print(hpx_header)
          
          hdu_gsm = fits.open(gsm_hpx_fits_name)[1]
-         #hdu_gsm.info()
-         #data_gsm = hdu_gsm.data
+         print hdu_gsm.header
          
-         reprojected_gsm_map,footprint = reproject_from_healpix(hdu_gsm, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
+         
+         
+         reprojected_gsm_map,footprint = reproject_from_healpix(hdu_gsm, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
          #reprojected_gsm_map,footprint = reproject_from_healpix((data_gsm,'galactic'), target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',nested=False)
+         
+         #print np.max(reprojected_gsm_map)
+         
          
          ##calc sky-average temp, no beam - 
          #Dont use this as input for visibilities, use the beam weighted on calculated below in the beamy bit
          sky_average_temp_no_beam = np.nanmean(reprojected_gsm_map)
          print sky_average_temp_no_beam
          sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
-         
+         sys.exit()
          
          
          
@@ -7602,7 +7659,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-#freq_MHz_list=[50.]
+freq_MHz_list=[50.]
 
 simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
@@ -7625,7 +7682,7 @@ model_type = 'OLS_fixed_intercept'
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
 
-joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
+#joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
 
 
 
