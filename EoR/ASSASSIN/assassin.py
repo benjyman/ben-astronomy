@@ -5691,7 +5691,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          
          hdu_gsm = fits.open(gsm_hpx_fits_name)[1]
          print hdu_gsm.header
-         
+         #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
          
          
          reprojected_gsm_map,footprint = reproject_from_healpix(hdu_gsm, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
@@ -5705,7 +5705,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          sky_average_temp_no_beam = np.nanmean(reprojected_gsm_map)
          print sky_average_temp_no_beam
          sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
-         sys.exit()
+         
          
          
          
