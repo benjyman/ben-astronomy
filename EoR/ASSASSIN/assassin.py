@@ -12,8 +12,7 @@ import matplotlib
 matplotlib.use('Agg') 
 import numpy as np
 import healpy as hp
-#from pygsm import GSMObserver2016
-#from pygsm import GSMObserver
+from pygsm import GSMObserver
 from pygsm import GlobalSkyModel
 from pygsm import GlobalSkyModel2016
 from datetime import datetime, date
@@ -30,7 +29,7 @@ import numpy.polynomial.polynomial as poly
 from pyuvdata import UVData
 import math
 import random
-from pygsm import GSMObserver
+
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import pandas as pd
@@ -145,7 +144,7 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse_global']
+signal_type_list=['diffuse']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -191,11 +190,38 @@ p = np.poly1d(z)
 Aeff_for_freq_MHz_list = p(freq_MHz_list)
 
 
+def rotate_map(hmap, rot_theta, rot_phi):
+    """
+    https://stackoverflow.com/questions/24636372/apply-rotation-to-healpix-map-in-healpy
+    Take hmap (a healpix map array) and return another healpix map array 
+    which is ordered such that it has been rotated in (theta, phi) by the 
+    amounts given.
+    """
+    nside = hp.npix2nside(len(hmap))
+
+    # Get theta, phi for non-rotated map
+    t,p = hp.pix2ang(nside, np.arange(hp.nside2npix(nside))) #theta, phi
+
+    # Define a rotator
+    r = hp.Rotator(deg=False, rot=[rot_phi,rot_theta])
+
+    # Get theta, phi under rotated co-ordinates
+    trot, prot = r(t,p)
+
+    # Interpolate map onto these co-ordinates
+    rot_map = hp.get_interp_val(hmap, trot, prot)
+
+    return rot_map
+    
+    
+
 def make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
    n_pix = hp.nside2npix(NSIDE)
    hpx_index_array = np.arange(0,n_pix,1)
 
    theta_array,phi_array = hp.pix2ang(NSIDE,hpx_index_array)
+   
+   
    
    ##This is for YY dipole: !
    if (pol=='Y'):
@@ -1948,6 +1974,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
    diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
    
+   ov1 = GlobalSkyModel()
+   
    if include_angular_info:
       gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
       #gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
@@ -1968,7 +1996,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          global_signal_value = s_21_array_EDGES[freq_MHz_index]
          gsm_map += global_signal_value
    if 'diffuse' in signal_type_list:
-      gsm_map += ov.generate(freq_MHz)
+      gsm_map += ov1.generate(freq_MHz)
    if 'diffuse_global' in signal_type_list:
       if 'diffuse' in signal_type_list:
          print("can't have diffuse and diffuse global at the same time.")
@@ -1991,6 +2019,13 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #av_sky_no_beam = np.nanmean(gsm_map)
    #print("av_sky_no_beam %0.4E" % av_sky_no_beam)
    
+   
+   #I think we still need to actually rotate the map.
+   #gsm in is Galactic coords, 
+   
+   #rotated_gsm_map = rotate_map(hmap, rot_theta, rot_phi)
+   
+   
    sky_with_beam = gsm_map * short_dipole_parallel_beam_map
    #print(sky_with_beam)
 
@@ -2000,10 +2035,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #sky with beam
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
-      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=sky_with_beam,half_sky=False,title=map_title)
-      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-      fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz.png" % (sky_model,lst_hrs,int(freq_MHz))
+      ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=sky_with_beam,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+      #hp.mollview(map=sky_with_beam,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
+      fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
       figmap.savefig(fig_name,dpi=500)
       print "saved %s" % fig_name
@@ -2011,10 +2046,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #beam only
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
-      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title)
-      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-      fig_name="check_beam_%s_hrs_LST_%s_MHz.png" % (lst_hrs,int(freq_MHz))
+      ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
+      #hp.mollview(map=short_dipole_parallel_beam_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=1)
+      fig_name="check_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
       figmap.savefig(fig_name,dpi=500)
       print "saved %s" % fig_name      
@@ -2022,10 +2057,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #sky only
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
-      #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=gsm_map,half_sky=False,title=map_title)
-      #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-      fig_name="check_%s_%s_hrs_LST_%s_MHz.png" % (sky_model,lst_hrs,int(freq_MHz))
+      ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      hp.orthview(map=gsm_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+      #hp.mollview(map=gsm_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
+      fig_name="check_%s_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
       figmap.savefig(fig_name,dpi=500)
       print "saved %s" % fig_name    
@@ -5948,11 +5983,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                sky_averaged_diffuse_array_beam_X_lsts[freq_MHz_index] += sky_average_temp_beam_weighted
             else:
                sky_averaged_diffuse_array_beam_Y_lsts[freq_MHz_index] += sky_average_temp_beam_weighted
-            
-            
-            print sum_of_beam_weights
-            print sky_average_temp_beam_weighted
-            
+
             
             #Need this above for diffuse global, so move that bit here:
             #Not sure if I am introducing double beam effects now .....
@@ -6968,6 +6999,8 @@ def simulate2(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase
             
             gsm_map = gsm_map_initial * 0.
             
+            ov1 = GlobalSkyModel()
+            
             if 'global' in signal_type_list:
                if 'global_EDGES' in signal_type_list:
                   print("cant have global and global edges in signal_type_list")
@@ -6983,7 +7016,7 @@ def simulate2(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase
                   global_signal_value = s_21_array_EDGES[freq_MHz_index]
                   gsm_map += global_signal_value
             if 'diffuse' in signal_type_list:
-               gsm_map += ov.generate(freq_MHz)
+               gsm_map += ov1.generate(freq_MHz)
             if 'diffuse_global' in signal_type_list:
                if 'diffuse' in signal_type_list:
                   print("can't have diffuse and diffuse global at the same time.")
@@ -7016,8 +7049,8 @@ def simulate2(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase
                plt.clf()
                map_title="GSM from MWA at %s hrs LST %s MHz" % (lst,int(freq_MHz))
                #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-               hp.orthview(map=sky_with_beam,half_sky=False,title=map_title)
-               #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+               #hp.orthview(map=sky_with_beam,half_sky=False,title=map_title)
+               hp.mollview(map=gsm_map_from_moon,coord='G',xsize=400,title=map_title)
                fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz.png" % (sky_model,lst,int(freq_MHz))
                figmap = plt.gcf()
                figmap.savefig(fig_name,dpi=500)
@@ -7027,8 +7060,8 @@ def simulate2(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase
                plt.clf()
                map_title="GSM from MWA at %s hrs LST %s MHz" % (lst,int(freq_MHz))
                #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-               hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title)
-               #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+               #hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title)
+               hp.mollview(map=gsm_map_from_moon,coord='G',xsize=400,title=map_title)
                fig_name="check_beam_%s_hrs_LST_%s_MHz.png" % (lst,int(freq_MHz))
                figmap = plt.gcf()
                figmap.savefig(fig_name,dpi=500)
@@ -7038,8 +7071,8 @@ def simulate2(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase
                plt.clf()
                map_title="GSM from MWA at %s hrs LST %s MHz" % (lst,int(freq_MHz))
                #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-               hp.orthview(map=gsm_map,half_sky=False,title=map_title)
-               #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
+               #hp.orthview(map=gsm_map,half_sky=False,title=map_title)
+               hp.mollview(map=gsm_map_from_moon,coord='G',xsize=400,title=map_title)
                fig_name="check_%s_%s_hrs_LST_%s_MHz.png" % (sky_model,lst,int(freq_MHz))
                figmap = plt.gcf()
                figmap.savefig(fig_name,dpi=500)
@@ -8894,7 +8927,7 @@ lst_hrs_list = ['2']
 
 freq_MHz_list=[50.]
 
-simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -8903,12 +8936,12 @@ simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,sig
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 0.24
+baseline_length_thresh_lambda = 0.23
 plot_only = False  
 include_angular_info = True
-#model_type = 'OLS_with_intercept'
+model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
-model_type = 'OLS_fixed_intercept' 
+#model_type = 'OLS_fixed_intercept' 
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
 
