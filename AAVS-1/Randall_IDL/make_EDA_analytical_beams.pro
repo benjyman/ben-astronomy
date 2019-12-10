@@ -13,7 +13,7 @@ pro make_EDA_analytical_beams
    proj_x = sqrt(1-(sin(az[p])*sin(za[p]))^2)
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
-   for freq_MHz = 50, 150 do begin
+   for freq_MHz = 50, 200 do begin
    
       beam_name_string_x = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_xx.fits'
       beam_name_string_no_cos_za_x = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_xx_no_cos_za.fits'
