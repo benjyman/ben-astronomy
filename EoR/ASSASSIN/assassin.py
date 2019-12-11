@@ -37,6 +37,9 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import seaborn as sns
 from scipy.optimize import curve_fit
+from astropy.time import Time
+from astropy.time import TimeDelta
+import astropy.units as u
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -54,6 +57,9 @@ mwa_longitude_pyephem = "116:40.2488"
 mwa_elevation = 0
 
 mwa_latitude_deg = -26.70331940
+
+mwa_latitude_astropy = '-26.7d'
+mwa_longitude_astropy = '116.67d'
 
 #for uvgen systemp values, sky temp at 180 MHz, beta is spectral index (Frank's 180 at 180), efficiency eta
 T_180 = 180.0
@@ -142,11 +148,11 @@ lst_list = lst_list_array.astype(str)
 sky_model = 'gsm'
 #sky_model = 'gsm2016'
 #sky_model = 'gmoss'
-pol_list = ['X']
+pol_list = ['Y']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse_global']
+signal_type_list=['diffuse']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -205,7 +211,7 @@ def rotate_map(hmap, rot_theta, rot_phi):
     t,p = hp.pix2ang(nside, np.arange(hp.nside2npix(nside))) #theta, phi
 
     # Define a rotator
-    r = hp.Rotator(deg=True, rot=[rot_phi,rot_theta])
+    r = hp.Rotator(deg=False, rot=[rot_phi,rot_theta])
 
     # Get theta, phi under rotated co-ordinates
     trot, prot = r(t,p)
@@ -214,7 +220,18 @@ def rotate_map(hmap, rot_theta, rot_phi):
     rot_map = hp.get_interp_val(hmap, trot, prot)
 
     return rot_map
-    
+
+def make_hpx_beam_test(NSIDE,pol,wavelength,dipole_height_m):
+   n_pix = hp.nside2npix(NSIDE)
+   hpx_index_array = np.arange(0,n_pix,1)
+
+   phi_array,theta_array = np.radians(hp.pix2ang(NSIDE,hpx_index_array,lonlat=True))
+   
+
+   short_dipole_parallel_beam_map = theta_array * 0.
+   short_dipole_parallel_beam_map[theta_array < np.pi/2.] = 1.
+   
+   return short_dipole_parallel_beam_map    
     
 
 def make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
@@ -222,8 +239,6 @@ def make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
    hpx_index_array = np.arange(0,n_pix,1)
 
    theta_array,phi_array = hp.pix2ang(NSIDE,hpx_index_array)
-   
-   
    
    ##This is for YY dipole: !
    if (pol=='Y'):
@@ -1951,9 +1966,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    year=2000
    month=1
    day=1
-   hour=int(np.floor(float(lst_hrs)))
-   minute=int(np.floor((float(lst_hrs)-hour) * 60.))
-   second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
+   hour=0
+   minute=0
+   second=0
+   #hour=int(np.floor(float(lst_hrs)))
+   #minute=int(np.floor((float(lst_hrs)-hour) * 60.))
+   #second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
    
    date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
    #print(date_time_string)
@@ -1964,10 +1982,42 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    ov.lon = longitude
    ov.lat = latitude
    ov.elev = elevation
-   time_string = "%02d_%02d_%02d" % (hour,minute,second)
+   
    #print time_string
+   
+   #set an initial time using astropy Time
+   
+   astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (year, month, day, hour, minute, second)
+   time_initial = Time(astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+
+   #calculate the local sidereal time for the MWA at date_obs_initial
+   lst_initial = time_initial.sidereal_time('apparent')
+   
+   lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
+   
+   #want lst == lst_hrs, so add time so that this is true
+   delta_time = TimeDelta(lst_initial_days, format='jd') 
+   
+   desired_lst_days = float(lst_hrs) / 24.
+   
+   time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
+   
+   print('final LST is: ')
+   print time_final.sidereal_time('apparent')
+   
+   #close enough......
+ 
+   time_string = time_final.utc.iso
+   #time_string = "%02d_%02d_%02d" % (hour,minute,second)
+   
+   hour = int(time_string.split(' ')[1].split(':')[0])
+   minute = int(time_string.split(' ')[1].split(':')[1])
+   minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
+   
    date_obs = datetime(year, month, day, hour, minute, second)
    ov.date = date_obs
+   
+   
    gsm_map = ov.generate(freq_MHz) * 0.
    
    sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
@@ -2021,35 +2071,15 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #av_sky_no_beam = np.nanmean(gsm_map)
    #print("av_sky_no_beam %0.4E" % av_sky_no_beam)
    
+   #dont need to rotate gsm - just had the time of observation wrong!
+   #fixed it to work out time to have correct(ish) LST, still out by 2.5 mins for some reason...
    
-   #I think we still need to actually rotate the map.
-   #gsm in is Galactic coords, 
-   
-   
-   
-   #work out the galactic coords of the zenith
-   #hour angle = lst - RA
-   #zenith when HA = 0, so ra = lST
-   zenith_RA_hrs = float(lst_hrs)
-   zenith_RA_deg = zenith_RA_hrs/24. * 360.
-   zenith_DEC_deg = mwa_latitude_deg
-   
-   zenith_icrs = SkyCoord(zenith_RA_deg*u.deg, zenith_DEC_deg*u.deg, frame='icrs')
-   #print zenith_icrs
-   zenith_galactic = zenith_icrs.galactic
-   #print zenith_galactic
-   
-   rot_theta_gsm =  zenith_galactic.b.value
-   rot_phi_gsm =  zenith_galactic.l.value + lst_deg
-   
-   rotated_gsm_map = rotate_map(gsm_map, rot_theta_gsm, rot_phi_gsm)
-   
-   rot_theta_beam = 90. + mwa_latitude_deg
-   rot_phi_beam = 180. + lst_deg
+   rot_theta_beam = - np.pi / 2.
+   rot_phi_beam = 0.
    
    rotated_beam_map = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
    
-   sky_with_beam = rotated_gsm_map * rotated_beam_map
+   sky_with_beam = gsm_map * rotated_beam_map
    #print(sky_with_beam)
    
    #Close! But you need the beam in celestial coords!!!!
@@ -2064,7 +2094,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
       hp.orthview(map=sky_with_beam,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
       #hp.mollview(map=sky_with_beam,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
-      fig_name="check_rotated_%s_with_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
+      fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
       figmap.savefig(fig_name,dpi=500)
       print "saved %s" % fig_name
@@ -2073,7 +2103,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
       ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
+      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title,min=0, max=1)
       #hp.mollview(map=short_dipole_parallel_beam_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=1)
       fig_name="check_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
@@ -2103,16 +2133,16 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       figmap.savefig(fig_name,dpi=500)
       print "saved %s" % fig_name    
            
-      #sky only rotated
-      plt.clf()
-      map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
-      ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=rotated_gsm_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
-      #hp.mollview(map=gsm_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
-      fig_name="check_rotated_%s_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name,dpi=500)
-      print "saved %s" % fig_name    
+      ##sky only rotated
+      #plt.clf()
+      #map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
+      ###hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+      #hp.orthview(map=rotated_gsm_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+      ##hp.mollview(map=gsm_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
+      #fig_name="check_rotated_%s_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name,dpi=500)
+      #print "saved %s" % fig_name    
            
 
    sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
@@ -7789,7 +7819,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-#freq_MHz_list=[50.]
+freq_MHz_list=[50.]
 
 simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
