@@ -148,7 +148,7 @@ lst_list = lst_list_array.astype(str)
 sky_model = 'gsm'
 #sky_model = 'gsm2016'
 #sky_model = 'gmoss'
-pol_list = ['Y']
+pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
@@ -1596,39 +1596,99 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
    
+      
+      
+   
+      #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+   
+      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+      Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+      print("loaded %s" % Y_short_parallel_angular_array_filename)
+      Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
+      
+      #full response
+      full_response = X_short_parallel_array_norm + Y_short_parallel_array_norm
    
    
-   #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+      #plot a histogram of Y values
+      plt.clf()
+      n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+      map_title="Histogram of Y values (angular response)" 
+      fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print "saved %s" % fig_name  
    
-   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
-   Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
-   print("loaded %s" % Y_short_parallel_angular_array_filename)
-   
-   #plot a histogram of Y values
-   plt.clf()
-   n, bins, patches = plt.hist(Y_short_parallel_angular_array)
-   map_title="Histogram of Y values (angular response)" 
-   fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   plt.close()
-   print "saved %s" % fig_name  
-   
+      #also include Y and the sum of X plus Y
+      plt.clf()
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='Scaled simulated visibility amplitude')
+      plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_angular_array,s=1,label='Expected angular response')
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response,s=1,label='Expected full response')
+      ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+      map_title="Response to uniform sky vs baseline length data" 
+      plt.xlabel("Baseline length (wavelengths)")
+      plt.ylabel("Visibility amplitude")
+      plt.legend(loc=1)
+      #plt.ylim([0, 20])
+      fig_name= "X_Y_and_real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name 
    
    #Assign vis and X values a group according to the Y_angular response
+   #Dont need this anymore, is for mixedlm which didnt work.
    Y_angular_group_array = X_short_parallel_array * 0
+   X_group_array = X_short_parallel_array * 0
    ##use the hist output to split up X according to Y values
    for Y_bin_index,Y_bin in enumerate(n):
       start_value = bins[Y_bin_index]
       end_value = bins[Y_bin_index+1]
       Y_angular_group_array[(Y_short_parallel_angular_array >= start_value) & (Y_short_parallel_angular_array < end_value)] = Y_bin_index
     
+   #for OLS_fixed_int_min_vis:
+   #plot a histogram of X values
+   plt.clf()
+   n_X, X_bins, X_patches = plt.hist(X_short_parallel_array)
+   X_bin_width = X_bins[1] - X_bins[0]
+   print X_bin_width
+   map_title="Histogram of X values (angular response)" 
+   fig_name= "hist_X_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print "saved %s" % fig_name 
+   
+   #split X up into bins  
+   ##use the hist output to split up real vis according to X values
+   # and just use the minimum value of the vis in each X_bin
+   real_vis_data_min_in_X_bin_array = np.empty(len(X_bins)-1)
+   X_bin_centres_array = np.empty(len(X_bins)-1) 
+   for X_bin_index,n_bin in enumerate(n_X):
+      start_value = X_bins[X_bin_index]
+      end_value = X_bins[X_bin_index+1]
+      X_group_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)] = X_bin_index
+      real_vis_data_in_X_bin = real_vis_data_sorted_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)]
+      real_vis_data_min_in_X_bin = np.nanmin(real_vis_data_in_X_bin)
+      #print real_vis_data_in_X_bin
+      if (X_bin_index < len(n_X)):
+         real_vis_data_min_in_X_bin_array[X_bin_index] = real_vis_data_min_in_X_bin
+         X_bin_centres_array[X_bin_index] = start_value + (X_bin_width / 2.)
+ 
+   
+   
+       
+
    #make a data frame
-   data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array}
+   data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array,'X_group':X_group_array}
    df = pd.DataFrame(data) 
    
    X_short_parallel_array = np.asarray(df['X_global'])
    real_vis_data_sorted_array = np.asarray(df['real_vis'])
+   
+   
+   
    
    if np.nansum(X_short_parallel_array > 0):
       #random intercept model may work if you split data up into different bins for the value of X
@@ -1641,6 +1701,33 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       #Lets use scikit-learn instead of statsmodels (cause there are more tutorials and Kaggle prefers)
       if model_type=='OLS_fixed_intercept':
          model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+         results = model.fit()
+         ##print results.summary()
+         parameters = results.params
+         print parameters
+         t_sky_jy = parameters[0]
+         t_sky_error_jy = results.bse[0]
+      if model_type=='OLS_fixed_int_min_vis':
+         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array)
+         results = model.fit()
+         ##print results.summary()
+         parameters = results.params
+         print parameters
+         t_sky_jy = parameters[0]
+         t_sky_error_jy = results.bse[0]
+      if model_type=='OLS_with_int_min_vis':
+         X_bin_centres_array = sm.add_constant(X_bin_centres_array)
+         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array)
+         results = model.fit()
+         ##print results.summary()
+         parameters = results.params
+         print parameters
+         t_sky_jy = parameters[1]
+         t_sky_error_jy = results.bse[1]
+      elif model_type=='OLS_fixed_int_subtr_Y':
+         #subtract Y from the data before fitting (should get rid of the angular variations)
+         real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
+         model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array)
          results = model.fit()
          ##print results.summary()
          parameters = results.params
@@ -1720,6 +1807,12 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    if model_type=='OLS_with_intercept':
       plt.plot(X_short_parallel_array[:,1], real_vis_data_sorted_array,label='simulated data',linestyle='None',marker='.')
       plt.plot(X_short_parallel_array[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_with_int_min_vis':
+      plt.plot(X_bin_centres_array[:,1], real_vis_data_min_in_X_bin_array,label='simulated data min in X bin',linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_fixed_int_min_vis':
+      plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='simulated data min in X bin',linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    else:
       plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='simulated data',linestyle='None',marker='.')
       plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
@@ -1729,7 +1822,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    plt.legend(loc=1)
    plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
-   fig_name= "x_y_OLS_plot_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   fig_name= "x_y_OLS_plot_%s_MHz_%s_pol%s_%s.png" % (freq_MHz,pol,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
@@ -2028,10 +2121,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #ov1 = GlobalSkyModel()
    
-   if include_angular_info:
-      gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
-      #gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
-      #gsm_map_angular_norm = gsm_map_angular / gsm_map_angular_abs_max
+
    
    if 'global' in signal_type_list:
       if 'global_EDGES' in signal_type_list:
@@ -2064,6 +2154,13 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          gsm_map -= diffuse_global_value
          #print("diffuse_angular not implemented yet")
          #sys.exit()
+
+   if include_angular_info:
+      #I think this is wrong, try just using mean of full map... (does the horizon need to come into this?)
+      #gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+      gsm_map_angular = ov.generate(freq_MHz) - np.mean(ov.generate(freq_MHz))
+      ###gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
+      ###gsm_map_angular_norm = gsm_map_angular / gsm_map_angular_abs_max
 
    #show the sky maps multiplied by the beam
    #gsm_map[theta_array > np.pi/2.]=np.nan
@@ -7821,7 +7918,7 @@ lst_hrs_list = ['2']
 
 #freq_MHz_list=[50.]
 
-simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 ##don't need the concat files
 #cmd = "rm *concat*"
@@ -7831,11 +7928,14 @@ simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,sig
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 baseline_length_thresh_lambda = 0.50
-plot_only = False  
+plot_only = True  
 include_angular_info = True
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
-model_type = 'OLS_fixed_intercept' 
+#model_type = 'OLS_fixed_intercept' 
+#model_type = 'OLS_fixed_int_min_vis'
+model_type = 'OLS_with_int_min_vis'
+#model_type = 'OLS_fixed_int_subtr_Y'
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
 
