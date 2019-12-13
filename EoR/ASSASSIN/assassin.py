@@ -40,6 +40,7 @@ from scipy.optimize import curve_fit
 from astropy.time import Time
 from astropy.time import TimeDelta
 import astropy.units as u
+from sklearn.preprocessing import normalize
 
 sun_flux_density = 50000.0   #borkowski et al 1982?
 #mu_0 = 4.*np.pi*10**(-7)
@@ -197,6 +198,45 @@ z = np.polyfit(Aeff_freqs, Aeff_list, 3)
 p = np.poly1d(z)
 Aeff_for_freq_MHz_list = p(freq_MHz_list)
 
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    https://stackoverflow.com/questions/6802577/rotation-of-3d-vector
+    """
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    #axis_array = axis_array / np.linalg.norm(axis_array,axis=1)
+    #axis_array = normalize(axis_array, axis=1, norm='l1')
+    #print axis_array
+    a = np.cos(theta / 2.0)
+    #b_c_d = - axis_array * np.sin(theta / 2.0)
+    #b = b_c_d[:,0]
+    #c = b_c_d[:,1]
+    #d = b_c_d[:,2]
+    b, c, d = - axis * np.sin(theta / 2.0)
+
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+
+    
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
+def rotate_vector(axis, theta, vector):
+
+   return np.transpose(np.dot(rotation_matrix(axis, theta), np.transpose(vector)))
+   #print(np.dot(rotation_matrix(axis, theta), v)) 
+   
+#v = [[1, 0, 0],[0, 1, 0],[0, 0, 1]]
+#print v
+#axis = [0, 1, 0]
+#theta = np.pi/2.
+#rotated_vector = rotate_vector(axis,theta,v)
+#print np.round(rotated_vector)
+##print rotated_vector.shape
+#sys.exit()
 
 def rotate_map(hmap, rot_theta, rot_phi):
     """
@@ -1474,7 +1514,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False):
    
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1513,6 +1553,8 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
        signal_type_postfix += '_GE'
        concat_output_name_base_X += '_GE'
    
+   if EDA2_data==True:
+      signal_type_postfix = "_EDA2_data"
    wavelength = 300./float(freq_MHz)
 
    X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
@@ -1527,6 +1569,19 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
    print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
+   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+   print("loaded %s" % Y_short_parallel_angular_array_filename)
+   
+   #plot a histogram of Y values
+   plt.clf()
+   n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+   map_title="Histogram of Y values (angular response)" 
+   fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print "saved %s" % fig_name  
    
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
@@ -1596,35 +1651,19 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
    
-      
-      
-   
-      #X_short_parallel_array = sm.add_constant(X_short_parallel_array)
-   
-      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
-      Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
-      print("loaded %s" % Y_short_parallel_angular_array_filename)
       Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
-      
+   
       #full response
       full_response = X_short_parallel_array_norm + Y_short_parallel_array_norm
    
    
-      #plot a histogram of Y values
-      plt.clf()
-      n, bins, patches = plt.hist(Y_short_parallel_angular_array)
-      map_title="Histogram of Y values (angular response)" 
-      fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      plt.close()
-      print "saved %s" % fig_name  
+
    
       #also include Y and the sum of X plus Y
       plt.clf()
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+      plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
       #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='Scaled simulated visibility amplitude')
-      plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_angular_array,s=1,label='Expected angular response')
+      plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
       #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response,s=1,label='Expected full response')
       ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
       map_title="Response to uniform sky vs baseline length data" 
@@ -1670,7 +1709,11 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       end_value = X_bins[X_bin_index+1]
       X_group_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)] = X_bin_index
       real_vis_data_in_X_bin = real_vis_data_sorted_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)]
-      real_vis_data_min_in_X_bin = np.nanmin(real_vis_data_in_X_bin)
+      #check if all nans
+      if len(real_vis_data_in_X_bin) > 0:
+         real_vis_data_min_in_X_bin = np.nanmin(real_vis_data_in_X_bin)
+      else:
+         real_vis_data_min_in_X_bin = np.nan
       #print real_vis_data_in_X_bin
       if (X_bin_index < len(n_X)):
          real_vis_data_min_in_X_bin_array[X_bin_index] = real_vis_data_min_in_X_bin
@@ -1830,7 +1873,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    return t_sky_K,t_sky_error_K
            
-def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False):
+def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False):
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1869,6 +1912,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
        signal_type_postfix += '_GE'
        concat_output_name_base += '_GE'
    
+   if EDA2_data==True:
+      signal_type_postfix = "_EDA2_data"
    #n_baselines_included
    #n_baselines_included = 20
    
@@ -1891,7 +1936,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #open one uvfits file to get n_timesteps
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
-   uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+   if EDA2_data:
+      if freq_MHz==50:
+         uvfits_filename = "chan_90_20191202T171727.uvfits" 
+   else:
+      uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
    visibilities = uvtable['DATA']
@@ -1902,7 +1951,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    uvfits_filename_list = []
    for lst_hrs in lst_hrs_list:
       lst_deg = (float(lst_hrs)/24.)*360.
-      uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+      if EDA2_data:
+         if freq_MHz==50:
+            uvfits_filename = "chan_90_20191202T171727.uvfits" 
+      else:
+         uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
       uvfits_filename_list.append(uvfits_filename)
    
    real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
@@ -1991,6 +2044,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #beam stuff in function
    short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m)
    
+   #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
+   rot_theta_beam = - np.pi / 2.
+   rot_phi_beam = 0.
+   short_dipole_parallel_beam_map_rot = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
+   print "not using rotated beam later on, but if you do you get the wrong answer -this is because all vectors and the beam are in the same reference frame, but not the sky map - solution: JUST rotate the sky map up!"
+   sys.exit()
    #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
    #TRY it!
    #baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
@@ -2008,19 +2067,37 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
 
    baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+   #print baseline_vector_array_unit[0,:]
    baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
    baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
 
-   baseline_vector_array = baseline_vector_array_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-   baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-   baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-   
-   
-   #print baseline_vector_array.shape
-   #print np.linalg.norm(baseline_vector_array[1])
 
-   sky_vector_array=np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+   #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+   #https://vpython.org/contents/docs/VisualIntro.html
+   #rotate about x axis
+   #forget about rotating the vectors (just rotate the sky map itself)
+   rot_axis = [0,1,0]
+   rot_theta = 0. #np.pi / 4.
+   
+   baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+   
+   #print baseline_vector_array_unit_rotated[0,:]
 
+   
+   baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
+   baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
+
+   baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+   
+   sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+   #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+   #print sky_vector_array_unrotated_test
+   #sys.exit()
+   #do the same rotation for the sky vector
+   sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+   
    baseline_vector_array = baseline_vector_array[0:n_baselines_included]
    X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
    Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
@@ -2042,8 +2119,6 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print "saved %s" % fig_name 
-   
-   
    
    #First work out what things should look like
    #need to implement this for each lst - for now just use the last one (i.e. dont modify lst_deg)
@@ -2121,8 +2196,6 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #ov1 = GlobalSkyModel()
    
-
-   
    if 'global' in signal_type_list:
       if 'global_EDGES' in signal_type_list:
          print("cant have global and global edges in signal_type_list")
@@ -2156,9 +2229,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #sys.exit()
 
    if include_angular_info:
-      #I think this is wrong, try just using mean of full map... (does the horizon need to come into this?)
-      #gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
-      gsm_map_angular = ov.generate(freq_MHz) - np.mean(ov.generate(freq_MHz))
+      #I think this is wrong, try just using mean of full map... (does the horizon need to come into this?) .. actually I think it is right ...
+      gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+      #gsm_map_angular = ov.generate(freq_MHz) - np.mean(ov.generate(freq_MHz))   #this is probly wrong
       ###gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
       ###gsm_map_angular_norm = gsm_map_angular / gsm_map_angular_abs_max
 
@@ -2170,13 +2243,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #dont need to rotate gsm - just had the time of observation wrong!
    #fixed it to work out time to have correct(ish) LST, still out by 2.5 mins for some reason...
-   
-   rot_theta_beam = - np.pi / 2.
-   rot_phi_beam = 0.
-   
-   rotated_beam_map = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
-   
-   sky_with_beam = gsm_map * rotated_beam_map
+      
+   #sky_with_beam = gsm_map * short_dipole_parallel_beam_map
+   sky_with_beam = gsm_map * short_dipole_parallel_beam_map_rot
    #print(sky_with_beam)
    
    #Close! But you need the beam in celestial coords!!!!
@@ -2211,7 +2280,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
       ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=rotated_beam_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
+      hp.orthview(map=short_dipole_parallel_beam_map_rot,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
       #hp.mollview(map=short_dipole_parallel_beam_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=1)
       fig_name="check_rotated_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
@@ -2276,9 +2345,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
       #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
       #print b_dot_r_single
+      #print baseline_vector_for_dot_array[0:3]
       b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
-      #print b_dot_r.shape
-      
+ 
       b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
       b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
       
@@ -2298,6 +2367,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       #for angular info
       if include_angular_info:
          element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
+         #print short_dipole_parallel_beam_map[0:100]
+         #print gsm_map_angular[:3]
+         #print phase_angle_array[0:3]
+         #print element_short_parallel_angular_array[0:3]
       
       #print element_iso_array[0:5]
       #visibility_iso = np.sum(element_iso_array)
@@ -2308,7 +2381,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       
       #this one gives approximately the right answer ....
       X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-      
+
       X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
       X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
 
@@ -2654,7 +2727,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print "saved %s" % fig_name
     
    
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept'):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False):
 
    pol = pol_list[0]
    
@@ -2706,6 +2779,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
        concat_output_name_base_X += '_GE'
        concat_output_name_base_Y += '_GE'
    
+   if EDA2_data==True:
+      signal_type_postfix = "_EDA2_data"
+   
    t_sky_theoretical_array = np.full(len(freq_MHz_list),np.nan)
    n_baselines_used_array = np.full(len(freq_MHz_list),np.nan)
    
@@ -2725,7 +2801,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    if not plot_only:
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info)
+         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -7916,31 +7992,28 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-#freq_MHz_list=[50.]
+freq_MHz_list=[50.]
 
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
-##don't need the concat files
-#cmd = "rm *concat*"
-#print cmd
-#os.system(cmd)
 
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
-baseline_length_thresh_lambda = 0.50
-plot_only = True  
+baseline_length_thresh_lambda = 0.24
+plot_only = False  
 include_angular_info = True
+EDA2_data = False
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
-#model_type = 'OLS_fixed_intercept' 
+model_type = 'OLS_fixed_intercept' 
 #model_type = 'OLS_fixed_int_min_vis'
-model_type = 'OLS_with_int_min_vis'
+#model_type = 'OLS_with_int_min_vis'
 #model_type = 'OLS_fixed_int_subtr_Y'
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data)
 
 #joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
 
