@@ -2047,9 +2047,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
    rot_theta_beam = - np.pi / 2.
    rot_phi_beam = 0.
-   short_dipole_parallel_beam_map_rot = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
-   print "not using rotated beam later on, but if you do you get the wrong answer -this is because all vectors and the beam are in the same reference frame, but not the sky map - solution: JUST rotate the sky map up!"
-   sys.exit()
+   short_dipole_parallel_beam_map = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
+
    #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
    #TRY it!
    #baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
@@ -2077,7 +2076,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #rotate about x axis
    #forget about rotating the vectors (just rotate the sky map itself)
    rot_axis = [0,1,0]
-   rot_theta = 0. #np.pi / 4.
+   rot_theta =  - np.pi / 2.
    
    baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
    
@@ -2245,7 +2244,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #fixed it to work out time to have correct(ish) LST, still out by 2.5 mins for some reason...
       
    #sky_with_beam = gsm_map * short_dipole_parallel_beam_map
-   sky_with_beam = gsm_map * short_dipole_parallel_beam_map_rot
+   sky_with_beam = gsm_map * short_dipole_parallel_beam_map
    #print(sky_with_beam)
    
    #Close! But you need the beam in celestial coords!!!!
@@ -2280,7 +2279,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       plt.clf()
       map_title="GSM from MWA at %s hrs LST %s MHz" % (lst_hrs,int(freq_MHz))
       ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-      hp.orthview(map=short_dipole_parallel_beam_map_rot,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
+      hp.orthview(map=short_dipole_parallel_beam_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=1)
       #hp.mollview(map=short_dipole_parallel_beam_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=1)
       fig_name="check_rotated_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
       figmap = plt.gcf()
