@@ -2076,7 +2076,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #rotate about x axis
    #forget about rotating the vectors (just rotate the sky map itself)
    rot_axis = [0,1,0]
-   rot_theta =  - np.pi / 2.
+   rot_theta =  np.pi / 2.
    
    baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
    
