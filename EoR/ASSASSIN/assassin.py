@@ -1534,7 +1534,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_averaged=1):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1):
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1931,7 +1931,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    return t_sky_K,t_sky_error_K
            
-def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_averaged=1):
+def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1):
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1995,10 +1995,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
    if EDA2_data:
-      if n_obs_averaged==1:
+      if n_obs_concat==1:
          uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
-         uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_averaged)
+         uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
       uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    hdulist = fits.open(uvfits_filename)
@@ -2012,10 +2012,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    for lst_hrs in lst_hrs_list:
       lst_deg = (float(lst_hrs)/24.)*360.
       if EDA2_data:
-         if n_obs_averaged==1:
+         if n_obs_concat==1:
             uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
-            uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_averaged)
+            uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
       else:
          uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
       uvfits_filename_list.append(uvfits_filename)
@@ -2819,7 +2819,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print "saved %s" % fig_name
     
    
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False,EDA2_chan_list='None',n_obs_averaged_list=[]):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[]):
 
    pol = pol_list[0]
    
@@ -2900,16 +2900,16 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          if EDA2_data==True:
             EDA2_chan = EDA2_chan_list[freq_MHz_index]
             EDA2_obs_time = EDA2_obs_time_list[freq_MHz_index]
-            if len(n_obs_averaged_list) > 0:
-               n_obs_averaged = n_obs_averaged_list[freq_MHz_index]
+            if len(n_obs_concat_list) > 0:
+               n_obs_concat = n_obs_concat_list[freq_MHz_index]
             else:
-               n_obs_averaged = 1
+               n_obs_concat = 1
          else:
             EDA2_chan = None
             EDA2_obs_time = None
-            n_obs_averaged = 1
+            n_obs_concat = 1
             
-         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_averaged=n_obs_averaged)
+         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -2929,14 +2929,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       if EDA2_data==True:
          EDA2_chan = EDA2_chan_list[freq_MHz_index]
-         if len(n_obs_averaged_list) > 0:
-            n_obs_averaged = n_obs_averaged_list[freq_MHz_index]
+         if len(n_obs_concat_list) > 0:
+            n_obs_concat = n_obs_concat_list[freq_MHz_index]
          else:
-            n_obs_averaged = 1
+            n_obs_concat = 1
       else:
          EDA2_chan = None
-         n_obs_averaged = 1
-      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_averaged=n_obs_averaged)
+         n_obs_concat = 1
+      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
       t_sky_measured_array[freq_MHz_index] = t_sky_measured
       t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
   
@@ -7241,21 +7241,98 @@ def extract_signal_from_eda2_data(eda2_data_uvfits_name_list,outbase_name,array_
             
          print "file %s has %s visibilities, %s timesteps, %s pols and %s freq chans" % (uvfits_filename,n_vis,n_timesteps,n_pol,n_freq)
 
-def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_averaged_list=[],av_in_freq=False):
+def plot_EDA2_cal_sols(phase_sol_filename,amp_sol_filename,n_ants=256):
+   #read the cal log into python and extract data for plotting. use pandas?
+   #amp 
+   #df = pd.read_csv(amp_sol_filename,header=2,index_col=False,engine='python',error_bad_lines=True)
+   #print(df.head)
+   #or look at randalls magic code....
+   #append uncommented lines to list and note times
+   
+   
+    
+   with open(amp_sol_filename) as f:
+      #looks like readlines ignores commented # lines
+      lines = f.readlines()
+   
+   timestep_count = 1
+   freq_bin_count = 0
+   
+   current_cal_time = 0
+   sol_values_list = []
+   
+   #go through once to work out how many freq_bins and timesteps 
+   for line_index,line in enumerate(lines):
+      line_string_list = line.split()
+      if line_string_list[0] != '#':
+         if len(line_string_list)==8:
+            sol_values = line_string_list[2:]
+            for value in sol_values:  
+               sol_values_list.append(float(value))
+            timestep_count += 1
+            new_cal_time = int("%s%s%s" % (line_string_list[1].strip()[0:2],line_string_list[1].strip()[3:5],line_string_list[1].strip()[6:8]))
+            if line_index==0:
+               current_cal_time = new_cal_time
+            if new_cal_time > current_cal_time:
+               #print new_cal_time
+               #print(line_string_list)   
+               current_cal_time = new_cal_time
+            else:
+               freq_bin_count += 1
+               current_cal_time = new_cal_time
+               timestep_count = 1
+         else:
+            sol_values = line_string_list
+            for value in sol_values:  
+               sol_values_list.append(float(value))
+      
+
+   data_frame = np.full([freq_bin_count,timestep_count,n_ants],np.nan)
+   print data_frame.shape
+   
+   #now go through again to put the data in the right place in the data frame
+   for freq_bin in np.arange(freq_bin_count):
+      for timestep in np.arange(timestep_count): 
+         start_index = int(freq_bin*timestep)
+         data_frame[freq_bin,timestep,:] = np.asarray(sol_values_list[start_index:start_index+n_ants])
+   
+   #print data_frame
+   #you beauty, now plot it!
+   
+   
+   for ant in np.arange(n_ants):
+      plt.clf()
+      for timestep in np.arange(timestep_count):
+         cal_sols = data_frame[:,timestep,ant]
+         #print cal_sols
+         plt.plot(np.arange(freq_bin_count),cal_sols,label='timestep %s' % timestep)
+      map_title="Cal sols ants"
+      plt.ylabel("Amp")
+      plt.xlabel("freq_bin")
+      plt.legend(loc=1)
+      fig_name= "cal_plot_amp_ant_%s.png" % ant
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print "saved %s" % fig_name  
+   
+   
+   
+   
+def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],av_in_freq=False):
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
-            if len(n_obs_averaged_list) > 0:
-               n_obs_averaged = n_obs_averaged_list[EDA2_chan_index]
+            if len(n_obs_concat_list) > 0:
+               n_obs_concat = n_obs_concat_list[EDA2_chan_index]
             else:
-               n_obs_averaged = 1
+               n_obs_concat = 1
             freq_MHz = np.round(400./512.*float(EDA2_chan))
             lst = lst_list[EDA2_chan_index]
             lst_deg = (float(lst)/24)*360.
             EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
-            if n_obs_averaged==1:
+            if n_obs_concat==1:
                uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
             else:
-               uvfits_name = "%s/av_chan_%s_%s_n_obs_%s_t_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_averaged)
+               uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
                
             uvfits_filename = "%s%s" % (eda2_data_dir,uvfits_name)
             miriad_vis_name = uvfits_name.split('.')[0] + '.vis'
@@ -7270,6 +7347,34 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
             cmd = "fits in=%s out=%s op=uvin" % (uvfits_filename,miriad_vis_name)
             print(cmd)
             os.system(cmd)
+            
+            
+            ##check data, see how many chans there are in uvfits
+            #with fits.open(uvfits_filename) as hdulist:
+            #    uvtable = hdulist[0].data
+            #    data = uvtable['DATA']
+            #    shape=data.shape
+            #    print shape
+            #    visibilities_real_1chan_x = data[:,0,0,0,0,0]
+            #    visibilities_imag_1chan_x = data[:,0,0,0,0,1]
+            #    weights_1chan_x = data[:,0,0,0,0,2]
+            #    
+            #    
+            #    end_print_index=10
+            #    print visibilities_real_1chan_x[0:end_print_index]
+            #    print visibilities_imag_1chan_x[0:end_print_index]
+            #    print weights_1chan_x[0:end_print_index]
+
+                
+                #plt.clf()
+                #n, bins, patches = plt.hist(visibilities_real_1chan_x)
+                #map_title="Histogram of real vis" 
+                #fig_name= "hist_real_vis.png"
+                #figmap = plt.gcf()
+                #figmap.savefig(fig_name)
+                #plt.close()
+                #print "saved %s" % fig_name  
+   
             
             if obs_type=='sun':
                
@@ -7316,15 +7421,25 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                print "calibrating using sky model"
                #generate_apparent_sky_model(pol=pol,lst_hrs=lst,freq_MHz=freq)
                apparent_sky_im_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
-               print apparent_sky_im_name
+               #print apparent_sky_im_name
+               
+               #how many chans
+               #cmd = "uvlist vis=%s " % (miriad_vis_name)
+               #print cmd 
+               #os.system(cmd)
+               
+               
+               
                #select=uvrange(uvmin,uvmax) in kilolambda
+               #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
                if uv_cutoff==True:
-                  cmd = "selfcal vis=%s nfbin=32 model=%s options=amplitude,noscale,mfs select=uvrange\(0.00050,50\)" % (miriad_vis_name,apparent_sky_im_name)
+                  cmd = "selfcal vis=%s nfbin=32 interval=0.083333 model=%s line=channel,32,1,1,1 options=amplitude,noscale,mfs select=uvrange\(0.00050,50\)" % (miriad_vis_name,apparent_sky_im_name)
                else:
                   cmd = "selfcal vis=%s nfbin=32 model=%s options=amplitude,noscale,mfs" % (miriad_vis_name,apparent_sky_im_name)
                print cmd 
                os.system(cmd)
                
+
                gain_solutions_name_amp = 'cal_%s_amp.txt' % (EDA2_chan)
                gain_solutions_name_phase = 'cal_%s_ph.txt' % (EDA2_chan)
                
@@ -7337,13 +7452,21 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (miriad_vis_name,gain_solutions_name_amp)
                print(cmd)
                os.system(cmd)
+
+               cmd = "gpplt vis=%s yaxis=phase log=%s" % (miriad_vis_name,gain_solutions_name_phase)
+               print(cmd)
+               os.system(cmd)               
                
+               #plot the sols
+               plot_EDA2_cal_sols(gain_solutions_name_phase,gain_solutions_name_amp)
                
-               
+
                #write the calibrated uvfits file out
                cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
                print(cmd)
                os.system(cmd)
+               
+               
                
                if av_in_freq==True:
                   print("averaging in freq and not including edge chans")
@@ -7357,8 +7480,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   with fits.open(av_uvfits_name) as hdu_list:
                      hdu_list.info()
-                  
-            
+               
+          
 def image_eda2_data(eda2_data_uvfits_name_list):
    for uvfits_name_index,uvfits_name in enumerate(eda2_data_uvfits_name_list):                         
          uvfits_filename = "%s%s" % (eda2_data_dir,uvfits_name)
@@ -8136,64 +8259,65 @@ def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circ
          extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
     
          
-def flag_and_average_EDA2_data(EDA2_chan,obs_time_list,pol):
-   n_obs = len(obs_time_list)     
-   first_obstime = obs_time_list[0]
-   av_vis_name = "av_chan_%s_%s_n_obs_%s_t_av.vis" % (EDA2_chan,first_obstime,n_obs)
-   concat_vis_name = "concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,first_obstime,n_obs)
-   av_uvfits_name = "av_chan_%s_%s_n_obs_%s_t_av.uvfits" % (EDA2_chan,first_obstime,n_obs)
-   miriad_vis_name_list = []
-   for obs_time in obs_time_list:
-      #need to use ms for aoflagger
-      ms_name = "flagged/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (obs_time[0:8],obs_time[9:15])
-      #run aoflagger on it
-      cmd = "aoflagger %s" % (ms_name)
+def concat_EDA2_data(EDA2_chan_list,EDA2_obs_time_list_each_chan,pol):
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
+      obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      n_obs = len(obs_time_list)     
+      first_obstime = obs_time_list[0]
+      #av_vis_name = "av_chan_%s_%s_n_obs_%s_t_av.vis" % (EDA2_chan,first_obstime,n_obs)
+      concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs)
+      concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs)
+      miriad_vis_name_list = []
+      for obs_time in obs_time_list:
+         ##need to use ms for aoflagger
+         #ms_name = "flagged/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (obs_time[0:8],obs_time[9:15])
+         ##run aoflagger on it
+         #cmd = "aoflagger %s" % (ms_name)
+         #print cmd
+         
+         #average the uncalibrated uvdata:
+         #need to convert to miriad vis first:
+         uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time)
+         miriad_vis_name = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,obs_time)
+         miriad_vis_name_list.append(miriad_vis_name) 
+         
+         cmd = "rm -rf %s" % (miriad_vis_name)
+         print(cmd)
+         os.system(cmd)
+               
+         cmd = "fits in=%s out=%s op=uvin" % (uvfits_name,miriad_vis_name)
+         print(cmd)
+         os.system(cmd)
+      
+      
+      
+      
+      vis_string = ','.join(miriad_vis_name_list)
+      #print(vis_string)   
+      
+      #remove old one:
+      
+      cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
       print cmd
+      os.system(cmd)
       
-      sys.exit()
-      #average the uncalibrated uvdata:
-      #need to convert to miriad vis first:
-      uvfits_name = "chan_%s_%s.uvfits" % (EDA2_chan,obs_time)
-      miriad_vis_name = "chan_%s_%s.vis" % (EDA2_chan,obs_time)
-      miriad_vis_name_list.append(miriad_vis_name) 
+      #concat all vis together 
+      cmd = "uvaver vis=%s out=%s options=nocal,nopass,nopol" % (vis_string,concat_vis_name)
+      print cmd
+      os.system(cmd)
       
-      cmd = "rm -rf %s" % (miriad_vis_name)
+      #av to one timestep - no, do this later, after calibration
+      #cmd = "uvaver vis=%s out=%s interval=10 options=nocal,nopass,nopol" % (concat_vis_name,av_vis_name)
+      #print cmd
+      #os.system(cmd)
+      
+      
+      cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
       print(cmd)
       os.system(cmd)
-            
-      cmd = "fits in=%s out=%s op=uvin" % (uvfits_name,miriad_vis_name)
-      print(cmd)
-      os.system(cmd)
-   
-   
-   
-   
-   vis_string = ','.join(miriad_vis_name_list)
-   #print(vis_string)   
-   
-   #remove old one:
-   
-   cmd = "rm -rf %s %s %s" % (av_vis_name,av_uvfits_name,concat_vis_name)
-   print cmd
-   os.system(cmd)
-   
-   #concat all vis together 
-   cmd = "uvaver vis=%s out=%s options=nocal,nopass,nopol" % (vis_string,concat_vis_name)
-   print cmd
-   os.system(cmd)
-   
-   #av to one timestep 
-   cmd = "uvaver vis=%s out=%s interval=10 options=nocal,nopass,nopol" % (concat_vis_name,av_vis_name)
-   print cmd
-   os.system(cmd)
-   
-   
-   cmd = "fits in=%s out=%s op=uvout" % (av_vis_name,av_uvfits_name)
-   print(cmd)
-   os.system(cmd)
-   
-   with fits.open(av_uvfits_name) as hdu_list:
-      hdu_list.info()
+      
+      with fits.open(concat_uvfits_name) as hdu_list:
+         hdu_list.info()
       
          
    # average all 32 chans together after calibration (each of the 32 fine chans is 28935.19 Hz wide)
@@ -8256,7 +8380,7 @@ EDA2_obs_time_list_each_chan = [
    ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
    ]
 
-n_obs_averaged_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
+n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
 
 EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan] 
 
@@ -8295,14 +8419,16 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 #image_eda2_data(eda2_data_uvfits_name_list)
 
-#average data at each chan before calibration (do in chan dir):
-chan_index = 0
-flag_and_average_EDA2_data(EDA2_chan=EDA2_chan_list[chan_index],obs_time_list=EDA2_obs_time_list_each_chan[chan_index],pol='X')
-sys.exit()
+
+##concat data before cal:
+#concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
+#sys.exit()
 
 #do this outside chan dir? # av_in_freq averages to 1 chan AFTER calibration on each fine chan individually
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_averaged_list=n_obs_averaged_list,av_in_freq=True)
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,av_in_freq=False)
+#sys.exit()
 
+plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
 sys.exit()
 
 #model_type = 'OLS_with_intercept'
@@ -8318,7 +8444,7 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'OLS_global_angular'
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_averaged_list=n_obs_averaged_list)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list)
 
 
 
