@@ -2095,15 +2095,15 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #eda2 data may have bad baselines where uu=vv=0, dont use these
    baseline_length_array_m_sorted = baseline_length_array_m_sorted[UU_m_array_sorted>0]
    VV_m_array_sorted = VV_m_array_sorted[UU_m_array_sorted>0]
-   UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
    real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
    imag_vis_data_sorted = imag_vis_data_sorted[UU_m_array_sorted>0]
    weights_vis_data_sorted = weights_vis_data_sorted[UU_m_array_sorted>0]
    
-   
+   #leave this here!!
+   UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
    
    #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-   print(weights_vis_data_sorted[np.isclose(weights_vis_data_sorted,0.)])
+   print(real_vis_data_sorted[np.isclose(real_vis_data_sorted,0.)])
    
    sys.exit()
 
