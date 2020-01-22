@@ -2104,7 +2104,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
    #print(real_vis_data_sorted[np.isclose(real_vis_data_sorted,0.)])
-   print(np.min(nnp.abs(real_vis_data_sorted)))
+   print(np.min(np.abs(real_vis_data_sorted)))
    
    sys.exit()
 
