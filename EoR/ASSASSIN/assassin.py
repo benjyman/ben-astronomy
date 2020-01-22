@@ -8413,6 +8413,7 @@ EDA2_obs_time = '20191202T171727'
 freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
 freq_MHz_list = freq_MHz_array[1:]
 EDA2_chan_list = EDA2_chan_list[1:]
+EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[1:]
 
 baseline_length_thresh_lambda = 0.50
 plot_only = False  
