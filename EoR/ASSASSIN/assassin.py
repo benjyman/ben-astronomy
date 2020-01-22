@@ -2103,7 +2103,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
    
    #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-   print(weights_vis_data_sorted[0:100])
+   print(np.min(real_vis_data_sorted))
    
    sys.exit()
 
@@ -8411,7 +8411,7 @@ EDA2_chan_list_array = np.asarray(EDA2_chan_list)
 eda2_data_dir = '/md0/EoR/EDA2/20191213_data/'
 EDA2_obs_time = '20191202T171727'
 freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
-freq_MHz_list = freq_MHz_array[2:]
+freq_MHz_list = freq_MHz_array[0:]
 
 
 baseline_length_thresh_lambda = 0.50
