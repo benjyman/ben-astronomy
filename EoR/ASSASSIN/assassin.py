@@ -2022,6 +2022,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
    real_vis_data = np.full(real_vis_data_array_size,np.nan)
+   imag_vis_data = np.full(real_vis_data_array_size,np.nan)
+   weights_vis_data = np.full(real_vis_data_array_size,np.nan)
+   
    UU_m_array = np.full(real_vis_data_array_size,np.nan)
    VV_m_array = np.full(real_vis_data_array_size,np.nan)
    
@@ -2048,8 +2051,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       print visibilities_shape
    
       real_vis_data_unweighted_single = visibilities_single[:,0,0,0,0,0]
-      #imag_vis_data_single = visibilities_single[:,0,0,0,0,1]
-      #weights_vis_data_single = visibilities_single[:,0,0,0,0,2]
+      imag_vis_data_single = visibilities_single[:,0,0,0,0,1]
+      weights_vis_data_single = visibilities_single[:,0,0,0,0,2]
    
       #vis data needs to be multiplied by the weight to get the right units
       real_vis_data_single = real_vis_data_unweighted_single #* weights_vis_data
@@ -2067,8 +2070,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
       end_index = int(start_index + (n_baselines * n_timesteps))
       real_vis_data[start_index:end_index] = real_vis_data_single
+      imag_vis_data[start_index:end_index] = imag_vis_data_single
+      weights_vis_data[start_index:end_index] = weights_vis_data_single
       UU_m_array[start_index:end_index] = UU_m_array_single
       VV_m_array[start_index:end_index] = VV_m_array_single
+      
       
 
    #Need to sort by baseline length (then only use short baselines)
@@ -2083,15 +2089,21 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
    VV_m_array_sorted = VV_m_array[baseline_length_array_m_inds]
    real_vis_data_sorted = real_vis_data[baseline_length_array_m_inds]
+   imag_vis_data_sorted = imag_vis_data[baseline_length_array_m_inds]
+   weights_vis_data_sorted = weights_vis_data[baseline_length_array_m_inds]
    
    #eda2 data may have bad baselines where uu=vv=0, dont use these
    baseline_length_array_m_sorted = baseline_length_array_m_sorted[UU_m_array_sorted>0]
    VV_m_array_sorted = VV_m_array_sorted[UU_m_array_sorted>0]
-   real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
    UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
+   real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
+   imag_vis_data_sorted = imag_vis_data_sorted[UU_m_array_sorted>0]
+   weights_vis_data_sorted = weights_vis_data_sorted[UU_m_array_sorted>0]
+   
+   
    
    #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-   print(real_vis_data_sorted[np.isclose(real_vis_data_sorted,0.)])
+   print(weights_vis_data_sorted[np.isclose(weights_vis_data_sorted,0.)])
    
    sys.exit()
 
