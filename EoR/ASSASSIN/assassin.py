@@ -8399,7 +8399,7 @@ EDA2_obs_time_list_each_chan = [
    ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
    ]
 
-EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[2:]
+EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[3:]
 
 n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
 
@@ -8414,8 +8414,8 @@ EDA2_chan_list_array = np.asarray(EDA2_chan_list)
 eda2_data_dir = '/md0/EoR/EDA2/20191213_data/'
 EDA2_obs_time = '20191202T171727'
 freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
-freq_MHz_list = freq_MHz_array[2:]
-EDA2_chan_list = EDA2_chan_list[2:]
+freq_MHz_list = freq_MHz_array[3:]
+EDA2_chan_list = EDA2_chan_list[3:]
 
 
 baseline_length_thresh_lambda = 0.50
