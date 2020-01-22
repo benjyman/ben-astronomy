@@ -2090,6 +2090,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
    UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
    
+   #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+   print(real_vis_data_sorted[real_vis_data_sorted==0.])
+   
+   sys.exit()
+
+
    baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
    
    baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
@@ -8428,8 +8434,8 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,av_in_freq=False)
 #sys.exit()
 
-plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
-sys.exit()
+#plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
+#sys.exit()
 
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
