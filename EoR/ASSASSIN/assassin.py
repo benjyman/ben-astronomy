@@ -8412,7 +8412,7 @@ eda2_data_dir = '/md0/EoR/EDA2/20191213_data/'
 EDA2_obs_time = '20191202T171727'
 freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
 freq_MHz_list = freq_MHz_array[1:]
-
+EDA2_chan_list = EDA2_chan_list[1:]
 
 baseline_length_thresh_lambda = 0.50
 plot_only = False  
