@@ -1997,7 +1997,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    lst_deg = (float(lst_hrs)/24.)*360.
    if EDA2_data:
       if n_obs_concat==1:
-         uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          #concat_chan_64_20191202T171525_n_obs_13.uvfits
          #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
@@ -2017,7 +2017,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       lst_deg = (float(lst_hrs)/24.)*360.
       if EDA2_data:
          if n_obs_concat==1:
-            uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             #
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
