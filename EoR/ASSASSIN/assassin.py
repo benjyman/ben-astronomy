@@ -1989,8 +1989,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
    
-   #n_baselines = n_ants*(n_ants-1) / 2. 
-   n_baselines = n_ants*(n_ants) / 2. 
+   n_baselines = n_ants*(n_ants-1) / 2. 
+   #n_baselines = n_ants*(n_ants) / 2. 
    
    #open one uvfits file to get n_timesteps
    lst_hrs = lst_hrs_list[0]
@@ -2098,7 +2098,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    imag_vis_data_sorted = imag_vis_data[baseline_length_array_m_inds]
    weights_vis_data_sorted = weights_vis_data[baseline_length_array_m_inds]
    
-   #eda2 data may have bad baselines where uu=vv=0, dont use these
+   #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
    baseline_length_array_m_sorted = baseline_length_array_m_sorted[UU_m_array_sorted>0]
    VV_m_array_sorted = VV_m_array_sorted[UU_m_array_sorted>0]
    real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
@@ -8402,6 +8402,15 @@ EDA2_obs_time_list_each_chan = [
    ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
    ]
 
+EDA2_obs_time_list_each_chan = [
+   ['20191202T171525']
+   ['20191202T171629']
+   ['20191202T171727']
+   ['20191202T171830']
+   ['20191202T171928']
+   ['20191202T172027']
+   ]
+   
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 
 n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
