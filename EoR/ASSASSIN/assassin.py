@@ -2008,7 +2008,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    visibilities = uvtable['DATA']
    n_vis = visibilities.shape[0]
    n_timesteps = n_vis/n_baselines
-   print "n_timesteps %s " % n_timesteps
+   print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps
    
    
    uvfits_filename_list = []
