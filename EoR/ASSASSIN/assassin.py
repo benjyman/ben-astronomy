@@ -2017,18 +2017,18 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    
    uvfits_filename_list = []
-   for lst_hrs in lst_hrs_list:
-      lst_deg = (float(lst_hrs)/24.)*360.
-      if EDA2_data:
-         if n_obs_concat==1:
-            uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-         else:
-            #
-            #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+   if EDA2_data:
+      if n_obs_concat==1:
+         uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
+         #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
+      uvfits_filename_list = [uvfits_filename]
+   else:
+      for lst_hrs in lst_hrs_list:
+         lst_deg = (float(lst_hrs)/24.)*360.
          uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
-      uvfits_filename_list.append(uvfits_filename)
+         uvfits_filename_list.append(uvfits_filename)
    
    real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
    real_vis_data = np.full(real_vis_data_array_size,np.nan)
