@@ -1989,8 +1989,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
    
-   n_baselines = n_ants*(n_ants-1) / 2. 
-   #n_baselines = n_ants*(n_ants) / 2. 
+   #eda2 data includes autos
+   if EDA2_data:
+      n_baselines = n_ants*(n_ants-1) / 2. + 256
+   else:
+      n_baselines = n_ants*(n_ants-1) / 2.
+   
    
    #open one uvfits file to get n_timesteps
    lst_hrs = lst_hrs_list[0]
