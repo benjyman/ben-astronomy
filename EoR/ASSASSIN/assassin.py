@@ -1998,7 +1998,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       if n_obs_concat==1:
          uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
-         uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         #concat_chan_64_20191202T171525_n_obs_13.uvfits
+         #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
       uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    hdulist = fits.open(uvfits_filename)
@@ -2008,6 +2010,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    n_timesteps = n_vis/n_baselines
    print "n_timesteps %s " % n_timesteps
    
+   
    uvfits_filename_list = []
    for lst_hrs in lst_hrs_list:
       lst_deg = (float(lst_hrs)/24.)*360.
@@ -2015,7 +2018,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          if n_obs_concat==1:
             uvfits_filename = "%s/chan_%s_%s_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
-            uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #
+            #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
       else:
          uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
       uvfits_filename_list.append(uvfits_filename)
@@ -2103,9 +2108,6 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
    
    #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-   #print(real_vis_data_sorted[np.isclose(real_vis_data_sorted,0.)])
-   print(np.min(np.abs(real_vis_data_sorted)))
-   
    sys.exit()
 
 
