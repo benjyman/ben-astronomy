@@ -1975,7 +1975,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #n_baselines_included
    #n_baselines_included = 20
    
-   wavelength = 300./float(freq_MHz)
+   
    n_lsts = len(lst_hrs_list)
    
    #for EDA2
@@ -2011,10 +2011,18 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
    visibilities = uvtable['DATA']
+   print("visibilities shape:")
+   print visibilities.shape
    n_vis = visibilities.shape[0]
    n_timesteps = n_vis/n_baselines
    print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
    
+   n_fine_chans = visibilities.shape[0]
+   print n_fine_chans
+   
+   sys.exit()
+   
+   wavelength = 300./float(freq_MHz)
    
    uvfits_filename_list = []
    if EDA2_data:
@@ -8402,17 +8410,28 @@ EDA2_chan_list = [64,77,90,103,116,129]
 #middle time for each chan
 #EDA2_obs_time_list = ["20191202T171525","20191202T171629","20191202T171727","20191202T171830","20191202T171928","20191202T172027"]
 
-#all times for each chan
+##all times for each chan
+#EDA2_obs_time_list_each_chan = [
+#   ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618','20191202T171624'],
+#   ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
+#   ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
+#   ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
+#   ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
+#   ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
+#   ]
+
+
+#SOme of these do not calibrate, so exclude them:
 EDA2_obs_time_list_each_chan = [
-   ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618','20191202T171624'],
+   ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618'],
    ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
    ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
    ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
    ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
-   ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
+   ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
    ]
 
-   
+
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 
 n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
@@ -8461,8 +8480,8 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #sys.exit()
 
 #do this outside chan dir
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=[],av_in_freq=False)
-sys.exit()
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=[],av_in_freq=False)
+#sys.exit()
 
 #plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
 #sys.exit()
@@ -8478,6 +8497,20 @@ model_type = 'OLS_fixed_intercept'
 
 #model_type = 'WLS'
 #model_type = 'OLS_global_angular'
+
+
+#after calibration:
+#no cal solutions for 64/chan_64_20191202T171624.vis
+#no cal solutions for 129/chan_129_20191202T172036.vis
+#no cal solutions for 129/chan_129_20191202T172046.vis
+#no cal solutions for 129/chan_129_20191202T172051.vis
+#no cal solutions for 129/chan_129_20191202T172056.vis
+#no cal solutions for 129/chan_129_20191202T172100.vis
+#no cal solutions for 129/chan_129_20191202T172105.vis
+#no cal solutions for 129/chan_129_20191202T172110.vis
+#no cal solutions for 129/chan_129_20191202T172120.vis
+#no cal solutions for 129/chan_129_20191202T172125.vis
+
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list)
