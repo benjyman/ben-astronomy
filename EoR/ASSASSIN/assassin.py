@@ -2075,6 +2075,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
          
+         print(fine_chan_index)
          print(freq_MHz_fine_chan)
          print(wavelength)
          
