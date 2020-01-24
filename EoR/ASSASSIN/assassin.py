@@ -2017,7 +2017,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    n_timesteps = n_vis/n_baselines
    print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
    
-   n_fine_chans = visibilities.shape[0]
+   n_fine_chans = visibilities.shape[3]
    print n_fine_chans
    
    sys.exit()
@@ -2046,7 +2046,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    UU_m_array = np.full(real_vis_data_array_size,np.nan)
    VV_m_array = np.full(real_vis_data_array_size,np.nan)
    
-   #1. Get the u,v points for a single freq, multiple lsts
+   #1. Get the u,v and visibilities for each fine chan 
    print("Solving for Tsky from:") 
    for uvfits_filename_index,uvfits_filename in enumerate(uvfits_filename_list):
       print("%s" % uvfits_filename)
