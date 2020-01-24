@@ -7268,7 +7268,7 @@ def extract_signal_from_eda2_data(eda2_data_uvfits_name_list,outbase_name,array_
             
          print "file %s has %s visibilities, %s timesteps, %s pols and %s freq chans" % (uvfits_filename,n_vis,n_timesteps,n_pol,n_freq)
 
-def plot_EDA2_cal_sols(phase_sol_filename,amp_sol_filename,n_ants=256):
+def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filename,n_ants=256):
    #read the cal log into python and extract data for plotting. use pandas?
    #amp 
    #df = pd.read_csv(amp_sol_filename,header=2,index_col=False,engine='python',error_bad_lines=True)
@@ -7337,7 +7337,7 @@ def plot_EDA2_cal_sols(phase_sol_filename,amp_sol_filename,n_ants=256):
       plt.ylabel("Amp")
       plt.xlabel("freq_bin")
       plt.legend(loc=1)
-      fig_name= "cal_plot_amp_ant_%s.png" % ant
+      fig_name= "cal_plot_amp_%s_%s_ant_%s.png" % (EDA2_chan,EDA2_obs_time,ant)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name  
@@ -7487,7 +7487,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                os.system(cmd)               
                
                #plot the sols
-               plot_EDA2_cal_sols(gain_solutions_name_phase,gain_solutions_name_amp)
+               plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
                
 
                #write the calibrated uvfits file out
