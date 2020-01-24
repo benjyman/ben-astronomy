@@ -7469,8 +7469,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                os.system(cmd)
                
 
-               gain_solutions_name_amp = 'cal_%s_amp.txt' % (EDA2_chan)
-               gain_solutions_name_phase = 'cal_%s_ph.txt' % (EDA2_chan)
+               gain_solutions_name_amp = 'cal_%s_%s_amp.txt' % (EDA2_chan,EDA2_obs_time)
+               gain_solutions_name_phase = 'cal_%s_%s_ph.txt' % (EDA2_chan,EDA2_obs_time)
                
                cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
                print(cmd)
