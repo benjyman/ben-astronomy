@@ -7348,14 +7348,16 @@ def plot_EDA2_cal_sols(phase_sol_filename,amp_sol_filename,n_ants=256):
 def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],av_in_freq=False):
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
-            if len(n_obs_concat_list) > 0:
-               n_obs_concat = n_obs_concat_list[EDA2_chan_index]
-            else:
-               n_obs_concat = 1
-            freq_MHz = np.round(400./512.*float(EDA2_chan))
-            lst = lst_list[EDA2_chan_index]
-            lst_deg = (float(lst)/24)*360.
-            EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
+       if len(n_obs_concat_list) > 0:
+          n_obs_concat = n_obs_concat_list[EDA2_chan_index]
+       else:
+          n_obs_concat = 1
+       freq_MHz = np.round(400./512.*float(EDA2_chan))
+       lst = lst_list[EDA2_chan_index]
+       lst_deg = (float(lst)/24)*360.
+       obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+       for EDA2_obs_time in obs_time_list:
+            #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
             if n_obs_concat==1:
                uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
             else:
@@ -8455,9 +8457,9 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
 #sys.exit()
 
-#do this outside chan dir? # av_in_freq averages to 1 chan AFTER calibration on each fine chan individually
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,av_in_freq=False)
-#sys.exit()
+#do this outside chan dir
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=1,av_in_freq=False)
+sys.exit()
 
 #plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
 #sys.exit()
