@@ -2011,18 +2011,13 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
    visibilities = uvtable['DATA']
-   print("visibilities shape:")
-   print visibilities.shape
    n_vis = visibilities.shape[0]
    n_timesteps = n_vis/n_baselines
    print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
    
    n_fine_chans = visibilities.shape[3]
-   print n_fine_chans
    
-   sys.exit()
    
-   wavelength = 300./float(freq_MHz)
    
    uvfits_filename_list = []
    if EDA2_data:
@@ -2067,31 +2062,48 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       visibilities_shape = visibilities_single.shape
       print "visibilities_shape"
       print visibilities_shape
-   
-      real_vis_data_unweighted_single = visibilities_single[:,0,0,0,0,0]
-      imag_vis_data_single = visibilities_single[:,0,0,0,0,1]
-      weights_vis_data_single = visibilities_single[:,0,0,0,0,2]
-   
-      #vis data needs to be multiplied by the weight to get the right units
-      real_vis_data_single = real_vis_data_unweighted_single #* weights_vis_data
       
-      #print "real visibilities shape"
-      #print real_vis_data.shape
-
+      print("omitting 1 edge chan ech side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-1))
+      fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+      print fine_chan_index_array
+      centre_freq = float(freq_MHz)
+      centre_chan_index = 16
+      fine_chan_width_Hz = 28935 #Hz
+      fine_chan_width_MHz = fine_chan_width_Hz/1000000.
+      for fine_chan_index in fine_chan_index_array:
+         fine_chan_index = int(fine_chan_index)
+         freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+         wavelength = 300./float(freq_MHz_fine_chan)
+         
+         print(freq_MHz_fine_chan)
+         print(wavelength)
+         
+         sys.exit()
+         
+         real_vis_data_unweighted_single = visibilities_single[:,0,0,0,0,0]
+         imag_vis_data_single = visibilities_single[:,0,0,0,0,1]
+         weights_vis_data_single = visibilities_single[:,0,0,0,0,2]
       
-      #get the UU and VV 
-      UU_s_array_single = uvtable['UU']
-      UU_m_array_single = UU_s_array_single * c   
-      VV_s_array_single = uvtable['VV']
-      VV_m_array_single = VV_s_array_single * c
+         #vis data needs to be multiplied by the weight to get the right units
+         real_vis_data_single = real_vis_data_unweighted_single #* weights_vis_data
+         
+         #print "real visibilities shape"
+         #print real_vis_data.shape
    
-      start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
-      end_index = int(start_index + (n_baselines * n_timesteps))
-      real_vis_data[start_index:end_index] = real_vis_data_single
-      imag_vis_data[start_index:end_index] = imag_vis_data_single
-      weights_vis_data[start_index:end_index] = weights_vis_data_single
-      UU_m_array[start_index:end_index] = UU_m_array_single
-      VV_m_array[start_index:end_index] = VV_m_array_single
+         
+         #get the UU and VV 
+         UU_s_array_single = uvtable['UU']
+         UU_m_array_single = UU_s_array_single * c   
+         VV_s_array_single = uvtable['VV']
+         VV_m_array_single = VV_s_array_single * c
+      
+         start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
+         end_index = int(start_index + (n_baselines * n_timesteps))
+         real_vis_data[start_index:end_index] = real_vis_data_single
+         imag_vis_data[start_index:end_index] = imag_vis_data_single
+         weights_vis_data[start_index:end_index] = weights_vis_data_single
+         UU_m_array[start_index:end_index] = UU_m_array_single
+         VV_m_array[start_index:end_index] = VV_m_array_single
       
       
 
