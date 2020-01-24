@@ -8475,13 +8475,29 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #image_eda2_data(eda2_data_uvfits_name_list)
 
 
-##concat data before cal:
-concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
-sys.exit()
-
+#calibrate each individually first
 #do this outside chan dir
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,av_in_freq=False)
 #sys.exit()
+
+#after calibration:
+#no cal solutions for 64/chan_64_20191202T171624.vis
+#no cal solutions for 129/chan_129_20191202T172036.vis
+#no cal solutions for 129/chan_129_20191202T172046.vis
+#no cal solutions for 129/chan_129_20191202T172051.vis
+#no cal solutions for 129/chan_129_20191202T172056.vis
+#no cal solutions for 129/chan_129_20191202T172100.vis
+#no cal solutions for 129/chan_129_20191202T172105.vis
+#no cal solutions for 129/chan_129_20191202T172110.vis
+#no cal solutions for 129/chan_129_20191202T172120.vis
+#no cal solutions for 129/chan_129_20191202T172125.vis
+
+#then concat
+##concat data 
+#concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
+#sys.exit()
+
+
 
 #plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
 #sys.exit()
@@ -8499,17 +8515,7 @@ model_type = 'OLS_fixed_intercept'
 #model_type = 'OLS_global_angular'
 
 
-#after calibration:
-#no cal solutions for 64/chan_64_20191202T171624.vis
-#no cal solutions for 129/chan_129_20191202T172036.vis
-#no cal solutions for 129/chan_129_20191202T172046.vis
-#no cal solutions for 129/chan_129_20191202T172051.vis
-#no cal solutions for 129/chan_129_20191202T172056.vis
-#no cal solutions for 129/chan_129_20191202T172100.vis
-#no cal solutions for 129/chan_129_20191202T172105.vis
-#no cal solutions for 129/chan_129_20191202T172110.vis
-#no cal solutions for 129/chan_129_20191202T172120.vis
-#no cal solutions for 129/chan_129_20191202T172125.vis
+
 
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
