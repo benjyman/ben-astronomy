@@ -7487,7 +7487,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                os.system(cmd)               
                
                #plot the sols
-               if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp):
+               if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
                   plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
                else:
                   print("no cal solutions for %s" % (miriad_vis_name))
