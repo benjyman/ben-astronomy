@@ -2136,7 +2136,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
          #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
-         sys.exit()
+         
       
       
          baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
