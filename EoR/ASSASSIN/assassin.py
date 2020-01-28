@@ -1938,6 +1938,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    print(real_vis_data_sorted_array)
    
    sys.exit()
+   
    map_title="Data and fit" 
    plt.xlabel("Expected global-signal response")
    plt.ylabel("Real component of visibility (Jy)")
