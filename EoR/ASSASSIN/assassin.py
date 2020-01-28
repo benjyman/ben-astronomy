@@ -1534,12 +1534,21 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0):
    
+   centre_freq = float(freq_MHz)
+   centre_chan_index = 16
+   fine_chan_width_Hz = 28935 #Hz
+   fine_chan_width_MHz = fine_chan_width_Hz/1000000.
+   
+   freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+         
+   wavelength = 300./float(freq_MHz_fine_chan)  
+
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
-   wavelength = 300./float(freq_MHz)
+
    if 'noise' in signal_type_list:
        signal_type_postfix += '_N'
        concat_output_name_base += '_N'
@@ -1593,19 +1602,19 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
    
    
-   X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    X_short_parallel_array = np.load(X_short_parallel_array_filename).real
    print("loaded %s" % X_short_parallel_array_filename)
     
-   X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
    print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
 
-   X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
    print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
-   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%f_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
    Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
    print("loaded %s" % Y_short_parallel_angular_array_filename)
    
@@ -1619,7 +1628,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    plt.close()
    print "saved %s" % fig_name  
    
-   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
@@ -1650,7 +1659,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       #offset X and real_vis by some arbitrary amount 0.5?
       real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
       
-      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
       
@@ -1668,7 +1677,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       plt.ylabel("Normalised visibility amplitude")
       plt.legend(loc=1)
       #plt.ylim([0, 20])
-      fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      fig_name= "X_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
@@ -1685,7 +1694,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       plt.ylabel("Visibility amplitude")
       plt.legend(loc=1)
       #plt.ylim([0, 20])
-      fig_name= "X_and_real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      fig_name= "X_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
@@ -1696,7 +1705,9 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       #need to convert between Jy and K
       jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
       Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
-      full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
+      
+      #need to update full response to include fine chans
+      #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
    
    
 
@@ -1706,27 +1717,29 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
       plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
       #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
-      plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
+      
+      #need to update update full response to include fine chans
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
       ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
       map_title="Response to uniform sky vs baseline length data" 
       plt.xlabel("Baseline length (wavelengths)")
       plt.ylabel("Visibility amplitude")
       plt.legend(loc=1)
       #plt.ylim([0, 20])
-      fig_name= "X_Y_and_real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print "saved %s" % fig_name 
    
-   #Assign vis and X values a group according to the Y_angular response
-   #Dont need this anymore, is for mixedlm which didnt work.
-   Y_angular_group_array = X_short_parallel_array * 0
-   X_group_array = X_short_parallel_array * 0
-   ##use the hist output to split up X according to Y values
-   for Y_bin_index,Y_bin in enumerate(n):
-      start_value = bins[Y_bin_index]
-      end_value = bins[Y_bin_index+1]
-      Y_angular_group_array[(Y_short_parallel_angular_array >= start_value) & (Y_short_parallel_angular_array < end_value)] = Y_bin_index
+   ##Assign vis and X values a group according to the Y_angular response
+   ##Dont need this anymore, is for mixedlm which didnt work.
+   #Y_angular_group_array = X_short_parallel_array * 0
+   #X_group_array = X_short_parallel_array * 0
+   ###use the hist output to split up X according to Y values
+   #for Y_bin_index,Y_bin in enumerate(n):
+   #   start_value = bins[Y_bin_index]
+   #   end_value = bins[Y_bin_index+1]
+   #   Y_angular_group_array[(Y_short_parallel_angular_array >= start_value) & (Y_short_parallel_angular_array < end_value)] = Y_bin_index
     
    #for OLS_fixed_int_min_vis:
    #plot a histogram of X values
@@ -1735,38 +1748,41 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_bin_width = X_bins[1] - X_bins[0]
    print X_bin_width
    map_title="Histogram of X values (angular response)" 
-   fig_name= "hist_X_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+   fig_name= "hist_X_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
    print "saved %s" % fig_name 
    
-   #split X up into bins  
-   ##use the hist output to split up real vis according to X values
-   # and just use the minimum value of the vis in each X_bin
-   real_vis_data_min_in_X_bin_array = np.empty(len(X_bins)-1)
-   X_bin_centres_array = np.empty(len(X_bins)-1) 
-   for X_bin_index,n_bin in enumerate(n_X):
-      start_value = X_bins[X_bin_index]
-      end_value = X_bins[X_bin_index+1]
-      X_group_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)] = X_bin_index
-      real_vis_data_in_X_bin = real_vis_data_sorted_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)]
-      #check if all nans
-      if len(real_vis_data_in_X_bin) > 0:
-         real_vis_data_min_in_X_bin = np.nanmin(real_vis_data_in_X_bin)
-      else:
-         real_vis_data_min_in_X_bin = np.nan
-      #print real_vis_data_in_X_bin
-      if (X_bin_index < len(n_X)):
-         real_vis_data_min_in_X_bin_array[X_bin_index] = real_vis_data_min_in_X_bin
-         X_bin_centres_array[X_bin_index] = start_value + (X_bin_width / 2.)
+   ##split X up into bins  (this didn't work....)
+   ###use the hist output to split up real vis according to X values
+   ## and just use the minimum value of the vis in each X_bin
+   #real_vis_data_min_in_X_bin_array = np.empty(len(X_bins)-1)
+   #X_bin_centres_array = np.empty(len(X_bins)-1) 
+   #for X_bin_index,n_bin in enumerate(n_X):
+   #   start_value = X_bins[X_bin_index]
+   #   end_value = X_bins[X_bin_index+1]
+   #   X_group_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)] = X_bin_index
+   #   real_vis_data_in_X_bin = real_vis_data_sorted_array[(X_short_parallel_array >= start_value) & (X_short_parallel_array < end_value)]
+   #   #check if all nans
+   #   if len(real_vis_data_in_X_bin) > 0:
+   #      real_vis_data_min_in_X_bin = np.nanmin(real_vis_data_in_X_bin)
+   #   else:
+   #      real_vis_data_min_in_X_bin = np.nan
+   #   #print real_vis_data_in_X_bin
+   #   if (X_bin_index < len(n_X)):
+   #      real_vis_data_min_in_X_bin_array[X_bin_index] = real_vis_data_min_in_X_bin
+   #      X_bin_centres_array[X_bin_index] = start_value + (X_bin_width / 2.)
  
    
    
        
 
    #make a data frame
-   data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array,'X_group':X_group_array}
+   #data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array,'X_group':X_group_array}
+   data = {'X_global':X_short_parallel_array,'real_vis':real_vis_data_sorted_array}
+   
+   
    df = pd.DataFrame(data) 
    
    X_short_parallel_array = np.asarray(df['X_global'])
@@ -1917,19 +1933,24 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    else:
       plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   
+   print(X_short_parallel_array)
+   print(real_vis_data_sorted_array)
+   
+   sys.exit()
    map_title="Data and fit" 
    plt.xlabel("Expected global-signal response")
    plt.ylabel("Real component of visibility (Jy)")
    plt.legend(loc=1)
    plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
-   fig_name= "x_y_OLS_plot_%s_MHz_%s_pol%s_%s.png" % (freq_MHz,pol,signal_type_postfix,model_type)
+   fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
    print "saved %s" % fig_name  
    
-   return t_sky_K,t_sky_error_K
+   return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
            
 def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1):
    
@@ -1989,7 +2010,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
    
-   #eda2 data includes autos
+   #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
+   #eda2 data includes autos?
    if EDA2_data:
       n_baselines = n_ants*(n_ants-1) / 2. + 256
    else:
@@ -2012,8 +2034,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    uvtable = hdulist[0].data
    visibilities = uvtable['DATA']
    n_vis = visibilities.shape[0]
+   
+   #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
    n_timesteps = n_vis/n_baselines
-   print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
+   #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
    
    n_fine_chans = visibilities.shape[3]
    
@@ -2033,13 +2057,14 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
          uvfits_filename_list.append(uvfits_filename)
    
-   real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
-   real_vis_data = np.full(real_vis_data_array_size,np.nan)
-   imag_vis_data = np.full(real_vis_data_array_size,np.nan)
-   weights_vis_data = np.full(real_vis_data_array_size,np.nan)
+   #dont predefine the size of these arrays, just take whatever comes in the concat uvfits files
+   #real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
+   #real_vis_data = np.full(real_vis_data_array_size,np.nan)
+   #imag_vis_data = np.full(real_vis_data_array_size,np.nan)
+   #weights_vis_data = np.full(real_vis_data_array_size,np.nan)
    
-   UU_m_array = np.full(real_vis_data_array_size,np.nan)
-   VV_m_array = np.full(real_vis_data_array_size,np.nan)
+   #UU_m_array = np.full(real_vis_data_array_size,np.nan)
+   #VV_m_array = np.full(real_vis_data_array_size,np.nan)
    
    #1. Get the u,v and visibilities for each fine chan 
    print("Solving for Tsky from:") 
@@ -2063,7 +2088,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       print "visibilities_shape"
       print visibilities_shape
       
-      print("omitting 1 edge chan ech side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-1))
+      print("omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-1))
       fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
       print fine_chan_index_array
       centre_freq = float(freq_MHz)
@@ -2076,36 +2101,47 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          wavelength = 300./float(freq_MHz_fine_chan)
          
+         print("fine_chan index,MHz,wavelength")
          print(fine_chan_index)
          print(freq_MHz_fine_chan)
          print(wavelength)
          
-         
-         
-         real_vis_data_unweighted_single = visibilities_single[:,0,0,fine_chan_index,0,0]
-         imag_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,1]
-         weights_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,2]
+         #dont predefine the size of these arrays, just take whatever comes in the concat uvfits files
+         #real_vis_data_unweighted_single = visibilities_single[:,0,0,fine_chan_index,0,0]
+         #imag_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,1]
+         #weights_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,2]
       
-         #vis data needs to be multiplied by the weight to get the right units
-         real_vis_data_single = real_vis_data_unweighted_single #* weights_vis_data
+         real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+         imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
+         weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
+         
+         
+         
+         #real_vis_data_single = real_vis_data_unweighted_single #* weights_vis_data
          
          #print "real visibilities shape"
          #print real_vis_data.shape
    
          
          #get the UU and VV 
-         UU_s_array_single = uvtable['UU']
-         UU_m_array_single = UU_s_array_single * c   
-         VV_s_array_single = uvtable['VV']
-         VV_m_array_single = VV_s_array_single * c
-      
-         start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
-         end_index = int(start_index + (n_baselines * n_timesteps))
-         real_vis_data[start_index:end_index] = real_vis_data_single
-         imag_vis_data[start_index:end_index] = imag_vis_data_single
-         weights_vis_data[start_index:end_index] = weights_vis_data_single
-         UU_m_array[start_index:end_index] = UU_m_array_single
-         VV_m_array[start_index:end_index] = VV_m_array_single
+         #UU_s_array_single = uvtable['UU']
+         #UU_m_array_single = UU_s_array_single * c   
+         #VV_s_array_single = uvtable['VV']
+         #VV_m_array_single = VV_s_array_single * c
+
+         UU_s_array = uvtable['UU']
+         UU_m_array = UU_s_array * c   
+         VV_s_array = uvtable['VV']
+         VV_m_array = VV_s_array * c
+               
+         #forget all this timestep stuff, just use all the data
+         #start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
+         #end_index = int(start_index + (n_baselines * n_timesteps))
+         #real_vis_data[start_index:end_index] = real_vis_data_single
+         #imag_vis_data[start_index:end_index] = imag_vis_data_single
+         #weights_vis_data[start_index:end_index] = weights_vis_data_single
+         #UU_m_array[start_index:end_index] = UU_m_array_single
+         #VV_m_array[start_index:end_index] = VV_m_array_single
       
       
 
@@ -2144,11 +2180,11 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
         
          n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-         print("n_baselines_included %s" % n_baselines_included)
+         print("n_baselines_included %s fine chan %s" % (n_baselines_included,fine_chan_index))
    
 
          #save the baseline length array sorted
-         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
          print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
          
@@ -2239,7 +2275,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          plt.ylabel("real vis")
          plt.legend(loc=1)
          #plt.ylim([0, 20])
-         fig_name= "real_vis_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+         fig_name= "real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print "saved %s" % fig_name 
@@ -2249,7 +2285,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          #Check value is reasonable
          #180 at 180 rule
-         T_sky_rough = 180.*(freq_MHz/180)**(-2.5)
+         T_sky_rough = 180.*(freq_MHz_fine_chan/180)**(-2.5)
          print("180@180 t_sky is %s" % T_sky_rough)
          
                   
@@ -2318,7 +2354,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          freq_MHz_index = int(freq_MHz - 50)
          diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
          if EDA2_data==True:
-            #just doing one freq at a time right now for EDA2
+            #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
             diffuse_global_value = diffuse_global_value_array[0]
          else:
             diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
@@ -2362,7 +2398,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
    
          if include_angular_info:
-            #I think this might be a bit wrong, should be subtracting mean after apply the beam....
+            #Need to update this to do each fine chan
             gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
             gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
             #gsm_map_angular = ov.generate(freq_MHz) - np.mean(ov.generate(freq_MHz))   #this is probly wrong
@@ -2546,28 +2582,31 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             
          #print X_short_parallel_array
          #save X_short_parallel_array
-         X_short_parallel_array_filename = "X_short_parallel_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+         X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(X_short_parallel_array_filename,X_short_parallel_array)
       
          print("saved %s" % X_short_parallel_array_filename)
       
-         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
          print("saved %s" % X_short_parallel_array_filename_pure_inline)
          
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
          print("saved %s" % X_short_parallel_array_filename_pure_parallel)
          
-         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
          print("saved %s" % real_vis_data_sorted_array_filename)
          
+         #update for fine chans
          if include_angular_info:
-            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%d_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0f_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
             np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
             print("saved %s" % Y_short_parallel_angular_array_filename)
          
+   return(beam_weighted_av_sky)
+   
          
          ##normalise both X and real vis to max 1
          ##Don't need to do this plot here anymore, it is done later (so that it can be done in plot_only mode)
@@ -2602,38 +2641,40 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #theta_hat2=np.matmul(np.matmul(np.linalg.inv(np.matmul(H2_matrix.T,H2_matrix)),H2_matrix.T),vec_D)
          #for us:
          # vis = X Tsky + noise
-         X_transpose = np.transpose(X_short_parallel_array)
-         sum_of_squares = X_transpose.dot(X_short_parallel_array)
-         sum_of_squares_inverse = sum_of_squares**(-1) 
-         #print sum_of_squares_inverse
-         sum_of_squares_inverse_Xt = sum_of_squares_inverse * (X_transpose)
-         t_sky_jy = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
-         print "t_sky is %0.2f Jy" % t_sky_jy
-         #convert jy to K
-         #jy_to_K = (2*k*(2*np.pi)) / (wavelength**2 * 10**(-26))
-         #jy_to_K = (2*k) / (10**(-26))
-         #from simulate where we convert to Jy/pix: scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-         jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
-         print("jy_to_K %.4E" % jy_to_K)
-         t_sky_K = jy_to_K * t_sky_jy
-         print("t_sky_K is %0.4E" % t_sky_K)
          
-         #Residuals of fit
-         #print real_vis_data_sorted[0:n_baselines_included]
-         #print X_short_parallel_array
-         residuals_jy = real_vis_data_sorted[0:n_baselines_included] - (X_short_parallel_array * t_sky_jy)
-         #print residuals_jy
-         residuals_K = jy_to_K * residuals_jy
-         rms_residual_K = np.sqrt(np.mean(np.square(residuals_K)))
-         #print rms_residual_K
+         ##Don't need all this stuff as you do it in model_t_sky function from saved data
+         #X_transpose = np.transpose(X_short_parallel_array)
+         #sum_of_squares = X_transpose.dot(X_short_parallel_array)
+         #sum_of_squares_inverse = sum_of_squares**(-1) 
+         ##print sum_of_squares_inverse
+         #sum_of_squares_inverse_Xt = sum_of_squares_inverse * (X_transpose)
+         #t_sky_jy = sum_of_squares_inverse_Xt.dot(real_vis_data_sorted[0:n_baselines_included])
+         #print "t_sky is %0.2f Jy" % t_sky_jy
+         ##convert jy to K
+         ##jy_to_K = (2*k*(2*np.pi)) / (wavelength**2 * 10**(-26))
+         ##jy_to_K = (2*k) / (10**(-26))
+         ##from simulate where we convert to Jy/pix: scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
+         #jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
+         #print("jy_to_K %.4E" % jy_to_K)
+         #t_sky_K = jy_to_K * t_sky_jy
+         #print("t_sky_K is %0.4E" % t_sky_K)
+        # 
+         ##Residuals of fit
+         ##print real_vis_data_sorted[0:n_baselines_included]
+         ##print X_short_parallel_array
+         #residuals_jy = real_vis_data_sorted[0:n_baselines_included] - (X_short_parallel_array * t_sky_jy)
+         ##print residuals_jy
+         #residuals_K = jy_to_K * residuals_jy
+         #rms_residual_K = np.sqrt(np.mean(np.square(residuals_K)))
+         ##print rms_residual_K
+         #
+         #parameter_covariance = rms_residual_K**2 * sum_of_squares_inverse
+         #print "parameter_covariance"
+         #print parameter_covariance
          
-         parameter_covariance = rms_residual_K**2 * sum_of_squares_inverse
-         print "parameter_covariance"
-         print parameter_covariance
-         
-         t_sky_error_K = np.sqrt(parameter_covariance)
+         #t_sky_error_K = np.sqrt(parameter_covariance)
           
-         print("t_sky_K = %0.4E +- %0.3f K for %s shortest baselines included" % (t_sky_K,t_sky_error_K,n_baselines_included))
+         #print("t_sky_K = %0.4E +- %0.3f K for %s shortest baselines included" % (t_sky_K,t_sky_error_K,n_baselines_included))
       
       
       
@@ -2641,8 +2682,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #ratio = beam_weighted_av_sky / t_sky_K
          #print("ratio between beam_weighted_av_sky %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_K,t_sky_error_K,ratio)) 
          
-         ratio = beam_weighted_av_sky / t_sky_K
-         print("ratio between beam_weighted_av_sky %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_K,t_sky_error_K,ratio)) 
+         #ratio = beam_weighted_av_sky / t_sky_K
+         #print("ratio between beam_weighted_av_sky %0.4E K and t_sky_K %0.4E +- %0.3f K is %0.3f" % (beam_weighted_av_sky,t_sky_K,t_sky_error_K,ratio)) 
       
          #Don't do this here, just save Y as above and then use random intercept LS regression later (Y is used to group X ....)
          #if include_angular_info:
@@ -2662,7 +2703,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #   t_sky_global_K = np.nan
          #   t_sky_ang_K = np.nan
          
-         return(t_sky_K,t_sky_error_K,beam_weighted_av_sky,n_baselines_included)
+         #don't return t_sky, error and n_baselines as these are derived from saved files later on oin model_t_sky
+         #return(t_sky_K,t_sky_error_K,beam_weighted_av_sky,n_baselines_included)
+      
          
          
          #make diagnostic plots
@@ -2872,6 +2915,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
    pol = pol_list[0]
    
+   if EDA2_data:
+      n_fine_chans = 32
+      n_chans_omitted_each_edge = 1
+      n_edge_chans_omitted = n_chans_omitted_each_edge * 2
+      n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+   else:
+      n_fine_chans_used = 1
+      n_chans_omitted_each_edge = 0
+   
    #lst_string = '_'.join(lst_hrs_list)
    #just use the first LST for LST string
    lst_string = lst_hrs_list[0]
@@ -2927,7 +2979,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    if EDA2_data==True:
       signal_type_postfix = "_EDA2_data"
    
+   
    t_sky_theoretical_array = np.full(len(freq_MHz_list),np.nan)
+   #don't use this as you have one for each fine chan now
    n_baselines_used_array = np.full(len(freq_MHz_list),np.nan)
    
    #for including angular info:
@@ -2942,6 +2996,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    ##for including angular info:
    t_sky_measured_global_array_filename = "t_sky_measured_global_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+   freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    
    
    if not plot_only:
@@ -2957,22 +3012,28 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             EDA2_chan = None
             EDA2_obs_time = None
             n_obs_concat = 1
-            
-         t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         
+         #only the theoretical beam weighted av is taken from this function now,, rest is derived from saved files
+         #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
-         n_baselines_used_array[freq_MHz_index] = n_baselines_used  
+         #n_baselines_used_array[freq_MHz_index] = n_baselines_used  
       #np.save(t_sky_measured_array_filename,t_sky_measured_array)
       #np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
       np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array)
-      np.save(n_baselines_used_array_filename,n_baselines_used_array)
+      #np.save(n_baselines_used_array_filename,n_baselines_used_array)
       #if include_angular_info:
       #   np.save(t_sky_measured_global_array_filename,t_sky_measured_global_array)
       #   np.save(t_sky_measured_angular_array_filename,t_sky_measured_angular_array)
- 
-   t_sky_measured_array = np.full(len(freq_MHz_list),np.nan)
-   t_sky_measured_error_array = np.full(len(freq_MHz_list),np.nan)
+   
+   #this array needs to be bigger now as we are using the fine channels of EDA2 data
+   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
+   t_sky_measured_array = np.full(t_sky_array_length,np.nan)
+   t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
+   freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
    
    #this replaces all the matrix stuff you do in model_tsky_from_saved_data
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
@@ -2985,18 +3046,26 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       else:
          EDA2_chan = None
          n_obs_concat = 1
-      t_sky_measured,t_sky_measured_error = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
-      t_sky_measured_array[freq_MHz_index] = t_sky_measured
-      t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
-  
+      
+      
+      fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
+      
+      for fine_chan_index in fine_chan_index_array:
+         freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index
+         t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
+         t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
+         t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
+         freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
+         
    np.save(t_sky_measured_array_filename,t_sky_measured_array)
    np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
+   np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array) 
    
    #Dont need to load these...       
    ###t_sky_measured_array = np.load(t_sky_measured_array_filename)
    ####t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
    t_sky_theoretical_array = np.load(t_sky_theoretical_array_filename)
-   n_baselines_used_array = np.load(n_baselines_used_array_filename)
+   #n_baselines_used_array = np.load(n_baselines_used_array_filename)
    #if include_angular_info:
    #   t_sky_measured_global_array = np.load(t_sky_measured_global_array_filename)
    #   t_sky_measured_angular_array = np.load(t_sky_measured_angular_array_filename)
@@ -3059,7 +3128,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
       
    plt.clf()
-   plt.errorbar(freq_MHz_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
+   plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
    plt.plot(freq_MHz_list,t_sky_theoretical_array,label='input')
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
@@ -8465,8 +8534,8 @@ freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
 
-baseline_length_thresh_lambda = 0.50
-plot_only = False  
+baseline_length_thresh_lambda = 0.23
+plot_only = True  
 include_angular_info = True
 
 
