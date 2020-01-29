@@ -1590,10 +1590,14 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    #wavelength = 300./float(freq_MHz)
    
    #get the diffuse global diffuse value used in the simulation (from gsm)
-   sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
+   if EDA2_data==True:
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)
+   else:
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
    #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
    freq_MHz_index = int(freq_MHz - 50)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   print("loaded %s sky_averaged_diffuse_array_beam_lsts_filename")
    if EDA2_data==True:
       #just doing one eda freq at a time for now
       ##
@@ -1937,7 +1941,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    print(X_short_parallel_array)
    print(real_vis_data_sorted_array)
    
-   sys.exit()
+   
    
    map_title="Data and fit" 
    plt.xlabel("Expected global-signal response")
@@ -2024,7 +2028,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    lst_deg = (float(lst_hrs)/24.)*360.
    if EDA2_data:
       if n_obs_concat==1:
-         uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          #concat_chan_64_20191202T171525_n_obs_13.uvfits
          #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
@@ -7437,7 +7441,7 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filena
    
    
    
-def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],av_in_freq=False):
+def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False):
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
@@ -7448,20 +7452,22 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        lst = lst_list[EDA2_chan_index]
        lst_deg = (float(lst)/24)*360.
        obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+            
+       first_obstime = obs_time_list[0]
+      
+       concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       
+       miriad_cal_vis_name_list = []
+       
        for EDA2_obs_time in obs_time_list:
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
-            if n_obs_concat==1:
-               uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-            else:
-               uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-               
+            uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
             uvfits_filename = "%s%s" % (eda2_data_dir,uvfits_name)
             miriad_vis_name = uvfits_name.split('.')[0] + '.vis'
             calibrated_uvfits_filename = uvfits_name.split('.')[0] + '_cal.uvfits'
-            av_vis_name = uvfits_name.split('.')[0] + '_cal_freq_av.vis'
-            av_uvfits_name = uvfits_name.split('.')[0] + '_cal_freq_av.uvfits'
-            
-            cmd = "rm -rf %s %s %s %s" % (miriad_vis_name,calibrated_uvfits_filename,av_vis_name,av_uvfits_name)
+
+            cmd = "rm -rf %s %s" % (miriad_vis_name,calibrated_uvfits_filename)
             print(cmd)
             os.system(cmd)
             
@@ -7581,29 +7587,35 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                #plot the sols
                if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
                   plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
+                  #write the calibrated uvfits file out
+                  cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                  print(cmd)
+                  os.system(cmd)
+                  if concat==True:
+                     print("concatenating calibrated data into one vis and uvfits")
+                     miriad_cal_vis_name_list.append(miriad_vis_name)
+               
                else:
                   print("no cal solutions for %s" % (miriad_vis_name))
                   continue
+       
+       if concat==True:
+          cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
+          print(cmd)
+          os.system(cmd)
+          
+          vis_string = ','.join(miriad_cal_vis_name_list)
+      
+          cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_name)
+          print cmd
+          os.system(cmd)
+               
+          cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
+          print(cmd)
+          os.system(cmd)
+               
+               
 
-               #write the calibrated uvfits file out
-               cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
-               print(cmd)
-               os.system(cmd)
-               
-               
-               
-               if av_in_freq==True:
-                  print("averaging in freq and not including edge chans")
-                  cmd = "uvaver vis=%s out=%s line=channel,1,2,30,1" % (miriad_vis_name,av_vis_name)
-                  print cmd
-                  os.system(cmd)
-            
-                  cmd = "fits in=%s out=%s op=uvout" % (av_vis_name,av_uvfits_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  with fits.open(av_uvfits_name) as hdu_list:
-                     hdu_list.info()
                
           
 def image_eda2_data(eda2_data_uvfits_name_list):
@@ -8383,69 +8395,9 @@ def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circ
          extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
     
          
-def concat_EDA2_data(EDA2_chan_list,EDA2_obs_time_list_each_chan,pol):
-   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
-      obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
-      n_obs = len(obs_time_list)     
-      first_obstime = obs_time_list[0]
-      #av_vis_name = "av_chan_%s_%s_n_obs_%s_t_av.vis" % (EDA2_chan,first_obstime,n_obs)
-      concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs)
-      concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs)
-      miriad_vis_name_list = []
-      for obs_time in obs_time_list:
-         ##need to use ms for aoflagger
-         #ms_name = "flagged/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (obs_time[0:8],obs_time[9:15])
-         ##run aoflagger on it
-         #cmd = "aoflagger %s" % (ms_name)
-         #print cmd
-         
-         #average the uncalibrated uvdata:
-         #need to convert to miriad vis first:
-         uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time)
-         miriad_vis_name = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,obs_time)
-         miriad_vis_name_list.append(miriad_vis_name) 
-         
-         cmd = "rm -rf %s" % (miriad_vis_name)
-         print(cmd)
-         os.system(cmd)
-               
-         cmd = "fits in=%s out=%s op=uvin" % (uvfits_name,miriad_vis_name)
-         print(cmd)
-         os.system(cmd)
-      
-      
-      
-      
-      vis_string = ','.join(miriad_vis_name_list)
-      #print(vis_string)   
-      
-      #remove old one:
-      
-      cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
-      print cmd
-      os.system(cmd)
-      
-      #concat all vis together 
-      cmd = "uvaver vis=%s out=%s options=nocal,nopass,nopol" % (vis_string,concat_vis_name)
-      print cmd
-      os.system(cmd)
-      
-      #av to one timestep - no, do this later, after calibration
-      #cmd = "uvaver vis=%s out=%s interval=10 options=nocal,nopass,nopol" % (concat_vis_name,av_vis_name)
-      #print cmd
-      #os.system(cmd)
-      
-      
-      cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
-      print(cmd)
-      os.system(cmd)
-      
-      with fits.open(concat_uvfits_name) as hdu_list:
-         hdu_list.info()
-      
-         
-   # average all 32 chans together after calibration (each of the 32 fine chans is 28935.19 Hz wide)
-   #line=channel,1,1,32,1
+
+
+
 #SIMS
 
 #calculate the global 21cm signal:
@@ -8515,6 +8467,17 @@ EDA2_obs_time_list_each_chan = [
    ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
    ]
 
+##for use in testing when you just want 1 obs per freq
+#EDA2_obs_time_list_each_chan = [
+#   ['20191202T171525'],
+#   ['20191202T171629'],
+#   ['20191202T171727'],
+#   ['20191202T171830'],
+#   ['20191202T171928'],
+#   ['20191202T172027'],
+#   ]
+
+
 
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 
@@ -8535,8 +8498,8 @@ freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
 
-baseline_length_thresh_lambda = 0.23
-plot_only = True  
+baseline_length_thresh_lambda = 0.50
+plot_only = True
 include_angular_info = True
 
 
@@ -8554,14 +8517,14 @@ for EDA2_obs_time in EDA2_obs_time_list:
    print lst_eda2_hrs
    lst_hrs_list.append(lst_eda2_hrs)
 
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
-#image_eda2_data(eda2_data_uvfits_name_list)
+##simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
+##image_eda2_data(eda2_data_uvfits_name_list)
 
 
-#calibrate each individually first
+#calibrate each individually first and concat
 #do this outside chan dir
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,av_in_freq=False)
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True)
 #sys.exit()
 
 #after calibration:
