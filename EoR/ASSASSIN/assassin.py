@@ -2354,7 +2354,10 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          gsm_map = ov.generate(freq_MHz) * 0.
          
          #get the diffuse global diffuse value used in the simulation (from gsm)
-         sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
+         if EDA2_data==True:
+            sky_averaged_diffuse_array_beam_lsts_filename = "%s/%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan,concat_output_name_base)
+         else:
+            sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
          #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
          freq_MHz_index = int(freq_MHz - 50)
          diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
@@ -5955,7 +5958,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
    sky_averaged_diffuse_array_beam_Y_lsts = np.full((n_chan),0.0)
    sky_averaged_diffuse_array_no_beam_lsts = np.full((n_chan),0.0)
    
-   
    for lst in lst_list:
       #model_sky_vis_list_X = []
       #model_global_signal_vis_list_X = []
@@ -6424,14 +6426,19 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #now multiply them to get the apparent sky and put that into uvmodel, 
          
             apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
+            apparent_sky_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.fits" % (lst_deg,pol,int(freq_MHz))
             apparent_sky_im_Tb_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.im" % (lst_deg,pol,int(freq_MHz))
             apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
             
-            cmd = "rm -rf %s %s %s " % (apparent_sky_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
+            cmd = "rm -rf %s %s %s %s " % (apparent_sky_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name,apparent_sky_fits_name)
             print(cmd)
             os.system(cmd)
          
             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_Jy_per_pix_name,apparent_sky_im_name)
+            print(cmd)
+            os.system(cmd)
+            
+            cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name,apparent_sky_fits_name)
             print(cmd)
             os.system(cmd)
             
@@ -7441,7 +7448,7 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filena
    
    
    
-def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False):
+def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False,casa=False):
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
@@ -7457,12 +7464,19 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
       
        concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
        concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
-       
+
+       concat_ms_name_casa_cal = "%s/concat_chan_%s_%s_n_obs_%s_casa_cal.ms" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_uvfits_name_casa_cal = "%s/concat_chan_%s_%s_n_obs_%s_casa_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+              
        miriad_cal_vis_name_list = []
+       casa_cal_vis_name_list = []
        
        for EDA2_obs_time in obs_time_list:
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
             uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+            print ms_name
+            sys.exit()
             uvfits_filename = "%s%s" % (eda2_data_dir,uvfits_name)
             miriad_vis_name = uvfits_name.split('.')[0] + '.vis'
             calibrated_uvfits_filename = uvfits_name.split('.')[0] + '_cal.uvfits'
@@ -7550,69 +7564,106 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                apparent_sky_im_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
                #print apparent_sky_im_name
                
-               #how many chans
-               #cmd = "uvlist vis=%s " % (miriad_vis_name)
-               #print cmd 
-               #os.system(cmd)
-               
-               
-               
-               #select=uvrange(uvmin,uvmax) in kilolambda
-               #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
-               if uv_cutoff==True:
-                  cmd = "selfcal vis=%s nfbin=32 interval=0.083333 model=%s line=channel,32,1,1,1 options=amplitude,noscale,mfs select=uvrange\(0.00050,50\)" % (miriad_vis_name,apparent_sky_im_name)
+               if casa==True:
+                  print("cal using CASA bandpass")
+                  
+                  #import apparent sky image in Jy/pix
+                  
+                  #use setjy with a sky model setjy(vis=myinput,field=myfluxcal,spw=myspw,modimage=myfluxmod,standard='Perley-Butler 2010',scalebychan=True)
+                  
+                  #calibrate using bandpass: bandpass(vis=myinput,caltable=myfluxbpasstable,field=myfluxcal,refant=myrefant,solint='inf',combine='scan',solnorm=False, # for calibrationbandtype='B',gaintable=[myfluxbpphasetable,myfluxbpamptable],gaincurve=True)
+                  
+                  #if solutions were found:
+                     #apply solutions applycal()
+                  
+                     #write out to uvfits: exportuvfits()
+                     
+                     #casa_cal_vis_name_list.append(ms_name)
+                  
                else:
-                  cmd = "selfcal vis=%s nfbin=32 model=%s options=amplitude,noscale,mfs" % (miriad_vis_name,apparent_sky_im_name)
-               print cmd 
-               os.system(cmd)
-               
-
-               gain_solutions_name_amp = 'cal_%s_%s_amp.txt' % (EDA2_chan,EDA2_obs_time)
-               gain_solutions_name_phase = 'cal_%s_%s_ph.txt' % (EDA2_chan,EDA2_obs_time)
-               
-               cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
-               print(cmd)
-               os.system(cmd)
-               
-               #this doesnt work - need to just run gpplt and then plot manually
-               #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-               cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-               print(cmd)
-               os.system(cmd)
-
-               cmd = "gpplt vis=%s yaxis=phase log=%s" % (miriad_vis_name,gain_solutions_name_phase)
-               print(cmd)
-               os.system(cmd)               
-               
-               #plot the sols
-               if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
-                  plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
-                  #write the calibrated uvfits file out
-                  cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                  print("cal using miriad selfcal (bandpass not applied individually to each chan)")
+                  #how many chans
+                  #cmd = "uvlist vis=%s " % (miriad_vis_name)
+                  #print cmd 
+                  #os.system(cmd)
+                  
+                  
+                  
+                  #select=uvrange(uvmin,uvmax) in kilolambda
+                  #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
+                  if uv_cutoff==True:
+                     cmd = "selfcal vis=%s nfbin=32 interval=0.083333 model=%s line=channel,32,1,1,1 options=amplitude,noscale,mfs select=uvrange\(0.00050,50\)" % (miriad_vis_name,apparent_sky_im_name)
+                  else:
+                     cmd = "selfcal vis=%s nfbin=32 model=%s options=amplitude,noscale,mfs" % (miriad_vis_name,apparent_sky_im_name)
+                  print cmd 
+                  os.system(cmd)
+                  
+   
+                  gain_solutions_name_amp = 'cal_%s_%s_amp.txt' % (EDA2_chan,EDA2_obs_time)
+                  gain_solutions_name_phase = 'cal_%s_%s_ph.txt' % (EDA2_chan,EDA2_obs_time)
+                  
+                  cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
                   print(cmd)
                   os.system(cmd)
-                  if concat==True:
-                     print("concatenating calibrated data into one vis and uvfits")
-                     miriad_cal_vis_name_list.append(miriad_vis_name)
-               
-               else:
-                  print("no cal solutions for %s" % (miriad_vis_name))
-                  continue
+                  
+                  #this doesnt work - need to just run gpplt and then plot manually
+                  #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
+                  cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (miriad_vis_name,gain_solutions_name_amp)
+                  print(cmd)
+                  os.system(cmd)
+   
+                  cmd = "gpplt vis=%s yaxis=phase log=%s" % (miriad_vis_name,gain_solutions_name_phase)
+                  print(cmd)
+                  os.system(cmd)               
+                  
+                  #plot the sols
+                  if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
+                     plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
+                     #write the calibrated uvfits file out
+                     cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                     print(cmd)
+                     os.system(cmd)
+                     if concat==True:
+                        print("concatenating calibrated data into one vis and uvfits")
+                        miriad_cal_vis_name_list.append(miriad_vis_name)
+                  
+                  else:
+                     print("no cal solutions for %s" % (miriad_vis_name))
+                     continue
        
        if concat==True:
-          cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
-          print(cmd)
-          os.system(cmd)
-          
-          vis_string = ','.join(miriad_cal_vis_name_list)
-      
-          cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_name)
-          print cmd
-          os.system(cmd)
-               
-          cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
-          print(cmd)
-          os.system(cmd)
+          if casa==True:
+             print("concating using CASA")
+             
+             cmd = "rm -rf %s %s" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
+             print(cmd)
+             os.system(cmd)
+             
+             vis_string = ','.join(casa_cal_vis_name_list)
+             
+             #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
+             cmd = "concatms(vis=%s,concatvis=%s,data_column='CCORRECTED_DATA)" % (vis_string,concat_ms_name_casa_cal)
+             print cmd
+             os.system(cmd)
+                  
+             cmd = "exportuvfits(vis=%s,fitsfile=%s)" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
+             print(cmd)
+             os.system(cmd)
+             
+          else:
+             cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
+             print(cmd)
+             os.system(cmd)
+             
+             vis_string = ','.join(miriad_cal_vis_name_list)
+         
+             cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_name)
+             print cmd
+             os.system(cmd)
+                  
+             cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
+             print(cmd)
+             os.system(cmd)
                
                
 
@@ -8517,15 +8568,18 @@ for EDA2_obs_time in EDA2_obs_time_list:
    print lst_eda2_hrs
    lst_hrs_list.append(lst_eda2_hrs)
 
-##simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
+#freq_MHz_list=[50.]
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#old calibrate cmd:
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 ##image_eda2_data(eda2_data_uvfits_name_list)
 
 
 #calibrate each individually first and concat
 #do this outside chan dir
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True)
-#sys.exit()
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,casa=True)
+sys.exit()
 
 #after calibration:
 #no cal solutions for 64/chan_64_20191202T171624.vis
