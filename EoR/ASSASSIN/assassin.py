@@ -160,7 +160,7 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse','noise']
+signal_type_list=['diffuse']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -7473,21 +7473,23 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        
        for EDA2_obs_time in obs_time_list:
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
+            simulation_uvfits_name = "%s/eda_model_LST_%03d_%s_%s_MHz_D_gsm.uvfits" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+            simulation_ms_name = "%s/eda_model_LST_%03d_%s_%s_MHz_D_gsm.ms" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+            
             uvfits_name = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
             ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-            print ms_name
-            sys.exit()
             uvfits_filename = "%s%s" % (eda2_data_dir,uvfits_name)
             miriad_vis_name = uvfits_name.split('.')[0] + '.vis'
             calibrated_uvfits_filename = uvfits_name.split('.')[0] + '_cal.uvfits'
-
-            cmd = "rm -rf %s %s" % (miriad_vis_name,calibrated_uvfits_filename)
-            print(cmd)
-            os.system(cmd)
             
-            cmd = "fits in=%s out=%s op=uvin" % (uvfits_filename,miriad_vis_name)
-            print(cmd)
-            os.system(cmd)
+            if not casa:
+               cmd = "rm -rf %s %s" % (miriad_vis_name,calibrated_uvfits_filename)
+               print(cmd)
+               os.system(cmd)
+               
+               cmd = "fits in=%s out=%s op=uvin" % (uvfits_filename,miriad_vis_name)
+               print(cmd)
+               os.system(cmd)
             
             
             ##check data, see how many chans there are in uvfits
@@ -7562,21 +7564,82 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                print "calibrating using sky model"
                #generate_apparent_sky_model(pol=pol,lst_hrs=lst,freq_MHz=freq)
                apparent_sky_im_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+               apparent_sky_fits_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.fits" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+               apparent_sky_casa_imname = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.model" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+               
                #print apparent_sky_im_name
                
                if casa==True:
-                  print("cal using CASA bandpass")
+                  print("cal using wsclean predict and calibrate / CASA bandpass")
                   
-                  #import apparent sky image in Jy/pix
+                  #Cant import the EDA sim uvfits file into ms - too many antenna - what if you make an mwa 32T simulated uvfits file instead!? then import to ms and image at low res (do this in simulate())
+                  
+                  #import the simulated visibility to casa ms
+                  cmd = "rm -rf %s " % simulation_ms_name
+                  print cmd
+                  os.system(cmd)
+                  
+                  casa_cmd_filename = "casa_cmd.py"
+                  casa_cmd = "importuvfits(fitsfile='%s',vis='%s')" % (simulation_uvfits_name,simulation_ms_name)
+                  with open(casa_cmd_filename,'w') as f:
+                     f.write(casa_cmd)
+                  print("wrote %s " % (casa_cmd_filename))
+                  cmd = "casa --nohead --nogui -c %s " % casa_cmd_filename
+                  print cmd
+                  os.system(cmd)
+                  
+                  sys.exit()
+                  
+                  #image with wsclean to get a model image
+                  
+                  #wsclean -predict the model into the real ms
+                  
+                  #use calibrate to ... calibrate
+                  
+                  cmd = "wsclean -predict %s " % (ms_name)
+                  #print cmd
+                  #os.system(cmd)
+                  
+                  #if solutions were found:
+                     #plot cal solutions
+                  
+                     #apply solutions applysolutions()
+                  
+                     #write out to uvfits with casa : exportuvfits(data_column='CCORRECTED_DATA)
+                     
+                     #casa_cal_vis_name_list.append(ms_name)
+                  
+                  ##import apparent sky image in Jy/pix
+                  #casa_cmd_filename = "casa_cmd.py"
+                  #casa_cmd = "importfits(fitsimage='%s',imagename='%s',overwrite=True)" % (apparent_sky_fits_name,apparent_sky_casa_imname)
+                  #with open(casa_cmd_filename,'w') as f:
+                  #   f.write(casa_cmd)
+                  #print("wrote %s " % (casa_cmd_filename))
+                  #cmd = "casa --nohead --nogui -c %s " % casa_cmd_filename
+                  #print cmd
+                  #os.system(cmd)
                   
                   #use setjy with a sky model setjy(vis=myinput,field=myfluxcal,spw=myspw,modimage=myfluxmod,standard='Perley-Butler 2010',scalebychan=True)
+                  #this is extremely slow or doesnt work - going to have to use wsclean -predict
+                  #casa_cmd = "setjy(vis='%s',modimage='%s',standard='manual',usescratch=True)" % (ms_name,apparent_sky_casa_imname)
+                  #with open(casa_cmd_filename,'w') as f:
+                  #   f.write(casa_cmd)
+                  #print("wrote %s " % (casa_cmd_filename))
+                  #cmd = "casa -c %s " % casa_cmd_filename
+                  #print cmd
+                  #os.system(cmd)
+                  
+                  sys.exit()
+                  
                   
                   #calibrate using bandpass: bandpass(vis=myinput,caltable=myfluxbpasstable,field=myfluxcal,refant=myrefant,solint='inf',combine='scan',solnorm=False, # for calibrationbandtype='B',gaintable=[myfluxbpphasetable,myfluxbpamptable],gaincurve=True)
                   
                   #if solutions were found:
+                     #plot cal solutions
+                  
                      #apply solutions applycal()
                   
-                     #write out to uvfits: exportuvfits()
+                     #write out to uvfits: exportuvfits(data_column='CCORRECTED_DATA)
                      
                      #casa_cal_vis_name_list.append(ms_name)
                   
@@ -7642,7 +7705,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              vis_string = ','.join(casa_cal_vis_name_list)
              
              #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
-             cmd = "concatms(vis=%s,concatvis=%s,data_column='CCORRECTED_DATA)" % (vis_string,concat_ms_name_casa_cal)
+             cmd = "concatms(vis=%s,concatvis=%s)" % (vis_string,concat_ms_name_casa_cal)
              print cmd
              os.system(cmd)
                   
@@ -8571,6 +8634,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #freq_MHz_list=[50.]
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#sys.exit()
 #old calibrate cmd:
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 ##image_eda2_data(eda2_data_uvfits_name_list)
