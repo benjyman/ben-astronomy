@@ -46,6 +46,8 @@ from astropy.utils.iers import conf
 conf.auto_max_age = None
 from astropy.utils import iers
 iers.conf.auto_download = False  
+from astroplan import download_IERS_A
+download_IERS_A()
 
   
 sun_flux_density = 50000.0   #borkowski et al 1982?
@@ -115,7 +117,10 @@ array_ant_locations = 'eda2'
 inst_bw = 30.
 #this has to be 1 MHz:
 chan_width = 1.0
-
+#fine chan stuff
+centre_chan_index = 16
+fine_chan_width_Hz = 28935 #Hz
+                     
 if array_ant_locations == 'eda2':
    array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
    array_label = 'eda_model'
@@ -160,7 +165,7 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse']
+signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -210,7 +215,7 @@ def get_eda2_lst(eda_time_string="20151202T171727"):
    #eda_time_string = "20191202T171727"
    year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
    eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
-   print eda2_astropy_time_string
+   print(eda2_astropy_time_string)
    eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
    #calculate the local sidereal time for the MWA at eda2_astropy_time
    eda2_obs_lst = eda2_astropy_time.sidereal_time('apparent')
@@ -324,7 +329,7 @@ def make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
       
       
 def cleanup_images_and_vis(array_label,lst,freq_MHz,pol):
-   print "###################doing cleanup########################"
+   print("###################doing cleanup########################")
    #print("lst %s hrs" % lst)
    lst_deg = (float(lst)/24)*360.
    #print("lst %s deg" % lst_deg)
@@ -355,8 +360,8 @@ def cleanup_images_and_vis(array_label,lst,freq_MHz,pol):
    reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
    reprojected_global_signal_im_Jy_per_pix_name =  "global_map_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
    
-   cmd = "rm -rf %s %s %s %s %s %s %s %s %s %s %s %s" % (gsm_hpx_fits_name,reprojected_gsm_fitsname,reprojected_gsm_im_name,global_signal_hpx_fits_name,reprojected_global_signal_fitsname,reprojected_global_signal_im_name,base_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,eda_model_no_source_image_fits_name,reprojected_gsm_im_Jy_per_pix_name,reprojected_global_signal_im_Jy_per_pix_name)
-   print cmd
+   cmd = "rm -rf %s %s %s %s %s %s %s %s %s %s %s" % (reprojected_gsm_fitsname,reprojected_gsm_im_name,global_signal_hpx_fits_name,reprojected_global_signal_fitsname,reprojected_global_signal_im_name,base_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,eda_model_no_source_image_fits_name,reprojected_gsm_im_Jy_per_pix_name,reprojected_global_signal_im_Jy_per_pix_name)
+   print(cmd)
    os.system(cmd)
    
    #don't get rid of this - need it for calibrating eda2 data
@@ -365,30 +370,30 @@ def cleanup_images_and_vis(array_label,lst,freq_MHz,pol):
    #apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
    apparent_global_signal_im_name = "apparent_global_signal_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
    cmd = "rm -rf %s %s " % (apparent_global_signal_im_name,apparent_sky_im_Tb_name)
-   print cmd
+   print(cmd)
    os.system(cmd)
    
    model_sky_vis = "%s_plus_sky_LST_%03d_%s_pol_%s_MHz.vis" % (array_label,lst_deg,pol,int(freq_MHz))
    model_global_signal_vis = "%s_plus_G_LST_%03d_%s_pol_%s_MHz.vis" % (array_label,lst_deg,pol,int(freq_MHz))
    eda_model_noise_vis_name = "%s_N_LST_%03d_%s_%s_MHz.vis" % (array_label,lst_deg,pol,int(freq_MHz))
    cmd = "rm -rf %s %s %s" % (model_sky_vis,model_global_signal_vis,eda_model_noise_vis_name)
-   print cmd
+   print(cmd)
    os.system(cmd)
          
    beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
    beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
    cmd = "rm -rf %s %s " % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name)
-   print cmd
+   print(cmd)
    os.system(cmd)        
 
    one_jy_source_vis_name =  "%s_one_jy_source_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
    one_jy_source_vis_name_assassin =  "%s_one_jy_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
    cmd = "rm -rf %s %s " % (one_jy_source_vis_name,one_jy_source_vis_name_assassin)
-   print cmd
+   print(cmd)
    os.system(cmd)
 
 def cleanup_images_and_vis_assassin(array_label,lst,freq_MHz,pol):
-   print "###################doing cleanup########################"
+   print("###################doing cleanup########################")
    #print("lst %s hrs" % lst)
    lst_deg = (float(lst)/24)*360.
    #print("lst %s deg" % lst_deg)
@@ -408,7 +413,7 @@ def cleanup_images_and_vis_assassin(array_label,lst,freq_MHz,pol):
    eda_model_no_source_image_fits_name = "%s_no_src_LST_%03d_%s_MHz.fits" % (array_label,lst_deg,int(freq_MHz))
       
    cmd = "rm -rf %s %s %s %s " % (base_vis_name,eda_model_no_source_image_name,eda_model_no_source_beam_name,eda_model_no_source_image_fits_name)
-   print cmd
+   print(cmd)
    os.system(cmd)
    
 
@@ -416,14 +421,14 @@ def cleanup_images_and_vis_assassin(array_label,lst,freq_MHz,pol):
    model_global_signal_vis = "%s_plus_G_LST_%03d_%s_pol_%s_MHz.vis" % (array_label,lst_deg,pol,int(freq_MHz))
    eda_model_noise_vis_name = "%s_N_LST_%03d_%s_%s_MHz.vis" % (array_label,lst_deg,pol,int(freq_MHz))
    cmd = "rm -rf %s %s %s" % (model_sky_vis,model_global_signal_vis,eda_model_noise_vis_name)
-   print cmd
+   print(cmd)
    os.system(cmd)
               
 
    one_jy_source_vis_name =  "%s_one_jy_source_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
    one_jy_source_vis_name_assassin =  "%s_one_jy_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
    cmd = "rm -rf %s %s " % (one_jy_source_vis_name,one_jy_source_vis_name_assassin)
-   print cmd
+   print(cmd)
    os.system(cmd)
 
 def global_sig_func(nu_array,C=0.,A=1.,delta_nu=20.,nu_c=78.):
@@ -509,7 +514,7 @@ def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    fig_name="s_21_vs_freq.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    return S_21
    
    
@@ -528,7 +533,7 @@ def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.
    fig_name="s_21_EDGES_vs_freq.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    return S_21_EDGES
 
 
@@ -555,7 +560,7 @@ def write_beam_fits_sin(cart_image,fitsname,lst=None):
    #target_header = fits.Header
    #pyfits.writeto(Power_pattern_average_interp_fitsname,cart_image,clobber=True)
    fits.update(fitsname,cart_image,header=header)
-   print "wrote image %s" %  fitsname
+   print("wrote image %s" %  fitsname)
 
 def recompute_ffts(pol,freq_MHz):
 
@@ -634,19 +639,19 @@ def recompute_ffts(pol,freq_MHz):
    ##beam_fft2_shift = np.fft.fftshift(beam_fft2)
    beam_fft2_real = np.real(beam_fft2)
    beam_fft2_imag = np.imag(beam_fft2)
-   print beam_fft2_imag
-   print np.max(abs(beam_fft2_imag))
+   #print beam_fft2_imag
+   #print np.max(abs(beam_fft2_imag))
    beam_fft2_abs = abs(beam_fft2)
 
    #beam_fft2_real_shift_norm = beam_fft2_real_shift/np.max(beam_fft2_real_shift)
    pyfits.writeto(fits_name_real,beam_fft2_real,clobber=True)
-   print "saved %s" % fits_name_real
+   print("saved %s" % fits_name_real)
    
    pyfits.writeto(fits_name_imag,beam_fft2_imag,clobber=True)
-   print "saved %s" % fits_name_imag
+   print("saved %s" % fits_name_imag)
 
    pyfits.writeto(fits_name_abs,beam_fft2_abs,clobber=True)
-   print "saved %s" % fits_name_abs 
+   print("saved %s" % fits_name_abs)
    #save the fft? - these are like a gig each - dont save!
    #np.save(fft_savename,beam_fft2)
    #np.save(fft_savename_shift,beam_fft2_shift)
@@ -682,7 +687,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
 
    #Fourier response real part:
@@ -722,7 +727,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_real.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    #profile of beam response at v=something
    plt.clf()
@@ -744,7 +749,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_real_inner.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    #inner profile of beam response at v=something
    plt.clf()
@@ -761,7 +766,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_real_log_abs_inner.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
       
    #other axis inner profile of beam response at v=something
    plt.clf()
@@ -774,7 +779,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_real_inner_other.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    #inner profile of beam response at v=something
    plt.clf()
@@ -789,7 +794,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_real_log_abs_inner_other.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    #abs
    
@@ -801,7 +806,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_abs.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    #profile of beam response at v=something
    plt.clf()
@@ -823,7 +828,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_abs_inner.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    #inner profile of beam response at v=something
    plt.clf()
@@ -838,7 +843,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_abs_log_inner.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
       
    #other axis inner profile of beam response at v=something
    plt.clf()
@@ -851,7 +856,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_abs_inner_other.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    #inner profile of beam response at v=something
    plt.clf()
@@ -866,7 +871,7 @@ def plot_beam_and_weights(pol,freq_MHz):
    fig_name= beam_plot_basename + "_beam_fft2_profile_abs_log_inner_other.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
 #this should be quickest!
 def bisection(array,value):
@@ -959,7 +964,7 @@ def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse',
           model_vis_name_base += '_GE'
                                    
       uvfits_name = "%s_concat_lsts.uvfits" % model_vis_name_base
-      print uvfits_name           
+      #print uvfits_name           
       hdulist = fits.open(uvfits_name)
       #hdulist.info()
       #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
@@ -1099,7 +1104,7 @@ def compute_weights(lst_list,freq_MHz_list,pol_list,signal_type_list=['diffuse',
                   #fig_name= plot_basename + "_beam_footprint_fourier.png"
                   #figmap = plt.gcf()
                   #figmap.savefig(fig_name)
-                  #print "saved %s" % fig_name
+                  #print("saved %s" % fig_name)
               
                   
                   ###convolve this with the Fourier beam response
@@ -1233,7 +1238,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                fig_name= "%s_residual_sky_average_beam_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
-               print "saved %s" % fig_name
+               print("saved %s" % fig_name)
    
                ##no beam
                #coefs = poly.polyfit(freq_MHz_array, sky_averaged_diffuse_array_no_beam_lsts, poly_order)
@@ -1251,7 +1256,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                #fig_name= "%s_residual_sky_average_beam_poly_%s.png" % (model_vis_name_base,poly_order)
                #figmap = plt.gcf()
                #figmap.savefig(fig_name)
-               #print "saved %s" % fig_name
+               #print("saved %s" % fig_name)
             
                #in log log space:
                log_sky_array = np.log10(sky_averaged_diffuse_array_beam_lsts)
@@ -1272,7 +1277,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                fig_name= "%s_log_fit_residual_sky_average_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
-               print "saved %s" % fig_name 
+               print("saved %s" % fig_name) 
 
                plt.clf()
                plt.plot(freq_MHz_array,ffit_linear,label='fit')
@@ -1284,7 +1289,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                fig_name= "%s_log_fit_sky_average_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
-               print "saved %s" % fig_name
+               print("saved %s" % fig_name)
          
          
             ###################
@@ -1322,7 +1327,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #fig_name= "%s_log_fit_residual_poly_%s_all_base_abs.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
-            #print "saved %s" % fig_name 
+            #print("saved %s" % fig_name) 
 
             ####################
             ##all baselines 
@@ -1357,7 +1362,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #fig_name= "%s_log_fit_residual_poly_%s_all_base.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
-            #print "saved %s" % fig_name 
+            #print("saved %s" % fig_name) 
                      
         
             #######Unweighted (real)
@@ -1381,7 +1386,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #fig_name= "%s_model_short_poly_%s.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
-            #print "saved %s" % fig_name
+            #print("saved %s" % fig_name)
    
             residual = ffit - good_signal_array_short_baselines_Tb
    
@@ -1395,7 +1400,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             fig_name= "%s_residual_short_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
    
             #in log log space:
             log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
@@ -1417,7 +1422,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #fig_name= "%s_log_fit_residual_poly_%s.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
-            #print "saved %s" % fig_name         
+            #print("saved %s" % fig_name)         
             
             #convert back to linear
             #inverse_log_residual = 10.**log_residual
@@ -1431,7 +1436,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             fig_name= "%s_log_fit_residual_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name 
+            print("saved %s" % fig_name) 
    
             #####Weighted
             #can't use the nan values:
@@ -1453,7 +1458,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             fig_name= "%s_model_short_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
    
             residual = ffit - good_signal_array_short_baselines_Tb
 
@@ -1467,7 +1472,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             fig_name= "%s_residual_short_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
    
             #in log log space:
             log_signal_array_short_baselines = np.log10(good_signal_array_short_baselines_Tb)
@@ -1488,7 +1493,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name 
+            print("saved %s" % fig_name) 
          
 def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_name,n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length_m,zero_spacing_leakage_threshold,poly_order):
    n_baselines = 1 #(by definition of the assassin design, each uvfits is for just one baseline)
@@ -1532,13 +1537,11 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (final_output_name_base,poly_order)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
 
 def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0):
-   
    centre_freq = float(freq_MHz)
-   centre_chan_index = 16
-   fine_chan_width_Hz = 28935 #Hz
+
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    
    freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
@@ -1630,7 +1633,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
-   print "saved %s" % fig_name  
+   print("saved %s" % fig_name)  
    
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
@@ -1684,7 +1687,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       fig_name= "X_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
       ##
       
       ## plot X and real vis vs baseline length for fig2
@@ -1701,7 +1704,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       fig_name= "X_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
    
       Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
    
@@ -1733,7 +1736,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
    
    ##Assign vis and X values a group according to the Y_angular response
    ##Dont need this anymore, is for mixedlm which didnt work.
@@ -1750,13 +1753,13 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    plt.clf()
    n_X, X_bins, X_patches = plt.hist(X_short_parallel_array)
    X_bin_width = X_bins[1] - X_bins[0]
-   print X_bin_width
+   #print X_bin_width
    map_title="Histogram of X values (angular response)" 
    fig_name= "hist_X_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
    
    ##split X up into bins  (this didn't work....)
    ###use the hist output to split up real vis according to X values
@@ -1816,7 +1819,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          results = model.fit()
          ##print results.summary()
          parameters = results.params
-         print parameters
+         #print parameters
          t_sky_jy = parameters[0]
          t_sky_error_jy = results.bse[0]
       if model_type=='OLS_fixed_int_min_vis':
@@ -1824,7 +1827,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          results = model.fit()
          ##print results.summary()
          parameters = results.params
-         print parameters
+         #print parameters
          t_sky_jy = parameters[0]
          t_sky_error_jy = results.bse[0]
       if model_type=='OLS_with_int_min_vis':
@@ -1833,7 +1836,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          results = model.fit()
          ##print results.summary()
          parameters = results.params
-         print parameters
+         #print parameters
          t_sky_jy = parameters[1]
          t_sky_error_jy = results.bse[1]
       elif model_type=='OLS_fixed_int_subtr_Y':
@@ -1843,7 +1846,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          results = model.fit()
          ##print results.summary()
          parameters = results.params
-         print parameters
+         #print parameters
          t_sky_jy = parameters[0]
          t_sky_error_jy = results.bse[0]
       elif model_type=='OLS_with_intercept':
@@ -1865,7 +1868,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          results = md.fit()
          print(results.summary()) 
          parameters = results.params
-         print parameters
+         #print parameters
          t_sky_jy = parameters[1]
          t_sky_error_jy = results.bse[1]
       elif model_type=='WLS':
@@ -1953,7 +1956,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
-   print "saved %s" % fig_name  
+   print("saved %s" % fig_name)  
    
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
            
@@ -2009,8 +2012,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    if sky_model=='gsm':
       NSIDE=512 #(to match pygsm)
    n_pix = hp.nside2npix(NSIDE)
-   print 'n_pix'
-   print n_pix
+   print('n_pix')
+   print(n_pix)
    pixel_solid_angle = (4.*np.pi) / n_pix
    #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
    hpx_index_array = np.arange(0,n_pix,1)
@@ -2090,15 +2093,13 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    
       visibilities_single = uvtable['DATA']
       visibilities_shape = visibilities_single.shape
-      print "visibilities_shape"
-      print visibilities_shape
+      print("visibilities_shape")
+      print(visibilities_shape)
       
       print("omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-1))
       fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
-      print fine_chan_index_array
+      print(fine_chan_index_array)
       centre_freq = float(freq_MHz)
-      centre_chan_index = 16
-      fine_chan_width_Hz = 28935 #Hz
       fine_chan_width_MHz = fine_chan_width_Hz/1000000.
       for fine_chan_index in fine_chan_index_array:
          fine_chan_index = int(fine_chan_index)
@@ -2269,8 +2270,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          X_short_parallel_array_pure_parallel = np.empty(len(baseline_vector_array),dtype=complex)
          X_short_parallel_array_pure_inline = np.empty(len(baseline_vector_array),dtype=complex)
    
-         print baseline_length_array_lambda_sorted.shape
-         print real_vis_data_sorted.shape
+         #print baseline_length_array_lambda_sorted.shape
+         #print real_vis_data_sorted.shape
          #plot amp vs uvdistance for simulated data
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted,real_vis_data_sorted,s=1,label='real vis data')
@@ -2283,7 +2284,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          fig_name= "real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name 
+         print("saved %s" % fig_name) 
          
          #First work out what things should look like
          #need to implement this for each lst - for now just use the last one (i.e. dont modify lst_deg)
@@ -2294,7 +2295,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          print("180@180 t_sky is %s" % T_sky_rough)
          
                   
-         print "checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+         print("checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz))
          #check vale
          year=2000
          month=1
@@ -2336,7 +2337,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
          
          print('final LST is: ')
-         print time_final.sidereal_time('apparent')
+         print(time_final.sidereal_time('apparent'))
          
          #close enough......
        
@@ -2441,7 +2442,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             fig_name="check_%s_with_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
             
             #beam only
             plt.clf()
@@ -2452,7 +2453,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             fig_name="check_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
-            print "saved %s" % fig_name      
+            print("saved %s" % fig_name)      
       
             #rotated beam only
             plt.clf()
@@ -2463,7 +2464,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             fig_name="check_rotated_beam_%s_hrs_LST_%s_MHz_%s_pol.png" % (lst_hrs,int(freq_MHz),pol)
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
-            print "saved %s" % fig_name     
+            print("saved %s" % fig_name)     
             
             
             #sky only
@@ -2475,7 +2476,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             fig_name="check_%s_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
-            print "saved %s" % fig_name    
+            print("saved %s" % fig_name)    
                  
             ##sky only rotated
             #plt.clf()
@@ -2486,7 +2487,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             #fig_name="check_rotated_%s_%s_hrs_LST_%s_MHz_%s_pol.png" % (sky_model,lst_hrs,int(freq_MHz),pol)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name,dpi=500)
-            #print "saved %s" % fig_name    
+            #print("saved %s" % fig_name)    
                  
       
          sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
@@ -2638,7 +2639,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #fig_name= "X_vs_uv_dist_%d_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name 
+         #print("saved %s" % fig_name) 
          
          
          #plot X_short_parallel_array vs uvdist
@@ -2862,7 +2863,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       fig_name= "t_sky_joint_fit_global_EDGES_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
       
       plt.clf()
       plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order 7 fit')
@@ -2874,7 +2875,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       fig_name= "t_sky_joint_fit_diffuse_global_foreground_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
    
    
    
@@ -2895,7 +2896,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    
    
@@ -2916,7 +2917,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    fig_name= "t_sky_measured_and_joint_fit_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
     
    
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[]):
@@ -3098,7 +3099,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       fig_name= "t_sky_beam_av_input_%s%s.png" % (lst_string,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
     
       #subtract a polynomial fit just do for X for now
       #in log log space:
@@ -3131,7 +3132,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       fig_name= "eda2_log_fit_residual_tsy_input_poly_%s_lst_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
    
     
       
@@ -3147,7 +3148,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Sky temperature (K)")
    if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-      print signal_type_list
+      print(signal_type_list)
       plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
@@ -3155,7 +3156,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    fig_name= "t_sky_measured_lst_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
    
 
       
@@ -3213,7 +3214,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_%s.png" % (poly_order,lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
 
    plt.clf()
    plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit')
@@ -3226,7 +3227,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
                      
    #n baselines plot
    plt.clf()
@@ -3239,7 +3240,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    fig_name= "n_baselines_included_lst_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
     
            
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
@@ -3291,7 +3292,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                   uvfits_name = "%s_concat_lsts_sub.uvfits" % concat_output_name_base_Y
                   model_vis_name_base = concat_output_name_base_Y + '_sub'
             model_vis_name_base += "_thresh_%0.2f" % (zero_spacing_leakage_threshold)
-            print uvfits_name           
+            print(uvfits_name)
             hdulist = fits.open(uvfits_name)
             #hdulist.info()
             info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
@@ -3301,8 +3302,8 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
             visibilities = uvtable['DATA']
             #print visibilities.shape
             visibilities_shape = visibilities.shape
-            print "visibilities shape"
-            print visibilities_shape
+            print("visibilities shape")
+            print(visibilities_shape)
             
             #get the UU and VV so we can check whether we are using short baselines
             UU_s_array = uvtable['UU']
@@ -3358,7 +3359,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                   beam_image_name = "%smodel_%s_MHz_yy.fits" % (beam_image_dir,int(freq_MHz))
                
                #cmd = "cp %s%s ." % (beam_image_dir,beam_image_name)
-               #print cmd
+               #print(cmd)
                #os.system(cmd)
                
                beam_plot_basename = beam_image_name.split('.')[0].split('/')[-1]
@@ -3371,7 +3372,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                fits_name = beam_image_dir + beam_plot_basename + "_beam_fft2_real_shift.fits"  
                
                #cmd = "cp %s%s ." % (beam_image_dir,fits_name)
-               #print cmd
+               #print(cmd)
                #os.system(cmd)
                
                beam_fft2_real_shift_hdu_list = fits.open(fits_name)
@@ -3405,7 +3406,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                chan_vis_used = 0.0
                for lst_index,lst in enumerate(lst_list):  
                   lst_deg = (float(lst)/24.)*360.         
-                  print "lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+                  print("lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz))
                   #keep in mind pol_index may be wrong (need to rerun sims with pol=xx,yy only, and not sure what the last index is even for ... real imag weight?)
                   timestep_vis_real_sum = 0.
                   timestep_vis_real_sum_weighted = 0.
@@ -3526,12 +3527,12 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                sum_of_weights_all_baselines_array[pol_index,chan_index] = chan_sum_of_weights_all_baselines
                if chan_vis_used>0.:
                   #chan_vis_real_average = chan_vis_real_sum/chan_vis_used
-                  print "chan_vis_real_sum"
-                  print chan_vis_real_sum
+                  print("chan_vis_real_sum")
+                  print(chan_vis_real_sum)
                   #chan_vis_real_weighted_average = chan_vis_real_sum_weighted/chan_sum_of_weights
                
                   number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
-                  print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+                  print("av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average))
                
                
                   #signal_array_short_baselines[pol_index,chan_index] = lst_vis_real_average
@@ -3566,7 +3567,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                   #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
                   #figmap = plt.gcf()
                   #figmap.savefig(fig_name)
-                  #print "saved %s" % fig_name       
+                  #print("saved %s" % fig_name)       
          
             #convert to brightness temp
             wavelength_array = 300./freq_MHz_array
@@ -3711,7 +3712,7 @@ def extract_signal_from_sims_multi_coherent(lst_list,freq_MHz_list,pol_list,sign
                      else:
                         uvfits_name = "%s_concat_lsts_sub.uvfits" % concat_output_name_base_Y
       
-                  print uvfits_name           
+                  print(uvfits_name)           
                   hdulist = fits.open(uvfits_name)
                   #hdulist.info()
                   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
@@ -3721,8 +3722,8 @@ def extract_signal_from_sims_multi_coherent(lst_list,freq_MHz_list,pol_list,sign
                   visibilities = uvtable['DATA']
                   #print visibilities.shape
                   visibilities_shape = visibilities.shape
-                  print "visibilities shape"
-                  print visibilities_shape
+                  print("visibilities shape")
+                  print(visibilities_shape)
                   
                   #get the UU and VV so we can check whether we are using short baselines
                   UU_s_array = uvtable['UU']
@@ -3740,7 +3741,7 @@ def extract_signal_from_sims_multi_coherent(lst_list,freq_MHz_list,pol_list,sign
                   
                   for lst_index,lst in enumerate(lst_list):  
                      lst_deg = (float(lst)/24.)*360.         
-                     print "lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+                     print("lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz))
                      #keep in mind pol_index may be wrong (need to rerun sims with pol=xx,yy only, and not sure what the last index is even for ... real imag weight?)
                      timestep_vis_real_sum = 0.
                      timestep_vis_real_sum_weighted = 0.
@@ -3796,12 +3797,12 @@ def extract_signal_from_sims_multi_coherent(lst_list,freq_MHz_list,pol_list,sign
                sum_of_weights_short_baselines_array[pol_index,chan_index] = chan_sum_of_weights_short_baselines
                if chan_vis_used>0.:
                   #chan_vis_real_average = chan_vis_real_sum/chan_vis_used
-                  print "chan_vis_real_sum"
-                  print chan_vis_real_sum
+                  print("chan_vis_real_sum")
+                  print(chan_vis_real_sum)
                   #chan_vis_real_weighted_average = chan_vis_real_sum_weighted/chan_sum_of_weights
                
                   number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
-                  print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+                  print("av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average))
                
                   signal_array_short_baselines_weighted[pol_index,chan_index] = chan_vis_real_sum_weighted
                   
@@ -3912,7 +3913,7 @@ def extract_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_lis
                   model_vis_name_base += '_GE'
                  
                uvfits_name = "%s_concat_lsts.uvfits" % model_vis_name_base
-               print uvfits_name  
+               print(uvfits_name)
                           
                hdulist = fits.open(uvfits_name)
                #hdulist.info()
@@ -3923,8 +3924,8 @@ def extract_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_lis
                visibilities = uvtable['DATA']
                #print visibilities.shape
                visibilities_shape = visibilities.shape
-               print "visibilities shape"
-               print visibilities_shape
+               print("visibilities shape")
+               print(visibilities_shape)
                
                #get the UU and VV so we can check whether we are using short baselines
                UU_s_array = uvtable['UU']
@@ -3990,7 +3991,7 @@ def extract_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_lis
          sum_of_weights_short_baselines_array[chan_index] = chan_sum_of_weights_short_baselines
          if chan_vis_used>0.:
             number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
-            print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+            print("av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average))
          
             signal_array_short_baselines_weighted[chan_index] = chan_vis_real_sum_weighted
                        
@@ -4019,7 +4020,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
    for line in lines:
       uvfits_filename_list.append(line.strip())
    for uvfits_filename in uvfits_filename_list:
-      print uvfits_filename           
+      #print uvfits_filename           
       hdulist = fits.open(uvfits_filename)
       #hdulist.info()
       info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
@@ -4041,7 +4042,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
          #NEED TO TEST THIS WITH DATA!
          start_freq = crval4 - (centre_pix*cdelt4)
       else:
-         print "invalid ref pixel for freq"
+         print("invalid ref pixel for freq")
          sys.exit()
       
       start_freq_MHz = start_freq/1000000.
@@ -4051,12 +4052,12 @@ def extract_signal_from_multiple(uvfits_list_filename):
       visibilities = uvtable['DATA']
       #print visibilities.shape
       visibilities_shape = visibilities.shape
-      print "visibilities shape"
-      print visibilities_shape
+      print("visibilities shape")
+      print(isibilities_shape)
       
       n_pol = visibilities_shape[-2]
       
-      print "number of chans %s, start freq %s MHz, chan width %s MHz, npol %s" % (n_chan,start_freq_MHz,chan_width_MHz,n_pol) 
+      print("number of chans %s, start freq %s MHz, chan width %s MHz, npol %s" % (n_chan,start_freq_MHz,chan_width_MHz,n_pol))
      
       freq_MHz_list = np.arange(start_freq_MHz,end_freq_MHz,chan_width_MHz)
       #print freq_MHz_list
@@ -4075,7 +4076,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
       for pol in range(0,n_pol):
          model_vis_name_base = uvfits_list_filename.split('.')[0]
          model_vis_name_base += "_thresh_%0.2f_pol_%s" % (zero_spacing_leakage_threshold,int(pol))
-         print model_vis_name_base
+         #print model_vis_name_base
          signal_array_short_baselines = np.full((n_pol,n_chan),0.0)
          signal_array_short_baselines_filename = "%s_signal.npy" % (model_vis_name_base)
          signal_array_short_baselines_Tb = np.full((n_pol,n_chan),0.0)
@@ -4155,7 +4156,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
             
             for lst_index,lst in enumerate(lst_list):  
                lst_deg = (float(lst)/24.)*360.         
-               print "lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
+               #print "lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz)
                #keep in mind pol_index may be wrong (need to rerun sims with pol=xx,yy only, and not sure what the last index is even for ... real imag weight?)
                timestep_vis_real_sum = 0.
                timestep_vis_real_sum_weighted = 0.
@@ -4276,12 +4277,12 @@ def extract_signal_from_multiple(uvfits_list_filename):
             sum_of_weights_all_baselines_array[pol_index,chan_index] = chan_sum_of_weights_all_baselines
             if chan_vis_used>0.:
                #chan_vis_real_average = chan_vis_real_sum/chan_vis_used
-               print "chan_vis_real_sum"
-               print chan_vis_real_sum
+               #print "chan_vis_real_sum"
+               #print chan_vis_real_sum
                #chan_vis_real_weighted_average = chan_vis_real_sum_weighted/chan_sum_of_weights
             
                number_baselines_used_average =   number_baselines_used_sum / (n_timesteps*len(lst_list)) 
-               print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
+               #print "av number baselines used for chan %s is %s" % (chan_index,number_baselines_used_average)
             
             
                #signal_array_short_baselines[pol_index,chan_index] = lst_vis_real_average
@@ -4316,7 +4317,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
                #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
                #figmap = plt.gcf()
                #figmap.savefig(fig_name)
-               #print "saved %s" % fig_name       
+               #print("saved %s" % fig_name)       
          
          #convert to brightness temp
          wavelength_array = 300./freq_MHz_array
@@ -4353,7 +4354,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    hdulist = fits.open(uvfits_name)
    hdulist.info()
    info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-   print info_string
+   #print info_string
    uvtable = hdulist[0].data
    uvtable_header = hdulist[0].header
    #print uvtable_header
@@ -4361,7 +4362,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    #super_threshold_indices = a > thresh
    #a[super_threshold_indices] = 0
    
-   print uvtable['DATA'].shape
+   #print uvtable['DATA'].shape
    real_visibilities_at_freq_MHz1 = uvtable['DATA'][:,0,0,0,0,0]
    abs_vis = abs(real_visibilities_at_freq_MHz1)
    log_abs_vis = np.log10(abs_vis)
@@ -4372,10 +4373,10 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    
    uvdist_m = np.sqrt(UU_m**2 + VV_m**2)
    
-   print "min abs uvdist_m"
-   print np.abs(uvdist_m).min()
-   print "max abs uvdist_m"
-   print np.abs(uvdist_m).max()
+   #print "min abs uvdist_m"
+   #print np.abs(uvdist_m).min()
+   #print "max abs uvdist_m"
+   #print np.abs(uvdist_m).max()
    
    
    UU_lambda = UU_m/wavelength
@@ -4388,7 +4389,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    fig_name= plot_basename + "log_abs_vis_vs_uu.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    plt.clf()
    map_title="real vis vs UU"
@@ -4398,7 +4399,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    fig_name= plot_basename + "real_vis_vs_uvdist.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    #print UU_lambda.shape
    uvdist_lambda_short_indices = np.where(abs(uvdist_lambda) < 2.)
@@ -4413,7 +4414,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    fig_name= plot_basename + "real_vis_vs_uvdist_zoom.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
    
    #for signal extraction only interested in short baselines (work out what this threshold should be based on U=0 leakage value later)
@@ -4437,7 +4438,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    #fig_name= plot_basename + "log_abs_max_vis_vs_freq.png"
    #figmap = plt.gcf()
    #figmap.savefig(fig_name)
-   #print "saved %s" % fig_name   
+   #print("saved %s" % fig_name)   
  
    #plt.clf()
    #map_title="log abs vis vs freq"
@@ -4445,7 +4446,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    #fig_name="abs_vis_vs_uu.png"
    #figmap = plt.gcf()
    #figmap.savefig(fig_name)
-   #print "saved %s" % fig_name
+   #print("saved %s" % fig_name)
 
 
 def concat_uvfits(uvfits_list,outname,delete=False):
@@ -4470,7 +4471,7 @@ def concat_uvfits(uvfits_list,outname,delete=False):
    fits.setval(first_filename, 'DATE', value=1.0000)
    fits.setval(first_filename, '_DATE', value=0.5000)
    fits.setval(first_filename, 'INTTIM', value=240)
-   print first_filename
+   #print first_filename
    tmp_uv.read_uvfits(first_filename)
    #run_check=False,check_extra=False,run_check_acceptability=False
    for uvfits_name in uvfits_list[1:]: 
@@ -4489,17 +4490,17 @@ def concat_uvfits(uvfits_list,outname,delete=False):
       tmp_uv = tmp_uv + new_uv
       #print(tmp_uv.Nfreqs)
    tmp_uv.write_uvfits(outname)
-   print "wrote %s" % outname
+   print("wrote %s" % outname)
    #delete all the temporary uvfits files
    if delete:
       for uvfits_name in uvfits_list:
          cmd = "rm -rf %s" % (uvfits_name)
-         print cmd
+         print(cmd)
          os.system(cmd)
          #also delete the miriad vis file
          vis_name = uvfits_name.split('.')[0] + '.vis'
          cmd = "rm -rf %s" % (vis_name)
-         print cmd
+         print(cmd)
          os.system(cmd)
          
          
@@ -4512,23 +4513,23 @@ def concat_uvfits_casa(uvfits_list,outname,delete=False):
       with open(casa_filename,'w') as f:
          f.write(casa_string)
       cmd = "casa -c %s" % casa_filename
-      print cmd
+      print(cmd)
       os.system(cmd)
 
    if delete:
       for uvfits_name in uvfits_list:
          cmd = "rm -rf %s" % (uvfits_name)
-         print cmd
+         print(cmd)
          os.system(cmd)
          #also delete the miriad vis file
          vis_name = uvfits_name.split('.')[0] + '.vis'
          cmd = "rm -rf %s" % (vis_name)
-         print cmd
+         print(cmd)
          os.system(cmd)
          #also delete the miriad ms file
          vis_name = uvfits_name.split('.')[0] + '.ms'
          cmd = "rm -rf %s" % (vis_name)
-         print cmd
+         print(cmd)
          os.system(cmd)
 
          
@@ -4539,7 +4540,7 @@ def concat_vis(vis_list,outname):
       tmp_name = "t%s.v" % vis_index
       tmp_list.append(tmp_name)
       cmd = "mv  %s %s" % (vis,tmp_name)
-      print cmd
+      print(cmd)
       os.system(cmd)
 
    vis_list_string = ','.join(tmp_list)
@@ -4799,7 +4800,7 @@ def generate_new_average_beam():
             print("saved %s" % power_pattern_average_interp_figname)
             
             pyfits.writeto(power_pattern_average_interp_fitsname,cart_image,clobber=True)
-            print "wrote fits image %s" %  power_pattern_average_interp_fitsname
+            print("wrote fits image %s" %  power_pattern_average_interp_fitsname)
    
    
             ##SIN projected!
@@ -4877,7 +4878,7 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
    elif  sky_model == 'gsm':
       gsm = GlobalSkyModel()
    else:
-      print 'unknown sky_model'
+      print('unknown sky_model')
       sys.exit()
         
    gsm_hpx_cube_smooth_filename = "%s_cube_hpx.npy" % (sky_model)
@@ -4915,7 +4916,7 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
       fig_name = "%s_cube_hpx_fit_pix_%s.png" % (sky_model,pix_index)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
       
       residual = spectrum - ffit_linear
       
@@ -4928,11 +4929,11 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
       fig_name = "%s_cube_hpx_fit_residual_pix_%s.png" % (sky_model,pix_index)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
       
       
    np.save(gsm_hpx_cube_smooth_filename,gsm_cube_smooth)
-   print "saved %s" % (gsm_hpx_cube_smooth_filename)
+   print("saved %s" % (gsm_hpx_cube_smooth_filename))
 
 #generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order)
 
@@ -4951,11 +4952,11 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
    second=((float(lst)-hour) * 60. - minute) * 60.
    
    date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-   print date_time_string
+   #print date_time_string
    #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
    day_frac_plus_one = float(lst)/24. + 1
    miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
-   print miriad_uvgen_time_string
+   #print miriad_uvgen_time_string
    wavelength = 300./freq_MHz
    freq_GHz = freq_MHz/1000.
    
@@ -4997,7 +4998,7 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
       #gmoss_freqs_GHz = np.asarray(gmoss_freqs_GHz)
       gmoss_freqs_MHz = gmoss_freqs_GHz*1000.
    else:
-      print 'unknown sky_model'
+      print('unknown sky_model')
       sys.exit()
    #ov.lon = longitude_degrees
    #ov.lat = latitude_degrees
@@ -5067,7 +5068,7 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
       fig_name="%s_map_%s_%sMHz.png" % (sky_model,date_time_string,int(freq_MHz))
       figmap = plt.gcf()
       figmap.savefig(fig_name,dpi=500)
-      print "saved %s" % fig_name
+      print("saved %s" % fig_name)
    
    #Miriad doesn't seem to be able to import the hpx file
    #Try using reproject_from_healpix
@@ -5075,7 +5076,7 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
    if os.path.isfile(eda_model_no_source_image_fits_name) and os.access(eda_model_no_source_image_fits_name, os.R_OK):
       hdulist = pyfits.open(eda_model_no_source_image_fits_name)
    else:
-      print "Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name
+      print("Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name)
       #continue        
    
    data=hdulist[0].data[0,0,:,:]
@@ -5114,13 +5115,13 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
    
    #calc sky-average temp, no beam
    sky_average_temp_no_beam = np.nanmean(reprojected_gsm_map)
-   print sky_average_temp_no_beam
+   #print sky_average_temp_no_beam
    sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
    
    #write the map to fits
    pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
    pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
-   print "wrote image %s" %  reprojected_gsm_fitsname
+   print("wrote image %s" %  reprojected_gsm_fitsname)
    
    #Do this GSM map stuff here as it doesn't depend on pol
    cmd = "rm -rf %s" % (reprojected_gsm_im_name)
@@ -5135,7 +5136,7 @@ def generate_apparent_sky_model(pol,lst_hrs,freq_MHz):
    #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
    
    scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-   print "scale map by %s to get to Jy/pix" % scale
+   print("scale map by %s to get to Jy/pix" % scale)
    
    reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
    
@@ -5234,7 +5235,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
          #gmoss_freqs_GHz = np.asarray(gmoss_freqs_GHz)
          gmoss_freqs_MHz = gmoss_freqs_GHz*1000.
       else:
-         print 'unknown sky_model'
+         print('unknown sky_model')
          sys.exit()
                
       for lst in lst_list:
@@ -5250,11 +5251,11 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
          second=((float(lst)-hour) * 60. - minute) * 60.
          
          date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-         print date_time_string
+         print(date_time_string)
          #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
          day_frac_plus_one = float(lst)/24. + 1
          miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
-         print miriad_uvgen_time_string
+         print(miriad_uvgen_time_string)
          
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             print(freq_MHz)
@@ -5300,7 +5301,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                fig_name="%s_map_%s_%sMHz.png" % (sky_model,date_time_string,int(freq_MHz))
                figmap = plt.gcf()
                figmap.savefig(fig_name,dpi=500)
-               print "saved %s" % fig_name
+               print("saved %s" % fig_name)
       
             ##########
             #assassin-specific bit:
@@ -5338,7 +5339,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             with open(antenna_position_filename,'w') as f:
                f.write(ant_1_position_string)
                f.write(ant_2_position_string)
-            print "wrote %s" % antenna_position_filename
+            print("wrote %s" % antenna_position_filename)
             
             sub_array_string = "sub_%03d_%03d" % (diameter_cm,angle_deg)
                
@@ -5380,7 +5381,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             if os.path.isfile(eda_model_no_source_image_fits_name) and os.access(eda_model_no_source_image_fits_name, os.R_OK):
                hdulist = pyfits.open(eda_model_no_source_image_fits_name)
             else:
-               print "Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name
+               print("Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name)
                #continue        
             
             data=hdulist[0].data[0,0,:,:]
@@ -5412,7 +5413,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             #write the map to fits
             pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
             pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
-            print "wrote image %s" %  reprojected_gsm_fitsname
+            print("wrote image %s" %  reprojected_gsm_fitsname)
             
             #Do this GSM map stuff here as it doesn't depend on pol
             cmd = "rm -rf %s" % (reprojected_gsm_im_name)
@@ -5427,7 +5428,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
             
             scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-            print "scale map by %s to get to Jy/pix" % scale
+            print("scale map by %s to get to Jy/pix" % scale)
             
             reprojected_gsm_im_Jy_per_pix_name =  "%s_map_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
             
@@ -5462,14 +5463,14 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                fig_name="global_signal_map_%s_%sMHz.png" % (date_time_string,int(freq_MHz))
                figmap = plt.gcf()
                figmap.savefig(fig_name)
-               print "saved %s" % fig_name
+               print("saved %s" % fig_name)
             
             reprojected_global_signal_map,footprint = reproject_from_healpix(global_signal_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
             
             #write the map to fits
             pyfits.writeto(reprojected_global_signal_fitsname,reprojected_global_signal_map,clobber=True)
             pyfits.update(reprojected_global_signal_fitsname,reprojected_global_signal_map,header=no_source_header)
-            print "wrote image %s" %  reprojected_global_signal_fitsname
+            print("wrote image %s" %  reprojected_global_signal_fitsname)
             
             cmd = "rm -rf %s" % (reprojected_global_signal_im_name)
             print(cmd)
@@ -5589,7 +5590,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
          with open(antenna_position_filename,'w') as f:
             f.write(ant_1_position_string)
             f.write(ant_2_position_string)
-         print "wrote %s" % antenna_position_filename         
+         print("wrote %s" % antenna_position_filename)
          
          for pol in pol_list:
             model_vis_uvfits_list_lsts = []
@@ -5608,11 +5609,11 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                second=((float(lst)-hour) * 60. - minute) * 60.
                
                date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-               print date_time_string
+               #print date_time_string
                #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
                day_frac_plus_one = float(lst)/24. + 1
                miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
-               print miriad_uvgen_time_string 
+               #print miriad_uvgen_time_string 
             
                for freq_MHz in freq_MHz_list:
                   print(freq_MHz)
@@ -5660,13 +5661,13 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                      #generate noise only visibilites
                      #for systemp, just use sky temp 180 at 180, for JyperK, use Aeff from Table 2 of Wayth et al 2017 (EDA paper)
                      systemp = T_180*(freq_MHz/180.0)**beta
-                     print 'systemp %s K' % systemp
+                     print('systemp %s K' % systemp)
                      A_eff = Aeff_for_freq_MHz_list[freq_MHz_index]
-                     print 'A_eff %s K' % A_eff
+                     print('A_eff %s K' % A_eff)
                      JperK = (2.0*k*10**26)/(eta*A_eff)
-                     print 'JperK %s ' % JperK
+                     print('JperK %s ' % JperK)
                      SEFD = systemp * JperK
-                     print 'SEFD %s ' % SEFD
+                     print('SEFD %s ' % SEFD)
                   
                      #generate the noise-only uvfits file
                      cmd = "rm -rf %s" % out_vis_name
@@ -5824,7 +5825,7 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                model_vis_uvfits_list_lsts.append(output_concat_uvfits_pyuvdata_name)
             
             cmd = 'rm -rf %s' % output_concat_uvfits_pyuvdata_name_lsts
-            print cmd
+            print(cmd)
             os.system(cmd)
             
             concat_uvfits(model_vis_uvfits_list_lsts,output_concat_uvfits_pyuvdata_name_lsts)
@@ -5989,11 +5990,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          second=((float(lst)-hour) * 60. - minute) * 60.
          
          date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-         print date_time_string
+         print(date_time_string)
          #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
          day_frac_plus_one = float(lst)/24. + 1
          miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
-         print miriad_uvgen_time_string
+         print(miriad_uvgen_time_string)
          wavelength = 300./freq_MHz
          freq_GHz = freq_MHz/1000.
          
@@ -6001,8 +6002,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          reprojected_gsm_fitsname = "%s_map_LST_%03d_%s_MHz_reprojected.fits" % (sky_model,lst_deg,int(freq_MHz))
          reprojected_gsm_im_name = "%s_map_LST_%03d_%s_MHz_reprojected.im" % (sky_model,lst_deg,int(freq_MHz))
 
-
-                           
+               
          global_signal_hpx_fits_name = "global_signal_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
          reprojected_global_signal_im_name = "global_signal_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
@@ -6081,7 +6081,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #gmoss_freqs_GHz = np.asarray(gmoss_freqs_GHz)
             gmoss_freqs_MHz = gmoss_freqs_GHz*1000.
          else:
-            print 'unknown sky_model'
+            print('unknown sky_model')
             sys.exit()
          #ov.lon = longitude_degrees
          #ov.lat = latitude_degrees
@@ -6169,7 +6169,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
             else:
                gsm_map = gsm.generate(freq_MHz)
-               print np.max(gsm_map)
+               #print np.max(gsm_map)
                hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
          else:
             if sky_model == 'gmoss':
@@ -6189,7 +6189,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             fig_name="%s_map_%s_%sMHz.png" % (sky_model,date_time_string,int(freq_MHz))
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
          
          #Miriad doesn't seem to be able to import the hpx file
          #Try using reproject_from_healpix
@@ -6197,7 +6197,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          if os.path.isfile(eda_model_no_source_image_fits_name) and os.access(eda_model_no_source_image_fits_name, os.R_OK):
             hdulist = pyfits.open(eda_model_no_source_image_fits_name)
          else:
-            print "Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name
+            print("Either file %s is missing or is not readable" % eda_model_no_source_image_fits_name)
             #continue        
          
          data=hdulist[0].data[0,0,:,:]
@@ -6228,7 +6228,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #print(hpx_header)
          
          hdu_gsm = fits.open(gsm_hpx_fits_name)[1]
-         print hdu_gsm.header
+         #print hdu_gsm.header
          #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
          input_tuple = (gsm_map,'G')
          
@@ -6241,7 +6241,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          ##calc sky-average temp, no beam - 
          #Dont use this as input for visibilities, use the beam weighted on calculated below in the beamy bit
          sky_average_temp_no_beam = np.nanmean(reprojected_gsm_map)
-         print sky_average_temp_no_beam
+         #print sky_average_temp_no_beam
          sky_averaged_diffuse_array_no_beam_lsts[freq_MHz_index] += sky_average_temp_no_beam
          
          
@@ -6251,7 +6251,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #write the reprojected gsm maps to fits
          pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
          pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
-         print "wrote image %s" %  reprojected_gsm_fitsname
+         print("wrote image %s" %  reprojected_gsm_fitsname)
 
 
                   
@@ -6270,7 +6270,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
          
          scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-         print "scale map by %s to get to Jy/pix" % scale
+         print("scale map by %s to get to Jy/pix" % scale)
          
          reprojected_gsm_im_Jy_per_pix_name =  "%s_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
 
@@ -6310,14 +6310,14 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             fig_name="global_signal_map_%s_%sMHz.png" % (date_time_string,int(freq_MHz))
             figmap = plt.gcf()
             figmap.savefig(fig_name)
-            print "saved %s" % fig_name
+            print("saved %s" % fig_name)
               
          reprojected_global_signal_map,footprint = reproject_from_healpix(global_signal_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
          
          #write the map to fits
          pyfits.writeto(reprojected_global_signal_fitsname,reprojected_global_signal_map,clobber=True)
          pyfits.update(reprojected_global_signal_fitsname,reprojected_global_signal_map,header=no_source_header)
-         print "wrote image %s" %  reprojected_global_signal_fitsname
+         print("wrote image %s" %  reprojected_global_signal_fitsname)
          
          cmd = "rm -rf %s" % (reprojected_global_signal_im_name)
          print(cmd)
@@ -6499,11 +6499,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             
             pyfits.writeto(reprojected_gsm_global_fitsname,reprojected_gsm_global_map,clobber=True)
             pyfits.update(reprojected_gsm_global_fitsname,reprojected_gsm_global_map,header=no_source_header)
-            print "wrote image %s" %  reprojected_gsm_global_fitsname
+            print("wrote image %s" %  reprojected_gsm_global_fitsname)
             
             pyfits.writeto(reprojected_gsm_angular_fitsname,reprojected_gsm_angular_map,clobber=True)
             pyfits.update(reprojected_gsm_angular_fitsname,reprojected_gsm_angular_map,header=no_source_header)
-            print "wrote image %s" %  reprojected_gsm_angular_fitsname
+            print("wrote image %s" %  reprojected_gsm_angular_fitsname)
             
             cmd = "rm -rf %s %s" % (reprojected_gsm_global_im_name,reprojected_gsm_angular_im_name)
             print(cmd)
@@ -6593,13 +6593,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                #generate noise only visibilites
                #for systemp, just use sky temp 180 at 180, for JyperK, use Aeff from Table 2 of Wayth et al 2017 (EDA paper)
                systemp = T_180*(freq_MHz/180.0)**beta
-               print 'systemp %s K' % systemp
+               print('systemp %s K' % systemp)
                A_eff = Aeff_for_freq_MHz_list[freq_MHz_index]
-               print 'A_eff %s K' % A_eff
+               print('A_eff %s K' % A_eff)
                JperK = (2.0*k*10**26)/(eta*A_eff)
-               print 'JperK %s ' % JperK
+               print('JperK %s ' % JperK)
                SEFD = systemp * JperK
-               print 'SEFD %s ' % SEFD
+               print('SEFD %s ' % SEFD)
            
                #generate the noise-only uvfits file
                cmd = "rm -rf %s" % out_vis_name
@@ -6808,7 +6808,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                image_basename = model_vis_name_base + '_sim_imaged'
             
                cmd = "rm -rf %s_xx.map %s.beam %s_xx.model %s_xx.restor %s_xx_sub.map %s_sub.beam %s_xx_sub.model %s_xx_sub.restor" % (image_basename,image_basename,image_basename,image_basename,image_basename,image_basename,image_basename,image_basename)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                #only image with long baselines (don't want to be subtracting global signal!)
@@ -6817,20 +6817,20 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                uvmax = max_imaging_uvdist_wavelength/1000.
                
                cmd = "invert vis=%s map=%s_xx.map beam=%s.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 select=uvrange\(%0.6f,%0.6f\)" % (out_vis_name,image_basename,image_basename,uvmin,uvmax)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                cmd = "clean map=%s_xx.map beam=%s.beam out=%s_xx.model niters=2000" % (image_basename,image_basename,image_basename)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                cmd = "restor model=%s_xx.model  beam=%s.beam map=%s_xx.map out=%s_xx.restor " % (image_basename,image_basename,image_basename,image_basename)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                #only need the .model one
                cmd = "rm -rf %s_xx.map %s.beam %s_xx.restor " % (image_basename,image_basename,image_basename)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                cmd = "uvmodel vis=%s model=%s_xx.model options=subtract,mfs out=%s" % (out_vis_name,image_basename,out_image_subtr_vis_name)
@@ -6843,15 +6843,15 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             
                #image the subtr vis to see if it worked
                #cmd = "invert vis=%s map=%s_xx_sub.map beam=%s_sub.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 select=uvrange\(%0.6f,%0.6f\)" % (out_image_subtr_vis_name,image_basename,image_basename,uvmin,uvmax)
-               #print cmd
+               #print(cmd)
                #os.system(cmd)
                
                #cmd = "clean map=%s_xx_sub.map beam=%s_sub.beam out=%s_xx_sub.model niters=2000" % (image_basename,image_basename,image_basename)
-               #print cmd
+               #print(cmd)
                #os.system(cmd)
             
                #cmd = "restor model=%s_xx_sub.model  beam=%s_sub.beam map=%s_xx_sub.map out=%s_xx_sub.restor " % (image_basename,image_basename,image_basename,image_basename)
-               #print cmd
+               #print(cmd)
                #os.system(cmd)
                
                
@@ -7163,7 +7163,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s%s_real_vis_vs_freq_all_baselines_Tb.png" % (outbase_name,model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
          
          #short baselines real Tb
          plt.clf()
@@ -7175,7 +7175,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_real_vis_vs_freq_short_baselines_Tb.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
          
          #short baselines real weighted Tb
          plt.clf()
@@ -7187,7 +7187,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_real_vis_vs_freq_short_baselines_weighted_Tb.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
       
          ##all baselines abs Tb
          #plt.clf()
@@ -7199,7 +7199,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_abs_vis_vs_freq_all_baselines_Tb.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
    
          #short baselines real
          plt.clf()
@@ -7211,7 +7211,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_real_vis_vs_freq_short_baselines.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
          
          #short baselines real log
          plt.clf()
@@ -7223,7 +7223,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_log_abs_real_vis_vs_freq_short_baseline.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
       
          #short baselines real weighted
          plt.clf()
@@ -7235,7 +7235,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_real_vis_vs_freq_short_baselines_weighted.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
        
          #short baselines real weighted log
          plt.clf()
@@ -7247,7 +7247,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_log_real_vis_vs_freq_short_baselines_weighted.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name    
+         print("saved %s" % fig_name)    
    
          ##all baselines real
          #plt.clf()
@@ -7259,7 +7259,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_real_vis_vs_freq_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
          
          #all baselines real log
          #plt.clf()
@@ -7271,7 +7271,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_log_abs_real_vis_vs_freq_all_baseline.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
 
          #all baselines abs
          #plt.clf()
@@ -7283,7 +7283,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_abs_vis_vs_freq_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
          
          #all baselines abs log
          #plt.clf()
@@ -7295,7 +7295,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_log_abs_vis_vs_freq_all_baseline.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
          
          #number of baselines
          plt.clf()
@@ -7307,7 +7307,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_number_of_baselines_used.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
          
          #sum of weights all baselines
          #plt.clf()
@@ -7319,7 +7319,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #fig_name= "%s_sum_of_weights_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
          #figmap.savefig(fig_name)
-         #print "saved %s" % fig_name
+         #print("saved %s" % fig_name)
 
          #sum of weights short baselines
          plt.clf()
@@ -7331,7 +7331,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          fig_name= "%s_sum_of_weights_short_baselines.png" % (model_vis_name_base)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
-         print "saved %s" % fig_name
+         print("saved %s" % fig_name)
     
 def extract_signal_from_eda2_data(eda2_data_uvfits_name_list,outbase_name,array_label):   
    outbase_name += "_thresh_%0.2f" % (zero_spacing_leakage_threshold)
@@ -7347,13 +7347,13 @@ def extract_signal_from_eda2_data(eda2_data_uvfits_name_list,outbase_name,array_
          hdulist = fits.open(uvfits_filename)
          #hdulist.info()
          info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         print info_string
+         #print info_string
          uvtable = hdulist[0].data
          uvtable_header = hdulist[0].header
          visibilities = uvtable['DATA']
          visibilities_shape = visibilities.shape
-         print "visibilities shape"
-         print visibilities_shape
+         #print "visibilities shape"
+         #print visibilities_shape
          
          n_pol = visibilities_shape[4]
          n_freq = visibilities_shape[3]
@@ -7369,9 +7369,9 @@ def extract_signal_from_eda2_data(eda2_data_uvfits_name_list,outbase_name,array_
          #print "n_timesteps %s " % n_timesteps
          timestep_array = np.arange(0,n_timesteps,1)
             
-         print "file %s has %s visibilities, %s timesteps, %s pols and %s freq chans" % (uvfits_filename,n_vis,n_timesteps,n_pol,n_freq)
+         print("file %s has %s visibilities, %s timesteps, %s pols and %s freq chans" % (uvfits_filename,n_vis,n_timesteps,n_pol,n_freq))
 
-def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filename,n_ants=256):
+def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,phase_sol_filename,amp_sol_filename,n_ants=256):
    #read the cal log into python and extract data for plotting. use pandas?
    #amp 
    #df = pd.read_csv(amp_sol_filename,header=2,index_col=False,engine='python',error_bad_lines=True)
@@ -7418,7 +7418,7 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filena
       
 
    data_frame = np.full([freq_bin_count,timestep_count,n_ants],np.nan)
-   print data_frame.shape
+   #print data_frame.shape
    
    #now go through again to put the data in the right place in the data frame
    for freq_bin in np.arange(freq_bin_count):
@@ -7440,15 +7440,15 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,phase_sol_filename,amp_sol_filena
       plt.ylabel("Amp")
       plt.xlabel("freq_bin")
       plt.legend(loc=1)
-      fig_name= "cal_plot_amp_%s_%s_ant_%s.png" % (EDA2_chan,EDA2_obs_time,ant)
+      fig_name= "cal_plot_amp_%s_%s_fine_chan_%s_ant_%s.png" % (EDA2_chan,EDA2_obs_time,fine_chan_index,ant)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name  
+      print("saved %s" % fig_name)  
    
    
    
    
-def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False,casa=False):
+def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False):
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
@@ -7482,7 +7482,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
             miriad_vis_name = uvfits_name.split('.')[0] + '.vis'
             calibrated_uvfits_filename = uvfits_name.split('.')[0] + '_cal.uvfits'
             
-            if not casa:
+            
+            if not wsclean:
                cmd = "rm -rf %s %s" % (miriad_vis_name,calibrated_uvfits_filename)
                print(cmd)
                os.system(cmd)
@@ -7516,13 +7517,13 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                 #figmap = plt.gcf()
                 #figmap.savefig(fig_name)
                 #plt.close()
-                #print "saved %s" % fig_name  
+                #print("saved %s" % fig_name)  
    
             
             if obs_type=='sun':
                
                cmd = "mfcal vis=%s flux=%s,0.150,0 refant=2 interval=1 stokes=xx,yy,xy,yx" % (miriad_vis_name,sun_flux_density)
-               print cmd
+               print(cmd)
                os.system(cmd)
                
                gain_solutions_name_amp = 'sun_%s_amp.txt' % (uvfits_name.split('.')[0])
@@ -7561,34 +7562,148 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                
                
             elif(obs_type=='night'):
-               print "calibrating using sky model"
+               print("calibrating using sky model")
                #generate_apparent_sky_model(pol=pol,lst_hrs=lst,freq_MHz=freq)
                apparent_sky_im_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
                apparent_sky_fits_name = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.fits" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
+               apparent_sky_model_fits_prefix = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
                apparent_sky_casa_imname = "%s/apparent_sky_LST_%03d_%s_pol_%s_MHz.model" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
                
+               uncal_ms_image_prefix = "uncal_chan_%s_%s_ms" % (EDA2_chan,EDA2_obs_time)
+               uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
+               
+               
+               gsm_hpx_fits_name = "%s/%s_map_LST_%03d_%s_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
+               reprojected_to_wsclean_gsm_prefix = "%s/%s_map_LST_%03d_%s_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
+               reprojected_to_wsclean_gsm_fitsname = "%s-model.fits" % (reprojected_to_wsclean_gsm_prefix)
                #print apparent_sky_im_name
                
-               if casa==True:
+               if wsclean==True:
+               
+                  wsclean_imsize = '512'
+                  wsclean_scale = '900asec'
+                  
                   print("cal using wsclean predict and calibrate / CASA bandpass")
                   
-                  #Cant import the EDA sim uvfits file into ms - too many antenna - what if you make an mwa 32T simulated uvfits file instead!? then import to ms and image at low res (do this in simulate())
+                  #Cant import the EDA sim uvfits file into ms - too many antennas - what if you make an mwa 32T simulated uvfits file instead!? then import to ms and image at low res (do this in simulate())
                   
-                  #import the simulated visibility to casa ms
-                  cmd = "rm -rf %s " % simulation_ms_name
-                  print cmd
+                  #make a wsclean image of the uncalibrated ms just to get an image header to reproject to:
+                  cmd = "wsclean -name %s -size %s %s -scale %s -pol xx -data-column DATA %s " % (uncal_ms_image_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
                   os.system(cmd)
                   
-                  casa_cmd_filename = "casa_cmd.py"
-                  casa_cmd = "importuvfits(fitsfile='%s',vis='%s')" % (simulation_uvfits_name,simulation_ms_name)
-                  with open(casa_cmd_filename,'w') as f:
-                     f.write(casa_cmd)
-                  print("wrote %s " % (casa_cmd_filename))
-                  cmd = "casa --nohead --nogui -c %s " % casa_cmd_filename
-                  print cmd
+                  
+                  
+                  ###
+                  if os.path.isfile(uncal_ms_image_name) and os.access(uncal_ms_image_name, os.R_OK):
+                     hdulist = pyfits.open(uncal_ms_image_name)
+                  else:
+                     print("Either file %s is missing or is not readable" % uncal_ms_image_name)
+                     #continue        
+                  
+                  data=hdulist[0].data[0,0,:,:]
+                  new_header=hdulist[0].header
+                  
+                  
+                  #needs cooordsys keyword
+                  #pt_source_header['COORDSYS'] = 'icrs'
+                  
+                  #print(pt_source_header)
+                  
+                  del new_header[8]
+                  del new_header[8]
+                  del new_header['history']
+                                  
+                  #print(pt_source_header)
+                  
+                  target_wcs = WCS(new_header)
+            
+                  target_wcs=target_wcs.dropaxis(2)
+                  target_wcs=target_wcs.dropaxis(2)
+                                  
+                  #hdu_hpx = pyfits.open(gsm_hpx_fits_name)[1]
+                  ##hdu_hpx.info()
+                  #hpx_header = hdu_hpx.header
+                  #print(hpx_header)
+                  
+                  hdu_gsm = fits.open(gsm_hpx_fits_name)[1]
+                  print(hdu_gsm.header)
+                  #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
+                  
+                  reprojected_gsm_map,footprint = reproject_from_healpix(hdu_gsm, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
+                  
+                  #write the reprojected gsm maps to fits
+                  pyfits.writeto(reprojected_to_wsclean_gsm_fitsname,reprojected_gsm_map,clobber=True)
+                  #print new_header
+                  pyfits.update(reprojected_to_wsclean_gsm_fitsname,reprojected_gsm_map,header=new_header)
+                  print("wrote image %s" %  reprojected_to_wsclean_gsm_fitsname)
+ 
+                  
+                  
+                  ###
+                  #Dont need this now as can use reprojected to wsclean image
+                  ##rename apparent sky fits image
+                  #cmd = "cp %s %s-model.fits" % (apparent_sky_fits_name,apparent_sky_model_fits_prefix)
+                  #print(cmd)
+                  #os.system(cmd)                  
+                  #
+                  
+                  #check the model image for non-finite values:
+                  with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname)) as hdu_list:
+                     data = hdu_list[0].data
+                  #replace nans with zeros
+                  data_new = np.nan_to_num(data)
+                  
+                  #write out a new fits file
+                  fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname),data_new,clobber=True)
+                  pyfits.update(reprojected_to_wsclean_gsm_fitsname,reprojected_gsm_map,header=new_header)
+                  print("saved %s" % (reprojected_to_wsclean_gsm_fitsname))
+
+                  #check the model image for non-finite values:
+                  #with fits.open("%s-model.fits" % (apparent_sky_model_fits_prefix)) as hdu_list:
+                  #   data = hdu_list[0].data
+                  #print(np.max(data))  
+                  #print(np.min(data))
+                  
+                
+                  # predict a model onto the ms for calibration
+                  #cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
+                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx %s " % (reprojected_to_wsclean_gsm_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
+                  os.system(cmd)                  
+                  
+                  ##make an image to check
+                  cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
                   os.system(cmd)
                   
-                  sys.exit()
+                  #hmmm seemed to actually work! We'll see ...
+                  
+                  gain_solutions_name = 'cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+                  
+                  cmd = "rm -rf %s" % (gain_solutions_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  #calibrate
+                  cmd = "calibrate -minuv 3 %s %s " % (ms_name,gain_solutions_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  #diiidn't look good...
+                  
+                  cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  ##make an image to check
+                  cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column CORRECTED_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  
+                  
+                  
                   
                   #image with wsclean to get a model image
                   
@@ -7596,8 +7711,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   #use calibrate to ... calibrate
                   
-                  cmd = "wsclean -predict %s " % (ms_name)
-                  #print cmd
+                  #cmd = "wsclean -predict %s " % (ms_name)
+                  #print(cmd)
                   #os.system(cmd)
                   
                   #if solutions were found:
@@ -7616,7 +7731,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #   f.write(casa_cmd)
                   #print("wrote %s " % (casa_cmd_filename))
                   #cmd = "casa --nohead --nogui -c %s " % casa_cmd_filename
-                  #print cmd
+                  #print(cmd)
                   #os.system(cmd)
                   
                   #use setjy with a sky model setjy(vis=myinput,field=myfluxcal,spw=myspw,modimage=myfluxmod,standard='Perley-Butler 2010',scalebychan=True)
@@ -7626,10 +7741,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #   f.write(casa_cmd)
                   #print("wrote %s " % (casa_cmd_filename))
                   #cmd = "casa -c %s " % casa_cmd_filename
-                  #print cmd
+                  #print(cmd)
                   #os.system(cmd)
                   
-                  sys.exit()
+                  
                   
                   
                   #calibrate using bandpass: bandpass(vis=myinput,caltable=myfluxbpasstable,field=myfluxcal,refant=myrefant,solint='inf',combine='scan',solnorm=False, # for calibrationbandtype='B',gaintable=[myfluxbpphasetable,myfluxbpamptable],gaincurve=True)
@@ -7644,58 +7759,155 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      #casa_cal_vis_name_list.append(ms_name)
                   
                else:
-                  print("cal using miriad selfcal (bandpass not applied individually to each chan)")
+                  print("cal using miriad selfcal")
                   #how many chans
                   #cmd = "uvlist vis=%s " % (miriad_vis_name)
-                  #print cmd 
+                  #print(cmd) 
+                  #os.system(cmd)
+                  
+                  with fits.open(uvfits_filename) as hdulist:
+                     uvtable = hdulist[0].data
+                     visibilities = uvtable['DATA']
+                  
+                  n_fine_chans = visibilities.shape[3]
+   
+                  #need to split off each chan and cal individually since selfcal does not apply bandpass corrections
+                  miriad_cal_vis_name_list_fine_chans = []
+                  miriad_cal_uvfits_name_list_fine_chans = []
+                  concat_vis_freq_name = "chan_%s_%s_all_f_ch.vis" % (EDA2_chan,EDA2_obs_time)
+                  concat_uvfits_freq_name = "chan_%s_%s_all_f_ch.uvfits" % (EDA2_chan,EDA2_obs_time)
+                  
+                  for fine_chan_index in range(0,n_fine_chans):
+                     centre_freq = float(freq_MHz)
+
+                     fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
+                     fine_chan_index = int(fine_chan_index)
+                     freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                    
+                     start_freq_GHz = (freq_MHz_fine_chan - fine_chan_width_MHz/2.) / 1000.
+                     end_freq_GHz = (freq_MHz_fine_chan + fine_chan_width_MHz/2.) / 1000.
+                     
+                     #uvsplit has its own naming convention for outputs (read help)
+                     orig_split_vis_name = "eda2cal.%s" % int(freq_MHz)
+                     
+                     cmd = "rm -rf %s" % (orig_split_vis_name)
+                     print(cmd) 
+                     os.system(cmd)
+                     
+                     #cmd = "uvsplit vis=%s select=frequency\(%0.6f,%0.6f\)" % (miriad_vis_name,start_freq_GHz,end_freq_GHz)
+                     cmd = "uvaver vis=%s line=channel,1,%s,1,1 out=%s " % (miriad_vis_name,int(fine_chan_index+1),orig_split_vis_name)
+                     print(cmd) 
+                     os.system(cmd)
+                     
+                     ##check how many chans in new vis
+                     #cmd = "uvlist vis=%s" % (orig_split_vis_name)
+                     cmd = "prthd in=%s" % (orig_split_vis_name)
+                     print(cmd) 
+                     os.system(cmd)
+                     
+                     
+                     
+                     #rename the vis produced
+                     new_split_vis_name = "fine_ch_%s.vis" % (fine_chan_index)
+                     new_split_uvfits_name = "fine_ch_%s.uvfits" % (fine_chan_index)
+                     
+                     cmd = "rm -rf %s %s" % (new_split_vis_name,new_split_uvfits_name)
+                     print(cmd) 
+                     os.system(cmd)
+
+                     cmd = "mv  %s %s" % (orig_split_vis_name,new_split_vis_name)
+                     print(cmd) 
+                     os.system(cmd)
+                     
+                     
+                      
+                     #select=uvrange(uvmin,uvmax) in kilolambda
+                     #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
+                     if uv_cutoff==True:
+                        cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(0.00050,50\)" % (new_split_vis_name,apparent_sky_im_name)
+                     else:
+                        cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (new_split_vis_name,apparent_sky_im_name)
+                     print(cmd) 
+                     os.system(cmd)
+                     
+                     
+                     gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
+                     gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
+                     
+                     cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     #this doesnt work - need to just run gpplt and then plot manually
+                     #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
+                     cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (new_split_vis_name,gain_solutions_name_amp)
+                     print(cmd)
+                     os.system(cmd)
+      
+                     cmd = "gpplt vis=%s yaxis=phase log=%s" % (new_split_vis_name,gain_solutions_name_phase)
+                     print(cmd)
+                     os.system(cmd)               
+                     
+                     
+                     #plot the sols and 
+                     if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
+                        if plot_cal:
+                           plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,gain_solutions_name_phase,gain_solutions_name_amp)
+                        #write the calibrated uvfits file out
+                        #cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                        #print(cmd)
+                        os.system(cmd)
+                        
+                        miriad_cal_vis_name_list_fine_chans.append(new_split_vis_name) 
+                        miriad_cal_uvfits_name_list_fine_chans.append(new_split_uvfits_name) 
+                        
+                        #write out the uvfits file (this also applies the calibration)
+                        cmd = "fits in=%s out=%s op=uvout" % (new_split_vis_name,new_split_uvfits_name)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                     else:
+                        print("no cal solutions for %s" % (new_split_vis_name))
+                        continue
+                   
+                  #concat them in freq here
+                  print("concatenating calibrated data in freq with pyuvdata")
+             
+                  cmd = "rm -rf %s %s" % (concat_vis_freq_name,concat_uvfits_freq_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  concat_uvfits(miriad_cal_uvfits_name_list_fine_chans,concat_uvfits_freq_name)
+                  #vis_string = ','.join(miriad_cal_vis_name_list_fine_chans)
+                 
+                  sys.exit()
+                  
+                  #cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_freq_name)
+                  #print(cmd)
+                  #os.system(cmd)
+                  ##then
+                  
+                  ##check how many chans in new vis
+                  ##cmd = "uvlist vis=%s" % (concat_vis_freq_name)
+                  #cmd = "prthd in=%s" % (concat_vis_freq_name)
+                  #print(cmd) 
+                  #os.system(cmd)
+                  
+                  ##pot uv data to see whats going on
+                  #cmd = "uvplt vis=%s axis=freq,amplitude device=uvplt_amp_v_freq.png/png" % (concat_vis_freq_name)
+                  #print(cmd)
                   #os.system(cmd)
                   
                   
                   
-                  #select=uvrange(uvmin,uvmax) in kilolambda
-                  #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
-                  if uv_cutoff==True:
-                     cmd = "selfcal vis=%s nfbin=32 interval=0.083333 model=%s line=channel,32,1,1,1 options=amplitude,noscale,mfs select=uvrange\(0.00050,50\)" % (miriad_vis_name,apparent_sky_im_name)
-                  else:
-                     cmd = "selfcal vis=%s nfbin=32 model=%s options=amplitude,noscale,mfs" % (miriad_vis_name,apparent_sky_im_name)
-                  print cmd 
-                  os.system(cmd)
+                  miriad_cal_vis_name_list.append(concat_vis_freq_name)
+                  miriad_cal_uvfits_name_list.append(concat_uvfits_freq_name)
+       
                   
-   
-                  gain_solutions_name_amp = 'cal_%s_%s_amp.txt' % (EDA2_chan,EDA2_obs_time)
-                  gain_solutions_name_phase = 'cal_%s_%s_ph.txt' % (EDA2_chan,EDA2_obs_time)
-                  
-                  cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  #this doesnt work - need to just run gpplt and then plot manually
-                  #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-                  cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-                  print(cmd)
-                  os.system(cmd)
-   
-                  cmd = "gpplt vis=%s yaxis=phase log=%s" % (miriad_vis_name,gain_solutions_name_phase)
-                  print(cmd)
-                  os.system(cmd)               
-                  
-                  #plot the sols
-                  if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
-                     plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,gain_solutions_name_phase,gain_solutions_name_amp)
-                     #write the calibrated uvfits file out
-                     cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
-                     print(cmd)
-                     os.system(cmd)
-                     if concat==True:
-                        print("concatenating calibrated data into one vis and uvfits")
-                        miriad_cal_vis_name_list.append(miriad_vis_name)
-                  
-                  else:
-                     print("no cal solutions for %s" % (miriad_vis_name))
-                     continue
+       #print miriad_cal_vis_name_list
        
        if concat==True:
-          if casa==True:
+          if wsclean==True:
              print("concating using CASA")
              
              cmd = "rm -rf %s %s" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
@@ -7706,7 +7918,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              
              #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
              cmd = "concatms(vis=%s,concatvis=%s)" % (vis_string,concat_ms_name_casa_cal)
-             print cmd
+             print(cmd)
              os.system(cmd)
                   
              cmd = "exportuvfits(vis=%s,fitsfile=%s)" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
@@ -7714,6 +7926,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              os.system(cmd)
              
           else:
+             print("concatenating calibrated data into one vis and uvfits with miriad")
+             
              cmd = "rm -rf %s %s" % (concat_vis_name,concat_uvfits_name)
              print(cmd)
              os.system(cmd)
@@ -7721,7 +7935,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              vis_string = ','.join(miriad_cal_vis_name_list)
          
              cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_name)
-             print cmd
+             print(cmd)
              os.system(cmd)
                   
              cmd = "fits in=%s out=%s op=uvout" % (concat_vis_name,concat_uvfits_name)
@@ -7740,17 +7954,17 @@ def image_eda2_data(eda2_data_uvfits_name_list):
          image_basename=uvfits_name.split('.')[0]
       
          cmd = "rm -rf %s_xx.map %s.beam %s_xx.model %s_xx.restor" % (image_basename,image_basename,image_basename,image_basename)
-         print cmd
+         print(cmd)
          os.system(cmd)
          
          cmd = "invert vis=%s map=%s_xx.map beam=%s.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 " % (miriad_vis_name,image_basename,image_basename)
-         print cmd
+         print(cmd)
          os.system(cmd)
          cmd = "clean map=%s_xx.map beam=%s.beam out=%s_xx.model niters=2000" % (image_basename,image_basename,image_basename)
-         print cmd
+         print(cmd)
          os.system(cmd)
          cmd = "restor model=%s_xx.model  beam=%s.beam map=%s_xx.map out=%s_xx.restor " % (image_basename,image_basename,image_basename,image_basename)
-         print cmd
+         print(cmd)
          os.system(cmd)
             
          cmd = "fits in=%s_xx.map out=%s_xx.fits op=xyout" % (image_basename,image_basename)
@@ -7793,21 +8007,21 @@ def plot_antenna_array(array_layout_filename,ylim=18):
    plt.ylim((-ylim,ylim))
    plt.title(antenna_position_plot_title)
    plt.savefig(antenna_position_plot_figname,dpi = 300)
-   print "saved %s" % antenna_position_plot_figname
+   print("saved %s" % antenna_position_plot_figname)
    plt.close()
 
      
 def grow_new_array(seed,n_ants,min_spacing_m):
    #want to pack them in as tight as possible, so work out diameter (4/pi comes from ration of area of a square to a circle)
    diameter = (4./math.pi) * min_spacing_m * math.sqrt(n_ants)
-   print "diameter of array with %s ants is %0.2f m" % (int(n_ants),diameter)
+   print("diameter of array with %s ants is %0.2f m" % (int(n_ants),diameter))
    min_spacing_cm = int(min_spacing_m*100.)
    new_ant_array_locations_filename = 'sim_array_seed_%03d_s_%03d_a_%03d.txt' % (seed,min_spacing_cm,n_ants)
    x_offset_list = []
    y_offset_list = []
    radius=diameter/2.
    random.seed(seed)
-   print 'random seed %s' % (seed)
+   #print 'random seed %s' % (seed)
    antennas_placed = 0
    while (antennas_placed<n_ants):
       x_offset_array = np.asarray(x_offset_list)
@@ -7837,13 +8051,13 @@ def grow_new_array(seed,n_ants,min_spacing_m):
       x_offset_list.append(x_offset)
       y_offset_list.append(y_offset)
       antennas_placed += 1
-      print 'ant %s dist_from_centre %s, min distance to another ant %s' % (antennas_placed,dist_from_centre,min_distance_between_ants)
+      print('ant %s dist_from_centre %s, min distance to another ant %s' % (antennas_placed,dist_from_centre,min_distance_between_ants))
    with open(new_ant_array_locations_filename,'w') as f:
       for x_offset_index,x_offset in enumerate(x_offset_list):
          y_offset = y_offset_list[x_offset_index]
          line = "%0.3f   %0.3f   0\n" % (x_offset,y_offset)
          f.write(line)
-   print "wrote %s" % new_ant_array_locations_filename
+   print("wrote %s" % new_ant_array_locations_filename)
    return new_ant_array_locations_filename
    #print x_offset_list
    #print y_offset_list
@@ -7904,7 +8118,7 @@ def model_average_from_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_thresh
    fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
    
    return rms_of_residuals
 
@@ -7953,7 +8167,7 @@ def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spa
       fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (plot_name_base,poly_order)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print "saved %s" % fig_name 
+      print("saved %s" % fig_name) 
    
    rms_of_residuals_array = np.asarray(rms_of_residuals_list)
    random_array_number_array = np.asarray(random_array_number_list)
@@ -7969,7 +8183,7 @@ def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spa
    fig_name= "%s_n_layouts_vs_residuals_poly_%s.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
    
    #now go through and selectively add arrays
    #find the lowest rms array:
@@ -8079,7 +8293,7 @@ def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spa
    fig_name= "%s_n_arrays_vs_residuals_poly_%s_selective.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name     
+   print("saved %s" % fig_name)     
 
 def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length_m,zero_spacing_leakage_threshold):
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -8225,17 +8439,17 @@ def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_
    current_rms = rms_of_residuals_selective
    current_n_arrays_used = 1.0
    
-   print "first signal:"
-   print first_signal_filename
+   print("first signal:")
+   print(first_signal_filename)
    
-   print current_rms
+   #print current_rms
    
    #Then step through all the rest of the arrays:
    for array_number_index,array_number in enumerate(array_number_array_sorted[1:]):
       array_length = array_length_array_sorted[1:][array_number_index]
       array_angle = array_angle_array_sorted[1:][array_number_index]
       new_signal_filename = 'assassin_%03d_deg_%03d_cm_X_lst_2.00_hr_int_0.13_hr_D_gmoss_thresh_%0.2f_signal_weighted_Tb.npy' % (array_angle,array_length,zero_spacing_leakage_threshold)
-      print new_signal_filename
+      #print new_signal_filename
       new_signal_array = np.load(new_signal_filename)
       new_selective_sum_signal_array = selective_sum_signal_array + new_signal_array
       new_selective_average_signal_array = new_selective_sum_signal_array / (current_n_arrays_used + 1.0)
@@ -8260,7 +8474,7 @@ def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_
       residual_of_log_fit = ffit_linear - good_signal_array_short_baselines_Tb
       new_rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
       
-      print new_rms_of_residuals
+      #print new_rms_of_residuals
       
       #only append if rms has been lowered
       if (new_rms_of_residuals < current_rms):
@@ -8290,7 +8504,7 @@ def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_
    fig_name= "%s_n_arrays_vs_residuals_poly_%s_selective.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    good_idx = np.isfinite(best_residual_of_log_fit) & np.isfinite(best_residual_of_log_fit)
    good_best_residual_of_log_fit = best_residual_of_log_fit[good_idx]  
@@ -8306,7 +8520,7 @@ def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_
    fig_name= "%s_best_log_fit_residual_poly_%s_selective.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
 
 def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length_m,zero_spacing_leakage_threshold):
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -8365,7 +8579,7 @@ def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,ma
    ##signal_array_average = signal_array_sum/n_arrays
    signal_array_average = signal_array_sum_nan_to_num/arrays_used_per_freq_sum
    
-   print signal_array_average
+   #print signal_array_average
    
    array_number_array = np.asarray(array_number_list)
    array_length_array = np.asarray(array_length_list)
@@ -8393,7 +8607,7 @@ def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,ma
    
    rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
 
-   print 'rms of residuals %0.3f ' % rms_of_residuals
+   print('rms of residuals %0.3f ' % rms_of_residuals)
    
    #plot the final best residual plot 
    plt.clf()
@@ -8405,7 +8619,7 @@ def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,ma
    fig_name= "%s_log_fit_residual_poly_%s_all.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name
+   print("saved %s" % fig_name)
    
    
 def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_threshold,addition_type,n_ants):
@@ -8438,7 +8652,7 @@ def plot_rms_residuals_for_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_th
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
 
 
 def plot_rms_residuals_for_n_ants(n_ant_min,n_ant_max,min_spacing_m,zero_spacing_leakage_threshold):
@@ -8469,7 +8683,7 @@ def plot_rms_residuals_for_n_ants(n_ant_min,n_ant_max,min_spacing_m,zero_spacing
    fig_name= "%s_n_ants_vs_residuals_poly_%s.png" % (model_vis_name_base,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
-   print "saved %s" % fig_name 
+   print("saved %s" % fig_name) 
 
 def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circles,max_arm_length_m,min_arm_length):
    #angles are anticlockwise from East
@@ -8501,7 +8715,7 @@ def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circ
          with open(antenna_position_filename,'w') as f:
             f.write(ant_1_position_string)
             f.write(ant_2_position_string)
-         print "wrote %s" % antenna_position_filename
+         print("wrote %s" % antenna_position_filename)
       
          array_label = "assassin_%03d_deg_%03d_cm" % (angle_deg,diameter_cm)
          plot_antenna_array(array_layout_filename=antenna_position_filename,ylim=2)
@@ -8628,7 +8842,7 @@ include_angular_info = True
 lst_hrs_list = []
 for EDA2_obs_time in EDA2_obs_time_list:
    lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
-   print lst_eda2_hrs
+   #print(lst_eda2_hrs)
    lst_hrs_list.append(lst_eda2_hrs)
 
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
@@ -8642,7 +8856,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 
 #calibrate each individually first and concat
 #do this outside chan dir
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,casa=True)
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=False,wsclean=False,plot_cal=False)
 sys.exit()
 
 #after calibration:
