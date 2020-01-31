@@ -46,8 +46,8 @@ from astropy.utils.iers import conf
 conf.auto_max_age = None
 from astropy.utils import iers
 iers.conf.auto_download = False  
-from astroplan import download_IERS_A
-download_IERS_A()
+#from astroplan import download_IERS_A
+#download_IERS_A()
 
   
 sun_flux_density = 50000.0   #borkowski et al 1982?
@@ -6236,7 +6236,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #reprojected_gsm_map,footprint = reproject_from_healpix((data_gsm,'galactic'), target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',nested=False)
          #reprojected_gsm_map,footprint = reproject_from_healpix(input_tuple, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',nested=False)
          
-         
+
          
          ##calc sky-average temp, no beam - 
          #Dont use this as input for visibilities, use the beam weighted on calculated below in the beamy bit
@@ -7456,6 +7456,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        else:
           n_obs_concat = 1
        freq_MHz = np.round(400./512.*float(EDA2_chan))
+       wavelength = 300./freq_MHz
        lst = lst_list[EDA2_chan_index]
        lst_deg = (float(lst)/24)*360.
        obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
@@ -7575,7 +7576,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                
                gsm_hpx_fits_name = "%s/%s_map_LST_%03d_%s_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
                reprojected_to_wsclean_gsm_prefix = "%s/%s_map_LST_%03d_%s_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
-               reprojected_to_wsclean_gsm_fitsname = "%s-model.fits" % (reprojected_to_wsclean_gsm_prefix)
+               reprojected_to_wsclean_gsm_fitsname = "%s.fits" % (reprojected_to_wsclean_gsm_prefix)
+               reprojected_to_wsclean_gsm_fitsname_Jy_per_pix = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix)
+               reprojected_to_wsclean_gsm_im_name_Jy_per_pix = "%s_map_LST_%03d_%s_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,int(freq_MHz))
+
                #print apparent_sky_im_name
                
                if wsclean==True:
@@ -7604,6 +7608,9 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   data=hdulist[0].data[0,0,:,:]
                   new_header=hdulist[0].header
                   
+                  pix_size_deg = float(new_header['CDELT1'])
+                  pix_area_deg_sq = pix_size_deg*pix_size_deg
+                  pix_area_sr = pix_area_deg_sq / sq_deg_in_1_sr
                   
                   #needs cooordsys keyword
                   #pt_source_header['COORDSYS'] = 'icrs'
@@ -7613,7 +7620,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   del new_header[8]
                   del new_header[8]
                   del new_header['history']
-                                  
+                  new_header['bunit'] ='Jy/Pixel'                                  
                   #print(pt_source_header)
                   
                   target_wcs = WCS(new_header)
@@ -7638,7 +7645,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   pyfits.update(reprojected_to_wsclean_gsm_fitsname,reprojected_gsm_map,header=new_header)
                   print("wrote image %s" %  reprojected_to_wsclean_gsm_fitsname)
  
-                  
+                  #model needs to be in Jy/pix
+                  #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
+         
+                  scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
+                  print("scale map by %s to get to Jy/pix" % scale)
                   
                   ###
                   #Dont need this now as can use reprojected to wsclean image
@@ -7648,27 +7659,109 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #os.system(cmd)                  
                   #
                   
-                  #check the model image for non-finite values:
+                  #check the model image for non-finite values and scale to Jy per pix:
                   with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname)) as hdu_list:
                      data = hdu_list[0].data
                   #replace nans with zeros
                   data_new = np.nan_to_num(data)
+                  data_new_jy_per_pix = data_new * scale
                   
                   #write out a new fits file
-                  fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname),data_new,clobber=True)
-                  pyfits.update(reprojected_to_wsclean_gsm_fitsname,reprojected_gsm_map,header=new_header)
-                  print("saved %s" % (reprojected_to_wsclean_gsm_fitsname))
-
-                  #check the model image for non-finite values:
-                  #with fits.open("%s-model.fits" % (apparent_sky_model_fits_prefix)) as hdu_list:
-                  #   data = hdu_list[0].data
-                  #print(np.max(data))  
-                  #print(np.min(data))
+                  fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix),data_new_jy_per_pix,clobber=True)
+                  pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix,data_new_jy_per_pix,header=new_header)
+                  print("saved %s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix))
                   
-                
+                  for pol in ['X','Y']:
+                     if use_analytic_beam:
+                        if pol=='X':
+                           beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'xx')
+                           beam_image_sin_projected_fitsname_no_cos_za = "model_%s_MHz_%s_no_cos_za.fits" % (int(freq_MHz),'xx')
+                        else:
+                           beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'yy')
+                           beam_image_sin_projected_fitsname_no_cos_za = "model_%s_MHz_%s_no_cos_za.fits" % (int(freq_MHz),'yy')
+                     else:
+                        beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
+     
+     
+                     cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     #Need to regrid the beam to the reproject gsm
+                     beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
+                     beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
+                     beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.im' % (pol,int(freq_MHz))
+                     beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.fits' % (pol,int(freq_MHz))
+                     
+                     cmd = "rm -rf %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     
+                     #put in the correct ra in the header (ra = lst for zenith) 
+                     #puthd in="$beam/crval1" value=$lst_degs
+                     cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name,lst_deg)
+                     print(cmd)
+                     os.system(cmd) 
+                     
+                     #write out as a fits file to check header
+                     cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     cmd = "fits in=%s out=%s op=xyin" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix,reprojected_to_wsclean_gsm_im_name_Jy_per_pix)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
+                     cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix)
+                     print(cmd)
+                     os.system(cmd)  
+                     
+                     #Now have a gsm and a beam. multiply 'em'
+                     apparent_sky_fits_name_prefix = "apparent_sky_LST_%03d_%s_MHz_wsclean" % (lst_deg,int(freq_MHz))
+                     apparent_sky_im_name = "%s.im" % (apparent_sky_fits_name_prefix)
+                     apparent_sky_fits_name = "apparent_sky_LST_%03d_%s_MHz_wsclean-%s%s-model.fits" % (lst_deg,int(freq_MHz),pol,pol)
+                     
+                     cmd = "rm -rf %s %s " % (apparent_sky_im_name,apparent_sky_fits_name)
+                     print(cmd)
+                     os.system(cmd)
+
+                     cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix,apparent_sky_im_name)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name,apparent_sky_fits_name)
+                     print(cmd)
+                     os.system(cmd) 
+            
+            
+                     #check the model image for non-finite values 
+                     with fits.open("%s" % (apparent_sky_fits_name)) as hdu_list:
+                        data = hdu_list[0].data
+                     #replace nans with zeros
+                     data_new = np.nan_to_num(data)
+                     
+                     #write out a new fits file
+                     fits.writeto("%s" % (apparent_sky_fits_name),data_new,clobber=True)
+                     pyfits.update(apparent_sky_fits_name,data_new,header=new_header)
+                     print("saved %s" % (apparent_sky_fits_name))
+                  
+                  
+                     #check the model image for non-finite values:
+                     #with fits.open("%s-model.fits" % (apparent_sky_model_fits_prefix)) as hdu_list:
+                     #   data = hdu_list[0].data
+                     #print(np.max(data))  
+                     #print(np.min(data))
+                     
+                    
                   # predict a model onto the ms for calibration
                   #cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
-                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx %s " % (reprojected_to_wsclean_gsm_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
                   print(cmd)
                   os.system(cmd)                  
                   
@@ -7686,20 +7779,25 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   os.system(cmd)
                   
                   #calibrate
-                  cmd = "calibrate -minuv 3 %s %s " % (ms_name,gain_solutions_name)
+                  cmd = "calibrate  %s %s " % (ms_name,gain_solutions_name)
                   print(cmd)
                   os.system(cmd)
                   
-                  #diiidn't look good...
+                  #Plot the cal solutions
+                  cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
                   
                   cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
                   print(cmd)
                   os.system(cmd)
                   
                   ##make an image to check
-                  cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column CORRECTED_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx -data-column CORRECTED_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
                   print(cmd)
                   os.system(cmd)
+                  
                   
                   
                   
@@ -8856,7 +8954,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 
 #calibrate each individually first and concat
 #do this outside chan dir
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=False,wsclean=False,plot_cal=False)
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=False,wsclean=True,plot_cal=False)
 sys.exit()
 
 #after calibration:
