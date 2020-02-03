@@ -140,7 +140,7 @@ else:
 beam_image_dir = "/md0/EoR/ASSASSIN/beam_fits/"
 
 #eda2_data_dir = '/md0/EoR/ASSASSIN/data_eda2/eda2_sub48/'
-#eda2_data_dir = '/md0/EoR/EDA2/20191213_data/90/'
+EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
 #eda2_data_uvfits_name_list = ['chan_204_20190611T024741.uvfits']
 #extract_from_eda2_data_outbase_name = 'eda2_sub48_data_'
 
@@ -1587,7 +1587,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
        concat_output_name_base += '_GE'
    
    if EDA2_data==True:
-      EDA2_chan_dir = "%s/" % EDA2_chan
+      EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
    else:
       EDA2_chan_dir = ''
    #wavelength = 300./float(freq_MHz)
@@ -2356,7 +2356,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          #get the diffuse global diffuse value used in the simulation (from gsm)
          if EDA2_data==True:
-            sky_averaged_diffuse_array_beam_lsts_filename = "%s/%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan,concat_output_name_base)
+            EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
+            sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
          else:
             sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
          #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
@@ -3044,6 +3045,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
    freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
    
+   
    #this replaces all the matrix stuff you do in model_tsky_from_saved_data
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       if EDA2_data==True:
@@ -3059,8 +3061,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
       fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
       
-      for fine_chan_index in fine_chan_index_array:
-         freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index
+      for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
+         freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index_index
          t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz=freq_MHz,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
          t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
          t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
@@ -3152,7 +3154,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
-   plt.ylim([500, 4500])
+   plt.ylim([500, 5000])
    fig_name= "t_sky_measured_lst_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -3164,7 +3166,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #in log log space:
    sky_array = t_sky_measured_array[t_sky_measured_array>0.]
    log_sky_array = np.log10(sky_array)
-   freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+   if n_fine_chans_used==1:
+      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+   else:
+      freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
    log_freq_MHz_array = np.log10(freq_array_cut)
    coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
    ffit = poly.polyval(log_freq_MHz_array, coefs)
@@ -7466,11 +7471,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
        concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
 
-       concat_ms_name_casa_cal = "%s/concat_chan_%s_%s_n_obs_%s_casa_cal.ms" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
-       concat_uvfits_name_casa_cal = "%s/concat_chan_%s_%s_n_obs_%s_casa_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_ms_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.ms" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_uvfits_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
               
        miriad_cal_vis_name_list = []
-       casa_cal_vis_name_list = []
+       wsclean_cal_ms_name_list = []
        
        for EDA2_obs_time in obs_time_list:
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
@@ -7765,7 +7770,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd)
                   os.system(cmd)                  
                   
-                  ##make an image to check
+                  ##make an image to check 
                   cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
                   print(cmd)
                   os.system(cmd)
@@ -7783,25 +7788,34 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd)
                   os.system(cmd)
                   
-                  #Plot the cal solutions
-                  cmd = "aocal_plot.py  %s " % (gain_solutions_name)
-                  print(cmd)
-                  os.system(cmd)
                   
-                  
-                  cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  ##make an image to check
-                  cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx -data-column CORRECTED_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  
-                  
-                  
-                  
+                  #plot the sols and 
+                  if (os.path.isfile(gain_solutions_name)):
+                     if plot_cal:
+                        #Plot the cal solutions
+                        cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                     #write the calibrated uvfits file out ?
+                     #cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                     #print(cmd)
+                     #os.system(cmd)
+                     
+                     wsclean_cal_ms_name_list.append(ms_name) 
+
+                     cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     ##make an image to check (both pols)
+                     cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                     print(cmd)
+                     os.system(cmd)   
+                  else:
+                     print("no cal solutions for %s" % (ms_name))
+                     continue
+                           
                   
                   #image with wsclean to get a model image
                   
@@ -7858,6 +7872,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                else:
                   print("cal using miriad selfcal")
+                  
+                  ##GO back to just using selfcal on the whole 32 fine chans ... all this splitting etc is not practical, this should be
+                  #okay when the eda2 is fixed and the huge phase ramps are gone.
+                  
                   #how many chans
                   #cmd = "uvlist vis=%s " % (miriad_vis_name)
                   #print(cmd) 
@@ -7954,7 +7972,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         #write the calibrated uvfits file out
                         #cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
                         #print(cmd)
-                        os.system(cmd)
+                        #os.system(cmd)
                         
                         miriad_cal_vis_name_list_fine_chans.append(new_split_vis_name) 
                         miriad_cal_uvfits_name_list_fine_chans.append(new_split_uvfits_name) 
@@ -8006,22 +8024,43 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        
        if concat==True:
           if wsclean==True:
-             print("concating using CASA")
+             print("concatenating using CASA")
              
-             cmd = "rm -rf %s %s" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
+             casa_cmd_filename = "casa_command.py"
+             
+             cmd = "rm -rf %s %s %s" % (concat_ms_name_wsclean_cal,concat_uvfits_name_wsclean_cal,casa_cmd_filename)
              print(cmd)
              os.system(cmd)
              
-             vis_string = ','.join(casa_cal_vis_name_list)
+             vis_string = "','".join(wsclean_cal_ms_name_list)
              
              #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
-             cmd = "concatms(vis=%s,concatvis=%s)" % (vis_string,concat_ms_name_casa_cal)
+             cmd = "concat(vis=['%s'],concatvis='%s')" % (vis_string,concat_ms_name_wsclean_cal)
              print(cmd)
              os.system(cmd)
+
+             with open(casa_cmd_filename,'w') as f:
+                f.write(cmd)
                   
-             cmd = "exportuvfits(vis=%s,fitsfile=%s)" % (concat_ms_name_casa_cal,concat_uvfits_name_casa_cal)
+             cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
              print(cmd)
              os.system(cmd)
+
+             cmd = "rm -rf %s " % (casa_cmd_filename)
+             print(cmd)
+             os.system(cmd)
+                   
+             cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True)" % (concat_ms_name_wsclean_cal,concat_uvfits_name_wsclean_cal)
+             print(cmd)
+             os.system(cmd)
+
+             with open(casa_cmd_filename,'w') as f:
+                f.write(cmd)
+                  
+             cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
+             print(cmd)
+             os.system(cmd)
+
              
           else:
              print("concatenating calibrated data into one vis and uvfits with miriad")
@@ -8895,7 +8934,7 @@ EDA2_obs_time_list_each_chan = [
 
 ##for use in testing when you just want 1 obs per freq
 #EDA2_obs_time_list_each_chan = [
-#   ['20191202T171525'],
+#   ['20191202T171525','20191202T171530'],
 #   ['20191202T171629'],
 #   ['20191202T171727'],
 #   ['20191202T171830'],
@@ -8925,7 +8964,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = True
+plot_only = False
 include_angular_info = True
 
 
@@ -8944,7 +8983,9 @@ for EDA2_obs_time in EDA2_obs_time_list:
    lst_hrs_list.append(lst_eda2_hrs)
 
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
-#freq_MHz_list=[50.]
+#need to fix this so you can just run like the other functoins below for multiple eda2 chans
+#for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
+#freq_MHz_list=[101.]
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
 #sys.exit()
 #old calibrate cmd:
@@ -8954,7 +8995,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 
 #calibrate each individually first and concat
 #do this outside chan dir
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=False,wsclean=True,plot_cal=False)
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True)
 sys.exit()
 
 #after calibration:
