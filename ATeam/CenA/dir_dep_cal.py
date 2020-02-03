@@ -27,6 +27,8 @@ def create_circular_mask(h, w, centre=None, radius=None):
     return mask*1.
 
 
+#/go to /md0/ATeam/CenA/DDCal
+
 for obsid in obsids_2015_2018:
    print "obsid is %s" % obsid
    #1. Take the best image of CenA - want the model image
@@ -44,6 +46,13 @@ for obsid in obsids_2015_2018:
    hi_res_image_for_self_cal_04_name = "%s_%s_selfcal_04" % (obsid,coarse_chan)
    self_cal_04_sols_name = "%s_%s_selfcal_04.bin" % (obsid,coarse_chan)
    normal_res_image_subtr_core_name = "%s_%s_subtr_core" % (obsid,coarse_chan)
+   
+   
+   #experiment with imaging only the core and then differencing the full and core-only images!
+   #...
+   core_only_image_name = "%s_%s_core_only" % (obsid,coarse_chan)
+   
+   
    
    hdulist = fits.open(fits_image_filename)
    header = hdulist[0].header
@@ -72,17 +81,16 @@ for obsid in obsids_2015_2018:
    
    #see if its 2015 data or 2018 data
    metafits_filename = "/md0/ATeam/CenA/2015/%s/%s/%s_metafits_ppds.fits" % (coarse_chan,obsid,obsid)
+   subtr_ms_name = "/md0/ATeam/CenA/DDCal/%s_subtr.ms " % (obsid)
+   core_only_ms_name = "/md0/ATeam/CenA/DDCal/%s_core_only.ms " % (obsid)
+   ms_copy_name = "/md0/ATeam/CenA/DDCal/%s_copy.ms " % (obsid)
    if os.path.isfile(metafits_filename) and os.access(metafits_filename, os.R_OK):
       obsid_year = 2015
       orig_ms_name = "/md0/ATeam/CenA/%s/%s/%s/%s.ms " % (obsid_year,coarse_chan,obsid,obsid)
-      ms_copy_name = "/md0/ATeam/CenA/DDCal/%s_copy.ms " % (obsid)
-      subtr_ms_name = "/md0/ATeam/CenA/DDCal/%s_subtr.ms " % (obsid)
    else:
       obsid_year = 2018
       metafits_filename = "/md0/ATeam/CenA/2018/%s/%s/%s_metafits_ppds.fits" % (coarse_chan,obsid,obsid)
       orig_ms_name = "/md0/ATeam/CenA/%s/%s/%s/%s.ms " % (obsid_year,coarse_chan,obsid,obsid)
-      ms_copy_name = "/md0/ATeam/CenA/DDCal/%s_copy.ms " % (obsid)
-      subtr_ms_name = "/md0/ATeam/CenA/DDCal/%s_subtr.ms " % (obsid)
       
    if generate_new_beams:
       cmd = "beam -2016 -proto %s -name %s -m %s " % (fits_image_filename,beam_name,metafits_filename)
@@ -103,6 +111,10 @@ for obsid in obsids_2015_2018:
    #print cmd
    #os.system(cmd)
    
+   cmd = "rm -rf %s" % (core_only_ms_name)
+   print cmd
+   os.system(cmd)
+   
    cmd = "cp -r %s %s" % (orig_ms_name,ms_copy_name)
    #print cmd
    #os.system(cmd)
@@ -111,17 +123,34 @@ for obsid in obsids_2015_2018:
    #print cmd
    #os.system(cmd)
    
-   #4. make a uvmodel with only the core (wsclean -predict)
+   cmd = "cp -r %s %s" % (orig_ms_name,core_only_ms_name)
+   print cmd
+   os.system(cmd)
+   
+   #4. for subtracting ... make a uvmodel with only the core (wsclean -predict)
    cmd = "wsclean -predict -name %s -size %s %s -scale %.4f -pol xx,xy,yx,yy %s " % (uncorrected_image_name,int(imsize),int(imsize),abs(float(pixel_scale_deg)),subtr_ms_name)
    #print cmd
    #os.system(cmd)
- 
    
    #5. subtract the core model from the visibilities (use subtrmodel -usemodelcol)
    cmd = "subtrmodel -usemodelcol -datacolumn CORRECTED_DATA %s %s " % (subtr_ms_name,subtr_ms_name)
    #print cmd
    #os.system(cmd)
 
+
+   #for core only image ... make a uvmodel with only the core (wsclean -predict)
+   cmd = "wsclean -predict -name %s -size %s %s -scale %.4f -pol xx,xy,yx,yy %s " % (uncorrected_image_name,int(imsize),int(imsize),abs(float(pixel_scale_deg)),core_only_ms_name)
+   print cmd
+   os.system(cmd) 
+   
+   #image the core-only model
+   cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (core_only_image_name,core_only_ms_name)
+   print cmd
+   os.system(cmd)
+   
+   sys.exit()
+   
+   
    
    #5a image subtracted model at smaller imsize and higher res (more w terms?) shallow clean 
    ###Dont do this anymore###############
@@ -210,8 +239,8 @@ for obsid in obsids_2015_2018:
    #os.system(cmd)
    
    cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (hi_res_image_for_self_cal_01_name,subtr_ms_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
    
    
    
