@@ -3,15 +3,22 @@
 
 from astropy.io import fits
 import numpy as np
-import os
+import os,sys
 
-generate_new_beams = False
+generate_new_beams = True
 
 subtraction_radius_arcmin = 7.0
 subtraction_radius_deg = subtraction_radius_arcmin/60.0
 
+#THes eobsids went into best image:CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0 
+#2015/145/1117031728/1117031728.ms 2015/145/1121420968/1121420968.ms  2015/145/1121593824/1121593824.ms 2015/145/1121334536/1121334536.ms  
+#2015/145/1121507392/1121507392.ms  2015/145/1121680256/1121680256.ms 2018/145/1199663088/1199663088.ms  2018/145/1200691136/1200691136.ms  
+#2018/145/1200864032/1200864032.ms 2018/145/1200604688/1200604688.ms  2018/145/1200777584/1200777584.ms  2018/145/1200950480/1200950480.ms
+
+
 #obsids_2015_2018 = ['1117031728','1199663088']
-obsids_2015_2018 = ['1117031728']
+#obsids_2015_2018 = ['1117031728']
+obsids_2015_2018 = ['1117031728','1121420968','1121593824','1121334536','1121507392','1121680256','1199663088','1200691136','1200864032','1200604688','1200777584','1200950480']
 coarse_chan = 145
 
 def create_circular_mask(h, w, centre=None, radius=None):
@@ -28,6 +35,7 @@ def create_circular_mask(h, w, centre=None, radius=None):
 
 
 #/go to /md0/ATeam/CenA/DDCal
+core_only_ms_name_list = []
 
 for obsid in obsids_2015_2018:
    print "obsid is %s" % obsid
@@ -83,6 +91,8 @@ for obsid in obsids_2015_2018:
    metafits_filename = "/md0/ATeam/CenA/2015/%s/%s/%s_metafits_ppds.fits" % (coarse_chan,obsid,obsid)
    subtr_ms_name = "/md0/ATeam/CenA/DDCal/%s_subtr.ms " % (obsid)
    core_only_ms_name = "/md0/ATeam/CenA/DDCal/%s_core_only.ms " % (obsid)
+   core_only_ms_name_list.append(core_only_ms_name)
+   
    ms_copy_name = "/md0/ATeam/CenA/DDCal/%s_copy.ms " % (obsid)
    if os.path.isfile(metafits_filename) and os.access(metafits_filename, os.R_OK):
       obsid_year = 2015
@@ -99,8 +109,8 @@ for obsid in obsids_2015_2018:
       
    #uncorrect image with beam
    cmd = "pbcorrect -uncorrect %s model.fits %s %s" % (uncorrected_image_name,beam_name,pbuncorrect_input_name)
-   #print cmd
-   #os.system(cmd)
+   print cmd
+   os.system(cmd)
  
    #3  make a copy of the ms's
    cmd = "rm -rf %s" % (ms_copy_name)
@@ -143,12 +153,14 @@ for obsid in obsids_2015_2018:
    print cmd
    os.system(cmd) 
    
-   #image the core-only model
-   cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (core_only_image_name,core_only_ms_name)
-   print cmd
-   os.system(cmd)
    
-   sys.exit()
+   #image the core-only model
+   #cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (core_only_image_name,core_only_ms_name)
+   #print cmd
+   #os.system(cmd)
+   
+   #Stripes appear when imaging the core-only model - need to repeat this for all 12 obsids combined and see what it loooks like
+   #   
    
    
    
@@ -242,7 +254,14 @@ for obsid in obsids_2015_2018:
    #print cmd
    #os.system(cmd)
    
-   
+#Once you have predicted all the core-only models into the individual ms, do a joint deconvolution of the model columns, with exactly
+#the same wsclean command that made the deep image
+
+core_only_ms_name_string = " ".join(core_only_ms_name_list)
+
+cmd = "wsclean -name CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_core_only_model -size 4096 4096 -niter 200000  -threshold 0.005  -multiscale -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2 %s " % core_only_ms_name_string
+print cmd
+os.system(cmd)
    
    
    
