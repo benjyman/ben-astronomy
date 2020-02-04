@@ -1,0 +1,1 @@
+listobs(vis='/md0/ATeam/CenA/2018/169/1200864208/1200864208.ms',listfile='/md0/ATeam/CenA/1200864208_info.txt')
