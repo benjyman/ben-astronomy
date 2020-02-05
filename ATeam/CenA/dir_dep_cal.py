@@ -5,7 +5,7 @@ from astropy.io import fits
 import numpy as np
 import os,sys
 
-generate_new_beams = True
+generate_new_beams = False
 
 subtraction_radius_arcmin = 7.0
 subtraction_radius_deg = subtraction_radius_arcmin/60.0
@@ -18,7 +18,11 @@ subtraction_radius_deg = subtraction_radius_arcmin/60.0
 
 #obsids_2015_2018 = ['1117031728','1199663088']
 #obsids_2015_2018 = ['1117031728']
+#all
 obsids_2015_2018 = ['1117031728','1121420968','1121593824','1121334536','1121507392','1121680256','1199663088','1200691136','1200864032','1200604688','1200777584','1200950480']
+#2018 only
+#obsids_2015_2018 = ['1199663088','1200691136','1200864032','1200604688','1200777584','1200950480']
+
 coarse_chan = 145
 
 def create_circular_mask(h, w, centre=None, radius=None):
@@ -36,6 +40,7 @@ def create_circular_mask(h, w, centre=None, radius=None):
 
 #/go to /md0/ATeam/CenA/DDCal
 core_only_ms_name_list = []
+orig_ms_name_list = []
 
 for obsid in obsids_2015_2018:
    print "obsid is %s" % obsid
@@ -79,9 +84,9 @@ for obsid in obsids_2015_2018:
    #print masked_image_data
    #print masked_image_data[imsize/2-20:imsize/2+20,imsize/2-20:imsize/2+20]
    
-   fits.writeto(masked_fits_image_filename,masked_image_data,clobber=True)
-   fits.update(masked_fits_image_filename,masked_image_data,header=header)
-   print "wrote  image %s" %  masked_fits_image_filename
+   #fits.writeto(masked_fits_image_filename,masked_image_data,clobber=True)
+   #fits.update(masked_fits_image_filename,masked_image_data,header=header)
+   #print "wrote  image %s" %  masked_fits_image_filename
    
    #Do I need to pb-uncorrect to get xx,yy,xy,yx?? I think so... 
    #Need the beams for each obsid 
@@ -106,11 +111,13 @@ for obsid in obsids_2015_2018:
       cmd = "beam -2016 -proto %s -name %s -m %s " % (fits_image_filename,beam_name,metafits_filename)
       print cmd
       os.system(cmd)
-      
+    
+   orig_ms_name_list.append(orig_ms_name) 
+    
    #uncorrect image with beam
    cmd = "pbcorrect -uncorrect %s model.fits %s %s" % (uncorrected_image_name,beam_name,pbuncorrect_input_name)
-   print cmd
-   os.system(cmd)
+   #print cmd
+   #os.system(cmd)
  
    #3  make a copy of the ms's
    cmd = "rm -rf %s" % (ms_copy_name)
@@ -152,8 +159,18 @@ for obsid in obsids_2015_2018:
    cmd = "wsclean -predict -name %s -size %s %s -scale %.4f -pol xx,xy,yx,yy %s " % (uncorrected_image_name,int(imsize),int(imsize),abs(float(pixel_scale_deg)),core_only_ms_name)
    print cmd
    os.system(cmd) 
-   
-   
+
+   #image the core-only model just to see if other sources are there
+   cmd = "wsclean -name check_model_%s -size 4096 4096 -niter 0 -data-column MODEL_DATA -scale 0.004 -small-inversion -pol xx  %s" % (core_only_image_name,core_only_ms_name)
+   print cmd
+   os.system(cmd)
+    
+   #image the core-only model just to see if other sources are there
+   cmd = "wsclean -name check_corrected_%s -size 4096 4096 -niter 0 -data-column CORRECTED_DATA -scale 0.004 -small-inversion -pol xx  %s" % (core_only_image_name,core_only_ms_name)
+   print cmd
+   os.system(cmd)
+    
+    
    #image the core-only model
    #cmd = "wsclean -name %s -size 4096 4096 -auto-threshold 3 -auto-mask 5 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 12 -join-channels -fit-spectral-pol 3 %s" % (core_only_image_name,core_only_ms_name)
    #print cmd
@@ -258,12 +275,17 @@ for obsid in obsids_2015_2018:
 #the same wsclean command that made the deep image
 
 core_only_ms_name_string = " ".join(core_only_ms_name_list)
+orig_ms_name_string = " ".join(orig_ms_name_list)
 
+#make the core only image again
 cmd = "wsclean -name CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_core_only_model -size 4096 4096 -niter 200000  -threshold 0.005  -multiscale -mgain 0.85 -save-source-list -data-column MODEL_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2 %s " % core_only_ms_name_string
 print cmd
 os.system(cmd)
    
-   
+ #make the full image  again since we are using a new wsclean version
+cmd = "wsclean -name CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0_orig_corrected -size 4096 4096 -niter 200000  -threshold 0.005  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2 %s " % orig_ms_name_string
+print cmd
+os.system(cmd)  
    
    
 
