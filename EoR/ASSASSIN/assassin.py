@@ -2942,7 +2942,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
     
    
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[]):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type='OLS_fixed_intercept',EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False):
 
    pol = pol_list[0]
    
@@ -3152,21 +3152,21 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #Get the theoretical diffuse value from the chan folders instead (in case you have run each chan separately for solve_from_uvfits) 
    if EDA2_data==True:
+      label2='predicted GSM'
       t_sky_theoretical_list = []
       for EDA2_chan in EDA2_chan_list:
             EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
             sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
             diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
-            print(diffuse_global_value_array)
             diffuse_global_value = diffuse_global_value_array[0]   
             t_sky_theoretical_list.append(diffuse_global_value)
       t_sky_theoretical_array = np.asarray(t_sky_theoretical_list)      
-    
-   print(t_sky_theoretical_array)
+   else:
+      label2 = 'input'
          
    plt.clf()
    plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
-   plt.plot(freq_MHz_list,t_sky_theoretical_array,label='input')
+   plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    #if include_angular_info:
@@ -8951,17 +8951,35 @@ EDA2_chan_list = [64,77,90,103,116,129]
 #   ]
 
 #default:
-#SOme of these do not calibrate, so exclude them:
+#SOme of these do not calibrate, so exclude them (best results so far):
+#EDA2_obs_time_list_each_chan = [
+#   ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618'],
+#   ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
+#   ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
+#   ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
+#   ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
+#   ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
+#   ]
+
+#Use older data at 50 MHz from Marcin. UTC chan_64_20190929T213132.uvfits is the same LST (5.8666 hrs)
+#they are space 5 mins apart, so just use 2 for now
+#20190929T213132
+#20190929T213632
+#
+#20190929_213132_eda2_ch32_ant256_midday_avg8140.ms
+#20190929_213632_eda2_ch32_ant256_midday_avg8140.ms
+
+
 EDA2_obs_time_list_each_chan = [
-   ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618'],
+   ['20190929T213132','20190929T213632'],
    ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
    ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
    ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
    ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
    ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
    ]
-
-
+   
+   
 
 ##for use in testing when you just want 1 obs per freq
 #EDA2_obs_time_list_each_chan = [
@@ -8995,7 +9013,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = True
+plot_only = False
 include_angular_info = True
 
 
@@ -9016,7 +9034,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
-#freq_MHz_list=[101.]
+#freq_MHz_list=[50.]
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
 #sys.exit()
 #old calibrate cmd:
@@ -9026,6 +9044,9 @@ for EDA2_obs_time in EDA2_obs_time_list:
 
 #calibrate each individually first and concat
 #do this outside chan dir
+#if doing individual chans:
+#freq_MHz_list = [freq_MHz_array[0]]
+#EDA2_chan_list = [EDA2_chan_list[0]]
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True)
 #sys.exit()
 
@@ -9078,7 +9099,10 @@ model_type = 'OLS_fixed_intercept'
 
 
 #also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list)
+#if doing individual chans:
+freq_MHz_list = [freq_MHz_array[0]]
+EDA2_chan_list = [EDA2_chan_list[0]]
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
 
 
 
