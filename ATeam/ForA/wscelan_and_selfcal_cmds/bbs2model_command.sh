@@ -1,0 +1,2 @@
+bbs2model  2014B_2018A_joint_idg_stokesI_deeper_self_cal_02_spec_pol_1-sources.txt  2014B_2018A_joint_idg_stokesI_deeper_self_cal_02_spec_pol_1-ao_sources.txt
+

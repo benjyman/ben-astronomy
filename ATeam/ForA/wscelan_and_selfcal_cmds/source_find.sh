@@ -1,0 +1,3 @@
+#BANE 2014B_2018A_joint_idg_stokesI_deeper_self_cal_02_spec_pol_1-MFS-image-pb.fits
+aegean --telescope MWA --autoload --table 2014B_2018A_joint_idg_stokesI_deeper_self_cal_02_spec_pol_1_agean_sources.fits  2014B_2018A_joint_idg_stokesI_deeper_self_cal_02_spec_pol_1-MFS-image-pb.fits
+
