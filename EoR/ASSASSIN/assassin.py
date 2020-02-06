@@ -1539,7 +1539,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print("saved %s" % fig_name) 
 
-def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0):
+def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,wsclean=False):
    centre_freq = float(freq_MHz)
 
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
@@ -1600,7 +1600,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
    freq_MHz_index = int(freq_MHz - 50)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
-   print("loaded %s sky_averaged_diffuse_array_beam_lsts_filename")
+   print("loaded %s" % sky_averaged_diffuse_array_beam_lsts_filename)
    if EDA2_data==True:
       #just doing one eda freq at a time for now
       ##
@@ -1941,8 +1941,8 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
-   print(X_short_parallel_array)
-   print(real_vis_data_sorted_array)
+   #print(X_short_parallel_array)
+   #print(real_vis_data_sorted_array)
    
    
    
@@ -1960,7 +1960,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
            
-def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1):
+def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False):
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -2031,11 +2031,17 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    lst_deg = (float(lst_hrs)/24.)*360.
    if EDA2_data:
       if n_obs_concat==1:
-         uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         if wsclean==True:
+            uvfits_filename = "%s/chan_%s_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         else:
+            uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
-         #concat_chan_64_20191202T171525_n_obs_13.uvfits
-         #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         if wsclean==True:
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         else:
+            #concat_chan_64_20191202T171525_n_obs_13.uvfits
+            #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
       uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    hdulist = fits.open(uvfits_filename)
@@ -2047,17 +2053,27 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    n_timesteps = n_vis/n_baselines
    #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
    
-   n_fine_chans = visibilities.shape[3]
+   #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
+   if wsclean:
+      n_fine_chans = visibilities.shape[4]
+   else:
+      n_fine_chans = visibilities.shape[3]
    
    
    
    uvfits_filename_list = []
    if EDA2_data:
       if n_obs_concat==1:
-         uvfits_filename = "%s/chan_%s_%s_calibrated.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         if wsclean==True:
+            uvfits_filename = "%s/chan_%s_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         else:
+            uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
-         #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
+         if wsclean==True:
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)     
+         else:
+            #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
       uvfits_filename_list = [uvfits_filename]
    else:
       for lst_hrs in lst_hrs_list:
@@ -2096,7 +2112,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       print("visibilities_shape")
       print(visibilities_shape)
       
-      print("omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-1))
+      print("omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
       fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
       print(fine_chan_index_array)
       centre_freq = float(freq_MHz)
@@ -2116,10 +2132,15 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #real_vis_data_unweighted_single = visibilities_single[:,0,0,fine_chan_index,0,0]
          #imag_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,1]
          #weights_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,2]
-      
-         real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
-         imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
-         weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
+         
+         if wsclean:
+            real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
+            imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,1]
+            weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,2]
+         else:
+            real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+            imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
+            weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
          
          
          
@@ -2939,52 +2960,44 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    lst_string = lst_hrs_list[0]
    lst_hrs = lst_hrs_list[0]
    
-   concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
-   concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
+   concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
    
    
    if 'noise' in signal_type_list:
        signal_type_postfix += '_N'
-       concat_output_name_base_X += '_N'
-       concat_output_name_base_Y += '_N'
+       concat_output_name_base += '_N'
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
-       concat_output_name_base_X += '_D_%s' % sky_model
-       concat_output_name_base_Y += '_D_%s' % sky_model
+       concat_output_name_base += '_D_%s' % sky_model
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse global at same time")
           sys.exit()
        else:
           signal_type_postfix += '_DG_%s' % sky_model
-          concat_output_name_base_X += '_DG_%s' % sky_model
-          concat_output_name_base_Y += '_DG_%s' % sky_model
+          concat_output_name_base += '_DG_%s' % sky_model
    if 'diffuse_angular' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse angular at same time")
           sys.exit()
        else:
           signal_type_postfix += '_DA_%s' % sky_model
-          concat_output_name_base_X += '_DA_%s' % sky_model
-          concat_output_name_base_Y += '_DA_%s' % sky_model
+          concat_output_name_base += '_DA_%s' % sky_model
    if 'global' in signal_type_list:
        if 'global_EDGES' in signal_type_list:
           print('cant have global_EDGES and global in signal_type_list')
           sys.exit()
        else:
           signal_type_postfix += '_G' 
-          concat_output_name_base_X += '_G'
-          concat_output_name_base_Y += '_G'
+          concat_output_name_base += '_G'
    if 'global_EDGES' in signal_type_list:
        signal_type_postfix += '_ED' 
-       concat_output_name_base_X += '_ED' 
-       concat_output_name_base_Y += '_ED' 
+       concat_output_name_base += '_ED' 
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
-       concat_output_name_base_X += '_GE'
-       concat_output_name_base_Y += '_GE'
+       concat_output_name_base += '_GE'
    
    if EDA2_data==True:
       signal_type_postfix = "_EDA2_data"
@@ -3025,7 +3038,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
          #only the theoretical beam weighted av is taken from this function now,, rest is derived from saved files
          #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
-         t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean)
          
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
@@ -3085,10 +3098,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #make a plot of diffuse global input  
    if 'diffuse_global' in signal_type_list:
-      sky_averaged_diffuse_array_beam_X_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_X
-      sky_averaged_diffuse_array_beam_Y_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base_Y
-      diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_X_lsts_filename)
-      #diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_Y_lsts_filename)
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
+      diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+      #diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
       
       plt.clf()
       plt.plot(freq_MHz_array,diffuse_global_value_array_X,label='sim input X')
@@ -3136,8 +3149,21 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       figmap.savefig(fig_name)
       print("saved %s" % fig_name) 
    
+   
+   #Get the theoretical diffuse value from the chan folders instead (in case you have run each chan separately for solve_from_uvfits) 
+   if EDA2_data==True:
+      t_sky_theoretical_list = []
+      for EDA2_chan in EDA2_chan_list:
+            EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
+            sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
+            diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+            print(diffuse_global_value_array)
+            diffuse_global_value = diffuse_global_value_array[0]   
+            t_sky_theoretical_list.append(diffuse_global_value)
+      t_sky_theoretical_array = np.asarray(t_sky_theoretical_list)      
     
-      
+   print(t_sky_theoretical_array)
+         
    plt.clf()
    plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
    plt.plot(freq_MHz_list,t_sky_theoretical_array,label='input')
@@ -5882,7 +5908,9 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             os.system(cmd)         
 
 #main program
-def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_name,array_ant_locations_filename,array_label):
+def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_name,array_ant_locations_filename,array_label,EDA2_data=False):
+   if EDA2_data:
+      lst_list = [lst_list[0]]
    ##split up into chunks of 30 MHz
    #remainder = len(freq_MHz_list) % inst_bw
    #assert remainder == 0, "n_chan (%s) must be a multiple of the instantaneous BW (%s MHz)" % (len(freq_MHz_list),inst_bw)
@@ -6482,6 +6510,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             sum_of_beam_weights = np.nansum(beam_image_sin_projected_regrid_gsm)
             
             sky_average_temp_beam_weighted = np.nansum(data) / sum_of_beam_weights
+
             if pol=='X':
                sky_averaged_diffuse_array_beam_X_lsts[freq_MHz_index] += sky_average_temp_beam_weighted
             else:
@@ -8921,7 +8950,7 @@ EDA2_chan_list = [64,77,90,103,116,129]
 #   ['20191202T172027','20191202T172032','20191202T172036','20191202T172041','20191202T172046','20191202T172051','20191202T172056','20191202T172100','20191202T172105','20191202T172110','20191202T172115','20191202T172120','20191202T172125']
 #   ]
 
-
+#default:
 #SOme of these do not calibrate, so exclude them:
 EDA2_obs_time_list_each_chan = [
    ['20191202T171525','20191202T171530','20191202T171535','20191202T171540','20191202T171545','20191202T171550','20191202T171554','20191202T171559','20191202T171604','20191202T171609','20191202T171614','20191202T171618'],
@@ -8931,6 +8960,8 @@ EDA2_obs_time_list_each_chan = [
    ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
    ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
    ]
+
+
 
 ##for use in testing when you just want 1 obs per freq
 #EDA2_obs_time_list_each_chan = [
@@ -8964,7 +8995,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = False
+plot_only = True
 include_angular_info = True
 
 
@@ -8986,7 +9017,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #freq_MHz_list=[101.]
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
 #sys.exit()
 #old calibrate cmd:
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
@@ -8995,8 +9026,8 @@ for EDA2_obs_time in EDA2_obs_time_list:
 
 #calibrate each individually first and concat
 #do this outside chan dir
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True)
-sys.exit()
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True)
+#sys.exit()
 
 #after calibration:
 #no cal solutions for 64/chan_64_20191202T171624.vis
@@ -9037,6 +9068,16 @@ model_type = 'OLS_fixed_intercept'
 
 
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
+
+#to save time:
+#poor man's parallel programming:
+#run this 5 seperate times, in 5 seperate screens, one for each freq with plot_only = False to get saved data products, then run with plot_only=True once with all freqs
+#dont need to change lst_hrs_list, for eda2 data processing only the first lst ios used
+#freq_MHz_list = [freq_MHz_list[5]]
+#EDA2_chan_list = [EDA2_chan_list[5]]
+
+
+#also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list)
 
 
