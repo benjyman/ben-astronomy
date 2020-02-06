@@ -23,6 +23,12 @@ obsids_2015_2018 = ['1117031728','1121420968','1121593824','1121334536','1121507
 #2018 only
 #obsids_2015_2018 = ['1199663088','1200691136','1200864032','1200604688','1200777584','1200950480']
 
+#new ones (close to old from tfranzne): 2015: 1122198832 1122112400 1122025976 1121939544 1121853112 1121766680
+#new ones  (close to old from msok) 2018: 1201123376 1201296272 1201382720 1201469160  1201555608 1201814952
+
+#make a new image from these 12 and average the two =) .... repeat until spikes average out!
+
+
 coarse_chan = 145
 
 def create_circular_mask(h, w, centre=None, radius=None):
