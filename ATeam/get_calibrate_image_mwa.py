@@ -110,7 +110,7 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
             check_scale_deg = 0.025
             check_imsize = 1024
             
-            cal_sol_filename = "%s.bin"
+            cal_sol_filename = "%s_sol1.bin" %s (obsid)
             
             pbuncorrect_input_name = model_image.split('-I.fits')[0]
 
@@ -164,7 +164,7 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
 model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
 masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
 
-calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=False,metafits_dir="/md0/ATeam/CenA/image_2/2015")
+calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,metafits_dir="/md0/ATeam/CenA/image_2/2015")
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 
