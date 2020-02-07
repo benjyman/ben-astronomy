@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #does what it says
 
 import os,sys
@@ -20,5 +21,5 @@ def download_obs(obsid_list,timeres=4,freqres=40,ms=True)
    
    #run manta ray command
    cmd = "mwa_client -c %s -d . " % (csv_filename)
-   print cmd
+   print(cmd)
    #os.system(cmd)
