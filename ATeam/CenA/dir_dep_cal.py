@@ -74,7 +74,7 @@ for obsid in obsids_2015_2018:
    
    
    hdulist = fits.open(fits_image_filename)
-   header = hdulist[0].header
+   new_header = hdulist[0].header
    image_data = hdulist[0].data[0,0,:,:]
    
    pixel_scale_deg = float(header['CDELT1'])
@@ -91,7 +91,7 @@ for obsid in obsids_2015_2018:
    #print masked_image_data[imsize/2-20:imsize/2+20,imsize/2-20:imsize/2+20]
    
    #fits.writeto(masked_fits_image_filename,masked_image_data,clobber=True)
-   #fits.update(masked_fits_image_filename,masked_image_data,header=header)
+   #fits.update(masked_fits_image_filename,masked_image_data,header=new_header)
    #print "wrote  image %s" %  masked_fits_image_filename
    
    #Do I need to pb-uncorrect to get xx,yy,xy,yx?? I think so... 
