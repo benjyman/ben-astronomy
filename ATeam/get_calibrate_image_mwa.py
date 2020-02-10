@@ -80,15 +80,15 @@ def mask_model_image(input_image_name,subtraction_radius_deg=0):
 
 
 
-def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir='',ms=True):
+def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,ms_dir='',ms=True):
    for obsid in obsid_list:
-      metafits_filename = "%s/%s.metafits" % (metafits_dir,obsid)
+      metafits_filename = "%s/%s.metafits" % (ms_dir,obsid)
       beam_name = "%s_beam" % obsid
       #get latest with wget?
       if generate_new_beams:
          if os.path.isfile(metafits_filename) and os.access(metafits_filename, os.R_OK):
             cmd = "beam -2016 -proto %s -name %s -m %s " % (model_image,beam_name,metafits_filename)
-            print cmd
+            print(cmd)
             os.system(cmd)
          else:
             print("Error: either file %s is missing or is not readable" % metafits_filename)
@@ -97,7 +97,7 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
       if ms==True:
          #calibrate them
          if model_image!='':
-            ms_name = "%s/%s.ms" % (metafits_dir,obsid)
+            ms_name = "%s/%s.ms" % (ms_dir,obsid)
             check_model_image_name = "check_model_%s" % obsid
             check_cal_image_name = "check_cal_%s" % obsid
             
@@ -110,7 +110,7 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
             check_scale_deg = 0.025
             check_imsize = 1024
             
-            cal_sol_filename = "%s_sol1.bin" %s (obsid)
+            cal_sol_filename = "%s_sol1.bin" % (obsid)
             
             pbuncorrect_input_name = model_image.split('-I.fits')[0]
 
@@ -118,34 +118,69 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
    
             #uncorrect image with beam
             cmd = "pbcorrect -uncorrect %s model.fits %s %s" % (uncorrected_image_name,beam_name,pbuncorrect_input_name)
-            print cmd
+            print(cmd)
             os.system(cmd)
 
             #predict in the model (wsclean -predict)
             cmd = "wsclean -predict -name %s -size %s %s -scale %.4f -pol xx,xy,yx,yy %s " % (uncorrected_image_name,int(predict_imsize),int(predict_imsize),abs(float(predict_pixel_scale_deg)),ms_name)
-            print cmd
+            print(cmd)
             os.system(cmd) 
          
             #image the  model just to see if it worked
             cmd = "wsclean -name %s -size %s %s -niter 0 -data-column MODEL_DATA -scale %s -small-inversion -pol xx  %s" % (check_model_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
-            print cmd
+            print(cmd)
             os.system(cmd)
             
             #calibrate
             cmd = "calibrate -minuv 60 %s %s " % (ms_name,cal_sol_filename)
-            print cmd
+            print(cmd)
             os.system(cmd)
             
             cmd = "applysolutions %s %s " % (ms_name,cal_sol_filename)
-            print cmd
+            print(cmd)
             os.system(cmd)
                      
             #image to see if it worked
             cmd = "wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx  %s" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
-            print cmd
+            print(cmd)
             os.system(cmd)
             
 
+def jointly_deconvolve_idg(obsid_list,ms_dir_list,outname,wsclean_options):
+   #wsclean -name  -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight %s -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2 %s  " % (ms_string)
+   ms_list = []
+   for ms_dir in ms_dir_list:
+      for obsid in obsid_list:
+         ms_name = "%s/%s.ms" % (ms_dir,obsid)
+         if os.path.isdir(ms_name):
+            ms_list.append(ms_name)
+
+   ms_string = ' '.join(ms_list)
+   cmd = "wsclean -name %s %s %s  " % (outname, wsclean_options, ms_string)
+   print(cmd)
+   os.system(cmd)
+
+def self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number):
+   ms_list = []
+   solution_list = []
+   for ms_dir in ms_dir_list:
+      for obsid in obsid_list:
+         ms_name = "%s/%s.ms" % (ms_dir,obsid)
+         solution_name = "%s/%s_selfcal_%02d.bin" % (ms_dir,obsid,self_cal_number)
+         if os.path.isdir(ms_name):
+            ms_list.append(ms_name)
+            solution_list.append(solution_name)
+            
+   for ms_index,ms in enumerate(ms_list):
+      solution_name = solution_list[ms_index]
+      cmd = "calibrate %s %s %s" % (calibrate_options,ms,solution_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "applysolutions %s %s" % (ms,solution_name)
+      print(cmd)
+      os.system(cmd)
+   
 
 
 
@@ -160,21 +195,25 @@ def calibrate_obs(obsid_list,model_image='',generate_new_beams=True,metafits_dir
 #unzip_obs(obsid_list_2015,ms=True)
 #2018 data:
 #unzip_obs(obsid_list_2018,ms=True)  
+
  
 model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
-masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
+#masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
 
-calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,metafits_dir="/md0/ATeam/CenA/image_2/2015")
+#masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
+#calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
+#calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
 
+obsid_list = obsid_list_2015 + obsid_list_2018
+ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
+wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 
-
-
-
-
-
-
+calibrate_options = "-minuv 60"
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
 
 
 

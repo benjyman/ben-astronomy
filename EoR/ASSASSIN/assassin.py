@@ -1621,7 +1621,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
    print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
-   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%f_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
    print("loaded %s" % Y_short_parallel_angular_array_filename)
    
@@ -2632,7 +2632,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          #update for fine chans
          if include_angular_info:
-            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0f_MHz_%s_pol%s.npy" % (freq_MHz,pol,signal_type_postfix)
+            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
             print("saved %s" % Y_short_parallel_angular_array_filename)
          
@@ -3166,7 +3166,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
    plt.clf()
    plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label='recovered')
-   plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+   if len(freq_MHz_list)==1:
+      plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
+   else:
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+   
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    #if include_angular_info:
@@ -9075,8 +9079,8 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type = 'OLS_fixed_intercept' 
-#model_type = 'OLS_fixed_int_subtr_Y'
+#model_type = 'OLS_fixed_intercept' 
+model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
 #model_type = 'OLS_with_int_min_vis'
