@@ -180,6 +180,11 @@ def self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number):
       cmd = "applysolutions %s %s" % (ms,solution_name)
       print(cmd)
       os.system(cmd)
+      
+      #Plot the cal solutions
+      cmd = "aocal_plot.py  %s " % (solution_name)
+      print(cmd)
+      os.system(cmd)
    
 
 
@@ -205,15 +210,28 @@ model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_
 #calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
-image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
+
 
 obsid_list = obsid_list_2015 + obsid_list_2018
 ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
+
+#image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
+#wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+#jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+#calibrate_options = "-minuv 60"
+#self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
+
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_02_image2"
 wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
 jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
-
 calibrate_options = "-minuv 60"
-self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=2)
+
+
+
+
+
+
 
 
 
