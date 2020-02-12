@@ -9,7 +9,7 @@ import pandas as pd
 import datetime
 
 #Global Variables - put your data in the file 'client.secret' and separate the fields with a comma!
-client_id, secret = open('client.secret').read().strip().split(',')
+client_id, secret = open('/home/benjamin/strava/client.secret').read().strip().split(',')
 port = 5000
 url = 'http://localhost:%d/authorized' % port
 allDone = False
