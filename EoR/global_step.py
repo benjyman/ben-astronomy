@@ -46,11 +46,18 @@ def plot_different_baselines(antenna_locations_filename):
             ant_j_y = float(lines[int(ant_j)].split()[1])
             v = ant_i_y - ant_j_y
             
-            visibility_index += 1
-            print visibility_index
-            #visibility_array[]
+            #print visibility_index
+            visibility_array[visibility_index,0] = u
+            visibility_array[visibility_index,1] = v
             
-   print "n_baselines %s" % n_baselines
+            visibility_index += 1
+            
+
+   #Do as arrays, not in the for loop
+   u_array = visibility_array[:,0]
+   v_array = visibility_array[:,1]
+   
+   #look below for all the vector stuff and to calc the intergral etc (maybe you can't do it in an array ...., but hpx is just another array.....)
    
    #for each u,v point calc 1/4PI * INTEGRAL( A(r,nu) * e^(-i2PI B dot r / lambda), dOmega) = X
    # Have system of linear equations V = X Tsky + N
@@ -61,6 +68,13 @@ def plot_different_baselines(antenna_locations_filename):
    #residuals:
    #covariance matrix:
    
+   #print "n_baselines %s" % n_baselines
+   #plot_name="u_v_plot.png"
+   #plt.clf()
+   #plt.scatter(visibility_array[:,0],visibility_array[:,1])
+   #plt.savefig(plot_name)
+   #print "%s" % plot_name
+   #plt.close()
    
    
 

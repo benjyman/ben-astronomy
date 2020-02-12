@@ -186,8 +186,30 @@ def self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number):
       print(cmd)
       os.system(cmd)
    
+def flag_bad_ants(ms_name,ant_string):
+   cmd = "flagantennae %s %s " % (ms_name,ant_string)
+   print(cmd)
+   os.system(cmd)
+
+def ms_qa(obsid_list,ms_dir_list):
+   ms_list = []
+   aoqplot_savename_list = []
+   for ms_dir in ms_dir_list:
+      for obsid in obsid_list:
+         ms_name = "%s/%s.ms" % (ms_dir,obsid)
+         aoqplot_savename = "aoqplot_stddev_%s"
+         if os.path.isdir(ms_name):
+            ms_list.append(ms_name)
+            aoqplot_savename_list.append(aoqplot_savename)
+            
+   for ms_name_index,ms_name in enumerate(ms_list):
+      aoqplot_savename = aoqplot_savename_list[ms_name_index]
+      cmd = "aoquality collect %s; aoqplot -save %s StandardDeviation %s" % (ms_name,aoqplot_savename,ms_name)
+      print(cmd)
+      os.system(cmd)    
 
 
+      
 
 
 #2015 data:
@@ -201,6 +223,8 @@ def self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number):
 #2018 data:
 #unzip_obs(obsid_list_2018,ms=True)  
 
+#Do this first!!!!!
+#ms_qa(obsid_list,ms_dir_list)
  
 model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
 #masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
@@ -221,13 +245,41 @@ ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
 #calibrate_options = "-minuv 60"
 #self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
 
-image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_02_image2"
+#image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_02_image2"
+#wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+#jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+#calibrate_options = "-minuv 60"
+#self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=2)
+
+#looks like there is something fishing going on, bad artefacts in middle of image. Looks like there is a bad reciever at least for 1122198832
+#look closely at cal plots and also with aoquality collect / aoqplot
+#flag_bad_ants("2015/1122198832.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1121766680.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1121853112.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1121939544.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1122025976.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1122112400.ms","49 56 60 104 105 106 107 108 109 110 111")
+#flag_bad_ants("2015/1122198832.ms","49 56 60 104 105 106 107 108 109 110 111")
+#potentially ant 49 and 10x ants on all 2015 obs
+
+#now 2018
+#flag_bad_ants("2018/1201123376.ms","84 76")
+#flag_bad_ants("2018/1201296272.ms","84 76")
+#flag_bad_ants("2018/1201382720.ms","84 76")
+#flag_bad_ants("2018/1201469160.ms","84 76")
+#flag_bad_ants("2018/1201555608.ms","84 76")
+#flag_bad_ants("2018/1201814952.ms","84 76")
+
+#should probably go back and start again from the start now the flagging is done properly
+#masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
+#calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=False,ms_dir="/md0/ATeam/CenA/image_2/2015")
+#calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=False,ms_dir="/md0/ATeam/CenA/image_2/2018")
+
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_model_cal_image2"
 wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
 jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 calibrate_options = "-minuv 60"
-self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=2)
-
-
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
 
 
 

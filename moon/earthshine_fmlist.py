@@ -83,11 +83,11 @@ freq_step = 0.200
 moon_pix = (525,1107)
 image_dir = "/md0/lspringer/mwa_data/new_download/"
 nchans = 154
-mwa_image_name_base_list = ['1127301352_moon_69']
+mwa_image_name_base_list = ['1127301352_moon_69','1127301592_moon_93']
 extract_moon_from_mwa_freq_images(image_dir,mwa_image_name_base_list,nchans,moon_pix,start_freq,freq_step)
-sys.exit()
+#sys.exit()
         
-plot_mwa_data = True
+plot_mwa_data = False
 
 fmlist_data_filename = '/md0/moon/lauren/moonraker.csv'
 #These are numpy arrays. When you open them with python numpy you will see they have a shape of (124,50,3). This corresponds to (n_channels, n_observations, 3), the 3 is because there is specular, diffuse, and observation ID.
@@ -515,7 +515,7 @@ for timestep_index, timestep in enumerate(utc_times):
      cur_axes = plt.gca()
      img = cur_axes.matshow(waterfall_jy,vmin=0,vmax=10)
      plt.grid(None) 
-     #get rid of labels
+     #get rid of tick labels
      
      cur_axes.axes.get_xaxis().set_ticklabels([])
      cur_axes.axes.get_yaxis().set_ticklabels([])
@@ -523,7 +523,11 @@ for timestep_index, timestep in enumerate(utc_times):
      cur_axes = plt.gca()
      cur_axes.axes.get_xaxis().set_ticks([])
      cur_axes.axes.get_yaxis().set_ticks([])
-     plt.colorbar(img, ax=cur_axes)
+     colorbar = plt.colorbar(img, ax=cur_axes)
+     colorbar.set_label('Flux density (Jy)')
+     
+     plt.xlabel('Frequency')
+     plt.ylabel('Time')
      
      plt.savefig('%s' % plot_figname, overwrite=True)
      print "saved %s" % plot_figname
@@ -610,6 +614,10 @@ print('made movie %s' % movie_name)
 #stitch together images into movie waterfall version
 
 filename_base = 'waterfall_trifecta_%03d.png'
+
+#draw labels on waterfall trifecta
+#cmd = " convert waterfall_trifecta_000.png   -background Orange  label:'Faerie Dragon' +swap  -gravity Center -append    anno_label2.png"
+
 movie_name = 'earthshine_waterfall.mp4'
 
 cmd = "ffmpeg -framerate 6 -i %s -c:v libx264 -r 30 -pix_fmt yuv420p %s" % (filename_base,movie_name)

@@ -1621,19 +1621,20 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
    print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
-   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-   Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
-   print("loaded %s" % Y_short_parallel_angular_array_filename)
+   if include_angular_info:
+      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+      Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+      print("loaded %s" % Y_short_parallel_angular_array_filename)
    
-   #plot a histogram of Y values
-   plt.clf()
-   n, bins, patches = plt.hist(Y_short_parallel_angular_array)
-   map_title="Histogram of Y values (angular response)" 
-   fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   plt.close()
-   print("saved %s" % fig_name)  
+      #plot a histogram of Y values
+      plt.clf()
+      n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+      map_title="Histogram of Y values (angular response)" 
+      fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)  
    
    real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
@@ -1705,16 +1706,19 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       print("saved %s" % fig_name) 
-   
-      Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
-   
-      #full response
-      #need to convert between Jy and K
-      jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-      Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
       
-      #need to update full response to include fine chans
-      #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
+      jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+      
+      if include_angular_info:
+         Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
+   
+         #full response
+         #need to convert between Jy and K
+      
+         Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
+      
+         #need to update full response to include fine chans
+         #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
    
    
 
@@ -3189,8 +3193,54 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
+  
+   ###Also plot the average measurement for each EDA2 coarse chan
+   t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
+   t_sky_measure_av_per_EDA2_chan_err = np.full(len(freq_MHz_list),np.nan)
+   if EDA2_data==True:
+      for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+         freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
+         freq_range_max = freq_MHz + (centre_chan_index * fine_chan_width_Hz/1000000.)
+         print(freq_range_min)
+         print(freq_range_max)
+         
+         indices = np.where(np.logical_and(freq_MHz_fine_array>=freq_range_min,freq_MHz_fine_array<=freq_range_max))
+         t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
+         print(t_sky_measured_EDA2_chan)
+         print(freq_MHz_fine_array[indices])
+         t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.mean(t_sky_measured_EDA2_chan)
+         t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.std(t_sky_measured_EDA2_chan)
+         
+   plt.clf()
+   plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label='recovered')
+   if len(freq_MHz_list)==1:
+      plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
+   else:
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
    
+   #if 'diffuse_global' in signal_type_list:
+   #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
+   #if include_angular_info:
+   #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
 
+   map_title="t_sky measured" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("Sky temperature (K)")
+   if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
+      print(signal_type_list)
+      plt.legend(loc='upper right')
+   else:
+      plt.legend(loc='lower right')
+   plt.ylim([500, 5000])
+   fig_name= "t_sky_measured_lst_%s%s_%s_per_chan_av.png" % (lst_string,signal_type_postfix,model_type)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
+   
+   
+        
+   
+   
       
    #subtract a polynomial fit
    #in log log space:
@@ -7486,7 +7536,8 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,phase_sol_filenam
    
    
    
-def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',uv_cutoff=False,n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False):
+def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0):
+   #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
@@ -7495,6 +7546,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
           n_obs_concat = 1
        freq_MHz = np.round(400./512.*float(EDA2_chan))
        wavelength = 300./freq_MHz
+       if uv_cutoff!=0:
+          uv_cutoff_m = uv_cutoff * wavelength
        lst = lst_list[EDA2_chan_index]
        lst_deg = (float(lst)/24)*360.
        obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
@@ -7809,17 +7862,23 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   os.system(cmd)
                   
                   #hmmm seemed to actually work! We'll see ...
-                  
-                  gain_solutions_name = 'cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+                  if uv_cutoff==0:
+                     gain_solutions_name = 'cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+                     calibrate_options = ''
+                  else:
+                     gain_solutions_name = 'cal_%s_%s_calibrate_sols_uvcutoff_%0.3f_m.bin' % (EDA2_chan,EDA2_obs_time,uv_cutoff_m)
+                     calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
                   
                   cmd = "rm -rf %s" % (gain_solutions_name)
                   print(cmd)
                   os.system(cmd)
                   
                   #calibrate
-                  cmd = "calibrate  %s %s " % (ms_name,gain_solutions_name)
+                  
+                  cmd = "calibrate  %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
                   print(cmd)
                   os.system(cmd)
+                  
                   
                   
                   #plot the sols and 
@@ -7972,16 +8031,19 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                       
                      #select=uvrange(uvmin,uvmax) in kilolambda
                      #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
-                     if uv_cutoff==True:
-                        cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(0.00050,50\)" % (new_split_vis_name,apparent_sky_im_name)
+                     if uv_cutoff!=0:
+                        cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(%0.5f,50\)" % (new_split_vis_name,apparent_sky_im_name,uv_cutoff)
+                        gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan,uv_cutoff)
+                        gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan,uv_cutoff)
                      else:
                         cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (new_split_vis_name,apparent_sky_im_name)
+                        gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
+                        gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
                      print(cmd) 
                      os.system(cmd)
                      
                      
-                     gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
-                     gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
+
                      
                      cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
                      print(cmd)
@@ -9017,7 +9079,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = False
+plot_only = True
 include_angular_info = True
 
 
@@ -9051,7 +9113,7 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #if doing individual chans:
 #freq_MHz_list = [freq_MHz_array[0]]
 #EDA2_chan_list = [EDA2_chan_list[0]]
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True)
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True,uv_cutoff=0.5)
 #sys.exit()
 
 #after calibration:
@@ -9079,8 +9141,8 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-#model_type = 'OLS_fixed_intercept' 
-model_type = 'OLS_fixed_int_subtr_Y'
+model_type = 'OLS_fixed_intercept' 
+#model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
 #model_type = 'OLS_with_int_min_vis'
@@ -9108,6 +9170,10 @@ freq_MHz_list = [freq_MHz_array[0]]
 EDA2_chan_list = [EDA2_chan_list[0]]
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
 
+
+###obs seem to underestimate the global temp - Y sub improves it a bit.
+#I reckon because orig sims are with a much quieter patch of sky - this is the GP overhead!
+#need to sim the actual LST of the obs. Wait for new data from Marcin (current 12/2/2020)
 
 
 
