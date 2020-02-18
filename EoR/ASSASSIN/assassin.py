@@ -2775,7 +2775,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
 
 def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order_list,plot_only=False):
 
-   poly_order_list_string = '_'.join(poly_order_list)
+   poly_order_list_string = '_'.join(str(e) for e in poly_order_list)
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
    
