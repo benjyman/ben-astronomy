@@ -2888,7 +2888,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    #plot the recovered polynomial and recovered global signal separately 
    plt.clf()
    for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
-      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit poly %s' % poly_order_list[joint_fit_global_EDGES_index])
+      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='EDGES poly order %s' % poly_order_list[joint_fit_global_EDGES_index])
    map_title="t_sky gobal EDGES joint fit" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("T_sky (K)")
@@ -2901,7 +2901,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    
    plt.clf()
    for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
-      plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s fit' % poly_order_list[joint_fit_global_EDGES_index])
+      plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s' % poly_order_list[joint_fit_global_EDGES_index])
    map_title="t_sky diffuse joint fit" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("T_sky (K)")
