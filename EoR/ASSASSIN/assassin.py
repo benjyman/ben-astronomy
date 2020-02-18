@@ -165,9 +165,9 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse','noise']
+#signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse_global','noise']
-#signal_type_list=['diffuse','noise','global_EDGES']
+signal_type_list=['diffuse','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -201,7 +201,7 @@ zero_spacing_leakage_threshold = 0.5
 outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
 
 
-#from Wayht et al Table 2, third column divided by 256 (not last col which is dipole in isolation)
+#from Wayth et al Table 2, third column divided by 256 (not last col which is dipole in isolation)
 Aeff_list = np.array([970,950,914,874,832,771,707,638,568,498,435,377,329,288,252,222,196])/256.
 Aeff_freqs = np.arange(60,230,10)
 
@@ -2773,7 +2773,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #print "saved figure: %s" % figname
          #plt.close()    
 
-def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False):
+def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order_list,plot_only=False):
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -2829,58 +2829,65 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    t_sky_measured_array_okay = t_sky_measured_array[okay_indices]
    freq_MHz_array_okay = freq_MHz_array[okay_indices]
    
+   joint_fit_list = []
+   joint_fit_global_EDGES_list = []
+   joint_fit_diffuse_global_foreground_list = []
+   for poly_order in poly_order_list:
+      if (('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list) and ('global' not in signal_type_list and 'global_EDGES' not in signal_type_list)):
+         print('fitting just diffuse model (no global signal)')
+         #jointly fit model to data
+         if poly_order==5:
+            fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
+            joint_fit = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,*fitpars)
+         elif poly_order==7:
+            fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)
+            joint_fit = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,*fitpars)
+         elif poly_order==6:
+            fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
+            joint_fit = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,*fitpars)
    
-   if (('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list) and ('global' not in signal_type_list and 'global_EDGES' not in signal_type_list)):
-      print('fitting just diffuse model (no global signal)')
-      #jointly fit model to data
-      if poly_order==5:
-         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
-         joint_fit = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,*fitpars)
-      
-      elif poly_order==7:
-         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)
-         joint_fit = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,*fitpars)
-      elif poly_order==6:
-         fitpars, covmat = curve_fit(diffuse_global_foreground_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
-         joint_fit = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,*fitpars)
+         
+      if (('global_EDGES' in signal_type_list) and ('diffuse' not in signal_type_list and 'diffuse_global' not in signal_type_list)):
+         print('fitting just global_EDGES model (no diffuse foreground)')
+         #jointly fit model to data
+         fitpars, covmat = curve_fit(global_sig_EDGES_func,freq_MHz_array_okay,t_sky_measured_array_okay)
+   
+         joint_fit = global_sig_EDGES_func(freq_MHz_array_okay,*fitpars)   
 
-      
-   if (('global_EDGES' in signal_type_list) and ('diffuse' not in signal_type_list and 'diffuse_global' not in signal_type_list)):
-      print('fitting just global_EDGES model (no diffuse foreground)')
-      #jointly fit model to data
-      fitpars, covmat = curve_fit(global_sig_EDGES_func,freq_MHz_array_okay,t_sky_measured_array_okay)
-
-      joint_fit = global_sig_EDGES_func(freq_MHz_array_okay,*fitpars)   
-
-   if (('global_EDGES' in signal_type_list) and ('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list)):
-      print('fitting global_EDGES model and diffuse foreground)')
-      #jointly fit model to data
-      if poly_order==5:
-         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
-         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_5(freq_MHz_array_okay,*fitpars)
-         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5])
-
-      elif poly_order==6:
-         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
-         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_6(freq_MHz_array_okay,*fitpars)
-         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6])
-      
-      elif poly_order==7:
-         fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)            
-         joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_7(freq_MHz_array_okay,*fitpars)     
-         joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6],fitpars[7])
-
-      
-    
-      joint_fit_global_EDGES = global_sig_EDGES_func(freq_MHz_array_okay,fitpars[0])
-      
+      if (('global_EDGES' in signal_type_list) and ('diffuse' in signal_type_list or 'diffuse_global' in signal_type_list)):
+         print('fitting global_EDGES model and diffuse foreground)')
+         #jointly fit model to data
+         if poly_order==5:
+            fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_5,freq_MHz_array_okay,t_sky_measured_array_okay)
+            joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_5(freq_MHz_array_okay,*fitpars)
+            joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_5(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5])
+   
+         elif poly_order==6:
+            fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_6,freq_MHz_array_okay,t_sky_measured_array_okay)
+            joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_6(freq_MHz_array_okay,*fitpars)
+            joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_6(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6])
+         
+         elif poly_order==7:
+            fitpars, covmat = curve_fit(global_sig_EDGES_and_diffuse_fg_func_order_7,freq_MHz_array_okay,t_sky_measured_array_okay)            
+            joint_fit = global_sig_EDGES_and_diffuse_fg_func_order_7(freq_MHz_array_okay,*fitpars)     
+            joint_fit_diffuse_global_foreground = diffuse_global_foreground_func_order_7(freq_MHz_array_okay,fitpars[1],fitpars[2],fitpars[3],fitpars[4],fitpars[5],fitpars[6],fitpars[7])
+   
+         
+       
+         joint_fit_global_EDGES = global_sig_EDGES_func(freq_MHz_array_okay,fitpars[0])
+         
+         joint_fit_list.append(joint_fit)
+         joint_fit_global_EDGES_list.append(joint_fit_global_EDGES)
+         joint_fit_diffuse_global_foreground_list.append(joint_fit_diffuse_global_foreground)
+         
       #variances = covmat.diagonal()
       #std_devs = np.sqrt(variances)
       #print fitpars,std_devs
     
       #plot the recovered polynomial and recovered global signal separately 
       plt.clf()
-      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit')
+      for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
+         plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit poly %s' % poly_order_list[joint_fit_global_EDGES_index])
       map_title="t_sky gobal EDGES joint fit" 
       plt.xlabel("Frequency (MHz)")
       plt.ylabel("T_sky (K)")
@@ -2892,7 +2899,8 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       print("saved %s" % fig_name)
       
       plt.clf()
-      plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order 7 fit')
+      for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
+         plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s fit' % poly_order_list[joint_fit_global_EDGES_index])
       map_title="t_sky diffuse joint fit" 
       plt.xlabel("Frequency (MHz)")
       plt.ylabel("T_sky (K)")
@@ -2905,14 +2913,16 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    
    
    
-   #residuals from fit:
-   residuals = t_sky_measured_array_okay - joint_fit
-   rms_of_residuals = np.sqrt(np.mean(residuals**2))
-   max_abs_residuals = np.max(np.abs(residuals)) * 0.9
-
-   #plot residuals
+   #residuals from fit:\
    plt.clf()
-   plt.plot(freq_MHz_array_okay,residuals,label='Residuals')
+   for joint_fit_index,joint_fit in enumerate(joint_fit_list_list):
+      residuals = t_sky_measured_array_okay - joint_fit
+      rms_of_residuals = np.sqrt(np.mean(residuals**2))
+      max_abs_residuals = np.max(np.abs(residuals)) * 0.9
+
+      #plot residuals
+      plt.plot(freq_MHz_array_okay,residuals,label='Residuals poly order %s' % poly_order_list[joint_fit_index] )
+      
    map_title="residuals from joint fitting" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Residual T_sky (K)")
@@ -9168,7 +9178,7 @@ model_type = 'OLS_fixed_intercept'
 #if doing individual chans:
 freq_MHz_list = [freq_MHz_array[0]]
 EDA2_chan_list = [EDA2_chan_list[0]]
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
+#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type=model_type, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
 
 
 ###obs seem to underestimate the global temp - Y sub improves it a bit.
@@ -9176,9 +9186,9 @@ plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_li
 #need to sim the actual LST of the obs. Wait for new data from Marcin (current 12/2/2020)
 
 
-
-
-#joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only)
+lst_hrs_list=['2']
+poly_order_list=[5,6,7]
+joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order_list=poly_order_list,plot_only=plot_only)
 
 
 #model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
