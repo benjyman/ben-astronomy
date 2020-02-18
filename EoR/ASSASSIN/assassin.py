@@ -167,7 +167,7 @@ pol_list = ['X']
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse_global','noise']
-signal_type_list=['diffuse','noise','global_EDGES']
+signal_type_list=['diffuse_global','noise','global_EDGES']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -2775,6 +2775,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
 
 def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order_list,plot_only=False):
 
+   poly_order_list_string = '_'.join(poly_order_list)
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
    
@@ -2884,38 +2885,38 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       #std_devs = np.sqrt(variances)
       #print fitpars,std_devs
     
-      #plot the recovered polynomial and recovered global signal separately 
-      plt.clf()
-      for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
-         plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit poly %s' % poly_order_list[joint_fit_global_EDGES_index])
-      map_title="t_sky gobal EDGES joint fit" 
-      plt.xlabel("Frequency (MHz)")
-      plt.ylabel("T_sky (K)")
-      plt.legend(loc="lower right")
-      #plt.ylim([0, 20])
-      fig_name= "t_sky_joint_fit_global_EDGES_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
-      
-      plt.clf()
-      for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
-         plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s fit' % poly_order_list[joint_fit_global_EDGES_index])
-      map_title="t_sky diffuse joint fit" 
-      plt.xlabel("Frequency (MHz)")
-      plt.ylabel("T_sky (K)")
-      plt.legend(loc=1)
-      #plt.ylim([0, 20])
-      fig_name= "t_sky_joint_fit_diffuse_global_foreground_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
+   #plot the recovered polynomial and recovered global signal separately 
+   plt.clf()
+   for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
+      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='Global EDGES joint fit poly %s' % poly_order_list[joint_fit_global_EDGES_index])
+   map_title="t_sky gobal EDGES joint fit" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("T_sky (K)")
+   plt.legend(loc="lower right")
+   #plt.ylim([0, 20])
+   fig_name= "t_sky_joint_fit_global_EDGES_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   
+   plt.clf()
+   for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
+      plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s fit' % poly_order_list[joint_fit_global_EDGES_index])
+   map_title="t_sky diffuse joint fit" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("T_sky (K)")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "t_sky_joint_fit_diffuse_global_foreground_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
    
    
    
    #residuals from fit:\
    plt.clf()
-   for joint_fit_index,joint_fit in enumerate(joint_fit_list_list):
+   for joint_fit_index,joint_fit in enumerate(joint_fit_list):
       residuals = t_sky_measured_array_okay - joint_fit
       rms_of_residuals = np.sqrt(np.mean(residuals**2))
       max_abs_residuals = np.max(np.abs(residuals)) * 0.9
@@ -2929,7 +2930,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    #plt.ylim([0, 20])
-   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order)
+   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
@@ -9185,7 +9186,7 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 #I reckon because orig sims are with a much quieter patch of sky - this is the GP overhead!
 #need to sim the actual LST of the obs. Wait for new data from Marcin (current 12/2/2020)
 
-
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 lst_hrs_list=['2']
 poly_order_list=[5,6,7]
 joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order_list=poly_order_list,plot_only=plot_only)
