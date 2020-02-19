@@ -9027,7 +9027,22 @@ def simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference,n_circ
          simulate(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
          extract_signal_from_sims(lst_list=lst_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,outbase_name=outbase_name,sky_model=sky_model,array_ant_locations_filename=antenna_position_filename,array_label=array_label)
     
-         
+def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
+   obs_time_list_each_chan = []
+   temp_txt_filename = 'uvfits_time_list.txt'
+   for eda2_chan in eda2_chan_list:
+      chan_obs_time_list = []
+      chan_dir = "%s%s" % (base_dir,eda2_chan)
+      cmd = "ls -la %s | grep .uvfits > %s" % (chan_dir,temp_txt_filename)
+      os.system(cmd)
+      with open(temp_txt_filename) as f:
+         lines=f.readlines()
+      for line in lines[1:-2]:
+         obs_time = line.split('.uvfits')[0].split()[-1].split('_')[-1]
+         chan_obs_time_list.append(obs_time)
+      obs_time_list_each_chan.append(chan_obs_time_list)
+   return obs_time_list_each_chan
+            
 
 
 
@@ -9070,12 +9085,16 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = False
+EDA2_data = True
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
+#20190929 data:
+#EDA2_chan_list = [64,77,90,103,116,129]
 
-EDA2_chan_list = [64,77,90,103,116,129]
+#20200217 data (dont use 63 / 49 MHz dont have beam model! missing 127 and 128 so just do to incl 126)
+EDA2_chan_list = range(64,127)
+
 #middle time for each chan
 #EDA2_obs_time_list = ["20191202T171525","20191202T171629","20191202T171727","20191202T171830","20191202T171928","20191202T172027"]
 
@@ -9108,17 +9127,17 @@ EDA2_chan_list = [64,77,90,103,116,129]
 #20190929_213132_eda2_ch32_ant256_midday_avg8140.ms
 #20190929_213632_eda2_ch32_ant256_midday_avg8140.ms
 
+#20190929 data (sub 20190929 data for 50MHz):
+#EDA2_obs_time_list_each_chan = [
+#   ['20190929T213132','20190929T213632'],
+#   ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
+#   ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
+#   ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
+#   ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
+#   ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
+#   ]
+   
 
-EDA2_obs_time_list_each_chan = [
-   ['20190929T213132','20190929T213632'],
-   ['20191202T171629','20191202T171633','20191202T171638','20191202T171643','20191202T171648','20191202T171653','20191202T171658','20191202T171702','20191202T171707','20191202T171712','20191202T171717','20191202T171722'],
-   ['20191202T171727','20191202T171732','20191202T171737','20191202T171741','20191202T171746','20191202T171751','20191202T171756','20191202T171801','20191202T171805','20191202T171810','20191202T171815','20191202T171820','20191202T171825'],
-   ['20191202T171830','20191202T171835','20191202T171840','20191202T171845','20191202T171849','20191202T171854','20191202T171859','20191202T171904','20191202T171909','20191202T171913','20191202T171918','20191202T171923'],
-   ['20191202T171928','20191202T171933','20191202T171938','20191202T171943','20191202T171948','20191202T171952','20191202T171957','20191202T172002','20191202T172007','20191202T172012','20191202T172017','20191202T172021'],
-   ['20191202T172027','20191202T172032','20191202T172041','20191202T172115']
-   ]
-   
-   
 
 ##for use in testing when you just want 1 obs per freq
 #EDA2_obs_time_list_each_chan = [
@@ -9130,6 +9149,8 @@ EDA2_obs_time_list_each_chan = [
 #   ['20191202T172027'],
 #   ]
 
+#20200217 data (don't use 'edge' times):
+EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200217_data/",EDA2_chan_list)
 
 
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -9151,8 +9172,9 @@ freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
 
+
 baseline_length_thresh_lambda = 0.50
-plot_only = True
+plot_only = False
 include_angular_info = True
 
 
@@ -9174,8 +9196,14 @@ for EDA2_obs_time in EDA2_obs_time_list:
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #freq_MHz_list=[50.]
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#sys.exit()
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   os.chdir('./..')
+sys.exit()
 #old calibrate cmd:
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 ##image_eda2_data(eda2_data_uvfits_name_list)
