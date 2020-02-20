@@ -3315,29 +3315,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    
       
-   #subtract a polynomial fit
-   #in log log space:
-   sky_array = t_sky_measured_array[t_sky_measured_array>0.]
-   log_sky_array = np.log10(sky_array)
-   if n_fine_chans_used==1:
-      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
-   else:
-      freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
-   log_freq_MHz_array = np.log10(freq_array_cut)
-   coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
-   ffit = poly.polyval(log_freq_MHz_array, coefs)
-   ffit_linear = 10**ffit
-   
-   #log_residual = log_signal_array_short_baselines - log_ffit
-   residual_of_log_fit = ffit_linear - sky_array
-   
-   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-   print("rms_of_residuals is %0.3f K" % rms_of_residuals)
-   
-   max_abs_residuals = np.max(np.abs(residual_of_log_fit))
-   y_max = 1.5 * max_abs_residuals
-   y_min = 1.5 * -max_abs_residuals
-   
+
    
    #repeat for using angular info
    #if include_angular_info:
@@ -3357,8 +3335,68 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   rms_of_residuals_glob_ang = np.sqrt(np.mean(residual_of_log_fit_glob_ang**2))
    #   print("rms_of_residuals_glob_ang is %0.3f K" % rms_of_residuals_glob_ang)
    
+
    
+   #no error bar plot what we want
+   plt.clf()
+   for model_type in model_type_list:
+      #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+      if model_type=='OLS_fixed_intercept':
+         label1='ignore angular response'
+         y_offset=1
+         colour='tab:blue'
+      elif  model_type=='OLS_fixed_int_subtr_Y':
+         label1='subtract angular response'
+         y_offset=0
+         colour='tab:orange'
+      else:
+         label1='recovered'
+         
+      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+
+      t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      
+      #subtract a polynomial fit
+      #in log log space:
+      sky_array = t_sky_measured_array[t_sky_measured_array>0.]
+      log_sky_array = np.log10(sky_array)
+      if n_fine_chans_used==1:
+         freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+      else:
+         freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
+      log_freq_MHz_array = np.log10(freq_array_cut)
+      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+      
+      #log_residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - sky_array
+      
+      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+      
+      max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+      y_max = 1.5 * max_abs_residuals
+      y_min = 1.5 * -max_abs_residuals
    
+      plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
+      plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+      
+   map_title="Residual for log polynomial order %s fit " % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("freq (MHz)")
+   plt.legend(loc=1)
+   
+   plt.ylim([y_min, y_max])
+   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   plt.close()         
+            
+            
    plt.clf()
    plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
    #if include_angular_info:
@@ -3373,20 +3411,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
-
-   plt.clf()
-   plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit')
-   map_title="Residual for log polynomial order %s fit " % poly_order
-   plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
-   plt.legend(loc=1)
-   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
-   plt.ylim([y_min, y_max])
-   fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix,model_type)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name)
-                     
+   plt.close() 
+   
+               
    #n baselines plot
    plt.clf()
    plt.plot(freq_MHz_list,n_baselines_used_array)
@@ -3399,7 +3426,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
-    
+   plt.close()  
            
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
    with open(array_ant_locations_filename,'r') as f:
@@ -7624,8 +7651,13 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        lst = lst_list[EDA2_chan_index]
        lst_deg = (float(lst)/24)*360.
        obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
-            
        first_obstime = obs_time_list[0]
+       
+       #gaurd against cases where there are no data for that channel
+       if first_obstime==0:
+          continue
+       else:
+          pass
       
        concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
        concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
@@ -7636,7 +7668,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        miriad_cal_vis_name_list = []
        wsclean_cal_ms_name_list = []
        
-       for EDA2_obs_time in obs_time_list:
+       for EDA2_obs_time in obs_time_list:     
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
             simulation_uvfits_name = "%s/eda_model_LST_%03d_%s_%s_MHz_D_gsm.uvfits" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
             simulation_ms_name = "%s/eda_model_LST_%03d_%s_%s_MHz_D_gsm.ms" % (EDA2_chan,lst_deg,pol,int(freq_MHz))
@@ -7658,21 +7690,21 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                os.system(cmd)
             
             
-            ##check data, see how many chans there are in uvfits
-            #with fits.open(uvfits_filename) as hdulist:
-            #    uvtable = hdulist[0].data
-            #    data = uvtable['DATA']
-            #    shape=data.shape
-            #    print shape
-            #    visibilities_real_1chan_x = data[:,0,0,0,0,0]
-            #    visibilities_imag_1chan_x = data[:,0,0,0,0,1]
-            #    weights_1chan_x = data[:,0,0,0,0,2]
-            #    
-            #    
-            #    end_print_index=10
-            #    print visibilities_real_1chan_x[0:end_print_index]
-            #    print visibilities_imag_1chan_x[0:end_print_index]
-            #    print weights_1chan_x[0:end_print_index]
+               ##check data, see how many chans there are in uvfits
+               #with fits.open(uvfits_filename) as hdulist:
+               #    uvtable = hdulist[0].data
+               #    data = uvtable['DATA']
+               #    shape=data.shape
+               #    print shape
+               #    visibilities_real_1chan_x = data[:,0,0,0,0,0]
+               #    visibilities_imag_1chan_x = data[:,0,0,0,0,1]
+               #    weights_1chan_x = data[:,0,0,0,0,2]
+               #    
+               #    
+               #    end_print_index=10
+               #    print visibilities_real_1chan_x[0:end_print_index]
+               #    print visibilities_imag_1chan_x[0:end_print_index]
+               #    print weights_1chan_x[0:end_print_index]
 
                 
                 #plt.clf()
@@ -9032,15 +9064,19 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    temp_txt_filename = 'uvfits_time_list.txt'
    for eda2_chan in eda2_chan_list:
       chan_obs_time_list = []
-      chan_dir = "%s%s" % (base_dir,eda2_chan)
-      cmd = "ls -la %s | grep .uvfits > %s" % (chan_dir,temp_txt_filename)
+      chan_dir = "%s%s/" % (base_dir,eda2_chan)
+      cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
       os.system(cmd)
       with open(temp_txt_filename) as f:
          lines=f.readlines()
-      for line in lines[1:-2]:
+      for line in lines[1:-1]:
          obs_time = line.split('.uvfits')[0].split()[-1].split('_')[-1]
          chan_obs_time_list.append(obs_time)
-      obs_time_list_each_chan.append(chan_obs_time_list)
+      #there might be no obs, if so just put in a zero
+      if len(chan_obs_time_list)!=0:
+         obs_time_list_each_chan.append(chan_obs_time_list)
+      else:
+         obs_time_list_each_chan.append([0])
    return obs_time_list_each_chan
             
 
@@ -9085,7 +9121,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = True
+EDA2_data = False
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -9094,7 +9130,7 @@ EDA2_data = True
 
 #20200217 data (dont use 63 / 49 MHz dont have beam model! missing 127 and 128 so just do to incl 126)
 EDA2_chan_list = range(64,127)
-
+#EDA2_chan_list = range(64,66)
 #middle time for each chan
 #EDA2_obs_time_list = ["20191202T171525","20191202T171629","20191202T171727","20191202T171830","20191202T171928","20191202T172027"]
 
@@ -9174,7 +9210,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = False
+plot_only = True
 include_angular_info = True
 
 
@@ -9187,23 +9223,32 @@ include_angular_info = True
 
 ##need to use an old year ...
 lst_hrs_list = []
-for EDA2_obs_time in EDA2_obs_time_list:
-   lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
-   #print(lst_eda2_hrs)
-   lst_hrs_list.append(lst_eda2_hrs)
+for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
+   #there might have been no obs:
+   if EDA2_obs_time!=0:
+      lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
+      #print(lst_eda2_hrs)
+      lst_hrs_list.append(lst_eda2_hrs)
+   else:
+      #just use the first LST
+      lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time_list[0][4::])
+      #print(lst_eda2_hrs)
+      lst_hrs_list.append(lst_eda2_hrs)
+
 
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #freq_MHz_list=[50.]
-for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   EDA2_chan = EDA2_chan_list[freq_MHz_index]
-   new_dir = "./%s" % EDA2_chan
-   os.chdir(new_dir)
-   freq_MHz_input_list = [freq_MHz]
-   simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-   os.chdir('./..')
-sys.exit()
+#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+#   EDA2_chan = EDA2_chan_list[freq_MHz_index]
+#   new_dir = "./%s" % EDA2_chan
+#   os.chdir(new_dir)
+#   freq_MHz_input_list = [freq_MHz]
+#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+#   os.chdir('./..')
+#sys.exit()
 #old calibrate cmd:
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 ##image_eda2_data(eda2_data_uvfits_name_list)
@@ -9214,7 +9259,7 @@ sys.exit()
 #if doing individual chans:
 #freq_MHz_list = [freq_MHz_array[0]]
 #EDA2_chan_list = [EDA2_chan_list[0]]
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True,uv_cutoff=0.5)
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True,uv_cutoff=0)
 #sys.exit()
 
 #after calibration:
@@ -9276,7 +9321,7 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 lst_hrs_list=['2']
 poly_order_list=[5,6,7]
-
+poly_order=7
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
 
 
