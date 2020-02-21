@@ -274,7 +274,7 @@ model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_
 obsid_list = obsid_list_2015 + obsid_list_2018
 #ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
 #image_1:
-ms_dir_list=["/md0/ATeam/CenA/2015","/md0/ATeam/CenA/2018"]
+ms_dir_list=["/md0/ATeam/CenA/2015/145","/md0/ATeam/CenA/2018/145"]
 
 #image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
 #wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
