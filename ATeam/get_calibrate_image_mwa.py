@@ -9,8 +9,13 @@ import numpy as np
 #new ones  (close to old from msok) 2018: 1201123376 1201296272 1201382720 1201469160  1201555608 1201814952
 
 #image_2:
-obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
-obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
+#obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
+#obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
+
+#image_1 (original)
+obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
+obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
+
 
 def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    #write the csv file
@@ -267,7 +272,9 @@ model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 obsid_list = obsid_list_2015 + obsid_list_2018
-ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
+#ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
+#image_1:
+ms_dir_list=["/md0/ATeam/CenA/2015","/md0/ATeam/CenA/2018"]
 
 #image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
 #wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
@@ -337,15 +344,26 @@ ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
 #wsclean_options = "-size 4096 4096 -niter 350000  -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
 #jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 
-base_dir = "/md0/ATeam/CenA/"
-image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"]
-output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
-average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
+#base_dir = "/md0/ATeam/CenA/"
+#image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"]
+#output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
+#average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
 
 #looks good! now need more images to average!!! maybe re-image old data with uniform weighting and self-cal, then redo robust 0 cleaning (twice) this is because wsclean has been updated a lot since that image was made (new image looks better for sure)
+#image_1_redo
 
 
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_image1"
+wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+calibrate_options = "-minuv 60"
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=4)
 
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1"
+wsclean_options = "-size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
+#based on first cleaning attempt above (goes non-linear)
+#wsclean_options = "-size 4096 4096 -niter 350000  -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 
 
 
