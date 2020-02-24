@@ -13,14 +13,22 @@ import numpy as np
 #obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
 
 #image_1 (original)
-obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
-obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
+#obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
+#obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
 
+#image_3
+obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
+obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
 
 def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    #write the csv file
-   csv_filename = "manta_ray_download.csv"
+   csv_filename = "%s/manta_ray_download.csv" % dest_dir
    csv_line_list = []
+   
+   cmd = "mkdir -p %s" % dest_dir
+   print(cmd)
+   os.system(cmd)
+   
    for obsid in obsid_list:
       if ms==True:
          csv_line = "obs_id=%s, job_type=c, timeres=%s, freqres=%s, edgewidth=80, conversion=ms, calibrate=false, allowmissing=true, flagdcchannels=true " % (obsid,timeres,freqres)
@@ -30,10 +38,6 @@ def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    with open(csv_filename,'w') as f:
       f.write(csv_line_list_string)
    
-   cmd = "mkdir -p %s" % dest_dir
-   print(cmd)
-   os.system(cmd)
-    
    #run manta ray command
    cmd = "mwa_client -c %s -d %s " % (csv_filename,dest_dir)
    print(cmd)
@@ -211,7 +215,7 @@ def ms_qa(obsid_list,ms_dir_list):
    for ms_dir in ms_dir_list:
       for obsid in obsid_list:
          ms_name = "%s/%s.ms" % (ms_dir,obsid)
-         aoqplot_savename = "aoqplot_stddev_%s"
+         aoqplot_savename = "aoqplot_stddev_%s" % obsid
          if os.path.isdir(ms_name):
             ms_list.append(ms_name)
             aoqplot_savename_list.append(aoqplot_savename)
@@ -225,45 +229,127 @@ def ms_qa(obsid_list,ms_dir_list):
 def average_images(base_dir,image_list,output_name_base):
    n_images = len(image_list)
    output_name = "%s_%02d.fits" % (output_name_base,n_images)
+   
+   #convolve the images to the same resolution first (miriad convol function)
+   bmaj_list = []
+   bmin_list = []
+   bpa_list = []
    for image_name_index,image_name in enumerate(image_list):
       hdulist = fits.open("%s%s" % (base_dir,image_name))
       image_header = hdulist[0].header
+      image_data = hdulist[0].data[0,0,:,:] 
+      bmaj = float(image_header['BMAJ'])
+      bmin = float(image_header['BMIN'])
+      bpa = float(image_header['BPA'])
+      bmaj_list.append(bmaj)
+      bmin_list.append(bmin)
+      bpa_list.append(bpa)
+
+   #find the index of the biggest bpa
+   max_ind = np.argmax(bmaj_list)
+   bmaj_convol = bmaj_list[max_ind]
+   bmin_convol = bmin_list[max_ind]
+   bpa_convol = bpa_list[max_ind]
+   
+   
+   max_flux_list = []
+   for image_name_index,image_name in enumerate(image_list):
+      image_name_base = image_name.split('.fits')[0]
+      
+      #read in image to miriad
+      im_name = "%s.im" % image_name_base
+      convol_imname = "%s_convol.im" % image_name_base
+      convol_fitsname = "%s_convol.fits" % image_name_base
+      
+      cmd = "rm -rf %s %s %s" % (im_name,convol_imname,convol_fitsname)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "fits in=%s out=%s op=xyin" % (image_name,im_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name,bmaj_convol,bmin_convol,bpa_convol,convol_imname)
+      print(cmd)
+      os.system(cmd)
+      
+      
+      cmd = "fits in=%s out=%s op=xyout" % (convol_imname,convol_fitsname)
+      print(cmd)
+      os.system(cmd)
+      
+      hdulist = fits.open("%s" % (convol_fitsname))
+      image_header = hdulist[0].header
       image_data = hdulist[0].data[0,0,:,:]
       
+      #need all images to be on same flux scale (have same max flux)
+      data_max = np.max(image_data)
+      max_flux_list.append(data_max)
+      
+   scale_max_flux = np.max(max_flux_list)
+   
+   for image_name_index,image_name in enumerate(image_list):
+      image_name_base = image_name.split('.fits')[0]
+      image_name_scaled = "%s_scaled.fits" % image_name_base
+      
+      hdulist = fits.open("%s" % (image_name))
+      image_header = hdulist[0].header
+      image_data = hdulist[0].data[0,0,:,:]
+   
+      #work out scaling ratio:
+      image_data_max = np.max(image_data)
+      scaling = scale_max_flux / image_data_max
+      scaled_data = scaling * image_data
+      
+      #write out scaled images to check
+      fits.writeto(image_name_scaled,scaled_data,clobber=True)
+      fits.update(image_name_scaled,scaled_data,header=image_header)
+      print("wrote  image %s" %  image_name_scaled)
+      
       if image_name_index==0:
-         image_data_sum = image_data*0.
-         image_data_sum += image_data
+         image_data_sum = scaled_data*0.
+         image_data_sum += scaled_data
       else:
-         image_data_sum += image_data
+         image_data_sum += scaled_data
    image_data_average = image_data_sum / float(n_images)
    fits.writeto(output_name,image_data_average,clobber=True)
    fits.update(output_name,image_data_average,header=image_header)
-   print "wrote  image %s" %  output_name
+   print("wrote  image %s" %  output_name)
 
       
 
-
+#run in separate screens
 #2015 data:
 #download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
 #download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-
+#sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
 #2018 data:
 #unzip_obs(obsid_list_2018,ms=True)  
 
+
 #Do this first!!!!!
-#ms_qa(obsid_list,ms_dir_list)
- 
-model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
+#the repeat after calibration
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_3/2018'])
+
+#flagged all image_3 49 (2015)
+#flagged 76 80 for image_3 2018
+#flag_bad_ants("2015/1122544552.ms","49 56")
+#flag_bad_ants("2015/1122458120.ms","49 56")
+#sys.exit()
+
+#model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
 #masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
 
-#masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
-#calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
-#calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
+##Dont use:!!!!!
+###masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
+###calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
+###calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
 
+#yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
 #calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
@@ -352,18 +438,35 @@ ms_dir_list=["/md0/ATeam/CenA/2015/145","/md0/ATeam/CenA/2018/145"]
 #looks good! now need more images to average!!! maybe re-image old data with uniform weighting and self-cal, then redo robust 0 cleaning (twice) this is because wsclean has been updated a lot since that image was made (new image looks better for sure)
 #image_1_redo
 
+#image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_image1"
+#wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+#jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+#calibrate_options = "-minuv 60"
+#self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=4)
 
-image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_image1"
-wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
-jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
-calibrate_options = "-minuv 60"
-self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=4)
-
-image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1"
-wsclean_options = "-size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
+#image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1"
+#wsclean_options = "-size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
 #based on first cleaning attempt above (goes non-linear)
 #wsclean_options = "-size 4096 4096 -niter 350000  -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
-jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+#jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+
+#ensure on same flux scale
+#image 1 max: 160.839  Jy/beam (restoring beam: BMAJ=0.0227596310937707, BMIN=0.0186221584437102,BPA=154.993051422715)
+#image 2 max: 182.403  Jy/beam (restoring beam: BMAJ=0.0247237074675311, BMIN=0.0204914314054236,BPA=162.994234617591)
+
+#going to need to re-image and make each one have the same restoring beam
+
+#base_dir = "/md0/ATeam/CenA/"
+#image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits"]
+#output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
+#average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
+
+#In the meantime get new data for image 3
+
+#calibrate image_3
+calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2015")
+calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2018")
+
 
 
 
