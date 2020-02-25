@@ -17,6 +17,9 @@ import matplotlib.pyplot as plt
 from astropy.time import Time
 from astropy.time import TimeDelta
 import astropy.units as u
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw 
 Mac=True
 if not Mac:
 
@@ -54,9 +57,7 @@ if not Mac:
    iers.conf.auto_download = False  
    #from astroplan import download_IERS_A
    #download_IERS_A()
-   from PIL import Image
-   from PIL import ImageFont
-   from PIL import ImageDraw 
+
 
   
 sun_flux_density = 50000.0   #borkowski et al 1982?
