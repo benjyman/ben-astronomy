@@ -9073,7 +9073,10 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    for eda2_chan in eda2_chan_list:
       chan_obs_time_list = []
       chan_dir = "%s%s/" % (base_dir,eda2_chan)
-      cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
+      if Mac=True:
+         cmd = "ssh benjamin@namorrodor ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
+      else:
+         cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
       os.system(cmd)
       with open(temp_txt_filename) as f:
          lines=f.readlines()
@@ -9302,6 +9305,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #EDA2_chan_list = [EDA2_chan_list[0]]
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True,uv_cutoff=0)
 #sys.exit()
+
 
 make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200217_data.mp4')
 sys.exit()
