@@ -14,6 +14,9 @@ import os,sys
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from astropy.time import Time
+from astropy.time import TimeDelta
+import astropy.units as u
 Mac=True
 if not Mac:
 
@@ -42,9 +45,7 @@ if not Mac:
    from sklearn.linear_model import LinearRegression
    import seaborn as sns
    from scipy.optimize import curve_fit
-   from astropy.time import Time
-   from astropy.time import TimeDelta
-   import astropy.units as u
+
    from sklearn.preprocessing import normalize
    #avoid astropy time error
    from astropy.utils.iers import conf
