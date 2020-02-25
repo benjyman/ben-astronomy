@@ -20,9 +20,8 @@ import astropy.units as u
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
-Mac=True
+Mac=False
 if not Mac:
-
    import healpy as hp
    from pygsm import GSMObserver
    from pygsm import GlobalSkyModel
@@ -9093,20 +9092,23 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    return obs_time_list_each_chan
             
 def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
+   image_counter = 0
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
       obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
-      for obs_time in obs_time_list:
+      for obs_time_index,obs_time in enumerate(obs_time_list):
          image_name = "cal_chan_%s_%s_ms-XX-image.fits" % (EDA2_chan,obs_time)
          if os.path.exists(image_name):
+            image_counter += 1
             print(image_name)
             freq_MHz = float(EDA2_chan) * (50./64)
-   
-            out_png_image_name="cal_chan_%03d_%s_ds9.png" % (EDA2_chan,obs_time)
+             
+            out_png_image_name="cal_image_%03d_ds9.png" % (image_counter)
+            
             #cmd = "ds9 -fits %s_xx_restor.fits -scale limits 1 100 -cmap invert yes -colorbar yes -grid yes -grid axes type exterior -export jpg %s_xx_restor.jpg -exit " % (image_basename,image_basename)
             #"-scale limits %s %s" % (chan_scale_min_list_xx[chan_index],chan_scale_max_list_xx[chan_index])
             cmd = "ds9 %s -invert -colorbar yes -view buttons yes -view panner yes -view magnifier yes -view info yes -view filename yes  -zoom 1 -width 512 -height 512 -grid  -saveimage png %s -quit" % (image_name,out_png_image_name)
             print(cmd)
-            os.system(cmd)
+            #os.system(cmd)
             
             #Add some text to the png
             img = Image.open("%s" % out_png_image_name)
@@ -9117,9 +9119,9 @@ def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
             # draw.text((x, y),"Sample Text",(r,g,b))
             draw.text((10, 10),"EDA2 chan %s (%.0f MHz)\nTime %s" % (EDA2_chan,freq_MHz,obs_time),(0,0,0),font=font)
             #draw.text((256, 256),"Channel %s" % chan,(0,0,0))
-            img.save("%s" % out_png_image_name)
+            #img.save("%s" % out_png_image_name)
    
-   cmd = "ffmpeg -framerate 2 -i cal_chan_%03d_%s_ds9.png -c:v libx264 -r 30 -pix_fmt yuv420p out_movie.mp4" 
+   cmd = "ffmpeg -framerate 2 -i cal_image_%03d_ds9.png -c:v libx264 -r 30 -pix_fmt yuv420p out_movie.mp4" 
    print(cmd)
    os.system(cmd)
    
