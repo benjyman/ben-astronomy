@@ -13,6 +13,7 @@ matplotlib.use('Agg')
 import os,sys
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 Mac=True
 if not Mac:
 
@@ -21,7 +22,7 @@ if not Mac:
    from pygsm import GlobalSkyModel
    from pygsm import GlobalSkyModel2016
    from datetime import datetime, date
-   import matplotlib.pyplot as plt
+   
    from reproject import reproject_from_healpix
    import pyfits
    from astropy.wcs import WCS
