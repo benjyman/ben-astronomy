@@ -9,48 +9,52 @@
 # The data is in 1 deg steps.
 #
 import matplotlib
-matplotlib.use('Agg') 
-import numpy as np
-import healpy as hp
-from pygsm import GSMObserver
-from pygsm import GlobalSkyModel
-from pygsm import GlobalSkyModel2016
-from datetime import datetime, date
-import matplotlib.pyplot as plt
+matplotlib.use('Agg')
 import os,sys
-from reproject import reproject_from_healpix
-import pyfits
-from astropy.wcs import WCS
-from astropy.io import fits
-from scipy.interpolate import interp1d
-from scipy.ndimage import map_coordinates
-from scipy import signal
-import numpy.polynomial.polynomial as poly
-from pyuvdata import UVData
-import math
-import random
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-import pandas as pd
-from sklearn.linear_model import LinearRegression
-import seaborn as sns
-from scipy.optimize import curve_fit
-from astropy.time import Time
-from astropy.time import TimeDelta
-import astropy.units as u
-from sklearn.preprocessing import normalize
-#avoid astropy time error
-from astropy.utils.iers import conf
-conf.auto_max_age = None
-from astropy.utils import iers
-iers.conf.auto_download = False  
-#from astroplan import download_IERS_A
-#download_IERS_A()
-from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw 
+import numpy as np
+
+Mac=True
+if not Mac:
+
+   import healpy as hp
+   from pygsm import GSMObserver
+   from pygsm import GlobalSkyModel
+   from pygsm import GlobalSkyModel2016
+   from datetime import datetime, date
+   import matplotlib.pyplot as plt
+   from reproject import reproject_from_healpix
+   import pyfits
+   from astropy.wcs import WCS
+   from astropy.io import fits
+   from scipy.interpolate import interp1d
+   from scipy.ndimage import map_coordinates
+   from scipy import signal
+   import numpy.polynomial.polynomial as poly
+   from pyuvdata import UVData
+   import math
+   import random
+   from astropy import units as u
+   from astropy.coordinates import SkyCoord
+   import statsmodels.api as sm
+   import statsmodels.formula.api as smf
+   import pandas as pd
+   from sklearn.linear_model import LinearRegression
+   import seaborn as sns
+   from scipy.optimize import curve_fit
+   from astropy.time import Time
+   from astropy.time import TimeDelta
+   import astropy.units as u
+   from sklearn.preprocessing import normalize
+   #avoid astropy time error
+   from astropy.utils.iers import conf
+   conf.auto_max_age = None
+   from astropy.utils import iers
+   iers.conf.auto_download = False  
+   #from astroplan import download_IERS_A
+   #download_IERS_A()
+   from PIL import Image
+   from PIL import ImageFont
+   from PIL import ImageDraw 
 
   
 sun_flux_density = 50000.0   #borkowski et al 1982?
