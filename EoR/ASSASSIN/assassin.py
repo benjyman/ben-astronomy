@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 import os,sys
 import numpy as np
-
+import math
 Mac=True
 if not Mac:
 
@@ -31,7 +31,7 @@ if not Mac:
    from scipy import signal
    import numpy.polynomial.polynomial as poly
    from pyuvdata import UVData
-   import math
+   
    import random
    from astropy import units as u
    from astropy.coordinates import SkyCoord
