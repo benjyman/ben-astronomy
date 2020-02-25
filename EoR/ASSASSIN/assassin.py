@@ -9073,7 +9073,7 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    for eda2_chan in eda2_chan_list:
       chan_obs_time_list = []
       chan_dir = "%s%s/" % (base_dir,eda2_chan)
-      if Mac=True:
+      if Mac==True:
          cmd = "ssh benjamin@namorrodor ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
       else:
          cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
