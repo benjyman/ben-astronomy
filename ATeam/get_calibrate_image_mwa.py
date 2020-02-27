@@ -9,16 +9,21 @@ import numpy as np
 #new ones  (close to old from msok) 2018: 1201123376 1201296272 1201382720 1201469160  1201555608 1201814952
 
 #image_2:
-#obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
-#obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
+obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
+obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
 
 #image_1 (original)
 #obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
 #obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
 
 #image_3
-obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
-obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
+#obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
+#obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
+
+#image_4
+#obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
+#obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+
 
 def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    #write the csv file
@@ -163,6 +168,11 @@ def calibrate_obs(obsid_list,model_image='',model_wsclean_txt='',generate_new_be
             print(cmd)
             os.system(cmd)
             
+            #do aocal_plot.py
+            #Plot the cal solutions
+            cmd = "aocal_plot.py  %s " % (cal_sol_filename)
+            print(cmd)
+            os.system(cmd)
 
 def jointly_deconvolve_idg(obsid_list,ms_dir_list,outname,wsclean_options):
    #wsclean -name  -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight %s -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2 %s  " % (ms_string)
@@ -209,20 +219,20 @@ def flag_bad_ants(ms_name,ant_string):
    print(cmd)
    os.system(cmd)
 
-def ms_qa(obsid_list,ms_dir_list):
+def ms_qa(obsid_list,ms_dir_list,data_column="DATA"):
    ms_list = []
    aoqplot_savename_list = []
    for ms_dir in ms_dir_list:
       for obsid in obsid_list:
          ms_name = "%s/%s.ms" % (ms_dir,obsid)
-         aoqplot_savename = "aoqplot_stddev_%s" % obsid
+         aoqplot_savename = "aoqplot_stddev_%s_%s" % (obsid,data_column)
          if os.path.isdir(ms_name):
             ms_list.append(ms_name)
             aoqplot_savename_list.append(aoqplot_savename)
             
    for ms_name_index,ms_name in enumerate(ms_list):
       aoqplot_savename = aoqplot_savename_list[ms_name_index]
-      cmd = "aoquality collect %s; aoqplot -save %s StandardDeviation %s" % (ms_name,aoqplot_savename,ms_name)
+      cmd = "aoquality collect -d %s %s; aoqplot -save %s StandardDeviation %s" % (data_column,ms_name,aoqplot_savename,ms_name)
       print(cmd)
       os.system(cmd)    
 
@@ -329,11 +339,15 @@ def average_images(base_dir,image_list,output_name_base):
 #unzip_obs(obsid_list_2015,ms=True)
 #2018 data:
 #unzip_obs(obsid_list_2018,ms=True)  
-
+#sys.exit()
 
 #Do this first!!!!!
 #the repeat after calibration
-#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_3/2018'])
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_4/2018'],data_column="DATA")
+#qa image_4 
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_4/2015'])
+#sys.exit()
+
 
 #flagged all image_3 49 (2015)
 #flagged 76 80 for image_3 2018
@@ -355,12 +369,15 @@ def average_images(base_dir,image_list,output_name_base):
 #calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
 #calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
 
+ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_2/2018'],data_column="CORRECTED_DATA")
+ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_2/2015'],data_column="CORRECTED_DATA")
+sys.exit()
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 obsid_list = obsid_list_2015 + obsid_list_2018
 #ms_dir_list=["/md0/ATeam/CenA/image_2/2015","/md0/ATeam/CenA/image_2/2018"]
-#image_1:
-ms_dir_list=["/md0/ATeam/CenA/2015/145","/md0/ATeam/CenA/2018/145"]
+#image_3:
+ms_dir_list=["/md0/ATeam/CenA/image_3/2015","/md0/ATeam/CenA/image_3/2018"]
 
 #image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image2"
 #wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
@@ -373,6 +390,8 @@ ms_dir_list=["/md0/ATeam/CenA/2015/145","/md0/ATeam/CenA/2018/145"]
 #jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 #calibrate_options = "-minuv 60"
 #self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=2)
+
+
 
 #looks like there is something fishing going on, bad artefacts in middle of image. Looks like there is a bad reciever at least for 1122198832
 #look closely at cal plots and also with aoquality collect / aoqplot
@@ -464,8 +483,53 @@ ms_dir_list=["/md0/ATeam/CenA/2015/145","/md0/ATeam/CenA/2018/145"]
 #In the meantime get new data for image 3
 
 #calibrate image_3
-calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2018")
+#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2015")
+#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_3/2018")
+
+#image 4
+#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_4/2015")
+#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_4/2018")
+#sys.exit()
+
+
+#the repeat after calibration
+
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_3/2018'],data_column="CORRECTED_DATA")
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_3/2015'],data_column="CORRECTED_DATA")
+#sys.exit()
+
+#the repeat after calibration
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_4/2015'],data_column="CORRECTED_DATA")
+#sys.exit()
+#WHOA some whacky stuff going on with  1112806040 - do some serious flagging and re-cal
+
+
+
+
+#go ahead with imaging and self cal
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_model_cal_image3"
+wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+calibrate_options = "-minuv 60"
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=1)
+
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_01_image3"
+wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+calibrate_options = "-minuv 60"
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=2)
+
+image_outname = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_02_image3"
+wsclean_options = " -size 4096 4096 -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 8 -join-channels -fit-spectral-pol 2"
+jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
+calibrate_options = "-minuv 60"
+self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number=3)
+
+
+
+
+
+
 
 
 
