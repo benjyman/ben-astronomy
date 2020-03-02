@@ -387,8 +387,8 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #ms_qa(obsid_list_2018,['/md0/ozstar/ATeam/CenA/image4/2018'],data_column="DATA")
 #qa image_4 
 #ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_4/2015'],data_column="DATA")
-ms_qa(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image4/2015'],data_column="DATA")
-sys.exit()
+#ms_qa(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image4/2015'],data_column="DATA")
+#sys.exit()
 
 
 #flagged all image_3 49 (2015)
