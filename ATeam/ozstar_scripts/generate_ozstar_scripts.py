@@ -64,14 +64,21 @@ def generate_unzip(obsid_list,dest_dir):
    out_filename = '%s/unzip_obs.sh' % dest_dir
    initiate_script(out_filename) 
    
-   cmd = "cd %s;\ntime unzip *.zip " % dest_dir
+   cmd = "cd %s;\ntime unzip *.zip\nrm *.zip " % dest_dir
    with open(out_filename,'a') as f:
       f.write(cmd)
    
    print("wrote %s" % (out_filename))
    
-def generate_model_cal(obsid_list,model_wsclean_txt='',ms_dir=''):
+def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    print('generating model calibration script')
+   out_filename = '%s/unzip_obs.sh' % dest_dir
+   initiate_script(out_filename) 
+   
+   cmd = "cd %s" % dest_dir
+   with open(out_filename,'a') as f:
+      f.write(cmd)
+   
    for obsid in obsid_list:
       metafits_filename = "%s/%s.metafits" % (ms_dir,obsid)       
       ms_name = "%s/%s.ms" % (ms_dir,obsid)
@@ -81,10 +88,29 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',ms_dir=''):
       check_scale_deg = 0.025
       check_imsize = 1024
       #calibrate them
+      cmd_list = []
+      
+      cmd = "calibrate -minuv 60  -applybeam -m %s %s %s " % (model_wsclean_txt,ms_name,cal_sol_filename)
+      cmd_list.append(cmd)
+      
+      cmd = "applysolutions %s %s " % (ms_name,cal_sol_filename)
+      cmd_list.append(cmd)
+               
+      #image to see if it worked
+      cmd = "wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx  %s" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
+      cmd_list.append(cmd)
+      
+      #do aocal_plot.py
+      #Plot the cal solutions
+      cmd = "aocal_plot.py  %s " % (cal_sol_filename)
+      cmd_list.append(cmd)
 
+      with open(out_filename,'a') as f:
+         [f.write(cmd) for cmd in cmd_list]
 
-
-
+   print("wrote %s" % (out_filename))
+   
+   
 def generate_wsclean_image():
    print('generating wsclean script')
    
@@ -102,7 +128,9 @@ def generate_final_sbatch_script():
 
 obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
 obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+obsid_list = obsid_list_2015 + obsid_list_2018
 
+ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image4/2015","/fred/oz048/bmckinle/ATeam/CenA/image4/2018"]
    
 generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
 generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
@@ -110,5 +138,10 @@ generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=4
 generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
 generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
    
-   
+calibrate_obs(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+calibrate_obs(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+
+
+
+
 
