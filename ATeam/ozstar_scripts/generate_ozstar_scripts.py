@@ -80,8 +80,8 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
       f.write(cmd)
    
    for obsid in obsid_list:
-      metafits_filename = "%s/%s.metafits" % (ms_dir,obsid)       
-      ms_name = "%s/%s.ms" % (ms_dir,obsid)
+      metafits_filename = "%s/%s.metafits" % (dest_dir,obsid)       
+      ms_name = "%s/%s.ms" % (dest_dir,obsid)
       check_model_image_name = "check_model_%s" % obsid
       check_cal_image_name = "check_cal_%s" % obsid
       cal_sol_filename = "%s_sol1.bin" % (obsid)
