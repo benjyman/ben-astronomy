@@ -24,6 +24,7 @@ module load hdf5/1.10.1
 module load openblas/0.2.20 
 module load cuda/9.0.176 
 
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
 
 """        
@@ -75,7 +76,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    out_filename = '%s/model_cal.sh' % dest_dir
    initiate_script(out_filename) 
    
-   cmd = "cd %s" % dest_dir
+   cmd = "cd %s\n" % dest_dir
    with open(out_filename,'a') as f:
       f.write(cmd)
    
@@ -90,20 +91,25 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
       #calibrate them
       cmd_list = []
       
-      cmd = "calibrate -minuv 60  -applybeam -m %s %s %s " % (model_wsclean_txt,ms_name,cal_sol_filename)
+      
+      cmd = "module load boost/1.66.0-python-2.7.14 \n"
+      cmd_list.append(cmd)
+      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/calibrate -minuv 60  -applybeam -m %s %s %s \n" % (model_wsclean_txt,ms_name,cal_sol_filename)
       cmd_list.append(cmd)
       
-      cmd = "applysolutions %s %s " % (ms_name,cal_sol_filename)
+      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/applysolutions %s %s \n" % (ms_name,cal_sol_filename)
       cmd_list.append(cmd)
                
       #image to see if it worked
-      cmd = "wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx  %s" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
+      cmd = "module load boost/1.67.0-python-2.7.14 \n"
+      cmd_list.append(cmd)
+      cmd = "wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx %s \n" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
       cmd_list.append(cmd)
       
       #do aocal_plot.py
       #Plot the cal solutions
-      cmd = "aocal_plot.py  %s " % (cal_sol_filename)
-      cmd_list.append(cmd)
+      #cmd = "aocal_plot.py  %s \n" % (cal_sol_filename)
+      #cmd_list.append(cmd)
 
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
