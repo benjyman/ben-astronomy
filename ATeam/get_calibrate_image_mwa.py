@@ -17,12 +17,12 @@ import numpy as np
 #obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
 
 #image_3
-obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
-obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
+#obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
+#obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
 
 #image_4
-#obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
-#obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
+obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
 
 
 def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
@@ -239,6 +239,8 @@ def ms_qa(obsid_list,ms_dir_list,data_column="DATA"):
 def average_images(base_dir,image_list,output_name_base,weighted_average=True):
    n_images = len(image_list)
    output_name = "%s_%02d.fits" % (output_name_base,n_images)
+   if weighted_average==True:
+      output_name_weighted = "%s_%02d_weighted.fits" % (output_name_base,n_images)
    
    #convolve the images to the same resolution first (miriad convol function)
    bmaj_list = []
@@ -263,6 +265,7 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
    
    
    max_flux_list = []
+   weights_list = []
    for image_name_index,image_name in enumerate(image_list):
       image_name_base = image_name.split('.fits')[0]
       
@@ -297,17 +300,20 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
       max_flux_list.append(data_max)
       
       #choose a region to measure the rms in for weighting. 
-      region_x_start,region_x_end,region_y_start,region_y_end = 2400,2900,1250,1650
+      region_x_start,region_x_end,region_y_start,region_y_end = 2662,2778,1387,1491
       data_region = image_data[region_y_start:region_y_end,region_x_start:region_x_end]
       
       #write out the image region as fits just to check
-      #fits.writeto('region_check.fits',data_region,clobber=True)
+      fits.writeto('region_check.fits',data_region,clobber=True)
       
-      #get rms of region
-      rms = np.sqrt(np.mean(np.square(data_region)))
-      print "rms %3f" % rms
+      if weighted_average==True:
+         #get rms of region
+         rms = np.sqrt(np.mean(np.square(data_region)))
+         variance_weight = 1./rms**2
+         weights_list.append(variance_weight)
+         #print "rms %3f" % rms
       
-   sys.exit()
+   
       
    scale_max_flux = np.max(max_flux_list)
    
@@ -329,17 +335,37 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
       fits.update(image_name_scaled,scaled_data,header=image_header)
       print("wrote  image %s" %  image_name_scaled)
       
+      #also do the weighted average
+      if weighted_average==True:
+         variance_weight = weights_list[image_name_index]
+         print "weighting image by %s" % (variance_weight)
+         
       if image_name_index==0:
          image_data_sum = scaled_data*0.
          image_data_sum += scaled_data
+         if weighted_average==True:
+            image_data_sum_weighted = scaled_data*0.
+            image_data_sum_weighted += scaled_data*variance_weight
       else:
          image_data_sum += scaled_data
+         if weighted_average==True:
+            image_data_sum_weighted += scaled_data*variance_weight
+         
+         
    image_data_average = image_data_sum / float(n_images)
    fits.writeto(output_name,image_data_average,clobber=True)
    fits.update(output_name,image_data_average,header=image_header)
    print("wrote  image %s" %  output_name)
+   
 
+   if weighted_average==True:
+      sum_of_weights = np.sum(weights_list)
+      image_data_average_weighted = image_data_sum_weighted / sum_of_weights
+      fits.writeto(output_name_weighted,image_data_average_weighted,clobber=True)
+      fits.update(output_name_weighted,image_data_average_weighted,header=image_header)
+      print("wrote  image %s" %  output_name_weighted)
       
+
 
 #run in separate screens
 #2015 data:
@@ -354,12 +380,15 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #unzip_obs(obsid_list_2018,ms=True)  
 #sys.exit()
 
+#can do QA on namorodror by mounting /fred/oz048/bmckinle to namorrodor
 #Do this first!!!!!
 #the repeat after calibration
 #ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_4/2018'],data_column="DATA")
+#ms_qa(obsid_list_2018,['/md0/ozstar/ATeam/CenA/image4/2018'],data_column="DATA")
 #qa image_4 
 #ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_4/2015'],data_column="DATA")
-#sys.exit()
+ms_qa(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image4/2015'],data_column="DATA")
+sys.exit()
 
 
 #flagged all image_3 49 (2015)
@@ -482,16 +511,7 @@ ms_dir_list=["/md0/ATeam/CenA/image_3/2015","/md0/ATeam/CenA/image_3/2018"]
 #wsclean_options = "-size 4096 4096 -niter 350000  -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam  -channels-out 10 -join-channels -fit-spectral-pol 2"
 #jointly_deconvolve_idg(obsid_list=obsid_list,ms_dir_list=ms_dir_list,outname=image_outname,wsclean_options=wsclean_options)
 
-#ensure on same flux scale
-#image 1 max: 160.839  Jy/beam (restoring beam: BMAJ=0.0227596310937707, BMIN=0.0186221584437102,BPA=154.993051422715)
-#image 2 max: 182.403  Jy/beam (restoring beam: BMAJ=0.0247237074675311, BMIN=0.0204914314054236,BPA=162.994234617591)
 
-#going to need to re-image and make each one have the same restoring beam
-
-base_dir = "/md0/ATeam/CenA/"
-image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits"]
-output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
-average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
 
 #In the meantime get new data for image 3
 
@@ -519,6 +539,7 @@ average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_n
 
 
 ######################################################################
+#Need to move all this stuff to ozstar /fred/oz048/bmckinle/ATeam
 ##image 3:
 #go ahead with imaging and self cal
 #image_outname = "CenA_2015_2018_joint_idg_12_obs_145_model_cal_image3"
@@ -555,6 +576,13 @@ average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_n
 ######################################################################
 
 
+
+#############
+#averaging images bit (keep at bottom)
+#base_dir = "/md0/ATeam/CenA/"
+#image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","image_3/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image3-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits"]
+#output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
+#average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
 
 
 

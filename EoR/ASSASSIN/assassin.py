@@ -9092,6 +9092,7 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    return obs_time_list_each_chan
             
 def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
+   #Need to actually plug in linux box monitor and use native screen (cant do over ssh from Mac)
    image_counter = 0
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
       obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
