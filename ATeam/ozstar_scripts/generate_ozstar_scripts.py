@@ -72,7 +72,7 @@ def generate_unzip(obsid_list,dest_dir):
    
 def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    print('generating model calibration script')
-   out_filename = '%s/unzip_obs.sh' % dest_dir
+   out_filename = '%s/model_cal.sh' % dest_dir
    initiate_script(out_filename) 
    
    cmd = "cd %s" % dest_dir
