@@ -1,39 +1,89 @@
 #!/usr/bin/env python
 #generate scripts to lauch on ozstar for data processing
 
-def initiate_script(filename):
-   header_text = ("
-                 #!/bin/bash -l \n
-                 #SBATCH --nodes=1 \n
-                 #SBATCH --cpus-per-task=8 \n
-                 #SBATCH --mem=100000 \n
-                 #SBATCH --account=oz048 \n
-                 #SBATCH --time=12:00:00 \n
-                 #SBATCH --gres=gpu:1 \n
-                 #SBATCH --partition=skylake-gpu \n
-                 \n
-                 module load gcc/6.4.0 openmpi/3.0.0 \n
-                 module load fftw/3.3.7 \n
-                 module load gsl/2.4 \n
-                 module load cfitsio/3.420 \n
-                 module load boost/1.67.0-python-2.7.14 \n
-                 module load hdf5/1.10.1 \n
-                 module load openblas/0.2.20 \n
-                 module load cuda/9.0.176 \n
-                 \n
-                 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
-                 ")
-                 
-   print(header_text)
-                
-   #with open(filename,'w') as f:
-   
+import os,sys
+from astropy.io import fits
+import numpy as np
 
+def initiate_script(filename):
+   header_text = """#!/bin/bash -l
+#SBATCH --nodes=1 
+#SBATCH --cpus-per-task=8 
+#SBATCH --mem=100000 
+#SBATCH --account=oz048 
+#SBATCH --time=12:00:00 
+#SBATCH --gres=gpu:1 
+#SBATCH --partition=skylake-gpu 
+
+module load gcc/6.4.0 openmpi/3.0.0 
+module load fftw/3.3.7 
+module load gsl/2.4 
+module load cfitsio/3.420 
+module load boost/1.67.0-python-2.7.14 
+module load hdf5/1.10.1 
+module load openblas/0.2.20 
+module load cuda/9.0.176 
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
+
+"""        
+   with open(filename,'w') as f:
+      f.write(header_text)
+
+        
 def generate_download(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    print('generating download script') 
    
-def generate_model_cal():
+   cmd = "mkdir -p %s;\ncd %s" % (dest_dir,dest_dir)
+   print(cmd)
+   os.system(cmd)
+   
+   out_filename = '%s/download_obs.sh' % dest_dir
+   initiate_script(out_filename)
+   
+   #write the csv file
+   csv_filename = "%s/manta_ray_download.csv" % dest_dir
+   csv_line_list = []
+   for obsid in obsid_list:
+      if ms==True:
+         csv_line = "obs_id=%s, job_type=c, timeres=%s, freqres=%s, edgewidth=80, conversion=ms, calibrate=false, allowmissing=true, flagdcchannels=true " % (obsid,timeres,freqres)
+         csv_line_list.append(csv_line)
+   
+   csv_line_list_string = '\n'.join(csv_line_list)     
+   with open(csv_filename,'w') as f:
+      f.write(csv_line_list_string)
+   
+   #run manta ray command
+   cmd = "time python /fred/oz048/MWA/CODE/local_python/mantaray/scripts/mwa_client.py -c %s -d %s " % (csv_filename,dest_dir)
+   with open(out_filename,'a') as f:
+      f.write(cmd)
+   
+   print("wrote %s" % (out_filename))
+   
+def generate_unzip(obsid_list,dest_dir):
+   out_filename = '%s/unzip_obs.sh' % dest_dir
+   initiate_script(out_filename) 
+   
+   cmd = "cd %s;\ntime unzip *.zip " % dest_dir
+   with open(out_filename,'a') as f:
+      f.write(cmd)
+   
+   print("wrote %s" % (out_filename))
+   
+def generate_model_cal(obsid_list,model_wsclean_txt='',ms_dir=''):
    print('generating model calibration script')
+   for obsid in obsid_list:
+      metafits_filename = "%s/%s.metafits" % (ms_dir,obsid)       
+      ms_name = "%s/%s.ms" % (ms_dir,obsid)
+      check_model_image_name = "check_model_%s" % obsid
+      check_cal_image_name = "check_cal_%s" % obsid
+      cal_sol_filename = "%s_sol1.bin" % (obsid)
+      check_scale_deg = 0.025
+      check_imsize = 1024
+      #calibrate them
+
+
+
 
 def generate_wsclean_image():
    print('generating wsclean script')
@@ -45,4 +95,20 @@ def generate_final_sbatch_script():
    print('generating final sbatch script')
    
 
-initiate_script('test.sh')
+
+
+
+
+
+obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
+obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+
+   
+generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
+generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
+   
+generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
+generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
+   
+   
+
