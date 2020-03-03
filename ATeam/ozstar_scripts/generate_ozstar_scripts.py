@@ -175,7 +175,7 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    print("wrote %s" % (out_filename))
    return(out_filename)
    
-def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False,model_cal=Flase):
+def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False,model_cal=False):
    print('generating sbatch script for CenA')
 
    if download:
