@@ -142,6 +142,9 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    print('generating selfcal script')
    out_filename = '%s/selfcal_%02d.sh' % (dest_dir,self_cal_number)
    initiate_script(out_filename,time_hrs=15,partition_string='skylake')
+   cmd = "module load boost/1.66.0-python-2.7.14 \n"
+   cmd_list.append(cmd)
+      
    ms_list = []
    solution_list = []
    cmd_list = []
@@ -155,14 +158,14 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
             
    for ms_index,ms in enumerate(ms_list):
       solution_name = solution_list[ms_index]
-      cmd = "calibrate %s %s %s" % (calibrate_options,ms,solution_name)
+      cmd = "calibrate %s %s %s \n" % (calibrate_options,ms,solution_name)
       cmd_list.append(cmd)
       
-      cmd = "applysolutions %s %s" % (ms,solution_name)
+      cmd = "applysolutions %s %s \n" % (ms,solution_name)
       cmd_list.append(cmd)
       
       #Plot the cal solutions ##need to get this working
-      #cmd = "aocal_plot.py  %s " % (solution_name)
+      #cmd = "aocal_plot.py  %s \n" % (solution_name)
       #cmd_list.append(cmd)
       
    with open(out_filename,'a') as f:
