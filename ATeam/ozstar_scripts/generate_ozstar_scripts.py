@@ -142,12 +142,11 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    print('generating selfcal script')
    out_filename = '%s/selfcal_%02d.sh' % (dest_dir,self_cal_number)
    initiate_script(out_filename,time_hrs=15,partition_string='skylake')
+   cmd_list = []
    cmd = "module load boost/1.66.0-python-2.7.14 \n"
    cmd_list.append(cmd)
-      
    ms_list = []
    solution_list = []
-   cmd_list = []
    for ms_dir in ms_dir_list:
       for obsid in obsid_list:
          ms_name = "%s/%s.ms" % (ms_dir,obsid)
