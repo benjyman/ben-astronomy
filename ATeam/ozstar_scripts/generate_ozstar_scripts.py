@@ -120,7 +120,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
 def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_options,dest_dir,self_cal_number=0):
    print('generating wsclean script')
    out_filename = '%s/wsclean_selfcal_%02d.sh' % (dest_dir,self_cal_number)
-   initiate_script(out_filename,time_hrs=4,partition_string='skylake-gpu')
+   initiate_script(out_filename,time_hrs=15,partition_string='skylake-gpu')
    ms_list = []
    cmd_list = []
    for ms_dir in ms_dir_list:
@@ -138,8 +138,37 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
    print("wrote %s" % (out_filename))
    
    
-def generate_selfcal():
+def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,dest_dir):
    print('generating selfcal script')
+   out_filename = '%s/selfcal_%02d.sh' % (dest_dir,self_cal_number)
+   initiate_script(out_filename,time_hrs=15,partition_string='skylake')
+   ms_list = []
+   solution_list = []
+   cmd_list = []
+   for ms_dir in ms_dir_list:
+      for obsid in obsid_list:
+         ms_name = "%s/%s.ms" % (ms_dir,obsid)
+         solution_name = "%s/%s_selfcal_%02d.bin" % (ms_dir,obsid,self_cal_number)
+         if os.path.isdir(ms_name):
+            ms_list.append(ms_name)
+            solution_list.append(solution_name)
+            
+   for ms_index,ms in enumerate(ms_list):
+      solution_name = solution_list[ms_index]
+      cmd = "calibrate %s %s %s" % (calibrate_options,ms,solution_name)
+      cmd_list.append(cmd)
+      
+      cmd = "applysolutions %s %s" % (ms,solution_name)
+      cmd_list.append(cmd)
+      
+      #Plot the cal solutions ##need to get this working
+      #cmd = "aocal_plot.py  %s " % (solution_name)
+      #cmd_list.append(cmd)
+      
+   with open(out_filename,'a') as f:
+      [f.write(cmd) for cmd in cmd_list]
+   print("wrote %s" % (out_filename))
+   
    
 def generate_sbatch_script():
    print('generating sbatch script')
@@ -168,4 +197,6 @@ generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/
 wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
 generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=0)
 
+calibrate_options_1 = "-minuv 60"
+generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
 
