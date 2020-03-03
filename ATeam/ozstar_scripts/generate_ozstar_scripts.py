@@ -135,6 +135,7 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
    
    with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
+   print("wrote %s" % (out_filename))
    
    
 def generate_selfcal():
