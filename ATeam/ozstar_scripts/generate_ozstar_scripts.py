@@ -179,16 +179,16 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
    print('generating sbatch script for CenA')
    out_filename = 'sbatch_launch.sh'
    cmd_list = []
-   cmd = '#! /bin/bash'
+   cmd = '#! /bin/bash \n'
    cmd_list.append(cmd)
    if download:
       out_filename_2015 = generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
       out_filename_2018 = generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
       
       # first commands no dependencies
-      cmd = 'jid1=$(sbatch %s)' % out_filename_2015
+      cmd = 'jid1=$(sbatch %s \n)' % out_filename_2015
       cmd_list.append(cmd)
-      cmd = 'jid2=$(sbatch %s)' % out_filename_2018
+      cmd = 'jid2=$(sbatch %s \n)' % out_filename_2018
       cmd_list.append(cmd)
       
       #unzip
@@ -196,9 +196,9 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       out_filename_2018 = generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
       
       #unzip commands depend on downloads
-      cmd = 'jid3=$(sbatch --dependency=afterok:$jid1 %s)' % out_filename_2015
+      cmd = 'jid3=$(sbatch --dependency=afterok:$jid1 %s \n)' % out_filename_2015
       cmd_list.append(cmd)
-      cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s)' % out_filename_2018
+      cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s \n)' % out_filename_2018
       cmd_list.append(cmd)
    
    
