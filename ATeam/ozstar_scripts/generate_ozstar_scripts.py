@@ -5,7 +5,7 @@ import os,sys
 from astropy.io import fits
 import numpy as np
 
-def initiate_script(filename,time_hrs,gpu_string=''):
+def initiate_script(filename,time_hrs,partition_string='skylake'):
    header_text = """#!/bin/bash -l
 #SBATCH --nodes=1 
 #SBATCH --cpus-per-task=8 
@@ -13,7 +13,7 @@ def initiate_script(filename,time_hrs,gpu_string=''):
 #SBATCH --account=oz048 
 #SBATCH --time=%02d:00:00 
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=skylake-%s 
+#SBATCH --partition=%s 
 
 module load gcc/6.4.0 openmpi/3.0.0 
 module load fftw/3.3.7 
@@ -27,7 +27,7 @@ module load cuda/9.0.176
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
 
-"""        % (time_hrs,gpu_string)
+"""        % (time_hrs,partition_string)
    with open(filename,'w') as f:
       f.write(header_text)
 
@@ -119,8 +119,8 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    
 def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_options,dest_dir,self_cal_number=0):
    print('generating wsclean script')
-   out_filename = '%s/wsclean_selfcal_%02d.sh' % (dest_dir,self_cal_number
-   initiate_script(out_filename,time_hrs=4)
+   out_filename = '%s/wsclean_selfcal_%02d.sh' % (dest_dir,self_cal_number)
+   initiate_script(out_filename,time_hrs=4,partition_string='skylake-gpu')
    ms_list = []
    for ms_dir in ms_dir_list:
       for obsid in obsid_list:
