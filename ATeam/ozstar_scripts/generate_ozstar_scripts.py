@@ -251,7 +251,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          
          selfcal_out_filename = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.),dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
 
-         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal+1,selfcal_out_filename)
+         cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s) \n' % (selfcal+1,selfcal,selfcal_out_filename)
          cmd_list.append(cmd)
       
       with open(out_filename,'a') as f:
