@@ -5,7 +5,7 @@ import os,sys
 from astropy.io import fits
 import numpy as np
 
-def initiate_script(filename,time_hrs,partition_string='skylake'):
+def initiate_script(filename,time_hrs,partition_string='skylake',array_string=''):
    header_text = """#!/bin/bash -l
 #SBATCH --nodes=1 
 #SBATCH --cpus-per-task=8 
@@ -14,6 +14,7 @@ def initiate_script(filename,time_hrs,partition_string='skylake'):
 #SBATCH --time=%02d:00:00 
 #SBATCH --gres=gpu:1 
 #SBATCH --partition=%s 
+%s
 
 module load gcc/6.4.0 openmpi/3.0.0 
 module load fftw/3.3.7 
@@ -27,7 +28,7 @@ module load cuda/9.0.176
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
 
-"""        % (time_hrs,partition_string)
+"""        % (time_hrs,partition_string,array_string)
    with open(filename,'w') as f:
       f.write(header_text)
 
@@ -75,15 +76,17 @@ def generate_unzip(obsid_list,dest_dir):
    return(out_filename)
    
 def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
+   #individual job script for each obsid
    print('generating model calibration script')
-   out_filename = '%s/model_cal.sh' % dest_dir
-   initiate_script(out_filename,time_hrs=4) 
-   
-   cmd = "cd %s\n" % dest_dir
-   with open(out_filename,'a') as f:
-      f.write(cmd)
-   
+   out_filename_list = []
    for obsid in obsid_list:
+      out_filename = '%s/model_cal_%s.sh' % (dest_dir,obsid)
+      initiate_script(out_filename,time_hrs=4) 
+   
+      cmd = "cd %s\n" % dest_dir
+      with open(out_filename,'a') as f:
+         f.write(cmd)
+      
       metafits_filename = "%s/%s.metafits" % (dest_dir,obsid)       
       ms_name = "%s/%s.ms" % (dest_dir,obsid)
       check_model_image_name = "check_model_%s" % obsid
@@ -117,8 +120,8 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
 
-   print("wrote %s" % (out_filename))
-   return(out_filename)
+   #print("wrote %s" % (out_filename))
+   return(out_filename_list)
    
 def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_options,dest_dir,self_cal_number=0):
    print('generating wsclean script')
@@ -222,16 +225,15 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          f.write(cmd)
       cmd_list = []
    
-      out_filename_2015 = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
-      out_filename_2018 = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+      out_filename_2015_list = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+      out_filename_2018_list  = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
       
-      cmd = 'jid1=$(sbatch %s) \n' % out_filename_2015
-      cmd_list.append(cmd)
-      cmd = 'jid2=$(sbatch %s) \n' % out_filename_2018
-      cmd_list.append(cmd)
-      
-      
-      
+      out_filename_list = out_filename_2015_list + out_filename_2018_list
+       
+      for out_filename_index,out_filename in enumerate(out_filename_list):
+         cmd = 'jid%s=$(sbatch %s) \n' % (out_filename_index,out_filename)
+         cmd_list.append(cmd)
+
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
       print("wrote %s" % (out_filename))
