@@ -81,7 +81,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    out_filename_list = []
    for obsid in obsid_list:
       out_filename = '%s/model_cal_%s.sh' % (dest_dir,obsid)
-      initiate_script(out_filename,time_hrs=4) 
+      initiate_script(out_filename,time_hrs=2) 
    
       cmd = "cd %s\n" % dest_dir
       with open(out_filename,'a') as f:
@@ -257,7 +257,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       cmd_list = []
       job_id_list = []
       
-      for selfcal in range(0,int(n_selfcals*2.),2):
+      for selfcal in range(0,n_selfcals,1):
          wsclean_job_index = int(selfcal + len(job_id_list)*selfcal)
          wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
          calibrate_options_1 = "-minuv 60"
@@ -267,7 +267,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          if selfcal==0:
             cmd = 'jid%s=$(sbatch %s) \n' % (wsclean_job_index,wsclean_out_filename)
          else:
-            cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s) \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
+            cmd = 'jid%s=$(sbatch --dependency=afterok:%s %s) \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
          cmd_list.append(cmd)
          
          selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.)+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
@@ -276,7 +276,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
             selfcal_job_index = selfcal + selfcal_out_filename_index + 1
             cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s) \n' % (selfcal_job_index,wsclean_job_index,selfcal_out_filename)
             cmd_list.append(cmd)
-            job_id_list.append('jid%s' % selfcal_job_index)
+            job_id_list.append('$jid%s' % selfcal_job_index)
          
          job_id_list_string = ':'.join(job_id_list)
          
