@@ -270,10 +270,10 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
             cmd = 'jid%s=$(sbatch --dependency=afterok:%s %s) \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
          cmd_list.append(cmd)
          
-         selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.)+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
+         selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=selfcal+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
          
          for selfcal_out_filename_index,selfcal_out_filename in enumerate(selfcal_out_filename_list):
-            selfcal_job_index = selfcal + selfcal_out_filename_index + 1
+            selfcal_job_index = selfcal*len(selfcal_out_filename_list) + selfcal_out_filename_index
             cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s) \n' % (selfcal_job_index,wsclean_job_index,selfcal_out_filename)
             cmd_list.append(cmd)
             job_id_list.append('$jid%s' % selfcal_job_index)
