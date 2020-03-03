@@ -119,8 +119,9 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
 
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
-
-   #print("wrote %s" % (out_filename))
+      out_filename_list.append(out_filename)
+      print("wrote %s" % (out_filename))
+      
    return(out_filename_list)
    
 def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_options,dest_dir,self_cal_number=0):
