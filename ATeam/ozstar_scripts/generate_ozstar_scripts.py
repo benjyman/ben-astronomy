@@ -175,15 +175,16 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    print("wrote %s" % (out_filename))
    return(out_filename)
    
-def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False):
+def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False,model_cal=Flase):
    print('generating sbatch script for CenA')
-   out_filename = 'sbatch_launch.sh'
-   cmd = '#! /bin/bash \n'
-   with open(out_filename,'w') as f:
-      f.write(cmd)
-   
-   cmd_list = []
+
    if download:
+      out_filename = 'sbatch_launch_download.sh'
+      cmd = '#! /bin/bash \n'
+      with open(out_filename,'w') as f:
+         f.write(cmd)
+      cmd_list = []
+   
       out_filename_2015 = generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
       out_filename_2018 = generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
       
@@ -203,13 +204,63 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s) \n' % out_filename_2018
       cmd_list.append(cmd)
    
+      with open(out_filename,'a') as f:
+         [f.write(cmd) for cmd in cmd_list]
+      print("wrote %s" % (out_filename))
+      return(out_filename)
+      
+   #do qa manually after download and unzip then proceed
+   elif model_cal:
+      out_filename = 'sbatch_launch_model_cal.sh'
+      cmd = '#! /bin/bash \n'
+      with open(out_filename,'w') as f:
+         f.write(cmd)
+      cmd_list = []
    
-   with open(out_filename,'a') as f:
-      [f.write(cmd) for cmd in cmd_list]
-   print("wrote %s" % (out_filename))
-   return(out_filename)
+      out_filename_2015 = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+      out_filename_2018 = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+      
+      cmd = 'jid1=$(sbatch %s) \n' % out_filename_2015
+      cmd_list.append(cmd)
+      cmd = 'jid2=$(sbatch %s) \n' % out_filename_2018
+      cmd_list.append(cmd)
+      
+      
+      
+      with open(out_filename,'a') as f:
+         [f.write(cmd) for cmd in cmd_list]
+      print("wrote %s" % (out_filename))
+      return(out_filename)
 
+   #do qa again after model cal then proceed
+   else:
+      out_filename = 'sbatch_launch_wsclean_and_selfcal.sh'
+      cmd = '#! /bin/bash \n'
+      with open(out_filename,'w') as f:
+         f.write(cmd)
+      cmd_list = []
+      
+      for selfcal in range(n_selfcals*2,2):
+         wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
+         calibrate_options_1 = "-minuv 60"
+         
+         out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=selfcal)
+   
+         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal,out_filename)
+         cmd_list.append(cmd)
+         
+         out_filename = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
 
+         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal+1,out_filename)
+         cmd_list.append(cmd)
+      
+      
+   
+      with open(out_filename,'a') as f:
+         [f.write(cmd) for cmd in cmd_list]
+      print("wrote %s" % (out_filename))
+      return(out_filename)
+   
 
 
 obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
@@ -218,7 +269,9 @@ obsid_list = obsid_list_2015 + obsid_list_2018
 
 ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image4/2015","/fred/oz048/bmckinle/ATeam/CenA/image4/2018"]
 
-generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=True)
+generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=True,model_cal=False)
+generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=False,model_cal=True)
+generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4)
 
 #generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
