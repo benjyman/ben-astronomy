@@ -245,8 +245,11 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          calibrate_options_1 = "-minuv 60"
          
          wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=int(selfcal/2.))
-   
-         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal,wsclean_out_filename)
+         
+         if selfcal==0:
+            cmd = 'jid%s=$(sbatch %s) \n' % (selfcal,wsclean_out_filename)
+         else:
+            cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s) \n' % (selfcal,selfcal-1,wsclean_out_filename)
          cmd_list.append(cmd)
          
          selfcal_out_filename = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.),dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
