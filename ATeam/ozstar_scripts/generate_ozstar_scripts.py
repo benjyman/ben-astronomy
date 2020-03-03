@@ -146,12 +146,8 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
    return(out_filename)
    
 def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,dest_dir):
-   print('generating selfcal script')
-   out_filename = '%s/selfcal_%02d.sh' % (dest_dir,self_cal_number)
-   initiate_script(out_filename,time_hrs=2,partition_string='skylake')
-   cmd_list = []
-   cmd = "module load boost/1.66.0-python-2.7.14 \n"
-   cmd_list.append(cmd)
+   print('generating selfcal scripts')
+
    ms_list = []
    solution_list = []
    for ms_dir in ms_dir_list:
@@ -161,8 +157,14 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
          if os.path.isdir(ms_name):
             ms_list.append(ms_name)
             solution_list.append(solution_name)
-            
+   out_filename_list = []        
    for ms_index,ms in enumerate(ms_list):
+      out_filename = '%s/selfcal_%02d_ms_%s.sh' % (dest_dir,self_cal_number,ms_index)
+      initiate_script(out_filename,time_hrs=2,partition_string='skylake')
+      cmd_list = []
+      cmd = "module load boost/1.66.0-python-2.7.14 \n"
+      cmd_list.append(cmd)
+   
       solution_name = solution_list[ms_index]
       cmd = "calibrate %s %s %s \n" % (calibrate_options,ms,solution_name)
       cmd_list.append(cmd)
@@ -174,10 +176,11 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
       #cmd = "aocal_plot.py  %s \n" % (solution_name)
       #cmd_list.append(cmd)
       
-   with open(out_filename,'a') as f:
-      [f.write(cmd) for cmd in cmd_list]
-   print("wrote %s" % (out_filename))
-   return(out_filename)
+      with open(out_filename,'a') as f:
+         [f.write(cmd) for cmd in cmd_list]
+      print("wrote %s" % (out_filename))
+      out_filename_list.append(out_filename)
+   return(out_filename_list)
    
 def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False,model_cal=False):
    print('generating sbatch script for CenA')
