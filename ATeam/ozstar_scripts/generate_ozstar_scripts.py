@@ -255,7 +255,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       with open(out_filename,'w') as f:
          f.write(cmd)
       cmd_list = []
-      
+      job_id_list = []
       
       for selfcal in range(0,n_selfcals,1):
          wsclean_job_index = int(selfcal + len(job_id_list)*selfcal)
