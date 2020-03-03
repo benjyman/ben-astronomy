@@ -6,14 +6,18 @@ from astropy.io import fits
 import numpy as np
 
 def initiate_script(filename,time_hrs,partition_string='skylake',array_string=''):
+   if partition_string=='skylake-gpu':
+      gpu_string = '#SBATCH --gres=gpu:1' 
+   else: 
+      gpu_string = ''
    header_text = """#!/bin/bash -l
 #SBATCH --nodes=1 
 #SBATCH --cpus-per-task=8 
 #SBATCH --mem=100000 
 #SBATCH --account=oz048 
 #SBATCH --time=%02d:00:00 
-#SBATCH --gres=gpu:1 
 #SBATCH --partition=%s 
+%s
 %s
 
 module load gcc/6.4.0 openmpi/3.0.0 
@@ -28,7 +32,7 @@ module load cuda/9.0.176
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
 
-"""        % (time_hrs,partition_string,array_string)
+"""        % (time_hrs,partition_string,array_string,gpu_string)
    with open(filename,'w') as f:
       f.write(header_text)
 
@@ -109,7 +113,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
       #image to see if it worked
       cmd = "module load boost/1.67.0-python-2.7.14 \n"
       cmd_list.append(cmd)
-      cmd = "wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx %s \n" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
+      cmd = "/fred/oz048/MWA/CODE/bin/wsclean -name %s -size %s %s -niter 0 -data-column CORRECTED_DATA -scale %s -small-inversion -pol xx %s \n" % (check_cal_image_name,int(check_imsize),int(check_imsize),check_scale_deg,ms_name)
       cmd_list.append(cmd)
       
       #do aocal_plot.py
@@ -229,8 +233,8 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          f.write(cmd)
       cmd_list = []
    
-      model_cal_out_filename_2015_list = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
-      model_cal_out_filename_2018_list  = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+      model_cal_out_filename_2015_list = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+      model_cal_out_filename_2018_list  = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
       
       model_cal_out_filename_list = model_cal_out_filename_2015_list + model_cal_out_filename_2018_list
        
@@ -317,8 +321,8 @@ generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4)
 #generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
 #generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
 #   
-#generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
-#generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+#generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+#generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
 #
 #wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
 #generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=0)
