@@ -104,7 +104,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
       
       cmd = "module load boost/1.66.0-python-2.7.14 \n"
       cmd_list.append(cmd)
-      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/calibrate -minuv 60  -applybeam -m %s %s %s \n" % (model_wsclean_txt,ms_name,cal_sol_filename)
+      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/calibrate -minuv 60  -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -applybeam -m %s %s %s \n" % (model_wsclean_txt,ms_name,cal_sol_filename)
       cmd_list.append(cmd)
       
       cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/applysolutions %s %s \n" % (ms_name,cal_sol_filename)
