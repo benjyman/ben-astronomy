@@ -226,13 +226,13 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          f.write(cmd)
       cmd_list = []
    
-      out_filename_2015_list = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
-      out_filename_2018_list  = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+      model_cal_out_filename_2015_list = generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+      model_cal_out_filename_2018_list  = generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
       
-      out_filename_list = out_filename_2015_list + out_filename_2018_list
+      model_cal_out_filename_list = model_cal_out_filename_2015_list + model_cal_out_filename_2018_list
        
-      for out_filename_index,out_filename in enumerate(out_filename_list):
-         cmd = 'jid%s=$(sbatch %s) \n' % (out_filename_index,out_filename)
+      for model_cal_out_filename_index,model_cal_out_filename in enumerate(model_cal_out_filename_list):
+         cmd = 'jid%s=$(sbatch %s) \n' % (model_cal_out_filename_index,model_cal_out_filename)
          cmd_list.append(cmd)
 
       with open(out_filename,'a') as f:
