@@ -5,13 +5,13 @@ import os,sys
 from astropy.io import fits
 import numpy as np
 
-def initiate_script(filename):
+def initiate_script(filename,time_hrs):
    header_text = """#!/bin/bash -l
 #SBATCH --nodes=1 
 #SBATCH --cpus-per-task=8 
 #SBATCH --mem=100000 
 #SBATCH --account=oz048 
-#SBATCH --time=12:00:00 
+#SBATCH --time=%02d:00:00 
 #SBATCH --gres=gpu:1 
 #SBATCH --partition=skylake-gpu 
 
@@ -27,7 +27,7 @@ module load cuda/9.0.176
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/fred/oz048/MWA/CODE/lib/
 
-"""        
+"""        % (time_hrs)
    with open(filename,'w') as f:
       f.write(header_text)
 
@@ -40,7 +40,7 @@ def generate_download(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    os.system(cmd)
    
    out_filename = '%s/download_obs.sh' % dest_dir
-   initiate_script(out_filename)
+   initiate_script(out_filename,time_hrs=12)
    
    #write the csv file
    csv_filename = "%s/manta_ray_download.csv" % dest_dir
@@ -63,9 +63,9 @@ def generate_download(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    
 def generate_unzip(obsid_list,dest_dir):
    out_filename = '%s/unzip_obs.sh' % dest_dir
-   initiate_script(out_filename) 
+   initiate_script(out_filename,time_hrs=2) 
    
-   cmd = "cd %s;\ntime unzip *.zip\nrm *.zip " % dest_dir
+   cmd = "cd %s;\nunzip -o '*.zip'\nrm *.zip " % dest_dir
    with open(out_filename,'a') as f:
       f.write(cmd)
    
@@ -74,7 +74,7 @@ def generate_unzip(obsid_list,dest_dir):
 def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    print('generating model calibration script')
    out_filename = '%s/model_cal.sh' % dest_dir
-   initiate_script(out_filename) 
+   initiate_script(out_filename,time_hrs=4) 
    
    cmd = "cd %s\n" % dest_dir
    with open(out_filename,'a') as f:
