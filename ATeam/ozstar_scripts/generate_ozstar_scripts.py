@@ -122,6 +122,7 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
    out_filename = '%s/wsclean_selfcal_%02d.sh' % (dest_dir,self_cal_number)
    initiate_script(out_filename,time_hrs=4,partition_string='skylake-gpu')
    ms_list = []
+   cmd_list = []
    for ms_dir in ms_dir_list:
       for obsid in obsid_list:
          ms_name = "%s/%s.ms" % (ms_dir,obsid)
@@ -129,7 +130,7 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
             ms_list.append(ms_name)
 
    ms_string = ' '.join(ms_list)
-   cmd = "time /fred/oz048/MWA/CODE/bin/wsclean -name %s %s %s  " % (out_image_name_base, wsclean_options, ms_string)
+   cmd = "time /fred/oz048/MWA/CODE/bin/wsclean -name %s %s %s  \n" % (out_image_name_base, wsclean_options, ms_string)
    cmd_list.append(cmd)
    
    with open(out_filename,'a') as f:
