@@ -207,6 +207,11 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
       print("wrote %s" % (out_filename))
+      
+      cmd = 'chmod +x %s' % out_filename
+      print(cmd)
+      os.system(cmd)
+      
       return(out_filename)
       
    #do qa manually after download and unzip then proceed
@@ -230,6 +235,11 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
       print("wrote %s" % (out_filename))
+      
+      cmd = 'chmod +x %s' % out_filename
+      print(cmd)
+      os.system(cmd)
+      
       return(out_filename)
 
    #do qa again after model cal then proceed
@@ -267,6 +277,11 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
       print("wrote %s" % (out_filename))
+      
+      cmd = 'chmod +x %s' % out_filename
+      print(cmd)
+      os.system(cmd)
+
       return(out_filename)
    
 
