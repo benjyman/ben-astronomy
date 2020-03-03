@@ -241,22 +241,18 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       cmd_list = []
       
       for selfcal in range(0,int(n_selfcals*2.),2):
-         print selfcal
          wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
          calibrate_options_1 = "-minuv 60"
          
-         out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=int(selfcal/2.))
+         wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=int(selfcal/2.))
    
-         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal,out_filename)
+         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal,wsclean_out_filename)
          cmd_list.append(cmd)
          
-         out_filename = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.),dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
+         selfcal_out_filename = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=int(selfcal/2.),dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
 
-         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal+1,out_filename)
+         cmd = 'jid%s=$(sbatch %s) \n' % (selfcal+1,selfcal_out_filename)
          cmd_list.append(cmd)
-      
-      print('cmd_list')
-      print(cmd_list)
       
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
