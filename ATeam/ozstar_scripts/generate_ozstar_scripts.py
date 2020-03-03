@@ -60,6 +60,8 @@ def generate_download(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
       f.write(cmd)
    
    print("wrote %s" % (out_filename))
+   return(out_filename)
+   
    
 def generate_unzip(obsid_list,dest_dir):
    out_filename = '%s/unzip_obs.sh' % dest_dir
@@ -70,6 +72,7 @@ def generate_unzip(obsid_list,dest_dir):
       f.write(cmd)
    
    print("wrote %s" % (out_filename))
+   return(out_filename)
    
 def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
    print('generating model calibration script')
@@ -115,7 +118,7 @@ def generate_model_cal(obsid_list,model_wsclean_txt='',dest_dir=''):
          [f.write(cmd) for cmd in cmd_list]
 
    print("wrote %s" % (out_filename))
-   
+   return(out_filename)
    
 def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_options,dest_dir,self_cal_number=0):
    print('generating wsclean script')
@@ -136,12 +139,12 @@ def generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base,wsclean_op
    with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
    print("wrote %s" % (out_filename))
-   
+   return(out_filename)
    
 def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,dest_dir):
    print('generating selfcal script')
    out_filename = '%s/selfcal_%02d.sh' % (dest_dir,self_cal_number)
-   initiate_script(out_filename,time_hrs=15,partition_string='skylake')
+   initiate_script(out_filename,time_hrs=2,partition_string='skylake')
    cmd_list = []
    cmd = "module load boost/1.66.0-python-2.7.14 \n"
    cmd_list.append(cmd)
@@ -170,13 +173,39 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    with open(out_filename,'a') as f:
       [f.write(cmd) for cmd in cmd_list]
    print("wrote %s" % (out_filename))
+   return(out_filename)
+   
+def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False):
+   print('generating sbatch script for CenA')
+   out_filename = 'sbatch_launch.sh'
+   cmd_list = []
+   cmd = '#! /bin/bash'
+   cmd_list.append(cmd)
+   if download:
+      out_filename_2015 = generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
+      out_filename_2018 = generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
+      
+      # first commands no dependencies
+      cmd = 'jid1=$(sbatch %s)' % out_filename_2015
+      cmd_list.append(cmd)
+      cmd = 'jid2=$(sbatch %s)' % out_filename_2018
+      cmd_list.append(cmd)
+      
+      #unzip
+      out_filename_2015 = generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
+      out_filename_2018 = generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
+      
+      #unzip commands depend on downloads
+      cmd = 'jid3=$(sbatch --dependency=afterok:$jid1 %s)' % out_filename_2015
+      cmd_list.append(cmd)
+      cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s)' % out_filename_2018
+      cmd_list.append(cmd)
    
    
-def generate_sbatch_script():
-   print('generating sbatch script')
-   
-
-
+   with open(out_filename,'a') as f:
+      [f.write(cmd) for cmd in cmd_list]
+   print("wrote %s" % (out_filename))
+   return(out_filename)
 
 
 
@@ -187,18 +216,20 @@ obsid_list = obsid_list_2015 + obsid_list_2018
 
 ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image4/2015","/fred/oz048/bmckinle/ATeam/CenA/image4/2018"]
 
-generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=4,freqres=40,ms=True)
-generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
-   
-generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
-generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
-   
-generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
-generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=True)
 
-wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
-generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=0)
-
-calibrate_options_1 = "-minuv 60"
-generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
+#generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
+#generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
+#   
+#generate_unzip(obsid_list=obsid_list_2015,dest_dir='2015')
+#generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
+#   
+#generate_model_cal(obsid_list_2015,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[0])
+#generate_model_cal(obsid_list_2018,model_wsclean_txt='/fred/oz048/bmckinle/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',dest_dir=ms_dir_list[1])
+#
+#wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
+#generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=0)
+#
+#calibrate_options_1 = "-minuv 60"
+#generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
 
