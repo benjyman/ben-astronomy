@@ -255,8 +255,6 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          cmd = 'jid%s=$(sbatch %s) \n' % (selfcal+1,out_filename)
          cmd_list.append(cmd)
       
-      
-   
       with open(out_filename,'a') as f:
          [f.write(cmd) for cmd in cmd_list]
       print("wrote %s" % (out_filename))
