@@ -200,9 +200,9 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       out_filename_2018 = generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
       
       # first commands no dependencies
-      cmd = 'jid1=$(sbatch %s | cut -f 4 -d ' ') \n' % out_filename_2015
+      cmd = 'jid1=$(sbatch %s | cut -f 4 -d " ") \n' % out_filename_2015
       cmd_list.append(cmd)
-      cmd = 'jid2=$(sbatch %s | cut -f 4 -d ' ') \n' % out_filename_2018
+      cmd = 'jid2=$(sbatch %s | cut -f 4 -d " ") \n' % out_filename_2018
       cmd_list.append(cmd)
       
       #unzip
@@ -210,9 +210,9 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       out_filename_2018 = generate_unzip(obsid_list=obsid_list_2018,dest_dir='2018')  
       
       #unzip commands depend on downloads
-      cmd = 'jid3=$(sbatch --dependency=afterok:$jid1 %s | cut -f 4 -d ' ') \n' % out_filename_2015
+      cmd = 'jid3=$(sbatch --dependency=afterok:$jid1 %s | cut -f 4 -d " ") \n' % out_filename_2015
       cmd_list.append(cmd)
-      cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s | cut -f 4 -d ' ') \n' % out_filename_2018
+      cmd = 'jid4=$(sbatch --dependency=afterok:$jid2 %s | cut -f 4 -d " ") \n' % out_filename_2018
       cmd_list.append(cmd)
    
       with open(out_filename,'a') as f:
@@ -239,7 +239,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       model_cal_out_filename_list = model_cal_out_filename_2015_list + model_cal_out_filename_2018_list
        
       for model_cal_out_filename_index,model_cal_out_filename in enumerate(model_cal_out_filename_list):
-         cmd = 'jid%s=$(sbatch %s | cut -f 4 -d ' ') \n' % (model_cal_out_filename_index,model_cal_out_filename)
+         cmd = 'jid%s=$(sbatch %s | cut -f 4 -d " ") \n' % (model_cal_out_filename_index,model_cal_out_filename)
          cmd_list.append(cmd)
 
       with open(out_filename,'a') as f:
@@ -269,9 +269,9 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=selfcal)
          
          if selfcal==0:
-            cmd = 'jid%s=$(sbatch %s | cut -f 4 -d ' ') \n' % (wsclean_job_index,wsclean_out_filename)
+            cmd = 'jid%s=$(sbatch %s | cut -f 4 -d " ") \n' % (wsclean_job_index,wsclean_out_filename)
          else:
-            cmd = 'jid%s=$(sbatch --dependency=afterok:%s %s | cut -f 4 -d ' ') \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
+            cmd = 'jid%s=$(sbatch --dependency=afterok:%s %s | cut -f 4 -d " ") \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
          cmd_list.append(cmd)
          
          selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=selfcal+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
@@ -279,7 +279,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          job_id_list = []
          for selfcal_out_filename_index,selfcal_out_filename in enumerate(selfcal_out_filename_list):
             selfcal_job_index = selfcal*len(selfcal_out_filename_list) + selfcal_out_filename_index + 1 + selfcal
-            cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d ' ') \n' % (selfcal_job_index,wsclean_job_index,selfcal_out_filename)
+            cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (selfcal_job_index,wsclean_job_index,selfcal_out_filename)
             cmd_list.append(cmd)
             job_id_list.append('$jid%s' % selfcal_job_index)
          
@@ -289,7 +289,7 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       
       wsclean_options_2 = "-size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -niter 350000 -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 10 -join-channels -fit-spectral-pol 2"
       wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=n_selfcals)
-      cmd = 'jid%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d ' ') \n' % (selfcal_job_index+1,job_id_list_string,wsclean_out_filename)
+      cmd = 'id%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (selfcal_job_index+1,job_id_list_string,wsclean_out_filename)
       cmd_list.append(cmd)
     
       #FIRST=$(sbatch testrun.sh | cut -f 4 -d' ')
