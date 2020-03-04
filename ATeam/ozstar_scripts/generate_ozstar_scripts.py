@@ -304,8 +304,8 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
       return(out_filename)
    
 
-
-obsid_list_2015 = ['1112806040','1112892200','1114782984','1114869144','1114955312','1115041472']
+#leave out 1112806040, just going to make things worse
+obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
 obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
 obsid_list = obsid_list_2015 + obsid_list_2018
 
