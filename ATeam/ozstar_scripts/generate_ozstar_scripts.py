@@ -188,7 +188,8 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
    
 def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal=False):
    print('generating sbatch script for CenA')
-   obsid_list,ms_dir_list = get_obsid_list(image_number)
+   obsid_list_2015,obsid_list_2018,ms_dir_list = get_obsid_list(image_number)
+   obsid_list = obsid_list_2015 + obsid_list_2018
    if download:
       out_filename = 'sbatch_launch_download.sh'
       cmd = '#! /bin/bash \n'
@@ -316,13 +317,10 @@ def get_obsid_list(image_number):
       #leave out 1112806040, just going to make things worse
       obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
-      
-      
-   obsid_list = obsid_list_2015 + obsid_list_2018
 
    ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
  
-   return(obsid_list,ms_dir_list)
+   return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
 generate_sbatch_script_CenA(image_number=4,n_selfcals=4,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=4,n_selfcals=4,download=False,model_cal=True)
