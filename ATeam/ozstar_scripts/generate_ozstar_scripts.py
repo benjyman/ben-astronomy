@@ -170,10 +170,10 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
       cmd_list.append(cmd)
    
       solution_name = solution_list[ms_index]
-      cmd = "calibrate %s %s %s \n" % (calibrate_options,ms,solution_name)
+      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/calibrate %s %s %s \n" % (calibrate_options,ms,solution_name)
       cmd_list.append(cmd)
       
-      cmd = "applysolutions %s %s \n" % (ms,solution_name)
+      cmd = "/fred/oz048/MWA/CODE/mwa-reduce/build/applysolutions %s %s \n" % (ms,solution_name)
       cmd_list.append(cmd)
       
       #Plot the cal solutions ##need to get this working
@@ -186,9 +186,9 @@ def generate_selfcal(obsid_list,ms_dir_list,calibrate_options,self_cal_number,de
       out_filename_list.append(out_filename)
    return(out_filename_list)
    
-def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False,model_cal=False):
+def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal=False):
    print('generating sbatch script for CenA')
-
+   obsid_list,ms_dir_list = get_obsid_list(image_number)
    if download:
       out_filename = 'sbatch_launch_download.sh'
       cmd = '#! /bin/bash \n'
@@ -266,7 +266,9 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          wsclean_options_1 = " -size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight uniform -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 8 -join-channels -fit-spectral-pol 2"
          calibrate_options_1 = "-minuv 60"
          
-         wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=selfcal)
+         out_image_name_base = "image_%02d_selfcal_%02d_uniform" % (image_number,selfcal)
+         
+         wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=selfcal)
          
          if selfcal==0:
             cmd = 'jid%s=$(sbatch %s | cut -f 4 -d " ") \n' % (wsclean_job_index,wsclean_out_filename)
@@ -286,9 +288,10 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
          job_id_list_string = ':'.join(job_id_list)
          
       #final robust 0 clean
+      out_image_name_base = "image_%02d_selfcal_%02d_robust0" % (image_number,selfcal)
       
       wsclean_options_2 = "-size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -niter 350000 -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 10 -join-channels -fit-spectral-pol 2"
-      wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base='test1',wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=n_selfcals)
+      wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=n_selfcals)
       cmd = 'id%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (selfcal_job_index+1,job_id_list_string,wsclean_out_filename)
       cmd_list.append(cmd)
     
@@ -308,17 +311,22 @@ def generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals,download=False
 
       return(out_filename)
    
+def get_obsid_list(image_number):
+   if image_number==4:
+      #leave out 1112806040, just going to make things worse
+      obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
+      obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+      
+      
+   obsid_list = obsid_list_2015 + obsid_list_2018
 
-#leave out 1112806040, just going to make things worse
-obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
-obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
-obsid_list = obsid_list_2015 + obsid_list_2018
+   ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
+ 
+   return(obsid_list,ms_dir_list)
 
-ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image4/2015","/fred/oz048/bmckinle/ATeam/CenA/image4/2018"]
-
-generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=True,model_cal=False)
-generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4,download=False,model_cal=True)
-generate_sbatch_script_CenA(obsid_list,ms_dir_list,n_selfcals=4)
+generate_sbatch_script_CenA(image_number=4,n_selfcals=4,download=True,model_cal=False)
+generate_sbatch_script_CenA(image_number=4,n_selfcals=4,download=False,model_cal=True)
+generate_sbatch_script_CenA(image_number=4,n_selfcals=4)
 
 #generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
