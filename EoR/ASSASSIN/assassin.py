@@ -176,7 +176,7 @@ pol_list = ['X']
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse_global','noise']
-signal_type_list=['diffuse','noise']
+signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -1687,7 +1687,9 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
       
       #offset X and real_vis by some arbitrary amount 0.5?
-      real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
+      #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
+      #need to multiply (scale) not add!
+      real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2.
       
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
@@ -1716,7 +1718,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       
       plt.clf()
       plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
+      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
       #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
       map_title="Response to uniform sky vs baseline length data" 
       plt.xlabel("Baseline length (wavelengths)")
@@ -1985,7 +1987,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
            
-def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda=0.5,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False):
+def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False):
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -2137,15 +2139,20 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       print("visibilities_shape")
       print(visibilities_shape)
       
-      print("omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
-      fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
-      print(fine_chan_index_array)
+      if EDA2_data:
+         print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
+         fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+         #print(fine_chan_index_array)
+      else:
+         fine_chan_index_array = np.asarray([0])
       centre_freq = float(freq_MHz)
       fine_chan_width_MHz = fine_chan_width_Hz/1000000.
       for fine_chan_index in fine_chan_index_array:
          fine_chan_index = int(fine_chan_index)
-         freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-         
+         if EDA2_data:
+            freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+         else:
+            freq_MHz_fine_chan = freq_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
          
          print("fine_chan index,MHz,wavelength")
@@ -2157,6 +2164,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          #real_vis_data_unweighted_single = visibilities_single[:,0,0,fine_chan_index,0,0]
          #imag_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,1]
          #weights_vis_data_single = visibilities_single[:,0,0,fine_chan_index,0,2]
+         
          
          if wsclean:
             real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
@@ -2337,7 +2345,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          
          #Check value is reasonable
          #180 at 180 rule
-         T_sky_rough = 180.*(freq_MHz_fine_chan/180)**(-2.5)
+         T_sky_rough = 180.*(freq_MHz_fine_chan/180.)**(-2.5)
          print("180@180 t_sky is %s" % T_sky_rough)
          
                   
@@ -3075,7 +3083,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             n_obs_concat = 1
          
          #only the theoretical beam weighted av is taken from this function now,, rest is derived from saved files
-         #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
          t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean)
          
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
@@ -6667,7 +6675,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #wrong answer for the beam weighted average. yes matter ....
             
             #This gives the wrong answer..... I think it has to do with the cos(az) term in the beam or something....
-            #I think the way to go is to make the beams fresh in hpx (as I do in solve_for_tsky_from_uvfits), then multiply by 
+            #I think the way to go is to make the beams fresh in hpx (as I do in solve_for_tsky_from uvfits), then multiply by 
             #the healpix gsm, then reproject with reproject from healpy ....
             
             sum_of_beam_weights = np.nansum(beam_image_sin_projected_regrid_gsm)
@@ -9109,18 +9117,18 @@ def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
             #"-scale limits %s %s" % (chan_scale_min_list_xx[chan_index],chan_scale_max_list_xx[chan_index])
             cmd = "ds9 %s -invert -colorbar yes -view buttons yes -view panner yes -view magnifier yes -view info yes -view filename yes  -zoom 1 -width 512 -height 512 -grid  -saveimage png %s -quit" % (image_name,out_png_image_name)
             print(cmd)
-            #os.system(cmd)
+            os.system(cmd)
             
             #Add some text to the png
             img = Image.open("%s" % out_png_image_name)
             draw = ImageDraw.Draw(img)
-            # font = ImageFont.truetype(<font-file>, <font-size>)
-            #font = ImageFont.truetype("sans-serif.ttf", 16)
+            ##font = ImageFont.truetype(<font-file>, <font-size>)
+            ##font = ImageFont.truetype("sans-serif.ttf", 16)
             font = ImageFont.truetype('FreeSans.ttf',30)
-            # draw.text((x, y),"Sample Text",(r,g,b))
+            ##draw.text((x, y),"Sample Text",(r,g,b))
             draw.text((10, 10),"EDA2 chan %s (%.0f MHz)\nTime %s" % (EDA2_chan,freq_MHz,obs_time),(0,0,0),font=font)
-            #draw.text((256, 256),"Channel %s" % chan,(0,0,0))
-            #img.save("%s" % out_png_image_name)
+            ##draw.text((256, 256),"Channel %s" % EDA2_chan,(0,0,0))
+            img.save("%s" % out_png_image_name)
    
    cmd = "ffmpeg -framerate 2 -i cal_image_%03d_ds9.png -c:v libx264 -r 30 -pix_fmt yuv420p out_movie.mp4" 
    print(cmd)
@@ -9178,7 +9186,7 @@ EDA2_data = False
 #EDA2_chan_list = [64,77,90,103,116,129]
 
 #20200217 data (dont use 63 / 49 MHz dont have beam model! missing 127 and 128 so just do to incl 126)
-EDA2_chan_list = range(64,127)
+EDA2_chan_list = range(64,130)
 #EDA2_chan_list = range(64,66)
 #middle time for each chan
 #EDA2_obs_time_list = ["20191202T171525","20191202T171629","20191202T171727","20191202T171830","20191202T171928","20191202T172027"]
@@ -9235,7 +9243,8 @@ EDA2_chan_list = range(64,127)
 #   ]
 
 #20200217 data (don't use 'edge' times):
-EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200217_data/",EDA2_chan_list)
+#EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200303_data/",EDA2_chan_list)
+EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200304_data/",EDA2_chan_list)
 
 
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -9258,8 +9267,8 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 
-baseline_length_thresh_lambda = 0.50
-plot_only = True
+baseline_length_thresh_lambda = 2.00
+plot_only = False
 include_angular_info = True
 
 
@@ -9284,6 +9293,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
 
+#Step 1: simulate
+
 
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
@@ -9302,6 +9313,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
 ##image_eda2_data(eda2_data_uvfits_name_list)
 
+#Step 2: calibrate
 
 #calibrate each individually first and concat
 #do this outside chan dir
@@ -9311,9 +9323,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=True,uv_cutoff=0)
 #sys.exit()
 
-
-make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200217_data.mp4')
-sys.exit()
+#Need to plug in monitor to namorrodor, can't do this with nohup or remotely
+#make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
+#sys.exit()
  
 #after calibration:
 #no cal solutions for 64/chan_64_20191202T171624.vis
@@ -9375,7 +9387,10 @@ freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 lst_hrs_list=['2']
 poly_order_list=[5,6,7]
 poly_order=7
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=True)
+freq_MHz_list=[70]
+wsclean=False # for sims
+#wsclean=True # for data
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean)
 
 
 ###obs seem to underestimate the global temp - Y sub improves it a bit.
