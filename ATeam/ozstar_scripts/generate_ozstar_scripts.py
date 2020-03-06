@@ -269,7 +269,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
          
          out_image_name_base = "image_%02d_selfcal_%02d_uniform" % (image_number,selfcal)
          
-         wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=selfcal)
+         wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image%s' % image_number,self_cal_number=selfcal)
          
          if selfcal==0:
             cmd = 'jid%s=$(sbatch %s | cut -f 4 -d " ") \n' % (wsclean_job_index,wsclean_out_filename)
@@ -277,7 +277,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
             cmd = 'jid%s=$(sbatch --dependency=afterok:%s %s | cut -f 4 -d " ") \n' % (wsclean_job_index,job_id_list_string,wsclean_out_filename)
          cmd_list.append(cmd)
          
-         selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=selfcal+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4')
+         selfcal_out_filename_list = generate_selfcal(obsid_list,ms_dir_list,calibrate_options=calibrate_options_1,self_cal_number=selfcal+1,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image%s' % image_number)
          
          job_id_list = []
          for selfcal_out_filename_index,selfcal_out_filename in enumerate(selfcal_out_filename_list):
@@ -292,7 +292,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
       out_image_name_base = "image_%02d_selfcal_%02d_robust0" % (image_number,selfcal+1)
       
       wsclean_options_2 = "-size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -niter 350000 -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 10 -join-channels -fit-spectral-pol 2"
-      wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=n_selfcals)
+      wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image%s' % image_number,self_cal_number=n_selfcals)
       cmd = 'id%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (selfcal_job_index+1,job_id_list_string,wsclean_out_filename)
       cmd_list.append(cmd)
     
@@ -326,7 +326,7 @@ def get_obsid_list(image_number):
  
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-image_number = 5
+image_number = 4
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=False,model_cal=True)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number)
