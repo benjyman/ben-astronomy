@@ -191,7 +191,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
    obsid_list_2015,obsid_list_2018,ms_dir_list = get_obsid_list(image_number)
    obsid_list = obsid_list_2015 + obsid_list_2018
    if download:
-      out_filename = 'sbatch_launch_download.sh'
+      out_filename = 'sbatch_launch_download_image_%02d.sh' % (image_number)
       cmd = '#! /bin/bash \n'
       with open(out_filename,'w') as f:
          f.write(cmd)
@@ -228,7 +228,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
       
    #do qa manually after download and unzip then proceed
    elif model_cal:
-      out_filename = 'sbatch_launch_model_cal.sh'
+      out_filename = 'sbatch_launch_model_cal_image_%02d.sh' % (image_number)
       cmd = '#! /bin/bash \n'
       with open(out_filename,'w') as f:
          f.write(cmd)
@@ -255,7 +255,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
 
    #do qa again after model cal then proceed
    else:
-      out_filename = 'sbatch_launch_wsclean_and_selfcal.sh'
+      out_filename = 'sbatch_launch_wsclean_and_selfcal_image_%02d.sh' % (image_number)
       cmd = '#! /bin/bash \n'
       with open(out_filename,'w') as f:
          f.write(cmd)
@@ -289,7 +289,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
          job_id_list_string = ':'.join(job_id_list)
          
       #final robust 0 clean
-      out_image_name_base = "image_%02d_selfcal_%02d_robust0" % (image_number,selfcal)
+      out_image_name_base = "image_%02d_selfcal_%02d_robust0" % (image_number,selfcal+1)
       
       wsclean_options_2 = "-size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -niter 350000 -threshold 0.015  -multiscale -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 10 -join-channels -fit-spectral-pol 2"
       wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image4',self_cal_number=n_selfcals)
@@ -317,6 +317,10 @@ def get_obsid_list(image_number):
       #leave out 1112806040, just going to make things worse
       obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
+   elif image_number==5:
+      obsid_list_2015 = ['1115049272','1115127640','1115135440','1115213800','1115221600','1115299968']
+      obsid_list_2018 = ['1202673200','1202673440','1202673680','1202673920','1202674160','1202678472']
+
 
    ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
  
