@@ -174,9 +174,9 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-#signal_type_list=['diffuse','noise']
+signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse_global','noise']
-signal_type_list=['global_EDGES']
+#signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -1627,12 +1627,12 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
    else:
-      X_short_parallel_array_filename = "X_short_parallel_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-      X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-      X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-      real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
    
    
    X_short_parallel_array = np.load(X_short_parallel_array_filename).real
@@ -1689,7 +1689,7 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
       #offset X and real_vis by some arbitrary amount 0.5?
       #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
       #need to multiply (scale) not add!
-      real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2.
+      real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2. / (2.*np.pi)
       
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
@@ -6208,12 +6208,18 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
 
                
          global_signal_hpx_fits_name = "global_signal_map_LST_%03d_%s_MHz_hpx.fits" % (lst_deg,int(freq_MHz))
+         unity_sky_hpx_fits_name = "unity_sky_map_%s_MHz_hpx.fits" % (int(freq_MHz))
          reprojected_global_signal_fitsname = "global_signal_map_LST_%03d_%s_MHz_reprojected.fits" % (lst_deg,int(freq_MHz))
+         reprojected_unity_sky_fitsname = "unity_sky_map_%s_MHz_reprojected.fits" % (int(freq_MHz))
          reprojected_global_signal_im_name = "global_signal_map_LST_%03d_%s_MHz_reprojected.im" % (lst_deg,int(freq_MHz))
+         reprojected_unity_sky_im_name = "unity_sky_map_%s_MHz_reprojected.im" % (int(freq_MHz))
          
          #lna_impedance_aavs1_filename = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_LNA_impedance_180718.txt"
          
          base_vis_name = "%s_LST_%03d_%s_MHz.vis" % (array_label,lst_deg,int(freq_MHz))
+         unity_sky_base_vis_name = "%s_unity_sky_%s_MHz.vis" % (array_label,int(freq_MHz))
+         unity_sky_out_vis_name = "%s_unity_sky_out_%s_MHz.vis" % (array_label,int(freq_MHz))
+         unity_sky_out_uvfits_name = "%s_unity_sky_out_%s_MHz.uvfits" % (array_label,int(freq_MHz))
          #eda_model_uvfits_name = "eda_model_LST_%03d_%s_MHz.uvfits" % (lst_deg,int(freq_MHz))
          eda_model_no_source_image_name = "%s_no_src_LST_%03d_%s_MHz.map" % (array_label,lst_deg,int(freq_MHz))
          eda_model_no_source_beam_name = "%s_no_src_LST_%03d_%s_MHz.beam" % (array_label,lst_deg,int(freq_MHz))
@@ -6297,7 +6303,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          #1. get 'blank' visibilities in miriad and make an image (1 Jy pt source) to use as a template for the output projection
          if generate_new_vis:
          
-            cmd = "rm -rf %s" % base_vis_name
+            cmd = "rm -rf %s %s" % (unity_sky_base_vis_name,base_vis_name)
             print(cmd)
             os.system(cmd)
            
@@ -6305,7 +6311,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             cmd = "uvgen source=$MIRCAT/no.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec,harange_string,base_vis_name)
             print(cmd)
             os.system(cmd)
+         
+            #and for unity vis (for use later on in solving for T_sky)
+            cmd = "uvgen source=$MIRCAT/no.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec,harange_string,unity_sky_base_vis_name)
+            print(cmd)
+            os.system(cmd)
             
+                        
             #output the no source uvfits file for checking
             #cmd = "fits in=%s out=%s op=uvout" % (eda_model_vis_name,eda_model_uvfits_name)
             #print(cmd)
@@ -6497,11 +6509,14 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             s_21_value = s_21_array[freq_MHz_index]
          s_21_hpx_map = gsm_map * 0.0 + s_21_value
          
-         cmd = "rm -rf %s %s" % (global_signal_hpx_fits_name,reprojected_global_signal_im_name)
+         unity_sky_hpx_map = gsm_map * 0.0 + 1.
+         
+         cmd = "rm -rf %s %s %s" % (global_signal_hpx_fits_name,reprojected_global_signal_im_name,unity_sky_hpx_fits_name,reprojected_unity_sky_im_name)
          print(cmd)
          os.system(cmd)
             
          hp.write_map(global_signal_hpx_fits_name,s_21_hpx_map,coord='C')
+         hp.write_map(unity_sky_hpx_fits_name,unity_sky_hpx_map,coord='C')
          
          #plot?
          if plot_global_signal_map_hpx:
@@ -6517,13 +6532,19 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             print("saved %s" % fig_name)
               
          reprojected_global_signal_map,footprint = reproject_from_healpix(global_signal_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
+         reprojected_unity_sky_map,footprint = reproject_from_healpix(unity_sky_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
+         
          
          #write the map to fits
          pyfits.writeto(reprojected_global_signal_fitsname,reprojected_global_signal_map,clobber=True)
          pyfits.update(reprojected_global_signal_fitsname,reprojected_global_signal_map,header=no_source_header)
          print("wrote image %s" %  reprojected_global_signal_fitsname)
-         
-         cmd = "rm -rf %s" % (reprojected_global_signal_im_name)
+
+         pyfits.writeto(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,clobber=True)
+         pyfits.update(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,header=no_source_header)
+         print("wrote image %s" %  reprojected_unity_sky_fitsname)
+                  
+         cmd = "rm -rf %s %s" % (reprojected_global_signal_im_name,reprojected_unity_sky_im_name)
          print(cmd)
          os.system(cmd)     
          
@@ -6531,19 +6552,29 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          print(cmd)
          os.system(cmd)
          
+         cmd = "fits in=%s out=%s op=xyin" % (reprojected_unity_sky_fitsname,reprojected_unity_sky_im_name)
+         print(cmd)
+         os.system(cmd)
+         
          #uvmodel requires the model to be in Jy/pix
          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
          
          reprojected_global_signal_im_Jy_per_pix_name =  "global_map_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
+         reprojected_unity_sky_im_Jy_per_pix_name =  "unity_sky_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
          
-         cmd = "rm -rf %s" % reprojected_global_signal_im_Jy_per_pix_name
+         
+         cmd = "rm -rf %s %s" % (reprojected_global_signal_im_Jy_per_pix_name,reprojected_unity_sky_im_Jy_per_pix_name)
          print(cmd)
          os.system(cmd)
                
          cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_global_signal_im_name,reprojected_global_signal_im_Jy_per_pix_name)
          print(cmd)
          os.system(cmd)
-          
+
+         cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_unity_sky_im_name,reprojected_unity_sky_im_Jy_per_pix_name)
+         print(cmd)
+         os.system(cmd)
+                   
          #do for all pols:
          for pol in pol_list:
             #model_sky_vis = "eda_model_plus_sky_LST_%03d_%s_pol_%s_MHz.vis" % (lst_deg,pol,int(freq_MHz))
@@ -6751,7 +6782,18 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_global_signal_im_Jy_per_pix_name,apparent_global_signal_im_name)
             print(cmd)
             os.system(cmd)
-            
+
+            #Repeat for unity sky
+            apparent_unity_sky_im_name = "apparent_unity_sky_%s_pol_%s_MHz.im" % (pol,int(freq_MHz))
+
+            cmd = "rm -rf %s" % (apparent_unity_sky_im_name)
+            print(cmd)
+            os.system(cmd)
+         
+            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_unity_sky_im_Jy_per_pix_name,apparent_unity_sky_im_name)
+            print(cmd)
+            os.system(cmd)
+                        
             ##crop the image
             ##output a cropped fits file
             #cmd = "fits in=%s out=%s region=quarter op=xyout" % (apparent_global_signal_im_name,apparent_global_signal_fits_name_cropped)
@@ -6785,7 +6827,20 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             print(cmd)
             os.system(cmd)            
             
-         
+            #add unity sky into vis
+            cmd = "rm -rf %s %s" % (unity_sky_out_vis_name,unity_sky_out_uvfits_name)
+            print(cmd)
+            os.system(cmd)
+               
+            cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (unity_sky_base_vis_name,apparent_unity_sky_im_name,unity_sky_out_vis_name)
+            print(cmd)
+            os.system(cmd)
+
+            cmd = "fits in=%s out=%s op=uvout options=nocal,nopol,nopass" % (unity_sky_out_vis_name,unity_sky_out_uvfits_name)
+            print(cmd)
+            os.system(cmd)
+             
+               
             #then put into the vis 
             
             if 'noise' in signal_type_list:
@@ -9267,7 +9322,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 
-baseline_length_thresh_lambda = 2.00
+baseline_length_thresh_lambda = 0.50
 plot_only = False
 include_angular_info = True
 
@@ -9387,9 +9442,9 @@ freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 lst_hrs_list=['2']
 poly_order_list=[5,6,7]
 poly_order=7
-freq_MHz_list=[70]
-wsclean=False # for sims
-#wsclean=True # for data
+#freq_MHz_list=[70]
+#wsclean=False # for sims
+wsclean=True # for data
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean)
 
 
