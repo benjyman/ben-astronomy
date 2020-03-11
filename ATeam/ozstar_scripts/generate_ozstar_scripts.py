@@ -344,9 +344,10 @@ def get_obsid_list(image_number):
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
 image_number = 3
-generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=True,model_cal=False)
-generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=False,model_cal=True)
-generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number)
+n_selfcals = 4
+generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
+generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
+generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals)
 
 #generate_download(obsid_list=obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #generate_download(obsid_list=obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)   
