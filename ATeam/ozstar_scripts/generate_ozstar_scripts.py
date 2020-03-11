@@ -313,20 +313,37 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
       return(out_filename)
    
 def get_obsid_list(image_number):
-   if image_number==4:
+   if image_number==1:
+      obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
+      obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
+   elif image_number==2:
+      obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
+      obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
+   elif image_number==3:
+      obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
+      obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
+   elif image_number==4:
       #leave out 1112806040, just going to make things worse
       obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
    elif image_number==5:
       obsid_list_2015 = ['1115049272','1115127640','1115135440','1115213800','1115221600','1115299968']
       obsid_list_2018 = ['1202673200','1202673440','1202673680','1202673920','1202674160','1202678472']
-
+   elif image_number==6:
+      obsid_list_2015 = ['1115307768','1116343632','1116429792','1116603776','1116604056','1116773232']
+      obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
+   elif image_number==7:
+      obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
+      obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
+   elif image_number==8:
+      obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
+      obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
 
    ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
  
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-image_number = 5
+image_number = 3
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number,download=False,model_cal=True)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=image_number)
