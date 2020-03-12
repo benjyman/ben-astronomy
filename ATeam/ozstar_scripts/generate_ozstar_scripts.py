@@ -314,8 +314,9 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
    
 def get_obsid_list(image_number):
    if image_number==1:
-      obsid_list_2015 = ['1117031728','1121334536','1121420968','1121507392','1121593824','1121680256']
-      obsid_list_2018 = ['1199663088','1200604688','1200691136','1200777584','1200864032','1200950480']
+      #these ones are bad (from corrected_data qa): '1117031728' , '1199663088'
+      obsid_list_2015 = ['1121334536','1121420968','1121507392','1121593824','1121680256']
+      obsid_list_2018 = ['1200604688','1200691136','1200777584','1200864032','1200950480']
    elif image_number==2:
       obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
       obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
@@ -343,8 +344,8 @@ def get_obsid_list(image_number):
  
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-image_number = 3
-n_selfcals = 4
+image_number = 1
+n_selfcals = 5
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals)
