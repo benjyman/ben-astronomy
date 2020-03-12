@@ -343,7 +343,7 @@ def get_obsid_list(image_number):
  
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-image_number = 2
+image_number = 3
 n_selfcals = 4
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
