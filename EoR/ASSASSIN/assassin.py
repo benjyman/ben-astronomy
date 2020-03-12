@@ -1647,6 +1647,11 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
    
+   if EDA2_data==True:
+      real_or_simulated_string = "EDA2"
+   else:
+      real_or_simulated_string = "simulated"
+         
    if not miriad_X:
       X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
       print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
@@ -1668,11 +1673,6 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
          print("saved %s" % fig_name)  
    
 
-   
-      if EDA2_data==True:
-         real_or_simulated_string = "EDA2"
-      else:
-         real_or_simulated_string = "simulated"
       ##plot X_vs_uvdist for vis and X
       #normalise both X and real vis to max 1
       if len(X_short_parallel_array_pure_inline) > 0:
@@ -9578,8 +9578,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -9615,7 +9615,7 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 #poly_order=7
 
 
-#freq_MHz_list=[50]
+freq_MHz_list=[50]
 #wsclean=False # for sims
 wsclean=True # for data
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=True)
