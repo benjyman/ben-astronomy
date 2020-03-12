@@ -2140,7 +2140,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       uvtable = hdulist[0].data
       uvtable_header = hdulist[0].header
       #print(uvtable_header)
-   
+      hdulist.close()
       #freq_hz = float(uvtable_header['crval4'])
       #freq_MHz = freq_hz/1000000.
       #print "freq is %0.1f " % freq_MHz
@@ -2205,7 +2205,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          UU_m_array = UU_s_array * c   
          VV_s_array = uvtable['VV']
          VV_m_array = VV_s_array * c
-               
+
+         
+         
          #forget all this timestep stuff, just use all the data
          #start_index = int(uvfits_filename_index * n_baselines * n_timesteps)
          #end_index = int(start_index + (n_baselines * n_timesteps))
@@ -2221,32 +2223,32 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
          baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
          
          baseline_length_array_m_inds = baseline_length_array_m.argsort()
-         baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
+         baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
          
          #use only baselines shorter than threshold
          
       
-         UU_m_array_sorted = UU_m_array[baseline_length_array_m_inds]
-         VV_m_array_sorted = VV_m_array[baseline_length_array_m_inds]
-         real_vis_data_sorted = real_vis_data[baseline_length_array_m_inds]
-         imag_vis_data_sorted = imag_vis_data[baseline_length_array_m_inds]
-         weights_vis_data_sorted = weights_vis_data[baseline_length_array_m_inds]
+         UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+         VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+         real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+         imag_vis_data_sorted_orig = imag_vis_data[baseline_length_array_m_inds]
+         weights_vis_data_sorted_orig = weights_vis_data[baseline_length_array_m_inds]
          
+
+            
          #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-         baseline_length_array_m_sorted = baseline_length_array_m_sorted[UU_m_array_sorted>0]
-         VV_m_array_sorted = VV_m_array_sorted[UU_m_array_sorted>0]
-         real_vis_data_sorted = real_vis_data_sorted[UU_m_array_sorted>0]
-         imag_vis_data_sorted = imag_vis_data_sorted[UU_m_array_sorted>0]
-         weights_vis_data_sorted = weights_vis_data_sorted[UU_m_array_sorted>0]
+         baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+         VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+         real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         imag_vis_data_sorted = imag_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         weights_vis_data_sorted = weights_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
          
          #leave this here!!
-         UU_m_array_sorted = UU_m_array_sorted[UU_m_array_sorted>0]
+         UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          
          #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
          #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
-         
-      
-      
+          
          baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
          
          baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
@@ -2790,7 +2792,8 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             miriad_X_UU_m_array = miriad_X_UU_s_array * c   
             miriad_X_VV_s_array = uvtable['VV']
             miriad_X_VV_m_array = miriad_X_VV_s_array * c
-               
+            
+
             #Need to sort by baseline length (then only use short baselines)
             miriad_X_baseline_length_array_m = np.sqrt(miriad_X_UU_m_array**2 + miriad_X_VV_m_array**2)
             
@@ -2802,14 +2805,17 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             miriad_X_VV_m_array_sorted = miriad_X_VV_m_array[miriad_X_baseline_length_array_m_inds]
             miriad_X_real_vis_data_sorted = miriad_X_real_vis_data[miriad_X_baseline_length_array_m_inds]
       
+
             
             #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-            miriad_X_VV_m_array_sorted = miriad_X_VV_m_array_sorted[miriad_X_UU_m_array_sorted>0]
-            miriad_X_real_vis_data_sorted = miriad_X_real_vis_data_sorted[miriad_X_UU_m_array_sorted>0]
+            #so use UU_m_array_sorted>0 not miriad_X_UU_m_array_sorted>0
+            miriad_X_baseline_length_array_m_sorted = miriad_X_baseline_length_array_m_sorted[UU_m_array_sorted_orig>0]
+            miriad_X_VV_m_array_sorted = miriad_X_VV_m_array_sorted[UU_m_array_sorted_orig>0]
+            miriad_X_real_vis_data_sorted = miriad_X_real_vis_data_sorted[UU_m_array_sorted_orig>0]
             
             #leave this here!!
-            miriad_X_UU_m_array_sorted = miriad_X_UU_m_array_sorted[miriad_X_UU_m_array_sorted>0]
-      
+            miriad_X_UU_m_array_sorted = miriad_X_UU_m_array_sorted[UU_m_array_sorted_orig>0]
+                       
       
             miriad_X_baseline_length_array_lambda_sorted = miriad_X_baseline_length_array_m_sorted / wavelength
             miriad_X_baseline_length_array_lambda_sorted_cut = miriad_X_baseline_length_array_lambda_sorted[miriad_X_baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
@@ -9609,7 +9615,7 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 #poly_order=7
 
 
-freq_MHz_list=[50]
+#freq_MHz_list=[50]
 #wsclean=False # for sims
 wsclean=True # for data
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=True)
