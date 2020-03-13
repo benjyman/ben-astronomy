@@ -174,7 +174,8 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse','noise']
+#signal_type_list=['diffuse','noise']
+signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -1569,6 +1570,9 @@ def model_tsky_from_saved_data(freq_MHz,lst_hrs,pol,signal_type_list,sky_model,a
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
        concat_output_name_base += '_D_%s' % sky_model
+   if 'global_unity' in signal_type_list:
+       signal_type_postfix += '_GU'
+       concat_output_name_base += '_GU'    
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse_global at same time")
@@ -2006,6 +2010,9 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
        concat_output_name_base += '_D_%s' % sky_model
+   if 'global_unity' in signal_type_list:
+       signal_type_postfix += '_GU'
+       concat_output_name_base += '_GU'
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse_global at same time")
@@ -2635,7 +2642,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
                #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
                #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
                
-               #this one gives approximately the right answer ....
+               #this one gives approximately the right answer ....  no exactly!
                X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
          
                X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
@@ -3184,6 +3191,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
        concat_output_name_base += '_D_%s' % sky_model
+   if 'global_unity' in signal_type_list:
+       signal_type_postfix += '_GU'
+       concat_output_name_base += '_GU'
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("cant have diffuse and diffuse global at same time")
@@ -6268,6 +6278,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
    if 'diffuse' in signal_type_list:
        concat_output_name_base_X += '_D_%s' % sky_model
        concat_output_name_base_Y += '_D_%s' % sky_model
+   if 'global_unity' in signal_type_list:
+       concat_output_name_base_X += '_GU'
+       concat_output_name_base_Y += '_GU'
    if 'diffuse_global' in signal_type_list:
        if 'diffuse' in signal_type_list:
           print("can't have diffuse and diffuse global at the same time.")
@@ -6675,7 +6688,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             s_21_value = s_21_array[freq_MHz_index]
          s_21_hpx_map = gsm_map * 0.0 + s_21_value
          
-         unity_sky_hpx_map = gsm_map * 0.0 + 1.
+         jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+         
+         unity_sky_value = 1. * jy_to_K
+         #What value do you actually need to put in here to get the desired result .... I think it is 1 / Jy_to_k?
+         #play until you get a gradient of one in x_y_plot!
+         
+         unity_sky_hpx_map = gsm_map * 0.0 + unity_sky_value
          
          cmd = "rm -rf %s %s %s %s" % (global_signal_hpx_fits_name,reprojected_global_signal_im_name,unity_sky_hpx_fits_name,reprojected_unity_sky_im_name)
          print(cmd)
@@ -6991,21 +7010,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          
             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_angular_im_Jy_per_pix_name,apparent_sky_diffuse_angular_im_name)
             print(cmd)
-            os.system(cmd)            
-            
-            #add unity sky into vis
-            cmd = "rm -rf %s %s" % (unity_sky_out_vis_name,unity_sky_out_uvfits_name)
-            print(cmd)
-            os.system(cmd)
-               
-            cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (unity_sky_base_vis_name,apparent_unity_sky_im_name,unity_sky_out_vis_name)
-            print(cmd)
-            os.system(cmd)
-
-            cmd = "fits in=%s out=%s op=uvout options=nocal,nopol,nopass" % (unity_sky_out_vis_name,unity_sky_out_uvfits_name)
-            print(cmd)
-            os.system(cmd)
-             
+            os.system(cmd)                      
                
             #then put into the vis 
             
@@ -7172,7 +7177,26 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                os.system(cmd)
                
                base_vis_name = out_vis_name
+
+            if 'global_unity' in signal_type_list:
+            
+               model_vis_name_base += '_GU'
+               out_vis_name = model_vis_name_base + '.vis'
+            
+               cmd = "rm -rf %s" % out_vis_name
+               print(cmd)
+               os.system(cmd)
                
+               cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (base_vis_name,apparent_unity_sky_im_name,out_vis_name)
+               print(cmd)
+               os.system(cmd)
+               
+               #remove the previous base_vis
+               cmd = "rm -rf %s" % base_vis_name
+               print(cmd)
+               os.system(cmd)
+               
+               base_vis_name = out_vis_name              
         
             if 'gain_errors' in signal_type_list:
                model_vis_name_base += '_GE'
@@ -9399,7 +9423,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = True
+EDA2_data = False
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -9491,7 +9515,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 
-baseline_length_thresh_lambda = 0.50
+baseline_length_thresh_lambda = 0.25
 plot_only = False
 include_angular_info = True
 
@@ -9523,7 +9547,11 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
-##freq_MHz_list=[70.]
+#sims:
+freq_MHz_list=[50.]
+lst_hrs_list = ['2']
+simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+
 #pol_list = ['Y']
 #for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 #   EDA2_chan = EDA2_chan_list[freq_MHz_index]
@@ -9616,9 +9644,10 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 
 
 freq_MHz_list=[50]
-#wsclean=False # for sims
-wsclean=True # for data
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=True)
+lst_hrs_list=['2']
+wsclean=False # for sims
+#wsclean=True # for data
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=False)
 
 
 ###obs seem to underestimate the global temp - Y sub improves it a bit.
