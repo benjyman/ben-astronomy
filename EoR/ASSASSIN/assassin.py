@@ -20,42 +20,40 @@ import astropy.units as u
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
-Mac=False
-if not Mac:
-   import healpy as hp
-   from pygsm import GSMObserver
-   from pygsm import GlobalSkyModel
-   from pygsm import GlobalSkyModel2016
-   from datetime import datetime, date
-   
-   from reproject import reproject_from_healpix
-   import pyfits
-   from astropy.wcs import WCS
-   from astropy.io import fits
-   from scipy.interpolate import interp1d
-   from scipy.ndimage import map_coordinates
-   from scipy import signal
-   import numpy.polynomial.polynomial as poly
-   from pyuvdata import UVData
-   
-   import random
-   from astropy import units as u
-   from astropy.coordinates import SkyCoord
-   import statsmodels.api as sm
-   import statsmodels.formula.api as smf
-   import pandas as pd
-   from sklearn.linear_model import LinearRegression
-   import seaborn as sns
-   from scipy.optimize import curve_fit
+import healpy as hp
+from pygsm import GSMObserver
+from pygsm import GlobalSkyModel
+from pygsm import GlobalSkyModel2016
+from datetime import datetime, date
 
-   from sklearn.preprocessing import normalize
-   #avoid astropy time error
-   from astropy.utils.iers import conf
-   conf.auto_max_age = None
-   from astropy.utils import iers
-   iers.conf.auto_download = False  
-   #from astroplan import download_IERS_A
-   #download_IERS_A()
+from reproject import reproject_from_healpix
+import pyfits
+from astropy.wcs import WCS
+from astropy.io import fits
+from scipy.interpolate import interp1d
+from scipy.ndimage import map_coordinates
+from scipy import signal
+import numpy.polynomial.polynomial as poly
+from pyuvdata import UVData
+
+import random
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+import seaborn as sns
+from scipy.optimize import curve_fit
+
+from sklearn.preprocessing import normalize
+#avoid astropy time error
+from astropy.utils.iers import conf
+conf.auto_max_age = None
+from astropy.utils import iers
+iers.conf.auto_download = False  
+#from astroplan import download_IERS_A
+#download_IERS_A()
 
 
   
@@ -175,7 +173,8 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise']
-signal_type_list=['global_unity']
+signal_type_list=['diffuse']
+#signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise']
 #signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
@@ -2108,25 +2107,28 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
       if n_obs_concat==1:
          if wsclean==True:
             uvfits_filename = "%s/chan_%s_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-            ms_filename = "%s/chan_%s_%s_wsclean_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-            ms_copy_filename = "%s/chan_%s_%s_wsclean_cal_copy.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          if wsclean==True:
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)     
-            ms_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
-            ms_copy_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal_copy.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)            
          else:
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
       uvfits_filename_list = [uvfits_filename]
+      miriad_X_uvfits_filename = uvfits_filename.split('.uvfits')[0] + '_miriad_X.uvfits'
+      miriad_X_vis_filename = uvfits_filename.split('.uvfits')[0] + '_miriad_X.vis'
+      miriad_X_out_vis_name = uvfits_filename.split('.uvfits')[0] + '_miriad_X_out.vis'
+      apparent_sky_miriad_X = "%s/apparent_unity_sky_LST_%03d_X_pol_%s_MHz.im" % (EDA2_chan,lst_deg,freq_MHz)
    else:
       for lst_hrs in lst_hrs_list:
          lst_deg = (float(lst_hrs)/24.)*360.
          uvfits_filename = "%s_LST_%03d_%s_%2d_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
          uvfits_filename_list.append(uvfits_filename)
-   
+      #miriad_X_uvfits_filename = "eda_model_LST_%03d_%s_%s_MHz_GU.uvfits" % (lst_deg,pol,freq_MHz)
+      #miriad_X_vis_filename = "eda_model_LST_%03d_%s_%s_MHz_GU.vis" % (lst_deg,pol,freq_MHz)
+      #miriad_X_out_vis_filename = "eda_model_LST_%03d_%s_%s_MHz_GU_out.vis" % (lst_deg,pol,freq_MHz)
+      #apparent_sky_miriad_X = "apparent_unity_sky_LST_%03d_X_pol_%s_MHz.im" % (lst_deg,freq_MHz)
    #dont predefine the size of these arrays, just take whatever comes in the concat uvfits files
    #real_vis_data_array_size = int(n_baselines * n_timesteps * n_lsts)
    #real_vis_data = np.full(real_vis_data_array_size,np.nan)
@@ -2692,92 +2694,38 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
                np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
                print("saved %s" % Y_short_parallel_angular_array_filename)
          else:
-            print("getting expected unity sky values, X, from miriad sims")   
+            print("getting expected unity sky values, X, from miriad sims")              
             
-            #make a copy of the obs ms
-            
-            cmd = "rm -rf %s" % (ms_copy_filename)
-            print(cmd)
-            os.system(cmd)  
-
-            cmd = "cp -r %s %s" % (ms_filename,ms_copy_filename)
+            #rm miriad_X_vis_filename
+            cmd = "rm -rf %s" % miriad_X_vis_filename
             print(cmd)
             os.system(cmd)
             
-            #read the unity model image out as a fits file with right name
-            apparent_unity_sky_im_name_X = "%s/apparent_unity_sky_LST_%03d_X_pol_%s_MHz.im" % (EDA2_chan,lst_deg,int(freq_MHz))
-            apparent_unity_sky_im_name_Y = "%s/apparent_unity_sky_LST_%03d_Y_pol_%s_MHz.im" % (EDA2_chan,lst_deg,int(freq_MHz))
-            apparent_unity_sky_fits_name_base = "%s/apparent_unity_sky_LST_%03d_%s_MHz" % (EDA2_chan,lst_deg,int(freq_MHz))
-            apparent_unity_sky_fits_name_X = apparent_unity_sky_fits_name_base+"-XX-model.fits"
-            apparent_unity_sky_fits_name_Y = apparent_unity_sky_fits_name_base+"-YY-model.fits"
-            
-            cmd = "rm -rf %s %s" % (apparent_unity_sky_fits_name_X,apparent_unity_sky_fits_name_Y)
-            print(cmd)
-            os.system(cmd)            
-            
-            cmd = "fits in=%s op=xyout out=%s" % (apparent_unity_sky_im_name_X,apparent_unity_sky_fits_name_X)
+            #read in uvfits filename as miriad_X vis
+            cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,miriad_X_vis_filename)
             print(cmd)
             os.system(cmd)
-
-            cmd = "fits in=%s op=xyout out=%s" % (apparent_unity_sky_im_name_Y,apparent_unity_sky_fits_name_Y)
-            print(cmd)
-            os.system(cmd)            
-
-            #get imsize and pixsize for predict and get rid of nans
-            with pyfits.open(apparent_unity_sky_fits_name_X) as hdulist:
-               header_fits=hdulist[0].header
-               data_fits=hdulist[0].data
-            wsclean_imsize = header_fits['NAXIS1']
-            wsclean_scale = float(header_fits['CDELT2'])
             
-            #replace nans with zeros
-            data_new = np.nan_to_num(data_fits)
-                  
-            #write out a new fits file
-            pyfits.writeto("%s" % (apparent_unity_sky_fits_name_X),data_new,clobber=True)
-            pyfits.update(apparent_unity_sky_fits_name_X,data_new,header=header_fits)
-            print("saved %s" % (apparent_unity_sky_fits_name_X))
- 
-            with pyfits.open(apparent_unity_sky_fits_name_Y) as hdulist:
-               header_fits=hdulist[0].header
-               data_fits=hdulist[0].data
-            wsclean_imsize = header_fits['NAXIS1']
-            wsclean_scale = float(header_fits['CDELT2'])
-            
-            #replace nans with zeros
-            data_new = np.nan_to_num(data_fits)
-                  
-            #write out a new fits file
-            pyfits.writeto("%s" % (apparent_unity_sky_fits_name_Y),data_new,clobber=True)
-            pyfits.update(apparent_unity_sky_fits_name_Y,data_new,header=header_fits)
-            print("saved %s" % (apparent_unity_sky_fits_name_Y))
-                       
-            
-            #wsclean predict the model into the copied ms   
-            cmd = "wsclean -predict -name %s -size %s %s -scale %0.5f -pol xx,yy %s " % (apparent_unity_sky_fits_name_base,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_copy_filename)
-            print(cmd)
-            os.system(cmd)                  
-            
-            #export model data to uvfits
-            miriad_X_uvfits_filename = "%s/%s_unity_mir_LST_%03d_%s_MHz.uvfits" % (EDA2_chan,array_label,lst_deg,int(freq_MHz))
-            casa_cmd_filename = "casa_command_exportuvfits.py"
-             
-            cmd = "rm -rf %s %s" % (casa_cmd_filename,miriad_X_uvfits_filename)
+            #need to model miriad_X using uvgen
+            #uvgen
+            cmd = "rm -rf %s" % miriad_X_out_vis_name
             print(cmd)
             os.system(cmd)
-                  
-            cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='model',overwrite=True)" % (ms_copy_filename,miriad_X_uvfits_filename)
+               
+            cmd = "uvmodel vis=%s model=%s options=add,mfs out=%s" % (miriad_X_vis_filename,apparent_sky_miriad_X,miriad_X_out_vis_name)
             print(cmd)
             os.system(cmd)
-
-            with open(casa_cmd_filename,'w') as f:
-               f.write(cmd)
-                 
-            cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
+               
+            cmd = "rm -rf %s" % miriad_X_vis_filename
             print(cmd)
-            os.system(cmd)            
-
-            print("%s" % miriad_X_uvfits_filename)
+            os.system(cmd)
+            
+            #output miriad_X_uvfits_out
+            cmd = "fits in=%s op=uvout out=%s" % (miriad_X_out_vis_name,miriad_X_uvfits_filename)
+            print(cmd)
+            os.system(cmd)
+            
+            print("using %s" % miriad_X_uvfits_filename)
             hdulist = pyfits.open(miriad_X_uvfits_filename)
             hdulist.info()
             info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
@@ -2792,7 +2740,7 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             
             #later will actually do for each fine chan, but not for now
             #miriad_X_real_vis_data = miriad_X_visibilities_single[:,0,0,fine_chan_index,0,0]
-            miriad_X_real_vis_data = miriad_X_visibilities_single[:,0,0,0,16,0,0]
+            miriad_X_real_vis_data = miriad_X_visibilities_single[:,0,0,0,0,0]
       
       
             miriad_X_UU_s_array = uvtable['UU']
@@ -2815,13 +2763,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
 
             
             #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-            #so use UU_m_array_sorted>0 not miriad_X_UU_m_array_sorted>0
-            miriad_X_baseline_length_array_m_sorted = miriad_X_baseline_length_array_m_sorted[UU_m_array_sorted_orig>0]
-            miriad_X_VV_m_array_sorted = miriad_X_VV_m_array_sorted[UU_m_array_sorted_orig>0]
-            miriad_X_real_vis_data_sorted = miriad_X_real_vis_data_sorted[UU_m_array_sorted_orig>0]
+            miriad_X_baseline_length_array_m_sorted = miriad_X_baseline_length_array_m_sorted[miriad_X_UU_m_array_sorted>0]
+            miriad_X_VV_m_array_sorted = miriad_X_VV_m_array_sorted[miriad_X_UU_m_array_sorted>0]
+            miriad_X_real_vis_data_sorted = miriad_X_real_vis_data_sorted[miriad_X_UU_m_array_sorted>0]
             
             #leave this here!!
-            miriad_X_UU_m_array_sorted = miriad_X_UU_m_array_sorted[UU_m_array_sorted_orig>0]
+            miriad_X_UU_m_array_sorted = miriad_X_UU_m_array_sorted[miriad_X_UU_m_array_sorted>0]
                        
       
             miriad_X_baseline_length_array_lambda_sorted = miriad_X_baseline_length_array_m_sorted / wavelength
@@ -9327,10 +9274,7 @@ def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
    for eda2_chan in eda2_chan_list:
       chan_obs_time_list = []
       chan_dir = "%s%s/" % (base_dir,eda2_chan)
-      if Mac==True:
-         cmd = "ssh benjamin@namorrodor ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
-      else:
-         cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
+      cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
       os.system(cmd)
       with open(temp_txt_filename) as f:
          lines=f.readlines()
@@ -9423,7 +9367,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = False
+EDA2_data = True
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -9548,11 +9492,12 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #sims:
-freq_MHz_list=[50.]
-lst_hrs_list = ['2']
-simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+#freq_MHz_list=[50.]
+#lst_hrs_list = ['2']
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 
 #pol_list = ['Y']
+#for data need to simulate with 'global_unity' and then separately 'diffuse'
 #for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 #   EDA2_chan = EDA2_chan_list[freq_MHz_index]
 #   new_dir = "./%s" % EDA2_chan
@@ -9644,10 +9589,9 @@ EDA2_chan_list = [EDA2_chan_list[0]]
 
 
 freq_MHz_list=[50]
-lst_hrs_list=['2']
-wsclean=False # for sims
-#wsclean=True # for data
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=False)
+#wsclean=False # for sims
+wsclean=True # for data
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,miriad_X=True)
 
 
 ###obs seem to underestimate the global temp - Y sub improves it a bit.
