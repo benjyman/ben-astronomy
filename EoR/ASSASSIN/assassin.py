@@ -52,8 +52,8 @@ from astropy.utils.iers import conf
 conf.auto_max_age = None
 from astropy.utils import iers
 iers.conf.auto_download = False  
-#from astroplan import download_IERS_A
-#download_IERS_A()
+from astroplan import download_IERS_A
+download_IERS_A()
 
 
   
@@ -2073,12 +2073,12 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    if EDA2_data:
       if n_obs_concat==1:
          if wsclean==True:
-            uvfits_filename = "%s/chan_%s_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            uvfits_filename = "%s/chan_%s_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          if wsclean==True:
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
          else:
             #concat_chan_64_20191202T171525_n_obs_13.uvfits
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
@@ -2106,19 +2106,22 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
    if EDA2_data:
       if n_obs_concat==1:
          if wsclean==True:
-            uvfits_filename = "%s/chan_%s_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            uvfits_filename = "%s/chan_%s_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            ms_filename = "%s/chan_%s_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          if wsclean==True:
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)     
+            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+            ms_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+               
          else:
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
       uvfits_filename_list = [uvfits_filename]
-      miriad_X_uvfits_filename = uvfits_filename.split('.uvfits')[0] + '_miriad_X.uvfits'
-      miriad_X_vis_filename = uvfits_filename.split('.uvfits')[0] + '_miriad_X.vis'
-      miriad_X_out_vis_name = uvfits_filename.split('.uvfits')[0] + '_miriad_X_out.vis'
+      miriad_X_uvfits_filename = uvfits_filename.split('.uvfits')[0] + '_mX.uvfits'
+      miriad_X_vis_filename = uvfits_filename.split('.uvfits')[0] + '_mX.vis'
+      miriad_X_out_vis_name = uvfits_filename.split('.uvfits')[0] + '_mX_out.vis'
       apparent_sky_miriad_X = "%s/apparent_unity_sky_LST_%03d_X_pol_%s_MHz.im" % (EDA2_chan,lst_deg,freq_MHz)
    else:
       for lst_hrs in lst_hrs_list:
@@ -2697,14 +2700,40 @@ def solve_for_tsky_from_uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list,sky_mo
             print("getting expected unity sky values, X, from miriad sims")              
             
             #rm miriad_X_vis_filename
-            cmd = "rm -rf %s" % miriad_X_vis_filename
+            cmd = "rm -rf %s tmp.vis" % miriad_X_vis_filename
             print(cmd)
             os.system(cmd)
             
-            #read in uvfits filename as miriad_X vis
-            cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,miriad_X_vis_filename)
-            print(cmd)
-            os.system(cmd)
+            #Instead of this try using pyuvdata to read in ms and output a uvfits (to be read in using miriad!)
+            #
+            ##read in uvfits filename 
+            #cmd = "fits in=%s op=uvin out=tmp.vis" % (uvfits_filename)
+            #print(cmd)
+            #os.system(cmd)
+            #
+            #
+            #
+            ##something is wrong when u do uvgen - try exporting a s auvfits and re-importing
+            #cmd = "fits in=tmp.vis op=uvout out=tmp.uvfits" 
+            #print(cmd)
+            #os.system(cmd)
+            #
+            #cmd = "fits in=tmp.uvfits op=uvin out=%s" % miriad_X_vis_filename
+            #print(cmd)
+            #os.system(cmd)
+            #         
+            #cmd = "rm -rf tmp.vis" 
+            #print(cmd)
+            #os.system(cmd)
+            
+            ###pyuvdata:
+            tmp_uv = UVData()
+            tmp_uv.read_ms(ms_filename)
+            
+            sys.exit()
+            ########################
+            
+            
             
             #need to model miriad_X using uvgen
             #uvgen
@@ -7871,8 +7900,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        concat_vis_name = "%s/concat_chan_%s_%s_n_obs_%s.vis" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
        concat_uvfits_name = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
 
-       concat_ms_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.ms" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
-       concat_uvfits_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_wsclean_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_ms_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
+       concat_uvfits_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
               
        miriad_cal_vis_name_list = []
        wsclean_cal_ms_name_list = []
@@ -9507,10 +9536,6 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
 #   os.chdir('./..')
 #sys.exit()
-
-#old calibrate cmd:
-##calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,uv_cutoff=True)
-##image_eda2_data(eda2_data_uvfits_name_list)
 
 #Step 2: calibrate
 
