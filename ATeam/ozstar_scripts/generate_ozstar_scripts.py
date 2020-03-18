@@ -313,36 +313,74 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
       return(out_filename)
    
 def get_obsid_list(image_number):
+   #best results are from images 4 and 5 where there are only 2 lsts in 205 data - so maybe it performs better if there are less (single?) lsts, 
    if image_number==1:
       #these ones are bad (from corrected_data qa): '1117031728' , '1199663088'
+      lst_list_2015   = ['13.381','13.455','13.528','13.602','13.677']
+      lst_list_2018   = ['13.154','13.234','13.313','13.392','13.471']
       obsid_list_2015 = ['1121334536','1121420968','1121507392','1121593824','1121680256']
       obsid_list_2018 = ['1200604688','1200691136','1200777584','1200864032','1200950480']
    elif image_number==2:
+      lst_list_2015   = ['14.12','14.046','13.973','13.899','13.824','13.749']
+      lst_list_2018   = ['13.629','13.787','13.866','13.943','14.022','14.259']
       obsid_list_2015 = ['1122198832','1122112400','1122025976','1121939544','1121853112','1121766680']
       obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
    elif image_number==3:
+      lst_list_2015   = ['14.195','14.27','14.342','14.417','14.491','14.566']
+      lst_list_2018   = ['12.625','14.111','14.336','12.624','14.112','14.415']
       obsid_list_2015 = ['1122285264','1122371696','1122458120','1122544552','1122630984','1122717416']
       obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
    elif image_number==4:
       #leave out 1112806040, just going to make things worse
+      lst_list_2015   = ['13.867','12.523','12.521','12.522','12.521']
+      lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221']
       obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
    elif image_number==5:
+      lst_list_2015   = ['14.694','12.522','14.695','12.521','14.694','12.522']
+      lst_list_2018   = ['13.314','13.381','13.448','13.515','13.582','14.783']
       obsid_list_2015 = ['1115049272','1115127640','1115135440','1115213800','1115221600','1115299968']
       obsid_list_2018 = ['1202673200','1202673440','1202673680','1202673920','1202674160','1202678472']
    elif image_number==6:
+      lst_list_2015   = ['14.695','15.223','15.222','15.683','15.761','14.883']
+      lst_list_2018   = ['15.037','12.625','14.88','12.623','14.881','12.626']
       obsid_list_2015 = ['1115307768','1116343632','1116429792','1116603776','1116604056','1116773232']
       obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
    elif image_number==7:
+      lst_list_2015   = ['12.646','12.94','13.012','13.087','13.159','13.234']
+      lst_list_2018   = ['13.212','13.213','13.213','12.961','12.961','13.212']
       obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
       obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
    elif image_number==8:
+      lst_list_2015   = ['13.306','13.381','13.455','13.528','13.602','13.677']
+      lst_list_2018   = ['12.962','12.961','13.212','13.213','12.625','12.624']
       obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
       obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
+   #elif image_number==10:
+   #   #here we will try have ALL the data at the same LST!
+      
+   
 
    ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
  
-   return(obsid_list_2015,obsid_list_2018,ms_dir_list)
+   return(obsid_list_2015,obsid_list_2018,lst_list_2015,lst_list_2018,ms_dir_list)
+
+def find_obs_with_same_lst(image_number_list):
+   for image_number_1 in image_number_list:
+      obsid_list_2015_1,obsid_list_2018_1,lst_list_2015_1,lst_list_2018_1,ms_dir_list_1 = get_obsid_list(image_number_1)
+      for image_number_2 in image_number_list:
+         obsid_list_2015_2,obsid_list_2018_2,lst_list_2015_2,lst_list_2018_2,ms_dir_list_2 = get_obsid_list(image_number_2)
+         for obsid_2015_index_1,obsid_2015_1 in enumerate(obsid_list_2015_1):
+            lst_2015_1 = lst_list_2015_1[obsid_2015_index_1]
+            for obsid_2018_index_1,obsid_2018_1 in enumerate(obsid_list_2018_1):
+               lst_2018_1 = lst_list_2018_1[obsid_2018_index_1]
+               if np.round(float(lst_2015_1),2)==np.round(float(lst_2018_1),2):
+                  print("2015 obsid %s (image %s) has same lst as 2018 obsid %s, lsts are %s,%s" % (obsid_2015_1,obsid_2018_1,lst_2015_1,lst_2018_1))
+            
+            
+      
+find_obs_with_same_lst(range(1,9))      
+sys.exit()      
 
 image_number = 1
 n_selfcals = 5
