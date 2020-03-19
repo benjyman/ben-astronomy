@@ -332,9 +332,10 @@ def get_obsid_list(image_number):
       obsid_list_2018 = ['1201895248','1201900584','1201901392','1201981408','1201986752','1201987840']
    elif image_number==4:
       #leave out 1112806040, just going to make things worse
-      lst_list_2015   = ['13.867','12.523','12.521','12.522','12.521']
+      #leave out 1112892200 (lst '13.867') as well, to see if just having one lst of 2015 data improves the image
+      lst_list_2015   = ['12.523','12.521','12.522','12.521']
       lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221']
-      obsid_list_2015 = ['1112892200','1114782984','1114869144','1114955312','1115041472']
+      obsid_list_2015 = ['1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
    elif image_number==5:
       lst_list_2015   = ['14.694','12.522','14.695','12.521','14.694','12.522']
@@ -363,7 +364,8 @@ def get_obsid_list(image_number):
 
    ms_dir_list=["/fred/oz048/bmckinle/ATeam/CenA/image%s/2015" % int(image_number),"/fred/oz048/bmckinle/ATeam/CenA/image%s/2018" % int(image_number)]
  
-   return(obsid_list_2015,obsid_list_2018,lst_list_2015,lst_list_2018,ms_dir_list)
+   #return(obsid_list_2015,obsid_list_2018,lst_list_2015,lst_list_2018,ms_dir_list)
+   return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
 def find_obs_with_same_lst(image_number_list):
    for image_number_1 in image_number_list:
@@ -379,11 +381,11 @@ def find_obs_with_same_lst(image_number_list):
             
             
       
-find_obs_with_same_lst(range(1,9))      
-sys.exit()      
+#find_obs_with_same_lst(range(1,9))      
+#sys.exit()      
 
-image_number = 1
-n_selfcals = 5
+image_number = 4
+n_selfcals = 4
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals)
