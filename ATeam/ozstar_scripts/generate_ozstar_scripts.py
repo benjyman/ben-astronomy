@@ -333,6 +333,7 @@ def get_obsid_list(image_number):
    elif image_number==4:
       #leave out 1112806040, just going to make things worse
       #leave out 1112892200 (lst '13.867') as well, to see if just having one lst of 2015 data improves the image
+      #including or leaving out 1112892200 made little difference, try using 2018 data all from the same LST
       lst_list_2015   = ['12.523','12.521','12.522','12.521']
       lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221']
       obsid_list_2015 = ['1114782984','1114869144','1114955312','1115041472']
@@ -357,8 +358,13 @@ def get_obsid_list(image_number):
       lst_list_2018   = ['12.962','12.961','13.212','13.213','12.625','12.624']
       obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
       obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
-   #elif image_number==10:
-   #   #here we will try have ALL the data at the same LST!
+   elif image_number==10:
+      #here we will try have all 2015 data at same lst and all 2018 data at same lst 
+      #compare to image 4, mostly same data
+      lst_list_2015   = ['12.523','12.521','12.522','12.521']
+      lst_list_2018   = ['12.625','12.624','12.625','12.624']
+      obsid_list_2015 = ['1114782984','1114869144','1114955312','1115041472']
+      obsid_list_2018 = ['1202239904','1202326064','1201895248','1201981408']
       
    
 
@@ -384,7 +390,7 @@ def find_obs_with_same_lst(image_number_list):
 #find_obs_with_same_lst(range(1,9))      
 #sys.exit()      
 
-image_number = 4
+image_number = 10
 n_selfcals = 4
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
