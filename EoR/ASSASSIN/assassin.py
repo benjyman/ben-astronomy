@@ -9720,10 +9720,12 @@ EDA2_data = True
 
 #20200217 data (dont use 63 / 49 MHz dont have beam model! missing 127 and 128 so just do to incl 126)
 #20200303:
-EDA2_chan_list = range(64,127)
+#EDA2_chan_list = range(64,127)
 #20200304:
+
+#test progress 
 #EDA2_chan_list = range(64,130)
-#EDA2_chan_list = range(64,66)
+EDA2_chan_list = range(64,74)
 #middle time for each chan
 #EDA2_obs_time_list = ["20191202T171525","20191202T171629","20191202T171727","20191202T171830","20191202T171928","20191202T172027"]
 
@@ -9806,7 +9808,6 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 
 baseline_length_thresh_lambda = 0.50
-plot_only = False
 include_angular_info = True
 
 
@@ -9932,9 +9933,10 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-chan_num = 10
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+plot_only = True
+#chan_num = 10
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #wsclean=False # for sims
 wsclean=True # for data
 fast=False
