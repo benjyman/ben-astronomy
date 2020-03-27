@@ -384,24 +384,10 @@ def get_obsid_list(image_number):
    #return(obsid_list_2015,obsid_list_2018,lst_list_2015,lst_list_2018,ms_dir_list)
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-def find_obs_with_same_lst(image_number_list):
-   for image_number_1 in image_number_list:
-      obsid_list_2015_1,obsid_list_2018_1,lst_list_2015_1,lst_list_2018_1,ms_dir_list_1 = get_obsid_list(image_number_1)
-      for image_number_2 in image_number_list:
-         obsid_list_2015_2,obsid_list_2018_2,lst_list_2015_2,lst_list_2018_2,ms_dir_list_2 = get_obsid_list(image_number_2)
-         for obsid_2015_index_1,obsid_2015_1 in enumerate(obsid_list_2015_1):
-            lst_2015_1 = lst_list_2015_1[obsid_2015_index_1]
-            for obsid_2018_index_1,obsid_2018_1 in enumerate(obsid_list_2018_1):
-               lst_2018_1 = lst_list_2018_1[obsid_2018_index_1]
-               if np.round(float(lst_2015_1),2)==np.round(float(lst_2018_1),2):
-                  print("2015 obsid %s (image %s) has same lst as 2018 obsid %s, lsts are %s,%s" % (obsid_2015_1,obsid_2018_1,lst_2015_1,lst_2018_1))
-            
-            
+          
       
-#find_obs_with_same_lst(range(1,9))      
-#sys.exit()      
 
-image_number = 10
+image_number = 11
 n_selfcals = 4
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
