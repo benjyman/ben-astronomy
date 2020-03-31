@@ -3433,7 +3433,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #   np.save(t_sky_measured_angular_array_filename,t_sky_measured_angular_array)
    
    #this array needs to be bigger now as we are using the fine channels of EDA2 data
-   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
+   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans)
    t_sky_measured_array = np.full(t_sky_array_length,np.nan)
    t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
    freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
