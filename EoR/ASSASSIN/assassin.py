@@ -3330,7 +3330,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
    else:
       n_fine_chans_used = 1
-      n_chans_omitted_each_edge = 0
+      n_edge_chans_omitted = 0
    
    #lst_string = '_'.join(lst_hrs_list)
    #just use the first LST for LST string
