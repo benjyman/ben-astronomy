@@ -1562,7 +1562,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #check if it is an edge chan
    if fine_chan_index<n_edge_chans_omitted:
       return(np.nan,np.nan,freq_MHz_fine_chan)
-   elif (fine_chan_index>(n_fine_chans-n_edge_chans_omitted):
+   elif (fine_chan_index>(n_fine_chans-n_edge_chans_omitted)):
       return(np.nan,np.nan,freq_MHz_fine_chan)
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
