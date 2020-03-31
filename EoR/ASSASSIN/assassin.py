@@ -3641,8 +3641,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err = t_sky_measured_error_array
-      print(t_sky_measure_av_per_EDA2_chan)
-      sys.exit()
+
       plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
