@@ -3582,15 +3582,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
       plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
-  
-   print(t_sky_measured_array)
-   print(len(t_sky_measured_array))
-   print(freq_MHz_fine_array)
-   print(len(freq_MHz_fine_array))
-   print(t_sky_theoretical_array)
-   print(len(t_sky_theoretical_array)) 
-   print(freq_MHz_list)
-   print(len(freq_MHz_list))
  
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
@@ -3650,7 +3641,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err = t_sky_measured_error_array
-   
+      print(t_sky_measure_av_per_EDA2_chan)
+      sys.exit()
       plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
@@ -9962,8 +9954,8 @@ plot_only = True
 chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+5]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+5]
+freq_MHz_list = freq_MHz_array[chan_num:chan_num+3]
+EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+3]
 #wsclean=False # for sims
 wsclean=True # for data
 fast=False
