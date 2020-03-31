@@ -3636,8 +3636,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
             print(t_sky_measured_EDA2_chan)
             print(freq_MHz_fine_array[indices])
-            t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.mean(t_sky_measured_EDA2_chan)
-            t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.std(t_sky_measured_EDA2_chan)
+            t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.nanmean(t_sky_measured_EDA2_chan)
+            t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.nanstd(t_sky_measured_EDA2_chan)
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err = t_sky_measured_error_array
