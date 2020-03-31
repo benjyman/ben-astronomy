@@ -1558,7 +1558,13 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    else:
       freq_MHz_fine_chan = centre_freq     
    wavelength = 300./float(freq_MHz_fine_chan)  
-
+   
+   #check if it is an edge chan
+   if fine_chan_index<n_edge_chans_omitted:
+      return(np.nan,np.nan,freq_MHz_fine_chan)
+   elif (fine_chan_index>(n_fine_chans-n_edge_chans_omitted):
+      return(np.nan,np.nan,freq_MHz_fine_chan)
+   
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
@@ -3442,8 +3448,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                n_obs_concat = n_obs_concat_list[freq_MHz_index]
             else:
                n_obs_concat = 1
-            fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
-            
+            #fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
+            fine_chan_index_array = range(n_fine_chans)
             for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
                freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index_index
                t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,wsclean=wsclean,fast=fast)
