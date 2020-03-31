@@ -119,6 +119,10 @@ array_ant_locations = 'eda2'
 #array_ant_locations = 'eda2_sim_compact_seed_123'
 #array_ant_locations = 'eda2_sim_compact_seed_124'
 
+#EDA2
+n_fine_chans = 32
+n_chans_omitted_each_edge = 1
+      
 #eda2 parameters
 #instantaneous bw and channel width in MHz
 inst_bw = 30.
@@ -1562,7 +1566,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #check if it is an edge chan
    if fine_chan_index<n_edge_chans_omitted:
       return(np.nan,np.nan,freq_MHz_fine_chan)
-   elif (fine_chan_index>(n_fine_chans-n_edge_chans_omitted)):
+   elif (fine_chan_index>(n_fine_chans-n_edge_chans_omitted_each_edge)):
       return(np.nan,np.nan,freq_MHz_fine_chan)
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
@@ -3322,8 +3326,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    freq_MHz_array = np.asarray(freq_MHz_list)
    
    if EDA2_data:
-      n_fine_chans = 32
-      n_chans_omitted_each_edge = 1
       n_edge_chans_omitted = n_chans_omitted_each_edge * 2
       n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
    else:
