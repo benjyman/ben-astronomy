@@ -3451,7 +3451,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             fine_chan_index_array = range(n_fine_chans)
             for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
                channel_remainder = fine_chan_index % n_fine_chans
+               #print channel_remainder
                if (channel_remainder < n_chans_omitted_each_edge or channel_remainder > (n_fine_chans-n_chans_omitted_each_edge-1)):
+                  print(fine_chan_index)
+                  print(channel_remainder)
                   edge_chan=True
                else:
                   edge_chan=False
