@@ -3589,7 +3589,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    print(len(t_sky_theoretical_array)) 
    print(freq_MHz_list)
    print(len(freq_MHz_list))
-   sys.exit() 
+ 
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    #if include_angular_info:
