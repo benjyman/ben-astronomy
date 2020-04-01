@@ -2022,6 +2022,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array)
    real_vis_data_sorted_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
    
+   X_short_parallel_array_flagged = np.copy(X_short_parallel_array)
+   X_short_parallel_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
    
    model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array,missing='drop')
    results = model.fit()
@@ -2033,8 +2035,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    t_sky_error_jy = results.bse[0]
    
    plt.clf()
-   plt.plot(X_short_parallel_array, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-   plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   plt.plot(X_short_parallel_array_flagged, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+   plt.plot(X_short_parallel_array_flagged, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
    map_title="Flagged data and fit" 
    plt.xlabel("Expected global-signal response")
