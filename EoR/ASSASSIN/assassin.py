@@ -2015,8 +2015,15 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array - results.fittedvalues
    #take the mean 
    real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
+   real_vis_data_sorted_array_subtr_model_std = np.nanstd(real_vis_data_sorted_array_subtr_model)
    print(real_vis_data_sorted_array_subtr_model)
    print(real_vis_data_sorted_array_subtr_model_mean)
+   print(real_vis_data_sorted_array_subtr_model_std)
+   #mask values greater than 5 sigma away from mean
+   thresh = 5.* real_vis_data_sorted_array_subtr_model_std
+   real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array)
+   real_vis_data_sorted_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
+   print(real_vis_data_sorted_array_flagged)
    sys.exit()
    
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
