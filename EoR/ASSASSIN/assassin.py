@@ -2010,6 +2010,15 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    plt.close()
    print("saved %s" % fig_name)  
    
+   #now use the fit to identify outliers probably due to rfi
+   #subtract the model from the data
+   real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array - results.fittedvalues
+   #take the mean 
+   real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
+   print(real_vis_data_sorted_array_subtr_model)
+   print(real_vis_data_sorted_array_subtr_model_mean)
+   sys.exit()
+   
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
            
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
