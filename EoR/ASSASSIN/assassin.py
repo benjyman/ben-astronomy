@@ -1564,7 +1564,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    wavelength = 300./float(freq_MHz_fine_chan)  
    
    if edge_chan:
-      return(np.nan,np.nan,freq_MHz_fine_chan) 
+      return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan) 
    
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -1954,7 +1954,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_error_jy = 0.01
    else:
       print("X_short_parallel_array all NaNs, returning Tsky NaN")
-      return(np.nan,np.nan,freq_MHz_fine_chan)
+      return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan)
       
       
    
