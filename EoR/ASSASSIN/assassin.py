@@ -1866,9 +1866,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       ##OLS with fixed intercept at zero
       ##X_short_parallel_array = sm.add_constant(X_short_parallel_array)
       #Lets use scikit-learn instead of statsmodels (cause there are more tutorials and Kaggle prefers)
-      print(X_short_parallel_array)
-      print(type(X_short_parallel_array))
-      sys.exit()
       if model_type=='OLS_fixed_intercept':
          model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
          results = model.fit()
