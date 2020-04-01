@@ -2016,14 +2016,36 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #take the mean 
    real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
    real_vis_data_sorted_array_subtr_model_std = np.nanstd(real_vis_data_sorted_array_subtr_model)
-   print(real_vis_data_sorted_array_subtr_model)
-   print(real_vis_data_sorted_array_subtr_model_mean)
-   print(real_vis_data_sorted_array_subtr_model_std)
+
    #mask values greater than 5 sigma away from mean
    thresh = 5.* real_vis_data_sorted_array_subtr_model_std
    real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array)
    real_vis_data_sorted_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
-   print(real_vis_data_sorted_array_flagged)
+   
+   plt.clf()
+   if model_type=='OLS_with_intercept':
+      model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array)
+      results = model.fit()
+      ##print results.summary()
+      parameters = results.params
+      #print parameters
+      t_sky_jy = parameters[0]
+      t_sky_error_jy = results.bse[0]
+      plt.plot(X_short_parallel_array[:,1], real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   
+   map_title="Flagged data and fit" 
+   plt.xlabel("Expected global-signal response")
+   plt.ylabel("Real component of visibility (Jy) flagged")
+   plt.legend(loc=1)
+   plt.text(x_pos, y_pos, fit_string)
+   #plt.ylim([0, 3.5])
+   fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name)
+   
    sys.exit()
    
    return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
