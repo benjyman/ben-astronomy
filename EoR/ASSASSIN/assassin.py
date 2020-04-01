@@ -2045,9 +2045,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    plt.close()
    print("saved %s" % fig_name)
    
+   #convert to K
+   t_sky_K_flagged = jy_to_K * t_sky_jy
+   t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
+   print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+   fit_string = "y=%0.1fx" % t_sky_jy_flagged       #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
    sys.exit()
    
-   return t_sky_K,t_sky_error_K,freq_MHz_fine_chan
+   return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
            
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
