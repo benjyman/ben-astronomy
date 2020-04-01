@@ -2013,7 +2013,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #now use the fit to identify outliers probably due to rfi
    #subtract the model from the data
    print(real_vis_data_sorted_array)
+   print(type(real_vis_data_sorted_array))
    print(results.fittedvalues)
+   print(type(results.fittedvalues))
    real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array - results.fittedvalues
    #take the mean 
    real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
