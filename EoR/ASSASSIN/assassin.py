@@ -1558,7 +1558,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    
    if EDA2_data:
-      freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+      #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+      freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
    else:
       freq_MHz_fine_chan = centre_freq     
    wavelength = 300./float(freq_MHz_fine_chan)  
@@ -2183,7 +2184,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             baseline_length_array_lambda_sorted_cut_list = []
 
             if EDA2_data:
-               freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz     
+               #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+               #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+               freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz    
             else:
                freq_MHz_fine_chan = freq_MHz
             wavelength = 300./float(freq_MHz_fine_chan)
