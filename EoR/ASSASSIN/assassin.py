@@ -1844,7 +1844,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    df = pd.DataFrame(data) 
    
-   X_short_parallel_array = np.asarray(df['X_global'])
+   X_short_parallel_array = np.asarray(df['X_global']).real
    real_vis_data_sorted_array = np.asarray(df['real_vis'])
    
    ##remove points where visibility is zero
