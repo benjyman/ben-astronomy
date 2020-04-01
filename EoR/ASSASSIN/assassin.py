@@ -2027,7 +2027,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    results = model.fit()
    ##print results.summary()
    parameters = results.params
-   #print parameters
+   print parameters
+   sys.exit()
    t_sky_jy = parameters[0]
    t_sky_error_jy = results.bse[0]
    plt.plot(X_short_parallel_array, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -2050,7 +2051,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
    print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
    fit_string = "y=%0.1fx" % t_sky_jy      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-   sys.exit()
+   
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
            
