@@ -8913,7 +8913,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
                         print("saved %s" % (apparent_sky_fits_name_fine_chan))
                         
-                        sys.exit()
+                        
                         
                   ###########################
                   ###########################
