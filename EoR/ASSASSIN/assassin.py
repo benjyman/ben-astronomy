@@ -6930,27 +6930,19 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   freq_MHz_fine_chan = centre_freq     
                wavelength = 300./float(freq_MHz_fine_chan)  
                
-               gsm_hpx_fits_name = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
-               reprojected_gsm_fitsname = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
-               reprojected_gsm_im_name = "%s_map_LST_%03d_%0.3f_MHz_reprojected.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               gsm_hpx_fits_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               reprojected_gsm_fitsname_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               reprojected_gsm_im_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
                
-               print('%s %s %s' % (gsm_hpx_fits_name,reprojected_gsm_fitsname,reprojected_gsm_im_name)) 
-               sys.exit()
                
-               cmd = "rm -rf %s %s" % (gsm_hpx_fits_name,reprojected_gsm_im_name)
+               cmd = "rm -rf %s %s" % (gsm_hpx_fits_name_fine_chan,reprojected_gsm_im_name_fine_chan)
                print(cmd)
                os.system(cmd)
                
-               if sky_model == 'gmoss':
-                  gmoss_freq_index, gmoss_freq_value = find_nearest(gmoss_freqs_MHz,freq_MHz)
-                  #print "gmoss_freq_index, gmoss_freq_value %s %s" % (gmoss_freq_index, gmoss_freq_value)
-                  sky_model_data_nested = sky_model_data_array[:,gmoss_freq_index][1:]
-                  hp.write_map(gsm_hpx_fits_name,sky_model_data_nested,coord='G',nest=True)
-                  gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
-               else:
-                  gsm_map = gsm.generate(freq_MHz)
-                  #print np.max(gsm_map)
-                  hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
+               #only gsm supported
+               gsm_map = gsm.generate(freq_MHz_fine_chan)
+               #print np.max(gsm_map)
+               hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G')
             
             
             
@@ -6975,6 +6967,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
             print("saved %s" % fig_name)
+         
+         sys.exit()
          
          #Miriad doesn't seem to be able to import the hpx file
          #Try using reproject_from_healpix
