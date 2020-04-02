@@ -7307,99 +7307,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                print(cmd)
                os.system(cmd)
       
-               sys.exit()
-               
-               ########
-               #Repeat the above for the global signal
-               #make an all sky global signal map here too:
-               if 'global_EDGES' in signal_type_list:
-                  s_21_value = s_21_array_EDGES[freq_MHz_index]
-               else:
-                  s_21_value = s_21_array[freq_MHz_index]
-               s_21_hpx_map = gsm_map * 0.0 + s_21_value
-               
-               jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-               
-               unity_sky_value = 1. * jy_to_K
-               #What value do you actually need to put in here to get the desired result .... I think it is 1 / Jy_to_k?
-               #play until you get a gradient of one in x_y_plot!
-               
-               unity_sky_hpx_map = gsm_map * 0.0 + unity_sky_value
-               
-               cmd = "rm -rf %s %s %s %s" % (global_signal_hpx_fits_name,reprojected_global_signal_im_name,unity_sky_hpx_fits_name,reprojected_unity_sky_im_name)
-               print(cmd)
-               os.system(cmd)
-                  
-               hp.write_map(global_signal_hpx_fits_name,s_21_hpx_map,coord='C')
-               hp.write_map(unity_sky_hpx_fits_name,unity_sky_hpx_map,coord='C')
-               
-               #plot?
-               if plot_global_signal_map_hpx:
-                  #plot
-                  plt.clf()
-                  map_title="Global signal from MWA at %.0f:%.0f:%.0f and %s MHz" % (hour,minute,second,int(freq_MHz))
-                  #hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-                  hp.orthview(map=s_21_hpx_map,half_sky=False,title=map_title)
-                  #hp.mollview(map=gsm_map_from_moon,coord='C',xsize=400,title=map_title)
-                  fig_name="global_signal_map_%s_%sMHz.png" % (date_time_string,int(freq_MHz))
-                  figmap = plt.gcf()
-                  figmap.savefig(fig_name)
-                  print("saved %s" % fig_name)
-                    
-               reprojected_global_signal_map,footprint = reproject_from_healpix(global_signal_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
-               reprojected_unity_sky_map,footprint = reproject_from_healpix(unity_sky_hpx_fits_name, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear')
-               
-               
-               #write the map to fits
-               pyfits.writeto(reprojected_global_signal_fitsname,reprojected_global_signal_map,clobber=True)
-               pyfits.update(reprojected_global_signal_fitsname,reprojected_global_signal_map,header=no_source_header)
-               print("wrote image %s" %  reprojected_global_signal_fitsname)
-      
-               pyfits.writeto(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,clobber=True)
-               pyfits.update(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,header=no_source_header)
-               print("wrote image %s" %  reprojected_unity_sky_fitsname)
-                        
-               cmd = "rm -rf %s %s" % (reprojected_global_signal_im_name,reprojected_unity_sky_im_name)
-               print(cmd)
-               os.system(cmd)     
-               
-               cmd = "fits in=%s out=%s op=xyin" % (reprojected_global_signal_fitsname,reprojected_global_signal_im_name)
-               print(cmd)
-               os.system(cmd)
-               
-               cmd = "fits in=%s out=%s op=xyin" % (reprojected_unity_sky_fitsname,reprojected_unity_sky_im_name)
-               print(cmd)
-               os.system(cmd)
-               
-               #uvmodel requires the model to be in Jy/pix
-               #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
-               
-               reprojected_global_signal_im_Jy_per_pix_name =  "global_map_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
-               reprojected_unity_sky_im_Jy_per_pix_name =  "unity_sky_%s_%s_MHz_reproj_Jy_pix.im" % (date_time_string,int(freq_MHz))
-               
-               
-               cmd = "rm -rf %s %s" % (reprojected_global_signal_im_Jy_per_pix_name,reprojected_unity_sky_im_Jy_per_pix_name)
-               print(cmd)
-               os.system(cmd)
-                     
-               cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_global_signal_im_name,reprojected_global_signal_im_Jy_per_pix_name)
-               print(cmd)
-               os.system(cmd)
-      
-               cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_unity_sky_im_name,reprojected_unity_sky_im_Jy_per_pix_name)
-               print(cmd)
-               os.system(cmd)
-                         
                #do for all pols:
                for pol in pol_list:
-                  #model_sky_vis = "eda_model_plus_sky_LST_%03d_%s_pol_%s_MHz.vis" % (lst_deg,pol,int(freq_MHz))
-                  #model_global_signal_vis = "eda_model_plus_global_LST_%03d_%s_pol_%s_MHz.vis" % (lst_deg,pol,int(freq_MHz))
-                  #model_sky_uvfits = "eda_model_plus_sky_LST_%03d_%s_pol_%s_MHz.uvfits" % (lst_deg,pol,int(freq_MHz))
-                  #model_global_signal_uvfits = "eda_model_plus_global_LST_%03d_%s_pol_%s_MHz.uvfits" % (lst_deg,pol,int(freq_MHz)) 
-                  #eda_model_noise_vis_name = "eda_model_noise_LST_%03d_%s_%s_MHz.vis" % (lst_deg,pol,int(freq_MHz))
-                  #eda_model_noise_uvfits_name = "eda_model_noise_LST_%03d_%s_%s_MHz.uvfits" % (lst_deg,pol,int(freq_MHz))        
-                  model_vis_name_base = "%s_LST_%03d_%s_%s_MHz" % (array_label,lst_deg,pol,int(freq_MHz))
-      
                      
                   if use_analytic_beam:
                      if pol=='X':
@@ -7410,89 +7319,46 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                         beam_image_sin_projected_fitsname_no_cos_za = "model_%s_MHz_%s_no_cos_za.fits" % (int(freq_MHz),'yy')
                   else:
                         beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
-                        
-          
-                  #power_pattern_average_interp_sin_im_name = 'power_pattern_average_%s_%s_MHz_interp_sin.im' % (pol,int(freq_MHz))
-                  #power_pattern_average_interp_sin_regrid_gsm_im_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.im' % (pol,int(freq_MHz))
-                  #power_pattern_average_interp_sin_regrid_gsm_fits_name =  'power_pattern_average_%s_%s_MHz_sin_regrid.fits' % (pol,int(freq_MHz))
-      
-                  cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
-                  print(cmd)
-                  os.system(cmd)
-      
-                  cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname_no_cos_za)
-                  print(cmd)
-                  os.system(cmd)
-                                               
+                                                   
                   beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_im_name_no_cos_za = 'beam_image_sin_projected_%s_%s_MHz_no_cos_za.im' % (pol,int(freq_MHz))
                   beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.fits' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_regrid_gsm_im_name_no_cos_za =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid_no_cos_za.im' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid_no_cos_za.fits' % (pol,int(freq_MHz))
+                  
+                  beam_image_sin_projected_regrid_gsm_im_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.im' % (pol,freq_MHz_fine_chan)
+                  beam_image_sin_projected_regrid_gsm_fits_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.fits' % (pol,freq_MHz_fine_chan)
+
                  
-                 
-                  cmd = "rm -rf %s %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name, beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name_no_cos_za, beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za, beam_image_sin_projected_im_name_no_cos_za)
+                  cmd = "rm -rf %s " % (beam_image_sin_projected_regrid_gsm_im_name_fine_chan)
                   print(cmd)
                   os.system(cmd)
                   
-                  cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname_no_cos_za,beam_image_sin_projected_im_name_no_cos_za)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  #put in the correct ra in the header (ra = lst for zenith) 
-                  #puthd in="$beam/crval1" value=$lst_degs
-                  cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name,lst_deg)
-                  print(cmd)
-                  os.system(cmd)         
-      
-                  cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name_no_cos_za,lst_deg)
-                  print(cmd)
-                  os.system(cmd) 
-                  
-                  #write out as a fits file to check header
-                  cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
-                  cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name)
-                  print(cmd)
-                  os.system(cmd)   
-      
-                  cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name_no_cos_za,beam_image_sin_projected_regrid_gsm_im_name_no_cos_za,reprojected_gsm_im_name)
-                  print(cmd)
-                  os.system(cmd)
-                              
-               
-                  #Sweet! finally have a gsm and a beam.
-                  
-                  #diffuse
-                  #now multiply them to get the apparent sky and put that into uvmodel, 
-               
-                  apparent_sky_im_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.im" % (lst_deg,pol,int(freq_MHz))
-                  apparent_sky_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz.fits" % (lst_deg,pol,int(freq_MHz))
-                  apparent_sky_im_Tb_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.im" % (lst_deg,pol,int(freq_MHz))
-                  apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%s_MHz_Tb.fits" % (lst_deg,pol,int(freq_MHz))
-                  
-                  cmd = "rm -rf %s %s %s %s " % (apparent_sky_im_name,apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name,apparent_sky_fits_name)
-                  print(cmd)
-                  os.system(cmd)
-               
-                  cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_Jy_per_pix_name,apparent_sky_im_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name,apparent_sky_fits_name)
+                  cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname_fine_chan,beam_image_sin_projected_im_name_fine_chan)
                   print(cmd)
                   os.system(cmd)
 
-            
+                  
+                  cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name_fine_chan,reprojected_gsm_im_name_fine_chan)
+                  print(cmd)
+                  os.system(cmd)   
+      
+                  #now multiply them to get the apparent sky and put that into uvmodel, 
+               
+                  apparent_sky_im_name_fine_chan = "apparent_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz_fine_chan)
+                  apparent_sky_fits_name_fine_chan = "apparent_sky_LST_%03d_%s_pol_%0.3f_MHz.fits" % (lst_deg,pol,freq_MHz_fine_chan)
+
+                  
+                  cmd = "rm -rf %s %s" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+                  print(cmd)
+                  os.system(cmd)
+               
+                  cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name_fine_chan,reprojected_gsm_im_Jy_per_pix_name_fine_chan,apparent_sky_im_name_fine_chan)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+                  print(cmd)
+                  os.system(cmd)
+
+                  sys.exit()
             
             
             #########################################
