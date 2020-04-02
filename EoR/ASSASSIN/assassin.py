@@ -8579,11 +8579,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd)
                   os.system(cmd)
 
-                  cmd = "uvmodel vis=%s model=%s options=replace,ms out=%s" % (uvfits_vis_filename,apparent_zero_sky_im_name,zero_sky_vis_filename)
+                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_zero_sky_im_name,zero_sky_vis_filename)
                   print(cmd)
                   os.system(cmd)
                   
-                  cmd = "uvmodel vis=%s model=%s options=replace,ms out=%s" % (zero_sky_vis_filename,apparent_zero_sky_im_name,unity_sky_vis_filename)
+                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_zero_sky_im_name,unity_sky_vis_filename)
                   print(cmd)
                   os.system(cmd)
                   
