@@ -6928,7 +6928,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                else:
                   freq_MHz_fine_chan = centre_freq     
-               wavelength = 300./float(freq_MHz_fine_chan)  
+               wavelength_fine_chan = 300./float(freq_MHz_fine_chan)  
                
                gsm_hpx_fits_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
                reprojected_gsm_fitsname_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
@@ -7256,7 +7256,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                else:
                   freq_MHz_fine_chan = centre_freq     
-               wavelength = 300./float(freq_MHz_fine_chan) 
+               wavelength_fine_chan = 300./float(freq_MHz_fine_chan) 
                
                gsm_hpx_fits_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
                reprojected_gsm_fitsname_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
@@ -7278,14 +7278,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                pyfits.update(reprojected_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,header=no_source_header)
                print("wrote image %s" %  reprojected_gsm_fitsname_fine_chan)
       
-               sys.exit()
                         
                #Do this GSM map stuff here as it doesn't depend on pol
-               cmd = "rm -rf %s" % (reprojected_gsm_im_name)
+               cmd = "rm -rf %s" % (reprojected_gsm_im_name_fine_chan)
                print(cmd)
                os.system(cmd)     
                
-               cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_fitsname,reprojected_gsm_im_name)
+               cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_fitsname_fine_chan,reprojected_gsm_im_name_fine_chan)
                print(cmd)
                os.system(cmd)
       
@@ -7294,21 +7293,22 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                #uvmodel requires the model to be in Jy/pix
                #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
                
-               scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-               print("scale map by %s to get to Jy/pix" % scale)
+               scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)
+               print("scale map by %s to get to Jy/pix" % scale_fine_chan)
                
-               reprojected_gsm_im_Jy_per_pix_name =  "%s_%s_%s_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,int(freq_MHz))
+               reprojected_gsm_im_Jy_per_pix_name_fine_chan =  "%s_%s_%0.3f_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,freq_MHz_fine_chan)
       
                
-               cmd = "rm -rf %s" % (reprojected_gsm_im_Jy_per_pix_name)
+               cmd = "rm -rf %s" % (reprojected_gsm_im_Jy_per_pix_name_fine_chan)
                print(cmd)
                os.system(cmd)
                      
-               cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_gsm_im_name,reprojected_gsm_im_Jy_per_pix_name)
+               cmd = "maths exp=%s*%s out=%s " % (scale_fine_chan,reprojected_gsm_im_name_fine_chan,reprojected_gsm_im_Jy_per_pix_name_fine_chan)
                print(cmd)
                os.system(cmd)
       
-              
+               sys.exit()
+               
                ########
                #Repeat the above for the global signal
                #make an all sky global signal map here too:
