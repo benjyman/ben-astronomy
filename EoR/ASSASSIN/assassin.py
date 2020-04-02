@@ -7321,7 +7321,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                         beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
                                                    
                   beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
-                  beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
                   
                   beam_image_sin_projected_regrid_gsm_im_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.im' % (pol,freq_MHz_fine_chan)
                   beam_image_sin_projected_regrid_gsm_fits_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.fits' % (pol,freq_MHz_fine_chan)
@@ -8647,6 +8646,13 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #hpx_header = hdu_hpx.header
                   #print(hpx_header)
                   
+                  ##########################
+                  ##########################
+                  #repeat the below for each fine chan to get each correctly-name apparent sky
+                  ##########################
+                  ##########################
+                  
+                  
                   hdu_gsm = fits.open(gsm_hpx_fits_name)[1]
                   print(hdu_gsm.header)
                   #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
@@ -8772,7 +8778,149 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      #print(np.max(data))  
                      #print(np.min(data))
                      
-                    
+                  ##########################
+                  ##########################
+                  for fine_chan_index in range(0,32):
+                     centre_freq = float(freq_MHz)
+                     fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
+                     
+                     freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+                     wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
+                     
+                     gsm_hpx_fits_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               
+                     reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+                     reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+                     reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+                     reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
+
+
+                     hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
+                     #print(hdu_gsm_fine_chan.header)
+                     #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
+                     
+                     reprojected_gsm_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_gsm_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
+                     
+                     #write the reprojected gsm maps to fits
+                     pyfits.writeto(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,clobber=True)
+                     #print new_header
+                     pyfits.update(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,header=new_header)
+                     print("wrote image %s" %  reprojected_to_wsclean_gsm_fitsname_fine_chan)
+    
+                     #model needs to be in Jy/pix
+                     #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
+            
+                     scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)
+                     print("scale map by %s to get to Jy/pix" % scale_fine_chan)
+                     
+                     ###
+                     #Dont need this now as can use reprojected to wsclean image
+                     ##rename apparent sky fits image
+                     #cmd = "cp %s %s-model.fits" % (apparent_sky_fits_name,apparent_sky_model_fits_prefix)
+                     #print(cmd)
+                     #os.system(cmd)                  
+                     #
+                     
+                     #check the model image for non-finite values and scale to Jy per pix:
+                     with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname_fine_chan)) as hdu_list_fine_chan:
+                        data_fine_chan = hdu_list_fine_chan[0].data
+                        new_header_fine_chan = hdu_list_fine_chan[0].header
+                     #replace nans with zeros
+                     data_new_fine_chan = np.nan_to_num(data_fine_chan)
+                     data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
+                     
+                     #write out a new fits file
+                     fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
+                     pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header_fine_chan)
+                     print("saved %s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan))
+                     
+                     for pol in ['X','Y']:
+                        if use_analytic_beam:
+                           if pol=='X':
+                              beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'xx')
+                              beam_image_sin_projected_fitsname_no_cos_za = "model_%s_MHz_%s_no_cos_za.fits" % (int(freq_MHz),'xx')
+                           else:
+                              beam_image_sin_projected_fitsname = "model_%s_MHz_%s.fits" % (int(freq_MHz),'yy')
+                              beam_image_sin_projected_fitsname_no_cos_za = "model_%s_MHz_%s_no_cos_za.fits" % (int(freq_MHz),'yy')
+                        else:
+                           beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
+        
+        
+                        cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        #Need to regrid the beam to the reproject gsm
+                        beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
+                        beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
+                        beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.im' % (pol,int(freq_MHz))
+                        beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.fits' % (pol,int(freq_MHz))
+                        
+                        cmd = "rm -rf %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        
+                        #put in the correct ra in the header (ra = lst for zenith) 
+                        #puthd in="$beam/crval1" value=$lst_degs
+                        cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name,lst_deg)
+                        print(cmd)
+                        os.system(cmd) 
+                        
+                        #write out as a fits file to check header
+                        cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        cmd = "fits in=%s out=%s op=xyin" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
+                        cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+                        print(cmd)
+                        os.system(cmd)  
+                        
+                        #Now have a gsm and a beam. multiply 'em'
+                        apparent_sky_fits_name_prefix = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz_fine_chan)
+                        apparent_sky_im_name = "%s.im" % (apparent_sky_fits_name_prefix)
+                        apparent_sky_fits_name = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean-%s%s-model.fits" % (lst_deg,freq_MHz_fine_chan,pol,pol)
+                        
+                        cmd = "rm -rf %s %s " % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+                        print(cmd)
+                        os.system(cmd)
+   
+                        cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan,apparent_sky_im_name_fine_chan)
+                        print(cmd)
+                        os.system(cmd)
+                        
+                        cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+                        print(cmd)
+                        os.system(cmd) 
+               
+               
+                        #check the model image for non-finite values 
+                        with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
+                           data = hdu_list[0].data
+                        #replace nans with zeros
+                        data_new = np.nan_to_num(data)
+                        
+                        #write out a new fits file
+                        fits.writeto("%s" % (apparent_sky_fits_name_fine_chan),data_new,clobber=True)
+                        pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header_fine_chan)
+                        print("saved %s" % (apparent_sky_fits_name_fine_chan))
+                        
+                        sys.exit()
+                        
+                  ##########################
+                  ##########################
+                  
+                  
+                  
                   # predict a model onto the ms for calibration
                   #cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
                   cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
