@@ -8787,7 +8787,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
                      wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
                      
-                     gsm_hpx_fits_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+                     gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
                
                      reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
                      reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
