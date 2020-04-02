@@ -8879,7 +8879,6 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         print(cmd)
                         os.system(cmd)
                         
-                        sys.exit()
                         
                         #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
                         cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
@@ -8907,7 +8906,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                
                         print("wrote %s" % apparent_sky_fits_name_fine_chan)
                         
-                        
+                        sys.exit()
                         
                         #check the model image for non-finite values 
                         with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
