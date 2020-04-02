@@ -8885,9 +8885,9 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         os.system(cmd)  
                         
                         #Now have a gsm and a beam. multiply 'em'
-                        apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz_fine_chan)
-                        apparent_sky_im_name_fine_chan = "%s.im" % (apparent_sky_fits_name_prefix)
-                        apparent_sky_fits_name_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean-%s%s-model.fits" % (lst_deg,freq_MHz_fine_chan,pol,pol)
+                        apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%s_MHz_wsclean-%04d" % (lst_deg,int(freq_MHz),fine_chan_index)
+                        apparent_sky_im_name_fine_chan = "%s.im" % (apparent_sky_fits_name_prefix_fine_chan)
+                        apparent_sky_fits_name_fine_chan = "%s-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,lst_deg,int(freq_MHz),pol,pol)
                         
                         cmd = "rm -rf %s %s " % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
                         print(cmd)
@@ -8901,7 +8901,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         print(cmd)
                         os.system(cmd) 
                
-               
+                        print("wrote %s" % apparent_sky_fits_name_fine_chan)
+                        
+                        sys.exit() 
+                        
                         #check the model image for non-finite values 
                         with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
                            data = hdu_list[0].data
