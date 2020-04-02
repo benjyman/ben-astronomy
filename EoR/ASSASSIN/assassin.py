@@ -8855,7 +8855,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.im' % (pol,int(freq_MHz))
                         beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_wsclean_regrid.fits' % (pol,int(freq_MHz))
                         
-                        cmd = "rm -rf %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix)
+                        cmd = "rm -rf %s %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
                         print(cmd)
                         os.system(cmd)
                         
