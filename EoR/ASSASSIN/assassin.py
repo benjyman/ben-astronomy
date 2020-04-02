@@ -8893,7 +8893,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         apparent_sky_im_name_fine_chan = "%s.im" % (apparent_sky_fits_name_prefix_fine_chan)
                         apparent_sky_fits_name_fine_chan = "%s-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,lst_deg,int(freq_MHz),pol,pol)
                         
-                        cmd = "rm -rf %s %s " % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+                        cmd = "rm -rf %s %s %s" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
                         print(cmd)
                         os.system(cmd)
    
