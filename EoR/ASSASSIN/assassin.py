@@ -8824,14 +8824,13 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      #check the model image for non-finite values and scale to Jy per pix:
                      with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname_fine_chan)) as hdu_list_fine_chan:
                         data_fine_chan = hdu_list_fine_chan[0].data
-                        new_header_fine_chan = hdu_list_fine_chan[0].header
                      #replace nans with zeros
                      data_new_fine_chan = np.nan_to_num(data_fine_chan)
                      data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
                      
                      #write out a new fits file
                      fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
-                     pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header_fine_chan)
+                     pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header)
                      print("saved %s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan))
                      
                      for pol in ['X','Y']:
@@ -8911,7 +8910,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         
                         #write out a new fits file
                         fits.writeto("%s" % (apparent_sky_fits_name_fine_chan),data_new,clobber=True)
-                        pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header_fine_chan)
+                        pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
                         print("saved %s" % (apparent_sky_fits_name_fine_chan))
                         
                         sys.exit()
