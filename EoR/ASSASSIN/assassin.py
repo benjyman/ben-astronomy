@@ -6918,12 +6918,50 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                gsm_map = gsm.generate(freq_MHz)
                #print np.max(gsm_map)
                hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
+               
+            #Now repeat this for each of the EDA2s 32 fine chans
+            centre_freq = float(freq_MHz)
+            fine_chan_width_MHz = fine_chan_width_Hz/1000000.
+            for fine_chan_index in range(0,32):
+               if EDA2_data:
+                  #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                  freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               else:
+                  freq_MHz_fine_chan = centre_freq     
+               wavelength = 300./float(freq_MHz_fine_chan)  
+               
+               gsm_hpx_fits_name = "%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               reprojected_gsm_fitsname = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               reprojected_gsm_im_name = "%s_map_LST_%03d_%0.3f_MHz_reprojected.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
+               
+               print('%s %s %s' % (gsm_hpx_fits_name,reprojected_gsm_fitsname,reprojected_gsm_im_name)) 
+               sys.exit()
+               
+               cmd = "rm -rf %s %s" % (gsm_hpx_fits_name,reprojected_gsm_im_name)
+               print(cmd)
+               os.system(cmd)
+               
+               if sky_model == 'gmoss':
+                  gmoss_freq_index, gmoss_freq_value = find_nearest(gmoss_freqs_MHz,freq_MHz)
+                  #print "gmoss_freq_index, gmoss_freq_value %s %s" % (gmoss_freq_index, gmoss_freq_value)
+                  sky_model_data_nested = sky_model_data_array[:,gmoss_freq_index][1:]
+                  hp.write_map(gsm_hpx_fits_name,sky_model_data_nested,coord='G',nest=True)
+                  gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
+               else:
+                  gsm_map = gsm.generate(freq_MHz)
+                  #print np.max(gsm_map)
+                  hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
+            
+            
+            
          else:
             if sky_model == 'gmoss':
                sky_model_data_nested = hp.read_map(gsm_hpx_fits_name,nest=True)
                gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
             else:
                gsm_map = hp.read_map(gsm_hpx_fits_name)
+         
+         
          
          #plot?
          if plot_gsm_map_hpx:
@@ -7213,6 +7251,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name,apparent_sky_fits_name)
             print(cmd)
             os.system(cmd)
+            
+            #repeat the apparent sky simulation for each of the 32 EDA2 fine chans. Beam doesnt change much so just use same beam
             
             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
             print(cmd)
@@ -10043,15 +10083,15 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
 #for data need to simulate with 'global_unity' and then separately 'diffuse'
-#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-#   EDA2_chan = EDA2_chan_list[freq_MHz_index]
-#   new_dir = "./%s" % EDA2_chan
-#   os.chdir(new_dir)
-#   freq_MHz_input_list = [freq_MHz]
-#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#   os.chdir('./..')
-#sys.exit()
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   os.chdir('./..')
+sys.exit()
 
 #Step 2: calibrate
 
