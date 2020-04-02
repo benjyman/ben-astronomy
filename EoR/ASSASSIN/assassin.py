@@ -8890,7 +8890,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         #Now have a gsm and a beam. multiply 'em'
                         apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%s_MHz_wsclean-%04d" % (lst_deg,int(freq_MHz),fine_chan_index)
                         apparent_sky_im_name_fine_chan = "%s.im" % (apparent_sky_fits_name_prefix_fine_chan)
-                        apparent_sky_fits_name_fine_chan = "%s-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,lst_deg,int(freq_MHz),pol,pol)
+                        apparent_sky_fits_name_fine_chan = "%s-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,pol,pol)
                         
                         cmd = "rm -rf %s %s %s" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
                         print(cmd)
