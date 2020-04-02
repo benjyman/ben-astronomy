@@ -7331,11 +7331,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   print(cmd)
                   os.system(cmd)
                   
-                  cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname_fine_chan,beam_image_sin_projected_im_name_fine_chan)
-                  print(cmd)
-                  os.system(cmd)
-
-                  
                   cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name_fine_chan,reprojected_gsm_im_name_fine_chan)
                   print(cmd)
                   os.system(cmd)   
