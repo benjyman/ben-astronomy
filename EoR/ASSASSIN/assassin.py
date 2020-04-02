@@ -8642,6 +8642,14 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd)
                   os.system(cmd)
                   
+                  # predict a multi-channel model
+                  ##make an image to check 
+                  cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  sys.exit()
+                  
                   #hmmm seemed to actually work! We'll see ...
                   if uv_cutoff==0:
                      gain_solutions_name = 'cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
@@ -10051,11 +10059,11 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #calibrate each individually first and concat
 #do this outside chan dir
 #if doing individual chans:
-#freq_MHz_list = [freq_MHz_array[0]]
-#EDA2_chan_list = [EDA2_chan_list[0]]
-#plot_cal = False
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
-#sys.exit()
+freq_MHz_list = [freq_MHz_array[0]]
+EDA2_chan_list = [EDA2_chan_list[0]]
+plot_cal = True
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
+sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
