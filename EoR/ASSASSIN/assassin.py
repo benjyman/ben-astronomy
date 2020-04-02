@@ -8906,7 +8906,6 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                
                         print("wrote %s" % apparent_sky_fits_name_fine_chan)
                         
-                        sys.exit()
                         
                         #check the model image for non-finite values 
                         with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
