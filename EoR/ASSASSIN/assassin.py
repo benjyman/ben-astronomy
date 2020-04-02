@@ -7352,8 +7352,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
                   print(cmd)
                   os.system(cmd)
-
-            sys.exit()
             
             
             #########################################
