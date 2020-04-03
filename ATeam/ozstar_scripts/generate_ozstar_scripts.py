@@ -335,7 +335,7 @@ def get_obsid_list(image_number):
       #leave out 1112892200 (lst '13.867') as well, to see if just having one lst of 2015 data improves the image
       #including or leaving out 1112892200 made little difference, try using 2018 data all from the same LST
       lst_list_2015   = ['12.523','12.521','12.522','12.521']
-      lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221']
+      lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221','1112892200']
       obsid_list_2015 = ['1114782984','1114869144','1114955312','1115041472']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
    elif image_number==5:
@@ -384,8 +384,11 @@ def get_obsid_list(image_number):
    #return(obsid_list_2015,obsid_list_2018,lst_list_2015,lst_list_2018,ms_dir_list)
    return(obsid_list_2015,obsid_list_2018,ms_dir_list)
 
-          
-      
+#image11 2015:
+#1086433480 - some dodginess around ant 120
+#same with 1086441280. flag 'em     ants 112-119 incl     
+#image12: 1086605808 112-119 again, same 1086613608, same 1086699768,  1086778136
+ 
 
 image_number = 12
 n_selfcals = 4
