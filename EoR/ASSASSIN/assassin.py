@@ -8925,19 +8925,24 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   
                   
-                  # predict a model onto the ms for calibration
-                  #cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
-                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                  print(cmd)
-                  os.system(cmd)                  
-                  
-                  ##make an image to check 
-                  cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                  print(cmd)
-                  os.system(cmd)
+                  ## predict a model onto the ms for calibration
+                  ##cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
+                  #cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  #print(cmd)
+                  #os.system(cmd)                  
+                  #
+                  ###make an image to check 
+                  #cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  #print(cmd)
+                  #os.system(cmd)
                   
                   # predict a multi-channel model
                   cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  ##make  images to check 
+                  cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
                   print(cmd)
                   os.system(cmd)
                   
