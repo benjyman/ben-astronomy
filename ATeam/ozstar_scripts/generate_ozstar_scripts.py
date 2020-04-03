@@ -334,7 +334,7 @@ def get_obsid_list(image_number):
       #leave out 1112806040, just going to make things worse
       #leave out 1112892200 (lst '13.867') as well, to see if just having one lst of 2015 data improves the image
       #including or leaving out 1112892200 made little difference, try using 2018 data all from the same LST
-      lst_list_2015   = ['12.523','12.521','12.522','12.521']
+      lst_list_2015   = ['12.523','12.521','12.522','12.521','13.867']
       lst_list_2018   = ['12.625','12.624','12.15','12.451','14.496','13.221']
       obsid_list_2015 = ['1114782984','1114869144','1114955312','1115041472','1112892200']
       obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
