@@ -10354,14 +10354,14 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #Step 2: calibrate
 
-#calibrate each individually first and concat
-#do this outside chan dir
-#if doing individual chans:
-freq_MHz_list = [freq_MHz_array[0]]
-EDA2_chan_list = [EDA2_chan_list[0]]
-plot_cal = True
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
-sys.exit()
+##calibrate each individually first and concat
+##do this outside chan dir
+##if doing individual chans:
+#freq_MHz_list = [freq_MHz_array[0]]
+#EDA2_chan_list = [EDA2_chan_list[0]]
+#plot_cal = True
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
+#sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
@@ -10428,12 +10428,12 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+3]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+3]
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#freq_MHz_list = freq_MHz_array[chan_num:chan_num+3]
+#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+3]
 #wsclean=False # for sims
 wsclean=True # for data
 fast=False
