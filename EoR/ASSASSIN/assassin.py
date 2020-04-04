@@ -5230,7 +5230,7 @@ def concat_uvfits_casa(uvfits_list,outname,delete=False):
       casa_filename = 'casa_concat.sh'
       with open(casa_filename,'w') as f:
          f.write(casa_string)
-      cmd = "casa -c %s" % casa_filename
+      cmd = "casa -c --nocrashreport %s" % casa_filename
       print(cmd)
       os.system(cmd)
 
@@ -9005,7 +9005,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      with open(casa_cmd_filename,'w') as f:
                         f.write(cmd)
                           
-                     cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
+                     cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
                      print(cmd)
                      os.system(cmd)
                        
@@ -9290,7 +9290,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              with open(casa_cmd_filename,'w') as f:
                 f.write(cmd)
                   
-             cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
+             cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
              print(cmd)
              os.system(cmd)
 
@@ -9305,7 +9305,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              with open(casa_cmd_filename,'w') as f:
                 f.write(cmd)
                   
-             cmd = "casa --nohead --nogui -c %s" % casa_cmd_filename
+             cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
              print(cmd)
              os.system(cmd)
              
