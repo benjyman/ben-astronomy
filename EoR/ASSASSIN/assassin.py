@@ -10309,10 +10309,13 @@ EDA2_chan_list_array = np.asarray(EDA2_chan_list)
 #EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
 EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
 #EDA2_obs_time = '20191202T171727'
-freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
+freq_MHz_array = np.round(400./512.*EDA2_chan_list_array,3)
 freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
+print(freq_MHz_array)
+print(EDA2_chan_list)
+sys.exit()
 
 
 baseline_length_thresh_lambda = 0.50
@@ -10442,9 +10445,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order=7
 
 plot_only = False
-print(freq_MHz_array)
-print(EDA2_chan_list)
-sys.exit()
+
 #chan_num = 75
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
