@@ -1980,7 +1980,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    print(real_vis_data_sorted_array.shape)
     
    #get rid of nans
-   real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array))]
+   real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    print(real_vis_data_sorted_array_nonans)
    print(real_vis_data_sorted_array_nonans.shape)
     
