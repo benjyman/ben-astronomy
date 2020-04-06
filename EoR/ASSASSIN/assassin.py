@@ -1978,7 +1978,13 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    print(X_short_parallel_array.shape)
    print(real_vis_data_sorted_array)
    print(real_vis_data_sorted_array.shape)
-      
+    
+   #get rid of nans
+   real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array))]
+   print(real_vis_data_sorted_array_nonans)
+   print(real_vis_data_sorted_array_nonans.shape)
+    
+    
    plt.clf()
    if model_type=='OLS_with_intercept':
       plt.plot(X_short_parallel_array[:,1], real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
