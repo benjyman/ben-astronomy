@@ -1972,25 +1972,16 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
-   #plot
-   
-   print(X_short_parallel_array)
-   print(X_short_parallel_array.shape)
-   print(real_vis_data_sorted_array)
-   print(real_vis_data_sorted_array.shape)
     
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
-   
-   print(real_vis_data_sorted_array_nonans.shape)
-   print(X_short_parallel_array_nonans.shape)
-    
+   real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
     
    plt.clf()
    if model_type=='OLS_with_intercept':
-      plt.plot(X_short_parallel_array[:,1], real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-      plt.plot(X_short_parallel_array[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    elif model_type=='OLS_with_int_min_vis':
       plt.plot(X_bin_centres_array[:,1], real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_bin_centres_array[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
@@ -1998,17 +1989,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_bin_centres_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    elif model_type=="OLS_fixed_int_subtr_Y":
-      plt.plot(X_short_parallel_array, real_vis_data_sorted_array_subtr_Y,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
-      plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-      plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    else:
       plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
 
-   
-   
-   
    map_title="Data and fit" 
    plt.xlabel("Expected global-signal response")
    plt.ylabel("Real component of visibility (Jy)")
@@ -2025,20 +2013,20 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    #now use the fit to identify outliers probably due to rfi
    #subtract the model from the data
-   real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array - results.fittedvalues
+   real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array_no_nans - results.fittedvalues
    #take the mean 
    real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
    real_vis_data_sorted_array_subtr_model_std = np.nanstd(real_vis_data_sorted_array_subtr_model)
 
    #mask values greater than 5 sigma away from mean
    thresh = 5.* real_vis_data_sorted_array_subtr_model_std
-   real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array)
-   real_vis_data_sorted_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
+   real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_no_nans)
+   real_vis_data_sorted_array_flagged[np.argwhere((np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
    
    
-   X_short_parallel_array_flagged = np.copy(X_short_parallel_array)
+   X_short_parallel_array_flagged = np.copy(X_short_parallel_array_no_nans)
 
-   model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array,missing='drop')
+   model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array_flagged,missing='drop')
    results = model.fit()
    ##print results.summary()
    parameters = results.params
@@ -2047,14 +2035,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    t_sky_jy = parameters[0]
    t_sky_error_jy = results.bse[0]
    
-   X_short_parallel_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
-   X_short_parallel_array_flagged[np.argwhere(np.isnan(real_vis_data_sorted_array_subtr_model))] = np.nan
-   X_short_parallel_array_flagged_removed = X_short_parallel_array_flagged[np.argwhere(np.logical_not(np.isnan(X_short_parallel_array_flagged)))]
 
-   
    plt.clf()
    plt.plot(X_short_parallel_array_flagged, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-   plt.plot(X_short_parallel_array_flagged_removed, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   plt.plot(X_short_parallel_array_flagged, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
    map_title="Flagged data and fit" 
    plt.xlabel("Expected global-signal response")
