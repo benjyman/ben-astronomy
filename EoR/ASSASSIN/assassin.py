@@ -1857,7 +1857,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #
    #sys.exit()
    
-   print(real_vis_data_sorted_array)
+   #print(real_vis_data_sorted_array)
+   #print(real_vis_data_sorted_array.shape)
+   #get rid of nans in data and ? 
    
    if np.nansum(np.abs(X_short_parallel_array) > 0):
       #random intercept model may work if you split data up into different bins for the value of X
@@ -1869,14 +1871,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       ##X_short_parallel_array = sm.add_constant(X_short_parallel_array)
       #Lets use scikit-learn instead of statsmodels (cause there are more tutorials and Kaggle prefers)
       if model_type=='OLS_fixed_intercept':
-         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
          results = model.fit()
          parameters = results.params
          #print parameters
          t_sky_jy = parameters[0]
          t_sky_error_jy = results.bse[0]
       if model_type=='OLS_fixed_int_min_vis':
-         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array)
+         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array,missing='drop')
          results = model.fit()
          ##print results.summary()
          parameters = results.params
@@ -1885,7 +1887,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_error_jy = results.bse[0]
       if model_type=='OLS_with_int_min_vis':
          X_bin_centres_array = sm.add_constant(X_bin_centres_array)
-         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array)
+         model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array,missing='drop')
          results = model.fit()
          ##print results.summary()
          parameters = results.params
@@ -1895,7 +1897,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       elif model_type=='OLS_fixed_int_subtr_Y':
          #subtract Y from the data before fitting (should get rid of the angular variations)
          real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
-         model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array)
+         model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
          results = model.fit()
          ##print results.summary()
          parameters = results.params
@@ -1904,7 +1906,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_error_jy = results.bse[0]
       elif model_type=='OLS_with_intercept':
          X_short_parallel_array = sm.add_constant(X_short_parallel_array)
-         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array)
+         model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
          results = model.fit()
          ##print results.summary()
          parameters = results.params
