@@ -2045,9 +2045,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
       t_sky_jy = parameters[0]
       t_sky_error_jy = results.bse[0]
-   else:
-      t_sky_jy = np.nan
-      t_sky_error_jy = np.nan
       
       plt.clf()
       plt.plot(X_short_parallel_array, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -2063,8 +2060,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       plt.close()
-      print("saved %s" % fig_name)
+      print("saved %s" % fig_name) 
+   else:
+      t_sky_jy = np.nan
+      t_sky_error_jy = np.nan
       
+    
    #convert to K
    t_sky_K_flagged = jy_to_K * t_sky_jy
    t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
