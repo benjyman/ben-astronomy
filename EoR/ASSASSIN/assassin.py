@@ -2034,16 +2034,15 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    t_sky_jy = parameters[0]
    t_sky_error_jy = results.bse[0]
    
+   X_short_parallel_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
+   X_short_parallel_array_flagged_removed = X_short_parallel_array_flagged[np.logical_not(np.isnan(X_short_parallel_array_flagged))]
+    
    print(real_vis_data_sorted_array_flagged)
    print(real_vis_data_sorted_array_flagged.shape)
    print(X_short_parallel_array_flagged_removed)
    print(X_short_parallel_array_flagged_removed.shape)
    print(results.fittedvalues)
-   print(results.fittedvalues.shape)
-   
-   X_short_parallel_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
-   X_short_parallel_array_flagged_removed = X_short_parallel_array_flagged[np.logical_not(np.isnan(X_short_parallel_array_flagged))]
-     
+   print(results.fittedvalues.shape) 
    
    plt.clf()
    plt.plot(X_short_parallel_array_flagged, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
