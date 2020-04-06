@@ -6928,7 +6928,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                hp.write_map(gsm_hpx_fits_name,sky_model_data_nested,coord='G',nest=True)
                gsm_map = hp.reorder(sky_model_data_nested, n2r=True)
             else:
-               gsm_map = gsm.generate(freq_MHz)
+               gsm_map = gsm.generate(int(freq_MHz))
                #print np.max(gsm_map)
                hp.write_map(gsm_hpx_fits_name,gsm_map,coord='G')
                
