@@ -10442,9 +10442,12 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order=7
 
 plot_only = False
-chan_num = 75
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+print(freq_MHz_array)
+print(EDA2_chan_list)
+sys.exit()
+#chan_num = 75
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+6]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+6]
 #wsclean=False # for sims
