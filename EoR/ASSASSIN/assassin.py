@@ -2035,17 +2035,20 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #get rid of nans
    #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
    #X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
-
-   model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array,missing='drop')
-   results = model.fit()
-   ##print results.summary()
-   parameters = results.params
-   print parameters
    
-   t_sky_jy = parameters[0]
-   t_sky_error_jy = results.bse[0]
+   if (real_vis_data_sorted_array_flagged.shape[0]>0):
+      model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array,missing='drop')
+      results = model.fit()
+      ##print results.summary()
+      parameters = results.params
+      print parameters
    
-
+      t_sky_jy = parameters[0]
+      t_sky_error_jy = results.bse[0]
+   else
+      t_sky_jy = np.nan
+      t_sky_error_jy = np.nan
+      
    plt.clf()
    plt.plot(X_short_parallel_array, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
    plt.plot(X_short_parallel_array_flagged, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
