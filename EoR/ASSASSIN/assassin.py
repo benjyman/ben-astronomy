@@ -2895,7 +2895,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
          #print(sum_of_beam_weights)
          beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
-         print("beam_weighted_av_sky at %3d MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
+         print("beam_weighted_av_sky at %0.3f MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
          
          
          ##########
