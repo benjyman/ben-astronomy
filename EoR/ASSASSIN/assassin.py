@@ -2045,7 +2045,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
       t_sky_jy = parameters[0]
       t_sky_error_jy = results.bse[0]
-   else
+   else:
       t_sky_jy = np.nan
       t_sky_error_jy = np.nan
       
