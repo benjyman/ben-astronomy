@@ -2022,10 +2022,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    thresh = 5.* real_vis_data_sorted_array_subtr_model_std
    real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
    real_vis_data_sorted_array_flagged[np.argwhere(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
+
+   #get rid of nans
    real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
-   
-   X_short_parallel_array_flagged = np.copy(X_short_parallel_array_nonans)
-   X_short_parallel_array_flagged = X_short_parallel_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
+   X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
 
    model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array_flagged,missing='drop')
    results = model.fit()
