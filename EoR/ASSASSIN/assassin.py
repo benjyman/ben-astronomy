@@ -2029,6 +2029,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    X_short_parallel_array_flagged = X_short_parallel_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
    
+   print(X_short_parallel_array_flagged)
+   print(X_short_parallel_array_flagged.shape)
    #get rid of nans
    #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
    #X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
