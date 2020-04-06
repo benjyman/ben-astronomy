@@ -10354,29 +10354,30 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
-chan_num = 1
-freq_MHz_list = [freq_MHz_array[chan_num]]
-#if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   EDA2_chan = EDA2_chan_list[freq_MHz_index]
-   new_dir = "./%s" % EDA2_chan
-   os.chdir(new_dir)
-   freq_MHz_input_list = [freq_MHz]
-   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-   os.chdir('./..')
-sys.exit()
+#chan_num = 1
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
+#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+#   EDA2_chan = EDA2_chan_list[freq_MHz_index]
+#   new_dir = "./%s" % EDA2_chan
+#   os.chdir(new_dir)
+#   freq_MHz_input_list = [freq_MHz]
+#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+#   os.chdir('./..')
+#sys.exit()
 
 #Step 2: calibrate
 
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-#freq_MHz_list = [freq_MHz_array[0]]
-#EDA2_chan_list = [EDA2_chan_list[0]]
-#plot_cal = True
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
-#sys.exit()
+chan_num = 1
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+plot_cal = True
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
+sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
