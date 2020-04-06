@@ -1976,7 +1976,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
-   real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
     
    plt.clf()
    if model_type=='OLS_with_intercept':
@@ -1989,6 +1988,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_bin_centres_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    elif model_type=="OLS_fixed_int_subtr_Y":
+      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
