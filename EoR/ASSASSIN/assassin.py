@@ -1992,7 +1992,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_bin_centres_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    elif model_type=="OLS_fixed_int_subtr_Y":
-      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
@@ -2025,14 +2025,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #mask values greater than 5 sigma away from mean
    thresh = 5.* real_vis_data_sorted_array_subtr_model_std
    real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
-   real_vis_data_sorted_array_flagged[np.argwhere(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
+   real_vis_data_sorted_array_flagged[(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
    
    print(real_vis_data_sorted_array_flagged)
    print(real_vis_data_sorted_array_flagged.shape)
    print(X_short_parallel_array.shape)
    print(X_short_parallel_array)
    
-   X_short_parallel_array_flagged = X_short_parallel_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
+   X_short_parallel_array_flagged = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
    
    print(X_short_parallel_array_flagged)
    print(X_short_parallel_array_flagged.shape)
