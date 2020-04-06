@@ -1981,8 +1981,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
     
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
-   print(real_vis_data_sorted_array_nonans)
+   X_short_parallel_array_nonans = X_short_parallel_array[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+   
    print(real_vis_data_sorted_array_nonans.shape)
+   print(X_short_parallel_array_nonans.shape)
     
     
    plt.clf()
@@ -2000,8 +2002,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_short_parallel_array, real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    else:
-      plt.scatter(X_short_parallel_array, real_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-      plt.plot(X_short_parallel_array, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
 
    
