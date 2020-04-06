@@ -10314,7 +10314,8 @@ freq_MHz_array = 400./512.*EDA2_chan_list_array
 freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
-
+print(freq_MHz_list)
+print(EDA2_chan_list)
 
 
 
