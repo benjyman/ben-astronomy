@@ -10316,7 +10316,7 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 print(freq_MHz_array)
 print(EDA2_chan_list)
-sys.exit()
+
 
 
 baseline_length_thresh_lambda = 0.50
