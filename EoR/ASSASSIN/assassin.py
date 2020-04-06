@@ -1857,10 +1857,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #
    #sys.exit()
    
-   #print(real_vis_data_sorted_array)
-   #print(real_vis_data_sorted_array.shape)
-   #get rid of nans in data and ? 
-   
    if np.nansum(np.abs(X_short_parallel_array) > 0):
       #random intercept model may work if you split data up into different bins for the value of X
       #Actually, should calculate the angular response for each baseline, then divide X up according to similar values of the angular response
@@ -2041,9 +2037,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    X_short_parallel_array_flagged[np.abs(real_vis_data_sorted_array_subtr_model) > thresh] = np.nan
    X_short_parallel_array_flagged[np.argwhere(np.isnan(real_vis_data_sorted_array_subtr_model))] = np.nan
-   X_short_parallel_array_flagged_removed = X_short_parallel_array_flagged[np.logical_not(np.isnan(X_short_parallel_array_flagged))]
+   X_short_parallel_array_flagged_removed = X_short_parallel_array_flagged[np.argwhere(np.logical_not(np.isnan(X_short_parallel_array_flagged)))]
     
-
+   print(X_short_parallel_array_flagged)
+   print(X_short_parallel_array_flagged.shape)
+   print(X_short_parallel_array_flagged_removed)
+   print(X_short_parallel_array_flagged_removed.shape)
    
    plt.clf()
    plt.plot(X_short_parallel_array_flagged, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
