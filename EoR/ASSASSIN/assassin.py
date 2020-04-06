@@ -10314,13 +10314,8 @@ freq_MHz_array = 400./512.*EDA2_chan_list_array
 freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
-print(freq_MHz_array)
-print(EDA2_chan_list)
 
 
-
-baseline_length_thresh_lambda = 0.50
-include_angular_info = True
 
 
 #eda2_data_filename = "chan_%s_%s.uvfits" % (int(EDA2_chan),EDA2_obs_time)
@@ -10445,7 +10440,9 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
+baseline_length_thresh_lambda = 0.25
+include_angular_info = True
 
 chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
