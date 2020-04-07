@@ -6958,7 +6958,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G')
                print("wrote %s" % gsm_hpx_fits_name_fine_chan)
                
-               sys.exit()
             
          else:
             if sky_model == 'gmoss':
