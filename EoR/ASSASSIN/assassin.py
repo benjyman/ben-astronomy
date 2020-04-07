@@ -9019,7 +9019,6 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      print(cmd)
                      os.system(cmd)
                      
-                     sys.exit()
                      
                   else:
                      print("no cal solutions for %s" % (ms_name))
@@ -9321,6 +9320,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              print(cmd)
              os.system(cmd)
              
+             #casa still causing /tmp to fill up with crash reports
+             cmd = "rm -rf /tmp/*" 
+             print(cmd)
+             os.system(cmd)
 
           else:
              print("concatenating calibrated data into one vis and uvfits with miriad")
@@ -10366,6 +10369,10 @@ for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
    freq_MHz_input_list = [freq_MHz]
    lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
    simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   #the concat step is causing /tmp to fill with casa crash reports
+   cmd = "rm -rf /tmp/*" 
+   print(cmd)
+   os.system(cmd)
    os.chdir('./..')
 #sys.exit()
 
