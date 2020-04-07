@@ -1633,12 +1633,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #in here put bit to read X from miriad_sim_uvfits
    if not fast:
       if EDA2_data:
-         X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
       else:
          X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
@@ -1646,13 +1646,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-
    else:
       X_short_parallel_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-            
-   print(freq_MHz_fine_chan)   
+      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)  
          
    X_short_parallel_array = np.load(X_short_parallel_array_filename)
    print("loaded %s" % X_short_parallel_array_filename)
@@ -1666,9 +1663,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    if fast:
       X_short_parallel_array = np.concatenate(X_short_parallel_array)
       real_vis_data_sorted_array = np.concatenate(real_vis_data_sorted_array)
-   
-      print(X_short_parallel_array.shape)
-      print(real_vis_data_sorted_array.shape)
 
    if EDA2_data==True:
       real_or_simulated_string = "EDA2"
@@ -2590,7 +2584,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          if not fast:
             #save the baseline length array sorted
-            baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+            baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
             print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
          
@@ -2994,26 +2988,26 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                
             #print X_short_parallel_array
             #save X_short_parallel_array
-            X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+            X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(X_short_parallel_array_filename,X_short_parallel_array)
          
             print("saved %s" % X_short_parallel_array_filename)
          
-            X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+            X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
             print("saved %s" % X_short_parallel_array_filename_pure_inline)
             
-            X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+            X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
             print("saved %s" % X_short_parallel_array_filename_pure_parallel)
             
-            real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+            real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
             print("saved %s" % real_vis_data_sorted_array_filename)
             
             #update for fine chans
             if include_angular_info:
-               Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+               Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
                np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
                print("saved %s" % Y_short_parallel_angular_array_filename)
          else:
@@ -3520,19 +3514,19 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             else:
                n_obs_concat = 1
             #fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
-            fine_chan_index_array = range(n_fine_chans)
+            #omit 2 fine chans at the low end and 3 edge chans at the high end and you are sweet, no gaps
+            fine_chan_index_array = range(n_fine_chans-5)+2
             for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
                freq_MHz_index_fine = freq_MHz_index*n_fine_chans + fine_chan_index_index
-               channel_remainder = freq_MHz_index_fine % n_fine_chans
+               #oversampled PFB - dont need all this edge chan stuff
+               #channel_remainder = freq_MHz_index_fine % n_fine_chans
                #print channel_remainder
-               if (channel_remainder < n_chans_omitted_each_edge or channel_remainder >= (n_fine_chans-n_chans_omitted_each_edge)):
-                  edge_chan=True
-               else:
-                  edge_chan=False
-               print(fine_chan_index)
-               print(freq_MHz_index_fine)
-               print(channel_remainder) 
-               #fine_chan_index_input = channel_remainder
+               #if (channel_remainder < n_chans_omitted_each_edge or channel_remainder >= (n_fine_chans-n_chans_omitted_each_edge)):
+               #   edge_chan=True
+               #else:
+               #   edge_chan=False
+               edge_chan=False 
+               
                t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
 
                t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
@@ -10364,17 +10358,17 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 chan_num = 1
 freq_MHz_list = [freq_MHz_array[chan_num]]
 ##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   if len(freq_MHz_list)==1:
-      EDA2_chan = EDA2_chan_list[chan_num]
-   else:
-      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-   new_dir = "./%s" % EDA2_chan
-   os.chdir(new_dir)
-   freq_MHz_input_list = [freq_MHz]
-   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-   os.chdir('./..')
+#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+#   if len(freq_MHz_list)==1:
+#      EDA2_chan = EDA2_chan_list[chan_num]
+#   else:
+#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+#   new_dir = "./%s" % EDA2_chan
+#   os.chdir(new_dir)
+#   freq_MHz_input_list = [freq_MHz]
+#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+#   os.chdir('./..')
 #sys.exit()
 
 #Step 2: calibrate
@@ -10382,12 +10376,12 @@ for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 1
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = True
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
-sys.exit()
+#chan_num = 1
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#plot_cal = True
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
+#sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
