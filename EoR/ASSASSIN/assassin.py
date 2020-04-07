@@ -2017,10 +2017,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
    real_vis_data_sorted_array_flagged[(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
    
-   print(real_vis_data_sorted_array_flagged.shape)
-   print(real_vis_data_sorted_array_flagged)
-   print(X_short_parallel_array_nonans.shape)
-   print(X_short_parallel_array_nonans)
    
 
    #get rid of nans
