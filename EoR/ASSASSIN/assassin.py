@@ -6956,7 +6956,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                gsm_map = gsm.generate(freq_MHz_fine_chan)
                #print np.max(gsm_map)
                hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G')
-            
+               print("wrote %s" % gsm_hpx_fits_name_fine_chan)
             
             
          else:
@@ -7046,7 +7046,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
          print("wrote image %s" %  reprojected_gsm_fitsname)
 
-
+         sys.exit()
                   
          #Do this GSM map stuff here as it doesn't depend on pol
          cmd = "rm -rf %s" % (reprojected_gsm_im_name)
