@@ -9018,7 +9018,9 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
                      print(cmd)
                      os.system(cmd)
-                       
+                     
+                     sys.exit()
+                     
                   else:
                      print("no cal solutions for %s" % (ms_name))
                      continue
