@@ -3515,7 +3515,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                n_obs_concat = 1
             #fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
             #omit 2 fine chans at the low end and 3 edge chans at the high end and you are sweet, no gaps
-            fine_chan_index_array = range(n_fine_chans-5)+2
+            fine_chan_index_array = np.arange(n_fine_chans-5)+2
             for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
                freq_MHz_index_fine = freq_MHz_index*n_fine_chans + fine_chan_index_index
                #oversampled PFB - dont need all this edge chan stuff
