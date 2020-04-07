@@ -8417,16 +8417,23 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
    pol = pol_list[0]
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
-          n_obs_concat = n_obs_concat_list[EDA2_chan_index]
+          if len(EDA2_chan_list)==1:
+             n_obs_concat = n_obs_concat_list[chan_num]
+          else:
+             n_obs_concat = n_obs_concat_list[EDA2_chan_index]
        else:
           n_obs_concat = 1
-       freq_MHz = np.round(400./512.*float(EDA2_chan))
+       #freq_MHz = np.round(400./512.*float(EDA2_chan))
+       freq_MHz = 400./512.*float(EDA2_chan)
        wavelength = 300./freq_MHz
        if uv_cutoff!=0:
           uv_cutoff_m = uv_cutoff * wavelength
        lst = lst_list[EDA2_chan_index]
        lst_deg = (float(lst)/24)*360.
-       obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+       if len(EDA2_chan_list)==1:
+          obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+       else:
+          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
        first_obstime = obs_time_list[0]
        
        #gaurd against cases where there are no data for that channel
