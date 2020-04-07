@@ -10366,7 +10366,10 @@ chan_num = 1
 freq_MHz_list = [freq_MHz_array[chan_num]]
 ##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
 for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   if len(freq_MHz_list)==1:
+      EDA2_chan = EDA2_chan_list[chan_num]
+   else:
+      EDA2_chan = EDA2_chan_list[freq_MHz_index]
    new_dir = "./%s" % EDA2_chan
    os.chdir(new_dir)
    freq_MHz_input_list = [freq_MHz]
