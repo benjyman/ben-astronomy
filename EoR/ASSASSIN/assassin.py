@@ -8562,11 +8562,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
                
                
-               gsm_hpx_fits_name = "%s/%s_map_LST_%03d_%s_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
-               reprojected_to_wsclean_gsm_prefix = "%s/%s_map_LST_%03d_%s_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,int(freq_MHz))
+               gsm_hpx_fits_name = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,np.round(freq_MHz))
+               reprojected_to_wsclean_gsm_prefix = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,np.round(freq_MHz))
                reprojected_to_wsclean_gsm_fitsname = "%s.fits" % (reprojected_to_wsclean_gsm_prefix)
                reprojected_to_wsclean_gsm_fitsname_Jy_per_pix = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix)
-               reprojected_to_wsclean_gsm_im_name_Jy_per_pix = "%s_map_LST_%03d_%s_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,int(freq_MHz))
+               reprojected_to_wsclean_gsm_im_name_Jy_per_pix = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,np.round(freq_MHz))
 
                #print apparent_sky_im_name
                
