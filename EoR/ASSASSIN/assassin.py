@@ -6936,8 +6936,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             fine_chan_width_MHz = fine_chan_width_Hz/1000000.
             for fine_chan_index in range(0,32):
                if EDA2_data:
-                  #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-                  freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+                  freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                  #dont reverse the fine chan index here - that is done later in calibrate_eda2...
+                  #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                else:
                   freq_MHz_fine_chan = centre_freq     
                wavelength_fine_chan = 300./float(freq_MHz_fine_chan)  
@@ -7264,8 +7265,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #########################################
             for fine_chan_index in range(0,32):
                if EDA2_data:
-                  #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-                  freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+                  freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                  #dont reverse the fine chan index here - that is done later in calibrate_eda2...
+                  #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                else:
                   freq_MHz_fine_chan = centre_freq     
                wavelength_fine_chan = 300./float(freq_MHz_fine_chan) 
@@ -8803,7 +8805,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      centre_freq = float(freq_MHz)
                      fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
                      
-                     freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+                     freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
                      wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
                      
                      gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
