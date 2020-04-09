@@ -3646,6 +3646,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
       print(t_sky_measured_array)
       print(t_sky_measured_error_array)
+      
+      
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
@@ -10464,8 +10466,8 @@ include_angular_info = True
 chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
+freq_MHz_list = freq_MHz_array[chan_num:chan_num+5]
+EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+5]
 #wsclean=False # for sims
 wsclean=True # for data
 fast=False
