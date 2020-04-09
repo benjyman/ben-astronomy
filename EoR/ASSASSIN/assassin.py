@@ -3684,7 +3684,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    plt.clf()
    
-      #for model_type in model_type_list:
+   for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
          label1='ignore angular response'
