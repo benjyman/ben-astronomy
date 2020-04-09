@@ -10457,7 +10457,7 @@ plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
-chan_num = 0
+chan_num = 10
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+6]
