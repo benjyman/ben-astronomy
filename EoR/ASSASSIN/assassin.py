@@ -3379,7 +3379,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    freq_MHz_array = np.asarray(freq_MHz_list)
    
    if EDA2_data:
-      n_edge_chans_omitted = n_chans_omitted_each_edge * 2
+      n_edge_chans_omitted = 5 #two at start and 3 at end
       n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
    else:
       n_fine_chans_used = 1
@@ -3486,7 +3486,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #   np.save(t_sky_measured_angular_array_filename,t_sky_measured_angular_array)
    
    #this array needs to be bigger now as we are using the fine channels of EDA2 data
-   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans)
+   
+   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
    t_sky_measured_array = np.full(t_sky_array_length,np.nan)
    t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
    t_sky_measured_array_flagged = np.full(t_sky_array_length,np.nan)
