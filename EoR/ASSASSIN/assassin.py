@@ -3651,38 +3651,38 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
       
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
-      if len(freq_MHz_list)==1:
-         plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
-      else:
-         plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
-    
-      #if 'diffuse_global' in signal_type_list:
-      #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
-      #if include_angular_info:
-      #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
+   if len(freq_MHz_list)==1:
+      plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
+   else:
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+ 
+   #if 'diffuse_global' in signal_type_list:
+   #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
+   #if include_angular_info:
+   #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
+
+   map_title="t_sky measured" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("Sky temperature (K)")
+   if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
+      print(signal_type_list)
+      plt.legend(loc='upper right')
+   else:
+      plt.legend(loc='lower right')
+   if EDA2_data:
+      plt.ylim([500, 5000])
+   else:
+      plt.ylim([0, 4000])
+   fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
+  
+   ###Also plot the average measurement for each EDA2 coarse chan
+   t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
+   t_sky_measure_av_per_EDA2_chan_err = np.full(len(freq_MHz_list),np.nan)
    
-      map_title="t_sky measured" 
-      plt.xlabel("Frequency (MHz)")
-      plt.ylabel("Sky temperature (K)")
-      if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-         print(signal_type_list)
-         plt.legend(loc='upper right')
-      else:
-         plt.legend(loc='lower right')
-      if EDA2_data:
-         plt.ylim([500, 5000])
-      else:
-         plt.ylim([0, 4000])
-      fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
-     
-      ###Also plot the average measurement for each EDA2 coarse chan
-      t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
-      t_sky_measure_av_per_EDA2_chan_err = np.full(len(freq_MHz_list),np.nan)
-      
-      plt.clf()
+   plt.clf()
    
       #for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
