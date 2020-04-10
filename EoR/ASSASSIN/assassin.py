@@ -10472,8 +10472,8 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
-baseline_length_thresh_lambda = 0.23
+plot_only = False
+baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 #up to here with plot_only = False
