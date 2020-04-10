@@ -1558,8 +1558,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    
    if EDA2_data:
-      #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-      freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+      freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+      #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
    else:
       freq_MHz_fine_chan = centre_freq     
    wavelength = 300./float(freq_MHz_fine_chan)  
@@ -2189,7 +2189,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             if EDA2_data:
                #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
                #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-               freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
             else:
                freq_MHz_fine_chan = freq_MHz
             wavelength = 300./float(freq_MHz_fine_chan)
@@ -2484,7 +2484,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          if EDA2_data:
             #for 20200303 and 20200304 data fine chan order is reversed
             #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-            freq_MHz_fine_chan = freq_MHz - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+            freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
          else:
             freq_MHz_fine_chan = freq_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
@@ -3451,7 +3451,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    ##for including angular info:
    t_sky_measured_global_array_filename = "t_sky_measured_global_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
-   freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+   
+   #freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    
    
    if not plot_only:
@@ -3515,6 +3516,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             fine_chan_index_array = n_fine_chans_used - np.arange(n_fine_chans-5)+2
             for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
                freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index_index
+               ######freq_MHz_index_fine = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                #oversampled PFB - dont need all this edge chan stuff
                #channel_remainder = freq_MHz_index_fine % n_fine_chans
                #print channel_remainder
@@ -3531,7 +3533,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
                t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
                freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
-               np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
+            #np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
          else:
             EDA2_chan = None
             n_obs_concat = 1
