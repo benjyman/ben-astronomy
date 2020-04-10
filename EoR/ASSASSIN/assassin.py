@@ -3532,7 +3532,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                
                print(freq_MHz_fine)
                print(freq_MHz_index_fine)
-               sys.exit()
+               
                
                t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
                t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
@@ -10472,7 +10472,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.23
 include_angular_info = True
 
