@@ -2189,8 +2189,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             if EDA2_data:
                #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
                #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-               freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
+               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
             else:
                freq_MHz_fine_chan = freq_MHz
             wavelength = 300./float(freq_MHz_fine_chan)
@@ -2485,8 +2485,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          if EDA2_data:
             #for 20200303 and 20200304 data fine chan order is reversed
             #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
-            freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
+            freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+            #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
          else:
             freq_MHz_fine_chan = freq_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
@@ -10473,7 +10473,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order=7
 
 plot_only = False
-baseline_length_thresh_lambda = 0.25
+baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 #up to here with plot_only = False
