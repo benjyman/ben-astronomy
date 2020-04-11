@@ -10478,7 +10478,7 @@ include_angular_info = True
 
 #up to here with plot_only = False
 #chan_num = 10
-#chan_num = 0
+chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
