@@ -1558,9 +1558,18 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    
    if EDA2_data:
+      n_edge_chans_omitted = 5 #two at start and 3 at end
+      n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+   else:
+      n_fine_chans_used = 1
+      n_edge_chans_omitted = 0
+   
+   bandwidth = n_fine_chans_used * fine_chan_width_MHz
+   
+   if EDA2_data:
       #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
       #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-      freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz 
+      freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
    else:
       freq_MHz_fine_chan = centre_freq     
    wavelength = 300./float(freq_MHz_fine_chan)  
