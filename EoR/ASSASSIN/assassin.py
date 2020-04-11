@@ -1564,7 +1564,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       n_fine_chans_used = 1
       n_edge_chans_omitted = 0
    
-   bandwidth = (n_fine_chans_used - 3) * fine_chan_width_MHz
+   bandwidth = (n_fine_chans_used + 1) * fine_chan_width_MHz
    
    if EDA2_data:
       #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
