@@ -2183,7 +2183,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                   
          if EDA2_data:
             print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
-            fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+            #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+            fine_chan_index_array = range(n_fine_chans)
             #print(fine_chan_index_array)
          else:
             fine_chan_index_array = np.asarray([0])
@@ -2198,8 +2199,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
             if EDA2_data:
                #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
-               #freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
             else:
                freq_MHz_fine_chan = freq_MHz
