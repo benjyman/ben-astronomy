@@ -9357,7 +9357,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              os.system(cmd)
 
              #image the concat file to check spectral behaviour
- 
+             ##make an image to check (both pols) 32 chans
+             cmd = "wsclean -name concat_cal_chan_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name_wsclean_cal)
+             print(cmd)
+             os.system(cmd) 
     
           else:
              print("concatenating calibrated data into one vis and uvfits with miriad")
