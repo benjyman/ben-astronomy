@@ -7215,8 +7215,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%s_MHz.im' % (pol,int(freq_MHz))
             beam_image_sin_projected_im_name_no_cos_za = 'beam_image_sin_projected_%s_%s_MHz_no_cos_za.im' % (pol,int(freq_MHz))
             beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%s_MHz_puthd.fits' % (pol,int(freq_MHz))
-            beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
-            beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid.fits' % (pol,int(freq_MHz))
+            beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.im' % (pol,int(freq_MHz))
+            beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.fits' % (pol,int(freq_MHz))
             beam_image_sin_projected_regrid_gsm_im_name_no_cos_za =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid_no_cos_za.im' % (pol,int(freq_MHz))
             beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za =  'beam_image_sin_projected_%s_%s_MHz_gsm_regrid_no_cos_za.fits' % (pol,int(freq_MHz))
            
