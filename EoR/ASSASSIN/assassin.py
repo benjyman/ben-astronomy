@@ -2182,7 +2182,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             n_fine_chans = visibilities_single.shape[3]
                   
          if EDA2_data:
-            print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
+            #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
             #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
             fine_chan_index_array = range(n_fine_chans)
             #print(fine_chan_index_array)
@@ -2484,8 +2484,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       print(visibilities_shape)
       
       if EDA2_data:
-         print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
-         fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+         #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
+         #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+         fine_chan_index_array = range(n_fine_chans)
          #print(fine_chan_index_array)
       else:
          fine_chan_index_array = np.asarray([0])
