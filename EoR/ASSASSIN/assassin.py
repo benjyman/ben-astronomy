@@ -10346,8 +10346,8 @@ EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan]
 #EDA2_obs_time_list = ['20191202T172027']
 
 EDA2_chan_list_array = np.asarray(EDA2_chan_list)
-#EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
-EDA2_data_dir = '/md0/EoR/EDA2/20200303_data_64/'
+EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
+#EDA2_data_dir = '/md0/EoR/EDA2/20200303_data_64/'
 #EDA2_obs_time = '20191202T171727'
 #freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
 freq_MHz_array = 400./512.*EDA2_chan_list_array
