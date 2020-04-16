@@ -7468,7 +7468,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             print(cmd)
             os.system(cmd)
             
-            reprojected_gsm_global_im_Jy_per_pix_name =  "%s_DG_%s_%0.3f_MHz_%s_pol_reprojected_Jy_pix.im" % (sky_model,date_time_string,freq_MH,pol)
+            reprojected_gsm_global_im_Jy_per_pix_name =  "%s_DG_%s_%0.3f_MHz_%s_pol_reprojected_Jy_pix.im" % (sky_model,date_time_string,freq_MHz,pol)
             reprojected_gsm_angular_im_Jy_per_pix_name =  "%s_DA_%s_%0.3f_MHz_%s_pol_reprojected_Jy_pix.im" % (sky_model,date_time_string,freq_MHz,pol)
             
             cmd = "rm -rf %s %s" % (reprojected_gsm_global_im_Jy_per_pix_name,reprojected_gsm_angular_im_Jy_per_pix_name)
