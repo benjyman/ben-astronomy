@@ -389,10 +389,10 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 
 #run in separate screens
 #2015 data:
-download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
+#download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
 #download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-sys.exit()
+#sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
@@ -428,12 +428,12 @@ sys.exit()
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
-#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2015")
-#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
+calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_8/2015")
+calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_8/2018")
 
-#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
-#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
-#sys.exit()
+ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
+ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
+sys.exit()
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 obsid_list = obsid_list_2015 + obsid_list_2018
