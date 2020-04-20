@@ -3596,8 +3596,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       else:
          plt.ylim([0, 4000])
       fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      plt.savefig(fig_name)
       print("saved %s" % fig_name)
       
             
