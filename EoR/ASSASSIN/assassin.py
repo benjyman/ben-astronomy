@@ -3557,9 +3557,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
                freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
                
-               plt.plot(freq_MHz_fine_array,t_sky_measured_array)
-               
-            #np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
          else:
             EDA2_chan = None
             n_obs_concat = 1
@@ -3574,8 +3571,34 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
       np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
       np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
-       
-   
+    
+      if model_type=='OLS_fixed_intercept':
+         label1='ignore angular response'
+      elif  model_type=='OLS_fixed_int_subtr_Y':
+         label1='subtract angular response'
+      else:
+         label1='recovered'
+      
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
+      map_title="t_sky measured_coarse_chan" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("Sky temperature (K)")
+      if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
+         print(signal_type_list)
+         plt.legend(loc='upper right')
+      else:
+         plt.legend(loc='lower right')
+      if EDA2_data:
+         plt.ylim([500, 5000])
+      else:
+         plt.ylim([0, 4000])
+      fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)  
+      
+      
+      
    #Dont need to load these...  
    #yes you do now.....below!     
    ###t_sky_measured_array = np.load(t_sky_measured_array_filename)
