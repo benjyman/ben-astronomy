@@ -423,12 +423,12 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
-calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
+#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2015")
+#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
 
-ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
-ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
-sys.exit()
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
+#sys.exit()
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 obsid_list = obsid_list_2015 + obsid_list_2018
@@ -594,10 +594,10 @@ ms_dir_list=["/md0/ATeam/CenA/image_3/2015","/md0/ATeam/CenA/image_3/2018"]
 
 #############
 #averaging images bit (keep at bottom)
-#base_dir = "/md0/ATeam/CenA/"
-#image_list = ["image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","image_3/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image3-MFS-image-pb.fits","CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits"]
-#output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb"
-#average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
+base_dir = "/md0/ATeam/CenA/"
+image_list = ["CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits","image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","image_3/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image3-MFS-image-pb.fits","image_4/image_04_selfcal_04_robust0-MFS-image-pb.fits","image_5/image_05_selfcal_05_robust0-MFS-image-pb.fits","image_6/image_06_selfcal_04_robust0-MFS-image-pb.fits"]
+output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb_6_ims"
+average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
 
 
 
