@@ -3566,31 +3566,35 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
             freq_MHz_fine_array = freq_MHz_array
 
-
+         #plot each c chan different color
+         freq_MHz_index_fine_start = freq_MHz_index*n_fine_chans_used + 0
+         freq_MHz_index_fine_end = freq_MHz_index*n_fine_chans_used + n_fine_chans_used
+         
          if model_type=='OLS_fixed_intercept':
-            label1='ignore angular response'
+            label1='ignore ang resp cc %s' % (EDA2_chan)
          elif  model_type=='OLS_fixed_int_subtr_Y':
             label1='subtract angular response'
          else:
             label1='recovered'
          
-         plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
-         map_title="t_sky measured_coarse_chan" 
-         plt.xlabel("Frequency (MHz)")
-         plt.ylabel("Sky temperature (K)")
-         if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-            print(signal_type_list)
-            plt.legend(loc='upper right')
-         else:
-            plt.legend(loc='lower right')
-         if EDA2_data:
-            plt.ylim([500, 5000])
-         else:
-            plt.ylim([0, 4000])
-         fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)
+         plt.errorbar(freq_MHz_fine_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],t_sky_measured_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],yerr=t_sky_measured_error_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],label=label1)
+      
+      map_title="t_sky measured_coarse_chan" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("Sky temperature (K)")
+      if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
+         print(signal_type_list)
+         plt.legend(loc='upper right')
+      else:
+         plt.legend(loc='lower right')
+      if EDA2_data:
+         plt.ylim([500, 5000])
+      else:
+         plt.ylim([0, 4000])
+      fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
       
             
       np.save(t_sky_measured_array_filename,t_sky_measured_array)
