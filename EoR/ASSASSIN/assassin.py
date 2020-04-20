@@ -3566,7 +3566,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                label1='recovered'
             freq_MHz_index_fine_start = freq_MHz_index*n_fine_chans_used + 0
             freq_MHz_index_fine_end = freq_MHz_index_fine_start + n_fine_chans_used      
-            plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
+            #plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
+            plt.plot(freq_MHz_fine_array,t_sky_measured_array,label=label1)
             
          else:
             EDA2_chan = None
