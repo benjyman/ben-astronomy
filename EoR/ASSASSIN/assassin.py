@@ -3558,6 +3558,12 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
       
             #plot each c chan different color
+            if model_type=='OLS_fixed_intercept':
+               label1='ignore ang resp cc %s' % (EDA2_chan)
+            elif  model_type=='OLS_fixed_int_subtr_Y':
+               label1='subtract angular response'
+            else:
+               label1='recovered'
             freq_MHz_index_fine_start = freq_MHz_index*n_fine_chans_used + 0
             freq_MHz_index_fine_end = freq_MHz_index_fine_start + n_fine_chans_used      
             plt.errorbar(freq_MHz_fine_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],t_sky_measured_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],yerr=t_sky_measured_error_array[freq_MHz_index_fine_start:freq_MHz_index_fine_end],label=label1)
@@ -3573,12 +3579,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
 
          
-         if model_type=='OLS_fixed_intercept':
-            label1='ignore ang resp cc %s' % (EDA2_chan)
-         elif  model_type=='OLS_fixed_int_subtr_Y':
-            label1='subtract angular response'
-         else:
-            label1='recovered'
+
          
          
       map_title="t_sky measured_coarse_chan" 
