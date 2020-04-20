@@ -3520,8 +3520,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
       #plot each coarse chan
       plt.clf()
-      print(freq_MHz_list)
-      sys.exit()
+
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
          if EDA2_data==True:
             EDA2_chan = EDA2_chan_list[freq_MHz_index]
