@@ -3566,12 +3566,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
             freq_MHz_fine_array = freq_MHz_array
 
-            
-      np.save(t_sky_measured_array_filename,t_sky_measured_array)
-      np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
-      np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
-      np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
-    
+
       if model_type=='OLS_fixed_intercept':
          label1='ignore angular response'
       elif  model_type=='OLS_fixed_int_subtr_Y':
@@ -3595,7 +3590,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
-      print("saved %s" % fig_name)  
+      print("saved %s" % fig_name)
+      
+            
+      np.save(t_sky_measured_array_filename,t_sky_measured_array)
+      np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
+      np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
+      np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
+    
+  
       
       
       
