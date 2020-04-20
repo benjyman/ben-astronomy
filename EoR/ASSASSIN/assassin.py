@@ -3568,7 +3568,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
          #plot each c chan different color
          freq_MHz_index_fine_start = freq_MHz_index*n_fine_chans_used + 0
-         freq_MHz_index_fine_end = freq_MHz_index*n_fine_chans_used + n_fine_chans_used
+         freq_MHz_index_fine_end = freq_MHz_index_fine_start + n_fine_chans_used
          
          if model_type=='OLS_fixed_intercept':
             label1='ignore ang resp cc %s' % (EDA2_chan)
