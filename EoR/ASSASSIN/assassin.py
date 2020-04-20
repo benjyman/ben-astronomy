@@ -3517,6 +3517,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
 
       #this replaces all the matrix stuff you do in model_tsky_from_saved_data
+      
+      #plot each coarse chan
+      plt.clf()
+      
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
          if EDA2_data==True:
             EDA2_chan = EDA2_chan_list[freq_MHz_index]
@@ -3552,6 +3556,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
                t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
                freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
+               
+               plt.plot(freq_MHz_fine_array,t_sky_measured_array)
+               
             #np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
          else:
             EDA2_chan = None
@@ -3666,15 +3673,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
 
-      print(t_sky_measured_array)
-      print(t_sky_measured_array.shape)
-      print(t_sky_measured_error_array)
-      print(t_sky_measured_error_array.shape)
-      print(freq_MHz_fine_array)
-      print(freq_MHz_fine_array.shape)
-      
-      print(t_sky_theoretical_array)
-      print(freq_MHz_list)
+      #print(t_sky_measured_array)
+      #print(t_sky_measured_array.shape)
+      #print(t_sky_measured_error_array)
+      #print(t_sky_measured_error_array.shape)
+      #print(freq_MHz_fine_array)
+      #print(freq_MHz_fine_array.shape)
+      # 
+      #print(t_sky_theoretical_array)
+      #print(freq_MHz_list)
       
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
    if len(freq_MHz_list)==1:
