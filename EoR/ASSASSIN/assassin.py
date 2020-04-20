@@ -3518,9 +3518,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
       #this replaces all the matrix stuff you do in model_tsky_from_saved_data
       
-      #plot each coarse chan
-      plt.clf()
-
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
          if EDA2_data==True:
             EDA2_chan = EDA2_chan_list[freq_MHz_index]
@@ -3557,17 +3554,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
                freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
       
-            #plot each c chan different color
-            if model_type=='OLS_fixed_intercept':
-               label1='ignore ang resp cc %s' % (EDA2_chan)
-            elif  model_type=='OLS_fixed_int_subtr_Y':
-               label1='subtract angular response'
-            else:
-               label1='recovered'
-            freq_MHz_index_fine_start = freq_MHz_index*n_fine_chans_used + 0
-            freq_MHz_index_fine_end = freq_MHz_index_fine_start + n_fine_chans_used      
-            #plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
-            plt.plot(freq_MHz_fine_array,t_sky_measured_array,label=label1)
             
          else:
             EDA2_chan = None
@@ -3576,31 +3562,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
             t_sky_measured_array[freq_MHz_index] = t_sky_measured
             t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
-            freq_MHz_fine_array = freq_MHz_array
-
-
-         
-
-         
-         
-      map_title="t_sky measured_coarse_chan" 
-      plt.xlabel("Frequency (MHz)")
-      plt.ylabel("Sky temperature (K)")
-      if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-         print(signal_type_list)
-         plt.legend(loc='upper right')
-      else:
-         plt.legend(loc='lower right')
-      if EDA2_data:
-         plt.ylim([500, 5000])
-      else:
-         plt.ylim([0, 4000])
-      fig_name= "t_sky_measured_lst_%s%s_by_c_chan.png" % (lst_string,signal_type_postfix)
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      plt.savefig(fig_name)
-      print("saved %s" % fig_name)
-      
+            freq_MHz_fine_array = freq_MHz_array    
             
       np.save(t_sky_measured_array_filename,t_sky_measured_array)
       np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
