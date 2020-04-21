@@ -29,13 +29,13 @@ import numpy as np
 #obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
 
 #image 7
-#obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
-#obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
+obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
+obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
 
 
 #image 8:
-obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
-obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
+#obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
+#obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
       
 #image 11:
 #obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
@@ -428,11 +428,12 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
-calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_8/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_8/2018")
+#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2015")
+calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
 
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
 ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
-ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
+
 sys.exit()
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
