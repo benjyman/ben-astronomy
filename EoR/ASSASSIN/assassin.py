@@ -1747,6 +1747,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          ##
       
          ## plot X and real vis vs baseline length for fig2
+         print(len(X_short_parallel_array_norm))
+         print(len(real_vis_data_sorted_array_norm_scaled))
+         
+         sys.exit()
          
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
@@ -2073,6 +2077,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
+
+def extract_data_from_eda2_ms(freq_MHz_list,freq_MHz_index,pol,calculate_uniform_response=True):
+   freq_MHz = freq_MHz_list[freq_MHz_index]
            
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
@@ -10504,10 +10511,10 @@ include_angular_info = True
 #up to here with plot_only = False
 #chan_num = 10
 chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
+#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
 #wsclean=False # for sims
 wsclean=True # for data
 fast=False
