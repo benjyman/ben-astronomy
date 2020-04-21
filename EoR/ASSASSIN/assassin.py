@@ -9244,41 +9244,41 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   os.system(cmd)
                      
 
-                     cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
-                     print(cmd)
-                     os.system(cmd)
-                     
-                     #this doesnt work - need to just run gpplt and then plot manually
-                     #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-                     cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (new_split_vis_name,gain_solutions_name_amp)
-                     print(cmd)
-                     os.system(cmd)
+                  cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  #this doesnt work - need to just run gpplt and then plot manually
+                  #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
+                  cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (new_split_vis_name,gain_solutions_name_amp)
+                  print(cmd)
+                  os.system(cmd)
       
-                     cmd = "gpplt vis=%s yaxis=phase log=%s" % (new_split_vis_name,gain_solutions_name_phase)
+                  cmd = "gpplt vis=%s yaxis=phase log=%s" % (new_split_vis_name,gain_solutions_name_phase)
+                  print(cmd)
+                  os.system(cmd)               
+                  
+                  
+                  #plot the sols and 
+                  if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
+                     if plot_cal:
+                        plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,gain_solutions_name_phase,gain_solutions_name_amp)
+                     #write the calibrated uvfits file out
+                     #cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
+                     #print(cmd)
+                     #os.system(cmd)
+                     
+                     miriad_cal_vis_name_list.append(miriad_vis_name) 
+                     miriad_cal_uvfits_name_list.append(calibrated_uvfits_filename) 
+                     
+                     #write out the uvfits file (this also applies the calibration)
+                     cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
                      print(cmd)
-                     os.system(cmd)               
+                     os.system(cmd)
                      
-                     
-                     #plot the sols and 
-                     if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
-                        if plot_cal:
-                           plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,gain_solutions_name_phase,gain_solutions_name_amp)
-                        #write the calibrated uvfits file out
-                        #cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
-                        #print(cmd)
-                        #os.system(cmd)
-                        
-                        miriad_cal_vis_name_list.append(miriad_vis_name) 
-                        miriad_cal_uvfits_name_list.append(calibrated_uvfits_filename) 
-                        
-                        #write out the uvfits file (this also applies the calibration)
-                        cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
-                        print(cmd)
-                        os.system(cmd)
-                        
-                     else:
-                        print("no cal solutions for %s" % (new_split_vis_name))
-                        continue
+                  else:
+                     print("no cal solutions for %s" % (new_split_vis_name))
+                     continue
                    
                   ##concat them in freq here
                   #print("concatenating calibrated data in freq with pyuvdata")
