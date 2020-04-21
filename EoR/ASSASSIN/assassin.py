@@ -1747,8 +1747,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          ##
       
          ## plot X and real vis vs baseline length for fig2
-         print(len(X_short_parallel_array_norm))
-         print(len(real_vis_data_sorted_array_norm_scaled))
+         print(X_short_parallel_array_norm[0:10])
+         print(real_vis_data_sorted_array_norm_scaled[0:10])
          
          sys.exit()
          
