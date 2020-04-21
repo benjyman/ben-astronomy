@@ -8480,6 +8480,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        concat_uvfits_name_wsclean_cal = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,n_obs_concat)
               
        miriad_cal_vis_name_list = []
+       miriad_cal_uvfits_name_list = []
        wsclean_cal_ms_name_list = []
        
        for EDA2_obs_time in obs_time_list:    
