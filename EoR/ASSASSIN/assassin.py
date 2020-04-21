@@ -1867,11 +1867,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #https://www.statsmodels.org/dev/examples/notebooks/generated/mixed_lm_example.html
       #tilde in mixedlm mean "predicted by"
       
-      print(X_short_parallel_array[0:20]) 
-      print(real_vis_data_sorted_array[0:20])
-      
-      sys.exit()
-      
       ##OLS with fixed intercept at zero
       ##X_short_parallel_array = sm.add_constant(X_short_parallel_array)
       #Lets use scikit-learn instead of statsmodels (cause there are more tutorials and Kaggle prefers)
@@ -9111,13 +9106,6 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #os.system(cmd)
                   
                   
-                  
-                  
-
-         
-                  
-                 
-             
              
                   #image with wsclean to get a model image
                   
@@ -9188,73 +9176,74 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      visibilities = uvtable['DATA']
                   
                   n_fine_chans = visibilities.shape[3]
-   
-                  #need to split off each chan and cal individually since selfcal does not apply bandpass corrections
-                  miriad_cal_vis_name_list_fine_chans = []
-                  miriad_cal_uvfits_name_list_fine_chans = []
-                  concat_vis_freq_name = "chan_%s_%s_all_f_ch.vis" % (EDA2_chan,EDA2_obs_time)
-                  concat_uvfits_freq_name = "chan_%s_%s_all_f_ch.uvfits" % (EDA2_chan,EDA2_obs_time)
                   
-                  for fine_chan_index in range(0,n_fine_chans):
-                     centre_freq = float(freq_MHz)
+                  centre_freq = float(freq_MHz)
+                  
+                  #need to split off each chan and cal individually since selfcal does not apply bandpass corrections
+                  #Noooo this is a dumb idea, just go back to using the average cal solutions across the band
+                  #miriad_cal_vis_name_list_fine_chans = []
+                  #miriad_cal_uvfits_name_list_fine_chans = []
+                  #concat_vis_freq_name = "chan_%s_%s_all_f_ch.vis" % (EDA2_chan,EDA2_obs_time)
+                  #concat_uvfits_freq_name = "chan_%s_%s_all_f_ch.uvfits" % (EDA2_chan,EDA2_obs_time)
+                  #
+                  #for fine_chan_index in range(0,n_fine_chans):
+                  #   centre_freq = float(freq_MHz)
+                  #
+                  #   fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
+                  #   fine_chan_index = int(fine_chan_index)
+                  #   freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                  #  
+                  #   start_freq_GHz = (freq_MHz_fine_chan - fine_chan_width_MHz/2.) / 1000.
+                  #   end_freq_GHz = (freq_MHz_fine_chan + fine_chan_width_MHz/2.) / 1000.
+                  #   
+                  #   #uvsplit has its own naming convention for outputs (read help)
+                  #   orig_split_vis_name = "eda2cal.%s" % int(freq_MHz)
+                  #   
+                  #   cmd = "rm -rf %s" % (orig_split_vis_name)
+                  #   print(cmd) 
+                  #   os.system(cmd)
+                  #   
+                  #   #cmd = "uvsplit vis=%s select=frequency\(%0.6f,%0.6f\)" % (miriad_vis_name,start_freq_GHz,end_freq_GHz)
+                  #   cmd = "uvaver vis=%s line=channel,1,%s,1,1 out=%s " % (miriad_vis_name,int(fine_chan_index+1),orig_split_vis_name)
+                  #   print(cmd) 
+                  #   os.system(cmd)
+                  #   
+                  #   ##check how many chans in new vis
+                  #   #cmd = "uvlist vis=%s" % (orig_split_vis_name)
+                  #   cmd = "prthd in=%s" % (orig_split_vis_name)
+                  #   print(cmd) 
+                  #   os.system(cmd)
+                     
+                     
+                     
+                  #   #rename the vis produced
+                  #   new_split_vis_name = "fine_ch_%s.vis" % (fine_chan_index)
+                  #   new_split_uvfits_name = "fine_ch_%s.uvfits" % (fine_chan_index)
+                  #   
+                  #   cmd = "rm -rf %s %s" % (new_split_vis_name,new_split_uvfits_name)
+                  #   print(cmd) 
+                  #   os.system(cmd)
 
-                     fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
-                     fine_chan_index = int(fine_chan_index)
-                     freq_MHz_fine_chan = freq_MHz + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-                    
-                     start_freq_GHz = (freq_MHz_fine_chan - fine_chan_width_MHz/2.) / 1000.
-                     end_freq_GHz = (freq_MHz_fine_chan + fine_chan_width_MHz/2.) / 1000.
-                     
-                     #uvsplit has its own naming convention for outputs (read help)
-                     orig_split_vis_name = "eda2cal.%s" % int(freq_MHz)
-                     
-                     cmd = "rm -rf %s" % (orig_split_vis_name)
-                     print(cmd) 
-                     os.system(cmd)
-                     
-                     #cmd = "uvsplit vis=%s select=frequency\(%0.6f,%0.6f\)" % (miriad_vis_name,start_freq_GHz,end_freq_GHz)
-                     cmd = "uvaver vis=%s line=channel,1,%s,1,1 out=%s " % (miriad_vis_name,int(fine_chan_index+1),orig_split_vis_name)
-                     print(cmd) 
-                     os.system(cmd)
-                     
-                     ##check how many chans in new vis
-                     #cmd = "uvlist vis=%s" % (orig_split_vis_name)
-                     cmd = "prthd in=%s" % (orig_split_vis_name)
-                     print(cmd) 
-                     os.system(cmd)
-                     
-                     
-                     
-                     #rename the vis produced
-                     new_split_vis_name = "fine_ch_%s.vis" % (fine_chan_index)
-                     new_split_uvfits_name = "fine_ch_%s.uvfits" % (fine_chan_index)
-                     
-                     cmd = "rm -rf %s %s" % (new_split_vis_name,new_split_uvfits_name)
-                     print(cmd) 
-                     os.system(cmd)
-
-                     cmd = "mv  %s %s" % (orig_split_vis_name,new_split_vis_name)
-                     print(cmd) 
-                     os.system(cmd)
+                  #   cmd = "mv  %s %s" % (orig_split_vis_name,new_split_vis_name)
+                  #   print(cmd) 
+                  #   os.system(cmd)
                      
                      
                       
                      #select=uvrange(uvmin,uvmax) in kilolambda
                      #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
-                     if uv_cutoff!=0:
-                        cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(%0.5f,50\)" % (new_split_vis_name,apparent_sky_im_name,uv_cutoff)
-                        gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan,uv_cutoff)
-                        gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan,uv_cutoff)
-                     else:
-                        cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (new_split_vis_name,apparent_sky_im_name)
-                        gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
-                        gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,freq_MHz_fine_chan)
-                     print(cmd) 
-                     os.system(cmd)
-                     
+                  if uv_cutoff!=0:
+                     cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(%0.5f,50\)" % (miriad_vis_name,apparent_sky_im_name,uv_cutoff)
+                     gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
+                     gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
+                  else:
+                     cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (miriad_vis_name,apparent_sky_im_name)
+                     gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
+                     gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
+                  print(cmd) 
+                  os.system(cmd)
                      
 
-                     
                      cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
                      print(cmd)
                      os.system(cmd)
@@ -9279,11 +9268,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         #print(cmd)
                         #os.system(cmd)
                         
-                        miriad_cal_vis_name_list_fine_chans.append(new_split_vis_name) 
-                        miriad_cal_uvfits_name_list_fine_chans.append(new_split_uvfits_name) 
+                        miriad_cal_vis_name_list.append(miriad_vis_name) 
+                        miriad_cal_uvfits_name_list.append(calibrated_uvfits_filename) 
                         
                         #write out the uvfits file (this also applies the calibration)
-                        cmd = "fits in=%s out=%s op=uvout" % (new_split_vis_name,new_split_uvfits_name)
+                        cmd = "fits in=%s out=%s op=uvout" % (miriad_vis_name,calibrated_uvfits_filename)
                         print(cmd)
                         os.system(cmd)
                         
@@ -9291,17 +9280,17 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                         print("no cal solutions for %s" % (new_split_vis_name))
                         continue
                    
-                  #concat them in freq here
-                  print("concatenating calibrated data in freq with pyuvdata")
+                  ##concat them in freq here
+                  #print("concatenating calibrated data in freq with pyuvdata")
              
-                  cmd = "rm -rf %s %s" % (concat_vis_freq_name,concat_uvfits_freq_name)
-                  print(cmd)
-                  os.system(cmd)
+                  #cmd = "rm -rf %s %s" % (concat_vis_freq_name,concat_uvfits_freq_name)
+                  #print(cmd)
+                  #os.system(cmd)
                   
-                  concat_uvfits(miriad_cal_uvfits_name_list_fine_chans,concat_uvfits_freq_name)
-                  #vis_string = ','.join(miriad_cal_vis_name_list_fine_chans)
+                  #concat_uvfits(miriad_cal_uvfits_name_list_fine_chans,concat_uvfits_freq_name)
+                  ##vis_string = ','.join(miriad_cal_vis_name_list_fine_chans)
                  
-                  sys.exit()
+                  #sys.exit()
                   
                   #cmd = "uvaver vis=%s out=%s options=nopol" % (vis_string,concat_vis_freq_name)
                   #print(cmd)
@@ -9318,11 +9307,9 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   #cmd = "uvplt vis=%s axis=freq,amplitude device=uvplt_amp_v_freq.png/png" % (concat_vis_freq_name)
                   #print(cmd)
                   #os.system(cmd)
-                  
-                  
-                  
-                  miriad_cal_vis_name_list.append(concat_vis_freq_name)
-                  miriad_cal_uvfits_name_list.append(concat_uvfits_freq_name)
+
+                  #miriad_cal_vis_name_list.append(concat_vis_freq_name)
+                  #miriad_cal_uvfits_name_list.append(concat_uvfits_freq_name)
        
                   
        #print miriad_cal_vis_name_list
@@ -9394,7 +9381,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              print(cmd)
              os.system(cmd)
                
-               
+             #image the concat vis to seee if the cal worked   
 
                
           
@@ -10436,9 +10423,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = True
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=True,plot_cal=plot_cal,uv_cutoff=0)
-#sys.exit()
+plot_cal = False
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=False,plot_cal=plot_cal,uv_cutoff=0)
+sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
@@ -10505,7 +10492,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
@@ -10517,7 +10504,7 @@ EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
 #wsclean=False # for sims
-wsclean=True # for data
+wsclean=False # for data
 fast=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast)
 
