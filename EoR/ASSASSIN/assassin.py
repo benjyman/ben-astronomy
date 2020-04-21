@@ -1747,10 +1747,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          ##
       
          ## plot X and real vis vs baseline length for fig2
-         print(X_short_parallel_array_norm[0:10])
-         print(real_vis_data_sorted_array_norm_scaled[0:10])
-         
-         sys.exit()
          
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
@@ -1870,6 +1866,11 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #Actually, should calculate the angular response for each baseline, then divide X up according to similar values of the angular response
       #https://www.statsmodels.org/dev/examples/notebooks/generated/mixed_lm_example.html
       #tilde in mixedlm mean "predicted by"
+      
+      print(X_short_parallel_array[0:20]) 
+      print(real_vis_data_sorted_array[0:20])
+      
+      sys.exit()
       
       ##OLS with fixed intercept at zero
       ##X_short_parallel_array = sm.add_constant(X_short_parallel_array)
