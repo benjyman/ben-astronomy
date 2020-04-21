@@ -9250,11 +9250,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   #this doesnt work - need to just run gpplt and then plot manually
                   #cmd = "gpplt vis=%s device=output.png/png yaxis=amplitude options=bandpass nxy=7,7 log=%s" % (miriad_vis_name,gain_solutions_name_amp)
-                  cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (new_split_vis_name,gain_solutions_name_amp)
+                  cmd = "gpplt vis=%s yaxis=amplitude log=%s" % (miriad_vis_name,gain_solutions_name_amp)
                   print(cmd)
                   os.system(cmd)
       
-                  cmd = "gpplt vis=%s yaxis=phase log=%s" % (new_split_vis_name,gain_solutions_name_phase)
+                  cmd = "gpplt vis=%s yaxis=phase log=%s" % (miriad_vis_name,gain_solutions_name_phase)
                   print(cmd)
                   os.system(cmd)               
                   
