@@ -2086,7 +2086,8 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
    
-   max_baselines_included = 2000 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+   #this needs to change for each chan or you are wasting time
+   max_baselines_included = 20 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
          
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
@@ -2395,14 +2396,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
                   np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
                   print("saved %s" % Y_short_parallel_angular_array_filename)
-   
-         
-      
-      
-      
-      
-      
-      
+
    return(diffuse_global_value)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
@@ -10847,8 +10841,9 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order=7
 
 plot_only = False
-baseline_length_thresh_lambda = 0.23
+baseline_length_thresh_lambda = 0.50
 include_angular_info = True
+
 
 #up to here with plot_only = False
 #chan_num = 10
