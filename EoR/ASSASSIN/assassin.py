@@ -9277,7 +9277,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      print(cmd)
                      os.system(cmd)
                      
-                     image_basename="miriad_cal_chan_%s" % (EDA2_chan)
+                     image_basename="miriad_cal_chan_%s_%s" % (EDA2_chan,EDA2_obs_time)
       
                      cmd = "rm -rf %s_xx.map %s.beam %s_xx.model %s_xx.restor" % (image_basename,image_basename,image_basename,image_basename)
                      print(cmd)
