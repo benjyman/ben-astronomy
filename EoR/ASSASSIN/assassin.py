@@ -1559,7 +1559,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
 
 def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,fine_chan_index,include_angular_info=True):
    centre_freq = float(freq_MHz_list[freq_MHz_index])
-   centre_wavelength = 300./centre_freq
+
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
@@ -1571,7 +1571,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-
+   wavelength_fine_chan = 300./freq_MHz_fine_chan
                
    #do for each obs_time:
    for obs_time in obs_time_list:
@@ -1602,8 +1602,116 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
          print("loaded %s" % Y_short_parallel_angular_array_filename)
    
-      sys.exit()
+         #plot a histogram of Y values
+         plt.clf()
+         n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+         map_title="Histogram of Y values (angular response)" 
+         fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         plt.close()
+         print("saved %s" % fig_name)  
+   
+
+      ##plot X_vs_uvdist for vis and X
+      #normalise both X and real vis to max 1
+      if len(X_short_parallel_array_pure_inline) > 0:
+         X_short_parallel_array_max_pure_inline = np.max(X_short_parallel_array_pure_inline)
+         #print("X_short_parallel_array_max_pure_inline %E" % X_short_parallel_array_max_pure_inline)
+         X_short_parallel_array_norm_pure_inline = X_short_parallel_array_pure_inline / X_short_parallel_array_max_pure_inline
+         
+         X_short_parallel_array_max_pure_parallel = np.max(X_short_parallel_array_pure_parallel)
+         #print("X_short_parallel_array_max_pure_parallel %E" % X_short_parallel_array_max_pure_parallel)
+         X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_inline  
       
+         X_short_parallel_array_max = np.max(X_short_parallel_array)
+         #print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
+         X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max_pure_inline
+         
+         #[0:n_baselines_included]
+         real_vis_data_sorted_max = np.max(real_vis_data_sorted_array)
+         #print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
+         real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
+         
+         #offset X and real_vis by some arbitrary amount 0.5?
+         #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
+         #need to multiply (scale) not add!
+         real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2. / (2.*np.pi)
+         
+         
+         #plot X and pure inline and parallel for fig 1 of paper
+         
+         ## plot X and real vis vs baseline length
+         plt.clf()
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2')
+         plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color='red')
+         plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='inline',color='green')
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
+         #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+         map_title="Response to uniform sky vs baseline length" 
+         plt.xlabel("Baseline length (wavelengths)")
+         plt.ylabel("Normalised visibility amplitude")
+         plt.legend(loc=1)
+         #plt.ylim([0, 20])
+         fig_name= "X_vs_uv_dist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
+         ##
+      
+         ## plot X and real vis vs baseline length for fig2
+         
+         plt.clf()
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
+         #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+         map_title="Response to uniform sky vs baseline length data" 
+         plt.xlabel("Baseline length (wavelengths)")
+         plt.ylabel("Visibility amplitude")
+         plt.legend(loc=1)
+         #plt.ylim([0, 20])
+         fig_name= "X_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
+         
+         jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
+         
+         if include_angular_info:
+            Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
+      
+            #full response
+            #need to convert between Jy and K
+         
+            Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
+         
+            #need to update full response to include fine chans
+            #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
+      
+      
+   
+   
+         #also include Y and the sum of X plus Y
+         plt.clf()
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+         
+         #need to update update full response to include fine chans
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
+         ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+         map_title="Response to uniform sky vs baseline length data" 
+         plt.xlabel("Baseline length (wavelengths)")
+         plt.ylabel("Visibility amplitude")
+         plt.legend(loc=1)
+         #plt.ylim([0, 20])
+         fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
+      
+         sys.exit()
+         
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    centre_freq = float(freq_MHz)
