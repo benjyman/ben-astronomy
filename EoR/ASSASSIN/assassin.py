@@ -172,6 +172,11 @@ lst_list = lst_list_array.astype(str)
 sky_model = 'gsm'
 #sky_model = 'gsm2016'
 #sky_model = 'gmoss'
+
+if sky_model=='gsm':
+   NSIDE=512 #(to match pygsm)
+      
+      
 pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
@@ -2276,8 +2281,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    
    #for EDA2
    n_ants = 256
-   if sky_model=='gsm':
-      NSIDE=512 #(to match pygsm)
+
    n_pix = hp.nside2npix(NSIDE)
    print('n_pix')
    print(n_pix)
