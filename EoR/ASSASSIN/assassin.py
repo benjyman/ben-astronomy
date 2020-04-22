@@ -2168,7 +2168,19 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
          UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          
          if calculate_uniform_response:
-            
+         
+            n_pix = hp.nside2npix(NSIDE)
+            print('n_pix')
+            print(n_pix)
+            pixel_solid_angle = (4.*np.pi) / n_pix
+            #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
+            hpx_index_array = np.arange(0,n_pix,1)
+
+            #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
+            #rot_theta_beam = - np.pi / 2.
+            rot_theta_sky = np.pi / 2.
+            rot_phi_beam = 0.
+
             T_sky_rough = 180.*(freq_MHz/180.)**(-2.5)
             print("180@180 t_sky chan %s is %s" % (EDA2_chan,T_sky_rough))
                
@@ -2235,29 +2247,11 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                gsm_map_angular = gsm_map - diffuse_global_value
                gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
             
-            
-            
-            n_pix = hp.nside2npix(NSIDE)
-            print('n_pix')
-            print(n_pix)
-            pixel_solid_angle = (4.*np.pi) / n_pix
-            #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
-            hpx_index_array = np.arange(0,n_pix,1)
-   
+
             #beam stuff in function
             short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
             
-            #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
-            #rot_theta_beam = - np.pi / 2.
-            rot_theta_sky = np.pi / 2.
-            rot_phi_beam = 0.
-            
-            #Dont rotate the beam map and the phase angle map, rotate the sky only (quicker!)
-            #short_dipole_parallel_beam_map = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
-            
-            #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
-            #TRY it!
-            #baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
+
             baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
             
             if pol == 'Y':
@@ -2267,7 +2261,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
                baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
          
-            #print baseline_phi_rad_array[0:10]
             #print baseline_phi_rad_array.shape
             baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
             
