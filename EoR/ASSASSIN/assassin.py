@@ -1606,7 +1606,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          plt.clf()
          n, bins, patches = plt.hist(Y_short_parallel_angular_array)
          map_title="Histogram of Y values (angular response)" 
-         fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+         fig_name= "hist_Y_angular_%s_MHz_%s_pol%s.png" % (centre_freq,pol,signal_type_postfix)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          plt.close()
