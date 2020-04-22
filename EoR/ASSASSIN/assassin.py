@@ -1582,9 +1582,28 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
       Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
 
-      print(Y_short_parallel_angular_array_filename)
-      sys.exit()
+      X_short_parallel_array = np.load(X_short_parallel_array_filename)
+      print("loaded %s" % X_short_parallel_array_filename)
    
+      real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
+      print("loaded %s" % real_vis_data_sorted_array_filename)
+
+      baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
+      print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
+
+      real_or_simulated_string = "EDA2"
+
+      X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
+      print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
+      X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
+      print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
+   
+      if include_angular_info:
+         Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+         print("loaded %s" % Y_short_parallel_angular_array_filename)
+   
+      sys.exit()
+      
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    centre_freq = float(freq_MHz)
