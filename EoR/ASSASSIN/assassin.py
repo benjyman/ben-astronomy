@@ -2079,10 +2079,15 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
-def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
+def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
    freq_MHz = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./freq_MHz
    
+   lst_hrs = lst_hrs_list[0]
+   lst_deg = (float(lst_hrs)/24.)*360.
+   
+   max_baselines_included = 2000 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+         
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
    sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
@@ -2164,13 +2169,74 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
          
          if calculate_uniform_response:
             
-            if include_angular_info:
+            T_sky_rough = 180.*(freq_MHz_fine_chan/180.)**(-2.5)
+            print("180@180 t_sky is %s" % T_sky_rough)
+               
+            if include_angular_info:            
+               print("checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz))
+               #check vale
+               year=2000
+               month=1
+               day=1
+               hour=0
+               minute=0
+               second=0
+               #hour=int(np.floor(float(lst_hrs)))
+               #minute=int(np.floor((float(lst_hrs)-hour) * 60.))
+               #second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
+               
+               date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
+               #print(date_time_string)
+               latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
+               #Parkes (pygsm example)
+               #latitude, longitude, elevation = '-32.998370', '148.263659', 100
+               ov = GSMObserver()
+               ov.lon = longitude
+               ov.lat = latitude
+               ov.elev = elevation
+               
+               #print time_string
+               
+               #set an initial time using astropy Time
+               
+               astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (year, month, day, hour, minute, second)
+               time_initial = Time(astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+               
+               #calculate the local sidereal time for the MWA at date_obs_initial
+               lst_initial = time_initial.sidereal_time('apparent')
+               
+               lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
+               
+               #want lst == lst_hrs, so add time so that this is true
+               delta_time = TimeDelta(lst_initial_days, format='jd') 
+               
+               desired_lst_days = float(lst_hrs) / 24.
+               
+               time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
+               
+               print('final LST is: ')
+               print(time_final.sidereal_time('apparent'))
+               
+               #close enough......
+               
+               time_string = time_final.utc.iso
+               #time_string = "%02d_%02d_%02d" % (hour,minute,second)
+               
+               hour = int(time_string.split(' ')[1].split(':')[0])
+               minute = int(time_string.split(' ')[1].split(':')[1])
+               minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
+               
+               date_obs = datetime(year, month, day, hour, minute, second)
+               ov.date = date_obs
+               
+               gsm_map = ov.generate(freq_MHz)
+
                #Need to update this to do each fine chan
-               gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+               gsm_map_angular = gsm_map - diffuse_global_value
                gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
             
-            max_baselines_included = 2000 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
-         
+            
+            
             n_pix = hp.nside2npix(NSIDE)
             print('n_pix')
             print(n_pix)
@@ -3761,7 +3827,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          ###THis is the one that works for the SIMS! at 20200422
          #t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
          
-         t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
+         t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
          
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
