@@ -9260,7 +9260,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   os.system(cmd)               
                   
                   
-                  #plot the sols and 
+                  #plot the sols and make in image to check
                   if (os.path.isfile(gain_solutions_name_phase) and os.path.isfile(gain_solutions_name_amp)):
                      if plot_cal:
                         plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,gain_solutions_name_phase,gain_solutions_name_amp)
@@ -9277,6 +9277,26 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      print(cmd)
                      os.system(cmd)
                      
+                     image_basename="miriad_cal_chan_%s" % (EDA2_chan)
+      
+                     cmd = "rm -rf %s_xx.map %s.beam %s_xx.model %s_xx.restor" % (image_basename,image_basename,image_basename,image_basename)
+                     print(cmd)
+                     os.system(cmd)
+                     
+                     cmd = "invert vis=%s map=%s_xx.map beam=%s.beam options=double imsize=512 stokes=xx robust=-0.5 cell=1800 " % (miriad_vis_name,image_basename,image_basename)
+                     print(cmd)
+                     os.system(cmd)
+                     cmd = "clean map=%s_xx.map beam=%s.beam out=%s_xx.model niters=2000" % (image_basename,image_basename,image_basename)
+                     print(cmd)
+                     os.system(cmd)
+                     cmd = "restor model=%s_xx.model  beam=%s.beam map=%s_xx.map out=%s_xx.restor " % (image_basename,image_basename,image_basename,image_basename)
+                     print(cmd)
+                     os.system(cmd)
+                        
+                     cmd = "fits in=%s_xx.map out=%s_xx.fits op=xyout" % (image_basename,image_basename)
+                     print(cmd)
+                     os.system(cmd)
+         
                   else:
                      print("no cal solutions for %s" % (new_split_vis_name))
                      continue
@@ -10426,7 +10446,8 @@ freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 plot_cal = False
 wsclean = False
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=True,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+concat=False
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
