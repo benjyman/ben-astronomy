@@ -2079,9 +2079,16 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
-def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=False):
+def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
    freq_MHz = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./freq_MHz
+   
+   #get the diffuse global diffuse value used in the simulation (from gsm)
+   EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
+   sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
+   diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
+   diffuse_global_value = diffuse_global_value_array[0]
    
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
           
@@ -2156,7 +2163,12 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
          UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          
          if calculate_uniform_response:
-         
+            
+            if include_angular_info:
+               #Need to update this to do each fine chan
+               gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+               gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
+            
             max_baselines_included = 2000 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
          
             n_pix = hp.nside2npix(NSIDE)
@@ -2249,10 +2261,10 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
                b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
                
                
-               phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+               phase_angle_array = 2.*np.pi*b_dot_r_array/centre_wavelength
                
-               phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
-               phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
+               phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/centre_wavelength
+               phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/centre_wavelength
                
                element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
                
@@ -2331,15 +2343,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
       
       
       
-   #end bit:
-   #get the diffuse global diffuse value used in the simulation (from gsm)
-   EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
-   sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
-   freq_MHz_index = int(freq_MHz - 50)
-   diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
-   #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
-   diffuse_global_value = diffuse_global_value_array[0]
-   
+      
    return(diffuse_global_value)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
