@@ -2138,16 +2138,14 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
          
          UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
          VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
-         real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
-         imag_vis_data_sorted_orig = imag_vis_data[baseline_length_array_m_inds]
-         weights_vis_data_sorted_orig = weights_vis_data[baseline_length_array_m_inds]
+         #real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+
           
          #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
          baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
          VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-         real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-         imag_vis_data_sorted = imag_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-         weights_vis_data_sorted = weights_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         #real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+
          
          #leave this here!!
          UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
