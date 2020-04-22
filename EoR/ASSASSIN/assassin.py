@@ -2156,6 +2156,14 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
          UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          
          if calculate_uniform_response:
+
+            n_pix = hp.nside2npix(NSIDE)
+            print('n_pix')
+            print(n_pix)
+            pixel_solid_angle = (4.*np.pi) / n_pix
+            #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
+            hpx_index_array = np.arange(0,n_pix,1)
+   
             #beam stuff in function
             short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
             
