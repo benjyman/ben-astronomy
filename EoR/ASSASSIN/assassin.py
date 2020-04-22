@@ -2355,6 +2355,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                
             #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
             #save for each obs separately
+            fine_chan_index_array = range(n_fine_chans)
             for fine_chan_index in fine_chan_index_array:
                fine_chan_index = int(fine_chan_index)
    
