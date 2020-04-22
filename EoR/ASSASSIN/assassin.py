@@ -2080,8 +2080,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
 def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
-   freq_MHz = float(freq_MHz_list[freq_MHz_index])
-   centre_wavelength = 300./freq_MHz
+   centre_freq = float(freq_MHz_list[freq_MHz_index])
+   centre_wavelength = 300./centre_freq
    
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
@@ -2182,11 +2182,11 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
             rot_theta_sky = np.pi / 2.
             rot_phi_beam = 0.
 
-            T_sky_rough = 180.*(freq_MHz/180.)**(-2.5)
+            T_sky_rough = 180.*(centre_freq/180.)**(-2.5)
             print("180@180 t_sky chan %s is %s" % (EDA2_chan,T_sky_rough))
                
             if include_angular_info:            
-               print("checking value for lst_deg %0.3f freq_MHz %s" % (lst_deg,freq_MHz))
+               print("calculating time for lst_deg %0.3f " % (lst_deg))
                #check vale
                year=2000
                month=1
@@ -2242,7 +2242,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                date_obs = datetime(year, month, day, hour, minute, second)
                ov.date = date_obs
                
-               gsm_map = ov.generate(freq_MHz)
+               gsm_map = ov.generate(centre_freq)
 
                #Need to update this to do each fine chan
                gsm_map_angular = gsm_map - diffuse_global_value
