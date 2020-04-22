@@ -2370,11 +2370,43 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                print(fine_chan_index)
                print(freq_MHz_fine_chan)
                print(wavelength)
-   
-               baseline_length_array_lambda_sorted_cut_list = []
-               real_vis_data_sorted_list = []
+          
+               if wsclean:
+                  real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
+               else:
+                  real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
                
-               sys.exit()
+               UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+               VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+               real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+
+               
+
+               #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+               baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+               VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+               real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+               
+               #leave this here!!
+               UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+               
+               #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+               #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
+                
+               baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
+               
+               
+               baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+               
+
+               n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+               print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,EDA2_obs_time,fine_chan_index))
+                       
+
+               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+               np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut_array)
+               print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
+               
                
                X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
                np.save(X_short_parallel_array_filename,X_short_parallel_array)
