@@ -2079,7 +2079,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
-def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=True):
+def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=False):
    freq_MHz = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./freq_MHz
    
@@ -2156,7 +2156,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
          UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          
          if calculate_uniform_response:
-
+         
+            max_baselines_included = 2000 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+         
             n_pix = hp.nside2npix(NSIDE)
             print('n_pix')
             print(n_pix)
@@ -2225,17 +2227,120 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
             
             baseline_vector_array = baseline_vector_array
             
-            print(baseline_vector_array[0:10])
-            sys.exit()
-            
             X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
             Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
             
             X_short_parallel_array_pure_parallel = np.empty(len(baseline_vector_array),dtype=complex)
             X_short_parallel_array_pure_inline = np.empty(len(baseline_vector_array),dtype=complex)
       
-            
+            #need do this bit just once for each chan
+            for baseline_vector_index in range(0,max_baselines_included):
+               #Just try doing the integral (sum) all in one go with one baseline
+               #baseline_vector_test = baseline_vector_array[0]
+               
+               baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
+               
+               baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
+               baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
+               
+               b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+          
+               b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
+               b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
+               
+               
+               phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+               
+               phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
+               phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
+               
+               element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+               
+               element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+               element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
+               
+               #for angular info
+               if include_angular_info:
+                  element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
 
+               X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+         
+               X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+               X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+         
+         
+               if include_angular_info:
+                  Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+
+               X_short_parallel_array[baseline_vector_index] = X_short_parallel
+               
+               X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+               X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+               
+               
+               if include_angular_info:
+                  Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
+               
+            #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
+            #save for each obs separately
+            for fine_chan_index in fine_chan_index_array:
+               fine_chan_index = int(fine_chan_index)
+   
+               #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+
+               wavelength = 300./float(freq_MHz_fine_chan)
+               
+               print("fine_chan index,MHz,wavelength")
+               print(fine_chan_index)
+               print(freq_MHz_fine_chan)
+               print(wavelength)
+   
+               baseline_length_array_lambda_sorted_cut_list = []
+               real_vis_data_sorted_list = []
+               
+               sys.exit()
+               
+               X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+               np.save(X_short_parallel_array_filename,X_short_parallel_array)
+            
+               print("saved %s" % X_short_parallel_array_filename)
+            
+               X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+               np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
+               print("saved %s" % X_short_parallel_array_filename_pure_inline)
+               
+               X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+               np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
+               print("saved %s" % X_short_parallel_array_filename_pure_parallel)
+               
+               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+               np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
+               print("saved %s" % real_vis_data_sorted_array_filename)
+               
+               #update for fine chans
+               if include_angular_info:
+                  Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
+                  print("saved %s" % Y_short_parallel_angular_array_filename)
+   
+         
+      
+      
+      
+      
+      
+   #end bit:
+   #get the diffuse global diffuse value used in the simulation (from gsm)
+   EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
+   sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
+   freq_MHz_index = int(freq_MHz - 50)
+   diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
+   diffuse_global_value = diffuse_global_value_array[0]
+   
+   return(diffuse_global_value)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
