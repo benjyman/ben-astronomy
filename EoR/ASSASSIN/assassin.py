@@ -2074,9 +2074,42 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
-def extract_data_from_eda2_ms(freq_MHz_list,freq_MHz_index,pol,calculate_uniform_response=True):
+def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=True):
    freq_MHz = freq_MHz_list[freq_MHz_index]
-           
+   obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
+          
+   #open one to get the number of fine chans
+   uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
+   
+   #read the cal uvfits, extract real vis uu and vv
+   print("%s" % uvfits_filename)
+   hdulist = fits.open(uvfits_filename)
+   hdulist.info()
+   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+   #print info_string
+   uvtable = hdulist[0].data
+   uvtable_header = hdulist[0].header
+   #print(uvtable_header)
+   hdulist.close()
+
+   visibilities_single = uvtable['DATA']
+   visibilities_shape = visibilities_single.shape
+   print("visibilities_shape")
+   print(visibilities_shape)
+   
+   #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
+   #n_timesteps = n_vis/n_baselines
+   #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
+   
+   #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
+   if wsclean:
+      n_fine_chans = visibilities_single.shape[4]
+   else:
+      n_fine_chans = visibilities_single.shape[3]
+
+   print(n_fine_chans)
+   sys.exit()
+      
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
@@ -3489,7 +3522,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
          #only the theoretical beam weighted av is taken from this function now,, rest is derived from saved files
          #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
-         t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
+         
+         ###THis is the one that works for the SIMS! at 20200422
+         #t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
+         
+         t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
          
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
@@ -10441,14 +10478,14 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
-wsclean = False
-concat=False
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
-sys.exit()
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#plot_cal = False
+#wsclean = False
+#concat=False
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+#sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
