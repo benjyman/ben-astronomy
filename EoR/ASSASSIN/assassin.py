@@ -1561,8 +1561,15 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    centre_freq = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./centre_freq
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
+   EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
    
-      
+   sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
+   diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
+   diffuse_global_value = diffuse_global_value_array[0] 
+   
+   print(diffuse_global_value)
+   sys.exit()
    
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
