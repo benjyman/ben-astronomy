@@ -2075,7 +2075,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
 def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_obs,calculate_uniform_response=True):
-   freq_MHz = freq_MHz_list[freq_MHz_index]
+   freq_MHz = float(freq_MHz_list[freq_MHz_index])
+   centre_wavelength = 300./freq_MHz
+   
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
           
    #open one to get the number of fine chans
@@ -2107,9 +2109,123 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,pol,EDA2_chan,n_o
    else:
       n_fine_chans = visibilities_single.shape[3]
 
-   print(n_fine_chans)
-   sys.exit()
+   for obs_time in obs_time_list:
+         uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time)
+         print("%s" % uvfits_filename)
+         hdulist = fits.open(uvfits_filename)
+         hdulist.info()
+         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+         #print info_string
+         uvtable = hdulist[0].data
+         uvtable_header = hdulist[0].header
+         #print(uvtable_header)
+         hdulist.close()
+         
+         visibilities = uvtable['DATA']
+         visibilities = visibilities_single.shape
+
+         UU_s_array = uvtable['UU']
+         UU_m_array = UU_s_array * c   
+         VV_s_array = uvtable['VV']
+         VV_m_array = VV_s_array * c
+
+    
+         #Need to sort by baseline length (then only use short baselines)
+         baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
+         
+         baseline_length_array_m_inds = baseline_length_array_m.argsort()
+         baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
+         
+         UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+         VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+         real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+         imag_vis_data_sorted_orig = imag_vis_data[baseline_length_array_m_inds]
+         weights_vis_data_sorted_orig = weights_vis_data[baseline_length_array_m_inds]
+          
+         #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+         baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+         VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+         real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         imag_vis_data_sorted = imag_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         weights_vis_data_sorted = weights_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+         
+         #leave this here!!
+         UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+         
+         if calculate_uniform_response:
+            #beam stuff in function
+            short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
+            
+            #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
+            #rot_theta_beam = - np.pi / 2.
+            rot_theta_sky = np.pi / 2.
+            rot_phi_beam = 0.
+            
+            #Dont rotate the beam map and the phase angle map, rotate the sky only (quicker!)
+            #short_dipole_parallel_beam_map = rotate_map(short_dipole_parallel_beam_map, rot_theta_beam, rot_phi_beam)
+            
+            #I think this is actually the wrong way round, should be UU/VV maybe ... to get the X/Y pols right.
+            #TRY it!
+            #baseline_phi_rad_array = np.arctan(VV_m_array_sorted/UU_m_array_sorted)
+            baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
+            
+            if pol == 'Y':
+               baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
+               baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
+            else:
+               baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
+               baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
+         
+            #print baseline_phi_rad_array[0:10]
+            #print baseline_phi_rad_array.shape
+            baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
+            
+            baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+            #print baseline_vector_array_unit[0,:]
+            baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
+            baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
+            
+            
+            #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+            #https://vpython.org/contents/docs/VisualIntro.html
+            #rotate about x axis
+            #forget about rotating the vectors its the phase angle hpx array you need to rotate!
+            rot_axis = [0,1,0]
+            rot_theta = 0. #np.pi / 4.
+            
+            baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+            
+            #print baseline_vector_array_unit_rotated[0,:]
+            
+            
+            baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
+            baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
+            
+            baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+            baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+            baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+            
+            sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+            #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+            #print sky_vector_array_unrotated_test
+            #sys.exit()
+            #do the same rotation for the sky vector
+            sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+            
+            baseline_vector_array = baseline_vector_array
+            
+            print(baseline_vector_array[0:10])
+            sys.exit()
+            
+            X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
+            Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
+            
+            X_short_parallel_array_pure_parallel = np.empty(len(baseline_vector_array),dtype=complex)
+            X_short_parallel_array_pure_inline = np.empty(len(baseline_vector_array),dtype=complex)
       
+            
+
+
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
