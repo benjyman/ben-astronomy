@@ -2082,7 +2082,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
 def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
    centre_freq = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./centre_freq
-   
+   fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
+
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
    
