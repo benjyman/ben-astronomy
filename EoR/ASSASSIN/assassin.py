@@ -1557,19 +1557,33 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       figmap.savefig(fig_name)
       print("saved %s" % fig_name) 
 
-def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
+def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,fine_chan_index,include_angular_info=True):
    centre_freq = float(freq_MHz_list[freq_MHz_index])
    centre_wavelength = 300./centre_freq
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
-   
+   obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
+      
    sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
    #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
    diffuse_global_value = diffuse_global_value_array[0] 
    
-   print(diffuse_global_value)
-   sys.exit()
+   fine_chan_width_MHz = fine_chan_width_Hz/1000000.
+   freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+
+               
+   #do for each obs_time:
+   for obs_time in obs_time_list:
+      baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)             
+      X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)               
+      X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)               
+      X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)            
+      real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+
+      print(Y_short_parallel_angular_array_filename)
+      sys.exit()
    
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
@@ -3917,7 +3931,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                edge_chan=False 
                
                if EDA2_data:
-                  t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat)
+                  t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,fine_chan_index=fine_chan_index)
                else:
                   t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
                
