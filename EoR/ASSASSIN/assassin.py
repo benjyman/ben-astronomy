@@ -2562,16 +2562,16 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
                
                X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename,X_short_parallel_array)
+               np.save(X_short_parallel_array_filename,X_short_parallel_array[0:n_baselines_included])
             
                print("saved %s" % X_short_parallel_array_filename)
             
                X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
+               np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline[0:n_baselines_included])
                print("saved %s" % X_short_parallel_array_filename_pure_inline)
                
                X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
+               np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel[0:n_baselines_included])
                print("saved %s" % X_short_parallel_array_filename_pure_parallel)
                
                real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
@@ -2581,7 +2581,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                #update for fine chans
                if include_angular_info:
                   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-                  np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
+                  np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
                   print("saved %s" % Y_short_parallel_angular_array_filename)
             
    return(diffuse_global_value)
@@ -11030,7 +11030,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
