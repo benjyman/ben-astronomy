@@ -2169,11 +2169,11 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
          
          if calculate_uniform_response:
             
-            T_sky_rough = 180.*(freq_MHz_fine_chan/180.)**(-2.5)
-            print("180@180 t_sky is %s" % T_sky_rough)
+            T_sky_rough = 180.*(freq_MHz/180.)**(-2.5)
+            print("180@180 t_sky chan %s is %s" % (EDA2_chan,T_sky_rough))
                
             if include_angular_info:            
-               print("checking global value for lst_deg %s freq_MHz %s" % (lst_deg,freq_MHz))
+               print("checking value for lst_deg %0.3f freq_MHz %s" % (lst_deg,freq_MHz))
                #check vale
                year=2000
                month=1
