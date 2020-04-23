@@ -2329,9 +2329,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    #open one to get the number of fine chans
    uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
    
-   #read the cal uvfits, extract real vis uu and vv
-   print("%s" % uvfits_filename)
-   sys.exit()
    
    hdulist = fits.open(uvfits_filename)
    hdulist.info()
@@ -2360,6 +2357,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    for obs_time in obs_time_list:
          uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time)
          print("%s" % uvfits_filename)
+         sys.exit()
          hdulist = fits.open(uvfits_filename)
          hdulist.info()
          info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
