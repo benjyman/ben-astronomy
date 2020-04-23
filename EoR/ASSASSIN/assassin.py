@@ -1793,19 +1793,13 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
     
    t_sky_K_array = np.asarray(t_sky_K_list)
    t_sky_error_K_array = np.asarray(t_sky_error_K_list)
-
-   print(t_sky_K_array) 
-   print(t_sky_error_K_array)
    
    mean_t_sky_K = np.nanmean(t_sky_K_array)
    std_dev_t_sky_K = np.nanstd(t_sky_K_array)
-   
-   
-   
-   print(mean_t_sky_K)
-   print(std_dev_t_sky_K)
-   
-   sys.exit()
+
+   print("flagging yet to be implemented in model_tsky_from_saved_data_eda2 ")
+   return(mean_t_sky_K.real,std_dev_t_sky_K,mean_t_sky_K.real,std_dev_t_sky_K,freq_MHz_fine_chan)
+
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
@@ -11121,7 +11115,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
