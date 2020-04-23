@@ -1621,25 +1621,17 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       #normalise both X and real vis to max 1
       if len(X_short_parallel_array_pure_inline) > 0:
          X_short_parallel_array_max_pure_inline = np.nanmax(X_short_parallel_array_pure_inline)
-         #print("X_short_parallel_array_max_pure_inline %E" % X_short_parallel_array_max_pure_inline)
          X_short_parallel_array_norm_pure_inline = X_short_parallel_array_pure_inline / X_short_parallel_array_max_pure_inline
          
          X_short_parallel_array_max_pure_parallel = np.nanmax(X_short_parallel_array_pure_parallel)
-         #print("X_short_parallel_array_max_pure_parallel %E" % X_short_parallel_array_max_pure_parallel)
          X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_inline  
       
          X_short_parallel_array_max = np.nanmax(X_short_parallel_array)
-         #print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
          X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max_pure_inline
          
-         #[0:n_baselines_included]
          real_vis_data_sorted_max = np.nanmax(real_vis_data_sorted_array)
-         #print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
          real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
          
-         #offset X and real_vis by some arbitrary amount 0.5?
-         #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
-         #need to multiply (scale) not add!
          real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2. / (2.*np.pi)
          
          
@@ -1664,7 +1656,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          ##
       
          ## plot X and real vis vs baseline length for fig2
-         
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
          plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
@@ -1686,7 +1677,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       
             #full response
             #need to convert between Jy and K
-         
             Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
          
             #need to update full response to include fine chans
@@ -1713,8 +1703,40 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
-      
-         sys.exit()
+
+         if np.nansum(np.abs(X_short_parallel_array) > 0):
+            if model_type=='OLS_fixed_intercept':
+               model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
+               results = model.fit()
+               parameters = results.params
+               #print parameters
+               t_sky_jy = parameters[0]
+               t_sky_error_jy = results.bse[0]
+            elif model_type=='OLS_fixed_int_subtr_Y':
+               #subtract Y from the data before fitting (should get rid of the angular variations)
+               real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
+               model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
+               results = model.fit()
+               ##print results.summary()
+               parameters = results.params
+               #print parameters
+               t_sky_jy = parameters[0]
+               t_sky_error_jy = results.bse[0]
+            elif model_type=='OLS_with_intercept':
+               X_short_parallel_array = sm.add_constant(X_short_parallel_array)
+               model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
+               results = model.fit()
+               ##print results.summary()
+               parameters = results.params
+               ##print parameters
+               t_sky_jy = parameters[1]
+               t_sky_error_jy = results.bse[1]
+         else:
+            print("X_short_parallel_array all NaNs, returning Tsky NaN")
+            return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan)
+        
+        print(t_sky_jy) 
+        print(t_sky_error_jy)
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
