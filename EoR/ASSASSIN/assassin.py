@@ -9829,7 +9829,9 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd) 
                   os.system(cmd)
                      
-
+                  print(apparent_sky_im_name)
+                  sys.exit()
+                  
                   cmd = "rm -rf %s %s" % (gain_solutions_name_amp,gain_solutions_name_phase)
                   print(cmd)
                   os.system(cmd)
