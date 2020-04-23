@@ -1661,6 +1661,14 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       
          ## plot X and real vis vs baseline length for fig2
          
+         print(baseline_length_array_lambda_sorted_cut)
+         print(len(baseline_length_array_lambda_sorted_cut))
+         print(X_short_parallel_array_norm)
+         print(len(X_short_parallel_array_norm))
+         print(real_vis_data_sorted_array_norm_scaled)
+         print(len(real_vis_data_sorted_array_norm_scaled))
+         
+         sys.exit()
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
          plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
@@ -11046,6 +11054,7 @@ EDA2_chan_list = [EDA2_chan_list[chan_num]]
 wsclean=False # for data
 fast=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast)
+
 
 
 ###obs seem to underestimate the global temp - Y sub improves it a bit.
