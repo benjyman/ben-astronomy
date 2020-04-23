@@ -2465,7 +2465,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
             baseline_vector_array = baseline_vector_array
             
             X_short_parallel_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-            Y_short_parallel_angular_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+            Y_short_parallel_angular_array = np.full(len(baseline_vector_array),0,dtype=complex)
             
             X_short_parallel_array_pure_parallel = np.full(len(baseline_vector_array),np.nan,dtype=complex)
             X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
