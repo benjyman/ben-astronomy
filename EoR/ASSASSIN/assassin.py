@@ -1575,6 +1575,9 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    wavelength_fine_chan = 300./freq_MHz_fine_chan
                
    #do for each obs_time:
+   t_sky_K_list = []
+   t_sky_error_K_list = []
+   
    for EDA2_obs_time in obs_time_list:
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)             
       X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)               
@@ -1782,8 +1785,19 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          plt.close()
          print("saved %s" % fig_name)  
          
-         sys.exit()
+         t_sky_K_list.append(t_sky_K)
+         t_sky_error_K_list.append(t_sky_error_K)
          
+   t_sky_K_array = np.asarray(t_sky_K_list)
+   t_sky_error_K_array = np.asarray(t_sky_error_K_list)
+   
+   mean_t_sky_K = np.nanmean(t_sky_K_array)
+   std_dev_t_sky_K = np.nanstd(t_sky_K_array)
+   
+   print(mean_t_sky_K)
+   print(std_dev_t_sky_K)
+   
+   sys.exit()
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
