@@ -2465,6 +2465,8 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
             baseline_vector_array = baseline_vector_array
             
             X_short_parallel_array = np.empty(len(baseline_vector_array),dtype=complex)
+            print(X_short_parallel_array)
+            sys.exit()
             Y_short_parallel_angular_array = np.empty(len(baseline_vector_array),dtype=complex)
             
             X_short_parallel_array_pure_parallel = np.empty(len(baseline_vector_array),dtype=complex)
@@ -11039,7 +11041,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
