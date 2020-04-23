@@ -1563,7 +1563,10 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
-      
+   
+   print(obs_time_list)
+   sys.exit()
+   
    sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
    #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
@@ -2326,11 +2329,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
    
-   print(obs_time_list)
-   print(freq_MHz_index)
-   print(obs_time_list[0])
-   
-   sys.exit()
      
    #open one to get the number of fine chans
    uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
@@ -2360,8 +2358,8 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    else:
       n_fine_chans = visibilities_single.shape[3]
 
-   for obs_time in obs_time_list:
-         uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time)
+   for EDA2_obs_time in obs_time_list:
+         uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          hdulist = fits.open(uvfits_filename)
          hdulist.info()
          info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
