@@ -9896,7 +9896,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      os.system(cmd)
          
                   else:
-                     print("no cal solutions for %s" % (new_split_vis_name))
+                     print("no cal solutions for %s" % (miriad_vis_name))
                      continue
                    
                   ##concat them in freq here
