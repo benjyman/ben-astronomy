@@ -1628,20 +1628,20 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       ##plot X_vs_uvdist for vis and X
       #normalise both X and real vis to max 1
       if len(X_short_parallel_array_pure_inline) > 0:
-         X_short_parallel_array_max_pure_inline = np.max(X_short_parallel_array_pure_inline)
+         X_short_parallel_array_max_pure_inline = np.nanmax(X_short_parallel_array_pure_inline)
          #print("X_short_parallel_array_max_pure_inline %E" % X_short_parallel_array_max_pure_inline)
          X_short_parallel_array_norm_pure_inline = X_short_parallel_array_pure_inline / X_short_parallel_array_max_pure_inline
          
-         X_short_parallel_array_max_pure_parallel = np.max(X_short_parallel_array_pure_parallel)
+         X_short_parallel_array_max_pure_parallel = np.nanmax(X_short_parallel_array_pure_parallel)
          #print("X_short_parallel_array_max_pure_parallel %E" % X_short_parallel_array_max_pure_parallel)
          X_short_parallel_array_norm_pure_parallel = X_short_parallel_array_pure_parallel / X_short_parallel_array_max_pure_inline  
       
-         X_short_parallel_array_max = np.max(X_short_parallel_array)
+         X_short_parallel_array_max = np.nanmax(X_short_parallel_array)
          #print("X_short_parallel_array_max %E" % X_short_parallel_array_max)
          X_short_parallel_array_norm = X_short_parallel_array / X_short_parallel_array_max_pure_inline
          
          #[0:n_baselines_included]
-         real_vis_data_sorted_max = np.max(real_vis_data_sorted_array)
+         real_vis_data_sorted_max = np.nanmax(real_vis_data_sorted_array)
          #print("real_vis_data_sorted_max %E" % real_vis_data_sorted_max)
          real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
          
