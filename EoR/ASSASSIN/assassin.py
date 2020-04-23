@@ -9819,13 +9819,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      #select=uvrange(uvmin,uvmax) in kilolambda
                      #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
                   if uv_cutoff!=0:
-                     #removed option noscale
-                     cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude select=uvrange\(%0.5f,50\)" % (miriad_vis_name,apparent_sky_im_name,uv_cutoff)
+                     cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(%0.5f,50\)" % (miriad_vis_name,apparent_sky_im_name,uv_cutoff)
                      gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
                      gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
                   else:
-                     #removed option noscale
-                     cmd = "selfcal vis=%s interval=1 model=%s options=amplitude" % (miriad_vis_name,apparent_sky_im_name)
+                     cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (miriad_vis_name,apparent_sky_im_name)
                      gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
                      gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
                   print(cmd) 
@@ -11028,13 +11026,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-#chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = False
-#wsclean = False
-#concat=False
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+chan_num = 0
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+plot_cal = False
+wsclean = False
+concat=False
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
