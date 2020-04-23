@@ -1669,6 +1669,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          print(len(real_vis_data_sorted_array_norm_scaled))
          
          sys.exit()
+         
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
          plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Scaled %s visibility amplitude' % real_or_simulated_string)
@@ -11038,7 +11039,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
