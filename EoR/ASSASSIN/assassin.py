@@ -1588,6 +1588,14 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
       print("loaded %s" % real_vis_data_sorted_array_filename)
 
+      print(real_vis_data_sorted_array)
+
+      #The EDA2 data calibrated with miriad has a bunch of zeros, replace these with nans
+      real_vis_data_sorted_array[np.isclose(real_vis_data_sorted_array,0)] = np.nan
+
+      print(real_vis_data_sorted_array)
+      sys.exit()
+      
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
 
@@ -1597,18 +1605,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
       X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
       print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
-   
-      print(X_short_parallel_array)
-      print(len(X_short_parallel_array))
-      print(real_vis_data_sorted_array)
-      print(len(real_vis_data_sorted_array))
-      print(baseline_length_array_lambda_sorted_cut)
-      print(len(baseline_length_array_lambda_sorted_cut))
-      print(X_short_parallel_array_pure_parallel)
-      print(len(X_short_parallel_array_pure_parallel))
-      print(X_short_parallel_array_pure_inline)
-      print(len(X_short_parallel_array_pure_inline))
-      
+
       
       if include_angular_info:
          Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
