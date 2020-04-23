@@ -7929,8 +7929,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                print("scale map by %s to get to Jy/pix" % scale_fine_chan)
                
                reprojected_gsm_im_Jy_per_pix_name_fine_chan =  "%s_%s_%0.3f_MHz_reprojected_Jy_pix.im" % (sky_model,date_time_string,freq_MHz_fine_chan)
-      
-               sys.exit()
+
                
                cmd = "rm -rf %s" % (reprojected_gsm_im_Jy_per_pix_name_fine_chan)
                print(cmd)
