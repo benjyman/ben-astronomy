@@ -2621,9 +2621,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                
                
                if wsclean:
-                  real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
+                  real_vis_data = visibilities[:,0,0,0,fine_chan_index,0,0]
                else:
-                  real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+                  real_vis_data = visibilities[:,0,0,fine_chan_index,0,0]
                
                UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
                VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
