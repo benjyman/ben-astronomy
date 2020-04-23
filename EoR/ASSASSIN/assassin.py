@@ -9819,11 +9819,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      #select=uvrange(uvmin,uvmax) in kilolambda
                      #also test with gpscal ... not sure what selfcal is doing with polarisation/stokes....
                   if uv_cutoff!=0:
-                     cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale select=uvrange\(%0.5f,50\)" % (miriad_vis_name,apparent_sky_im_name,uv_cutoff)
+                     cmd = "selfcal vis=%s interval=1 model=%s line=channel,1,1,1,1 options=amplitude,noscale,mfs select=uvrange\(%0.5f,50\)" % (miriad_vis_name,apparent_sky_im_name,uv_cutoff)
                      gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
                      gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph_uvcut_%0.5f.txt' % (EDA2_chan,EDA2_obs_time,centre_freq,uv_cutoff)
                   else:
-                     cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale" % (miriad_vis_name,apparent_sky_im_name)
+                     cmd = "selfcal vis=%s interval=1 model=%s options=amplitude,noscale,mfs" % (miriad_vis_name,apparent_sky_im_name)
                      gain_solutions_name_amp = 'cal_%s_%s_%0.3f_MHz_amp.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
                      gain_solutions_name_phase = 'cal_%s_%s_%0.3f_MHz_ph.txt' % (EDA2_chan,EDA2_obs_time,centre_freq)
                   print(cmd) 
@@ -11001,25 +11001,25 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
 ##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   if len(freq_MHz_list)==1:
-      EDA2_chan = EDA2_chan_list[chan_num]
-   else:
-      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-   new_dir = "./%s" % EDA2_chan
-   os.chdir(new_dir)
-   freq_MHz_input_list = [freq_MHz]
-   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-   #the concat step is causing /tmp to fill with casa crash reports
-   cmd = "rm -rf /tmp/*" 
-   print(cmd)
-   os.system(cmd)
-   os.chdir('./..')
-sys.exit()
+#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+#   if len(freq_MHz_list)==1:
+#      EDA2_chan = EDA2_chan_list[chan_num]
+#   else:
+#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+#   new_dir = "./%s" % EDA2_chan
+#   os.chdir(new_dir)
+#   freq_MHz_input_list = [freq_MHz]
+#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+#   #the concat step is causing /tmp to fill with casa crash reports
+#   cmd = "rm -rf /tmp/*" 
+#   print(cmd)
+#   os.system(cmd)
+#   os.chdir('./..')
+#sys.exit()
 
 #Step 2: calibrate
 
