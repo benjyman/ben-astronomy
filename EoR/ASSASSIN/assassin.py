@@ -2315,7 +2315,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    lst_deg = (float(lst_hrs)/24.)*360.
    
    #this needs to change for each chan or you are wasting time
-   max_baselines_included = 200 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+   max_baselines_included = 20 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
          
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
