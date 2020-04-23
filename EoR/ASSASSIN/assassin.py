@@ -4070,10 +4070,17 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
          #using global variable chan num so I can run lots in parallel (yes I know this is bad programming)
          if EDA2_data==True:
-            EDA2_chan = EDA2_chan_list[freq_MHz_index]
-            EDA2_obs_time = EDA2_obs_time_list[chan_num]
+            if len(freq_MHz_list)==1:
+               EDA2_chan = EDA2_chan_list[chan_num]
+               EDA2_obs_time = EDA2_obs_time_list[chan_num]
+            else:
+               EDA2_chan = EDA2_chan_list[freq_MHz_index]
+               EDA2_obs_time = EDA2_obs_time_list[freq_MHz_index]
             if len(n_obs_concat_list) > 0:
-               n_obs_concat = n_obs_concat_list[chan_num]
+               if len(freq_MHz_list)==1:
+                  n_obs_concat = n_obs_concat_list[chan_num]
+               else:
+                  n_obs_concat = n_obs_concat_list[freq_MHz_index]
             else:
                n_obs_concat = 1
          else:
@@ -11042,10 +11049,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
-wsclean = False
-concat=False
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+#plot_cal = False
+#wsclean = False
+#concat=False
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
