@@ -1787,12 +1787,17 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          
          t_sky_K_list.append(t_sky_K)
          t_sky_error_K_list.append(t_sky_error_K)
-         
+   
+   print(t_sky_K_array) 
+   print(t_sky_error_K_array)
+    
    t_sky_K_array = np.asarray(t_sky_K_list)
    t_sky_error_K_array = np.asarray(t_sky_error_K_list)
    
    mean_t_sky_K = np.nanmean(t_sky_K_array)
    std_dev_t_sky_K = np.nanstd(t_sky_K_array)
+   
+   
    
    print(mean_t_sky_K)
    print(std_dev_t_sky_K)
@@ -11040,13 +11045,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
-wsclean = False
-concat=False
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#plot_cal = False
+#wsclean = False
+#concat=False
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
@@ -11114,7 +11119,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
