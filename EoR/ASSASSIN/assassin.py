@@ -2596,7 +2596,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                print(freq_MHz_fine_chan)
                print(wavelength)
                
-               sys.exit()
                
                if wsclean:
                   real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
@@ -2655,7 +2654,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
                   np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
                   print("saved %s" % Y_short_parallel_angular_array_filename)
-            
+               
+               sys.exit()
+               
    return(diffuse_global_value)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
