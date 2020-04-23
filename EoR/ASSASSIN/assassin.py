@@ -1735,8 +1735,17 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             print("X_short_parallel_array all NaNs, returning Tsky NaN")
             return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan)
         
-         print(t_sky_jy) 
-         print(t_sky_error_jy)
+         t_sky_K = jy_to_K * t_sky_jy
+         t_sky_error_K = jy_to_K * t_sky_error_jy
+         print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+         fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+        
+         print("diffuse_global_value is %0.4E" % diffuse_global_value) 
+         
+         ratio_in_out = diffuse_global_value / t_sky_K
+         print("ratio between input and output T_sky is %0.4f" % ratio_in_out )
+         
+         sys.exit()
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
