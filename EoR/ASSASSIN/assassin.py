@@ -1745,7 +1745,41 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          ratio_in_out = diffuse_global_value / t_sky_K
          print("ratio between input and output T_sky is %0.4f" % ratio_in_out )
          
-         sys.exit()
+         y_pos = np.max(results.fittedvalues)
+         x_pos = 1.2 * np.min(X_short_parallel_array)
+         
+          
+         #get rid of nans
+         real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+         X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+         
+         plt.clf()
+         if model_type=='OLS_with_intercept':
+            plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans[:,1], results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         elif model_type=="OLS_fixed_int_subtr_Y":
+            real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+            plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         elif model_type=='OLS_fixed_intercept':
+            plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         else:
+            plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')         
+      
+         map_title="Data and fit" 
+         plt.xlabel("Expected global-signal response")
+         plt.ylabel("Real component of visibility (Jy)")
+         plt.legend(loc=1)
+         plt.text(x_pos, y_pos, fit_string)
+         #plt.ylim([0, 3.5])
+         fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         plt.close()
+         print("saved %s" % fig_name)  
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
