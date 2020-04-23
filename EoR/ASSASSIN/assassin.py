@@ -1788,11 +1788,12 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          t_sky_K_list.append(t_sky_K)
          t_sky_error_K_list.append(t_sky_error_K)
    
-   print(t_sky_K_array) 
-   print(t_sky_error_K_array)
     
    t_sky_K_array = np.asarray(t_sky_K_list)
    t_sky_error_K_array = np.asarray(t_sky_error_K_list)
+
+   print(t_sky_K_array) 
+   print(t_sky_error_K_array)
    
    mean_t_sky_K = np.nanmean(t_sky_K_array)
    std_dev_t_sky_K = np.nanstd(t_sky_K_array)
