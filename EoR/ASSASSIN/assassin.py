@@ -1588,13 +1588,8 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
       print("loaded %s" % real_vis_data_sorted_array_filename)
 
-      print(real_vis_data_sorted_array)
-
       #The EDA2 data calibrated with miriad has a bunch of zeros, replace these with nans
       real_vis_data_sorted_array[np.isclose(real_vis_data_sorted_array,0)] = np.nan
-
-      print(real_vis_data_sorted_array)
-      sys.exit()
       
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
