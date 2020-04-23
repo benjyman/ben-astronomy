@@ -1595,8 +1595,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       #The EDA2 data calibrated with miriad has a bunch of zeros, replace these with nans
       real_vis_data_sorted_array[np.isclose(real_vis_data_sorted_array,0)] = np.nan
       
-      print(real_vis_data_sorted_array)
-      
       baseline_length_array_lambda_sorted_cut = np.load(baseline_length_array_lambda_sorted_cut_filename)
       print("loaded %s" % baseline_length_array_lambda_sorted_cut_filename)
 
@@ -11019,21 +11017,21 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 ##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-#   if len(freq_MHz_list)==1:
-#      EDA2_chan = EDA2_chan_list[chan_num]
-#   else:
-#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-#   new_dir = "./%s" % EDA2_chan
-#   os.chdir(new_dir)
-#   freq_MHz_input_list = [freq_MHz]
-#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#   #the concat step is causing /tmp to fill with casa crash reports
-#   cmd = "rm -rf /tmp/*" 
-#   print(cmd)
-#   os.system(cmd)
-#   os.chdir('./..')
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   if len(freq_MHz_list)==1:
+      EDA2_chan = EDA2_chan_list[chan_num]
+   else:
+      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   #the concat step is causing /tmp to fill with casa crash reports
+   cmd = "rm -rf /tmp/*" 
+   print(cmd)
+   os.system(cmd)
+   os.chdir('./..')
 #sys.exit()
 
 #Step 2: calibrate
@@ -11044,10 +11042,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = False
-#wsclean = False
-#concat=False
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+plot_cal = False
+wsclean = False
+concat=False
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
@@ -11115,16 +11113,16 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 10
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
 #wsclean=False # for sims
