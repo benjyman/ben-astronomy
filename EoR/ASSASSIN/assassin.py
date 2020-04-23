@@ -1781,6 +1781,9 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          plt.close()
          print("saved %s" % fig_name)  
          
+         sys.exit()
+         
+         
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    centre_freq = float(freq_MHz)
@@ -2312,7 +2315,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    lst_deg = (float(lst_hrs)/24.)*360.
    
    #this needs to change for each chan or you are wasting time
-   max_baselines_included = 20 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+   max_baselines_included = 200 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
          
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
@@ -11099,7 +11102,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
