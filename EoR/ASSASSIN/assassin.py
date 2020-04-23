@@ -2315,7 +2315,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    lst_deg = (float(lst_hrs)/24.)*360.
    
    #this needs to change for each chan or you are wasting time
-   max_baselines_included = 20 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
+   max_baselines_included = 200 #I think 1680 is the most baselines I've seen used for the current data at lowest freq
          
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
@@ -11030,13 +11030,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
-wsclean = False
-concat=False
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#plot_cal = False
+#wsclean = False
+#concat=False
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
