@@ -2372,303 +2372,307 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
 
    for EDA2_obs_time in obs_time_list:
          uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-         hdulist = fits.open(uvfits_filename)
-         hdulist.info()
-         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         #print info_string
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         #print(uvtable_header)
-         hdulist.close()
-         
-         visibilities = uvtable['DATA']
-
-         UU_s_array = uvtable['UU']
-         UU_m_array = UU_s_array * c   
-         VV_s_array = uvtable['VV']
-         VV_m_array = VV_s_array * c
-
-    
-         #Need to sort by baseline length (then only use short baselines)
-         baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
-         
-         baseline_length_array_m_inds = baseline_length_array_m.argsort()
-         baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
-         
-         UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
-         VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
-         #real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
-
-          
-         #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-         baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
-         VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-         #real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-
-         
-         #leave this here!!
-         UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-         
-         if calculate_uniform_response:
-         
-            n_pix = hp.nside2npix(NSIDE)
-            print('n_pix')
-            print(n_pix)
-            pixel_solid_angle = (4.*np.pi) / n_pix
-            #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
-            hpx_index_array = np.arange(0,n_pix,1)
-
-            #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
-            #rot_theta_beam = - np.pi / 2.
-            rot_theta_sky = np.pi / 2.
-            rot_phi_beam = 0.
-
-            T_sky_rough = 180.*(centre_freq/180.)**(-2.5)
-            print("180@180 t_sky chan %s is %s" % (EDA2_chan,T_sky_rough))
-               
-            if include_angular_info:            
-               print("calculating time for lst_deg %0.3f " % (lst_deg))
-               #check vale
-               year=2000
-               month=1
-               day=1
-               hour=0
-               minute=0
-               second=0
-               #hour=int(np.floor(float(lst_hrs)))
-               #minute=int(np.floor((float(lst_hrs)-hour) * 60.))
-               #second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
-               
-               date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-               #print(date_time_string)
-               latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
-               #Parkes (pygsm example)
-               #latitude, longitude, elevation = '-32.998370', '148.263659', 100
-               ov = GSMObserver()
-               ov.lon = longitude
-               ov.lat = latitude
-               ov.elev = elevation
-               
-               #print time_string
-               
-               #set an initial time using astropy Time
-               
-               astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (year, month, day, hour, minute, second)
-               time_initial = Time(astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
-               
-               #calculate the local sidereal time for the MWA at date_obs_initial
-               lst_initial = time_initial.sidereal_time('apparent')
-               
-               lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
-               
-               #want lst == lst_hrs, so add time so that this is true
-               delta_time = TimeDelta(lst_initial_days, format='jd') 
-               
-               desired_lst_days = float(lst_hrs) / 24.
-               
-               time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
-               
-               print('final LST is: ')
-               print(time_final.sidereal_time('apparent'))
-               
-               #close enough......
-               
-               time_string = time_final.utc.iso
-               #time_string = "%02d_%02d_%02d" % (hour,minute,second)
-               
-               hour = int(time_string.split(' ')[1].split(':')[0])
-               minute = int(time_string.split(' ')[1].split(':')[1])
-               minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
-               
-               date_obs = datetime(year, month, day, hour, minute, second)
-               ov.date = date_obs
-               
-               gsm_map = ov.generate(centre_freq)
-
-               #Need to update this to do each fine chan
-               gsm_map_angular = gsm_map - diffuse_global_value
-               gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
+         #check here
+         if not os.path.exists(uvfits_filename):
+            continue
+         else:
+            hdulist = fits.open(uvfits_filename)
+            hdulist.info()
+            info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+            #print info_string
+            uvtable = hdulist[0].data
+            uvtable_header = hdulist[0].header
+            #print(uvtable_header)
+            hdulist.close()
             
-
-            #beam stuff in function
-            short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
-            
-
-            baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
-            
-            if pol == 'Y':
-               baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
-               baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
-            else:
-               baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
-               baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
-         
-            #print baseline_phi_rad_array.shape
-            baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
-            
-            baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
-            #print baseline_vector_array_unit[0,:]
-            baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
-            baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
-            
-            
-            #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
-            #https://vpython.org/contents/docs/VisualIntro.html
-            #rotate about x axis
-            #forget about rotating the vectors its the phase angle hpx array you need to rotate!
-            rot_axis = [0,1,0]
-            rot_theta = 0. #np.pi / 4.
-            
-            baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
-            
-            #print baseline_vector_array_unit_rotated[0,:]
-            
-            
-            baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
-            baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
-            
-            baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-            baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-            baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-            
-            sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
-            #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
-            #print sky_vector_array_unrotated_test
-            #sys.exit()
-            #do the same rotation for the sky vector
-            sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
-            
-            baseline_vector_array = baseline_vector_array
-            
-            X_short_parallel_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-            Y_short_parallel_angular_array = np.full(len(baseline_vector_array),0,dtype=complex)
-            
-            X_short_parallel_array_pure_parallel = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-            X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-      
-            #need do this bit just once for each chan
-            for baseline_vector_index in range(0,max_baselines_included):
-               #Just try doing the integral (sum) all in one go with one baseline
-               #baseline_vector_test = baseline_vector_array[0]
-               
-               baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
-               
-               baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
-               baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
-               
-               b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
-          
-               b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
-               b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
-               
-               
-               phase_angle_array = 2.*np.pi*b_dot_r_array/centre_wavelength
-               
-               phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/centre_wavelength
-               phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/centre_wavelength
-               
-               element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
-               
-               element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
-               element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
-               
-               #for angular info
-               if include_angular_info:
-                  element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
-
-               X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-         
-               X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-               X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-         
-         
-               if include_angular_info:
-                  Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
-
-               X_short_parallel_array[baseline_vector_index] = X_short_parallel
-               
-               X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
-               X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
-               
-               
-               if include_angular_info:
-                  Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
-               
-            #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
-            #save for each obs separately
-            fine_chan_index_array = range(n_fine_chans)
-            for fine_chan_index in fine_chan_index_array:
-               fine_chan_index = int(fine_chan_index)
+            visibilities = uvtable['DATA']
    
-               #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
-               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-
-               wavelength = 300./float(freq_MHz_fine_chan)
+            UU_s_array = uvtable['UU']
+            UU_m_array = UU_s_array * c   
+            VV_s_array = uvtable['VV']
+            VV_m_array = VV_s_array * c
+   
+       
+            #Need to sort by baseline length (then only use short baselines)
+            baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
+            
+            baseline_length_array_m_inds = baseline_length_array_m.argsort()
+            baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
+            
+            UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+            VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+            #real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+   
+             
+            #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+            baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+            VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            #real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+   
+            
+            #leave this here!!
+            UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            
+            if calculate_uniform_response:
+            
+               n_pix = hp.nside2npix(NSIDE)
+               print('n_pix')
+               print(n_pix)
+               pixel_solid_angle = (4.*np.pi) / n_pix
+               #print("pixel_solid_angle is %0.4E" % pixel_solid_angle)
+               hpx_index_array = np.arange(0,n_pix,1)
+   
+               #need to rotate this beam, since pix2ang in make_hpx_beam gives the colatitude, which is taken from the 'north pole' as healpy does not use az/alt
+               #rot_theta_beam = - np.pi / 2.
+               rot_theta_sky = np.pi / 2.
+               rot_phi_beam = 0.
+   
+               T_sky_rough = 180.*(centre_freq/180.)**(-2.5)
+               print("180@180 t_sky chan %s is %s" % (EDA2_chan,T_sky_rough))
+                  
+               if include_angular_info:            
+                  print("calculating time for lst_deg %0.3f " % (lst_deg))
+                  #check vale
+                  year=2000
+                  month=1
+                  day=1
+                  hour=0
+                  minute=0
+                  second=0
+                  #hour=int(np.floor(float(lst_hrs)))
+                  #minute=int(np.floor((float(lst_hrs)-hour) * 60.))
+                  #second=int(((float(lst_hrs)-hour) * 60. - minute) * 60.)
+                  
+                  date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
+                  #print(date_time_string)
+                  latitude, longitude, elevation = mwa_latitude_pyephem, mwa_longitude_pyephem, mwa_elevation
+                  #Parkes (pygsm example)
+                  #latitude, longitude, elevation = '-32.998370', '148.263659', 100
+                  ov = GSMObserver()
+                  ov.lon = longitude
+                  ov.lat = latitude
+                  ov.elev = elevation
+                  
+                  #print time_string
+                  
+                  #set an initial time using astropy Time
+                  
+                  astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (year, month, day, hour, minute, second)
+                  time_initial = Time(astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+                  
+                  #calculate the local sidereal time for the MWA at date_obs_initial
+                  lst_initial = time_initial.sidereal_time('apparent')
+                  
+                  lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
+                  
+                  #want lst == lst_hrs, so add time so that this is true
+                  delta_time = TimeDelta(lst_initial_days, format='jd') 
+                  
+                  desired_lst_days = float(lst_hrs) / 24.
+                  
+                  time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
+                  
+                  print('final LST is: ')
+                  print(time_final.sidereal_time('apparent'))
+                  
+                  #close enough......
+                  
+                  time_string = time_final.utc.iso
+                  #time_string = "%02d_%02d_%02d" % (hour,minute,second)
+                  
+                  hour = int(time_string.split(' ')[1].split(':')[0])
+                  minute = int(time_string.split(' ')[1].split(':')[1])
+                  minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
+                  
+                  date_obs = datetime(year, month, day, hour, minute, second)
+                  ov.date = date_obs
+                  
+                  gsm_map = ov.generate(centre_freq)
+   
+                  #Need to update this to do each fine chan
+                  gsm_map_angular = gsm_map - diffuse_global_value
+                  gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
                
-               print("fine_chan index,MHz,wavelength")
-               print(fine_chan_index)
-               print(freq_MHz_fine_chan)
-               print(wavelength)
+   
+               #beam stuff in function
+               short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
                
+   
+               baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
                
-               if wsclean:
-                  real_vis_data = visibilities[:,0,0,0,fine_chan_index,0,0]
+               if pol == 'Y':
+                  baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
+                  baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
                else:
-                  real_vis_data = visibilities[:,0,0,fine_chan_index,0,0]
-               
-               UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
-               VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
-               real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
-
-               
-
-               #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-               baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
-               VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-               
-               #leave this here!!
-               UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               
-               #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-               #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
-                
-               baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
-               
-               
-               baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
-               
-
-               n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-               print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,EDA2_obs_time,fine_chan_index))      
-
-               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
-               print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
-               
-               X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename,X_short_parallel_array[0:n_baselines_included])
+                  baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
+                  baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
             
-               print("saved %s" % X_short_parallel_array_filename)
+               #print baseline_phi_rad_array.shape
+               baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
+               
+               baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+               #print baseline_vector_array_unit[0,:]
+               baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
+               baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
+               
+               
+               #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+               #https://vpython.org/contents/docs/VisualIntro.html
+               #rotate about x axis
+               #forget about rotating the vectors its the phase angle hpx array you need to rotate!
+               rot_axis = [0,1,0]
+               rot_theta = 0. #np.pi / 4.
+               
+               baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+               
+               #print baseline_vector_array_unit_rotated[0,:]
+               
+               
+               baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
+               baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
+               
+               baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               
+               sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+               #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+               #print sky_vector_array_unrotated_test
+               #sys.exit()
+               #do the same rotation for the sky vector
+               sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+               
+               baseline_vector_array = baseline_vector_array
+               
+               X_short_parallel_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+               Y_short_parallel_angular_array = np.full(len(baseline_vector_array),0,dtype=complex)
+               
+               X_short_parallel_array_pure_parallel = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+               X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+         
+               #need do this bit just once for each chan
+               for baseline_vector_index in range(0,max_baselines_included):
+                  #Just try doing the integral (sum) all in one go with one baseline
+                  #baseline_vector_test = baseline_vector_array[0]
+                  
+                  baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
+                  
+                  baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
+                  baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
+                  
+                  b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+             
+                  b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
+                  b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
+                  
+                  
+                  phase_angle_array = 2.*np.pi*b_dot_r_array/centre_wavelength
+                  
+                  phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/centre_wavelength
+                  phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/centre_wavelength
+                  
+                  element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+                  
+                  element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+                  element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
+                  
+                  #for angular info
+                  if include_angular_info:
+                     element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
+   
+                  X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
             
-               X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline[0:n_baselines_included])
-               print("saved %s" % X_short_parallel_array_filename_pure_inline)
+                  X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+                  X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+            
+            
+                  if include_angular_info:
+                     Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+   
+                  X_short_parallel_array[baseline_vector_index] = X_short_parallel
+                  
+                  X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+                  X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+                  
+                  
+                  if include_angular_info:
+                     Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
+                  
+               #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
+               #save for each obs separately
+               fine_chan_index_array = range(n_fine_chans)
+               for fine_chan_index in fine_chan_index_array:
+                  fine_chan_index = int(fine_chan_index)
+      
+                  #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+                  freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+                  #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+   
+                  wavelength = 300./float(freq_MHz_fine_chan)
+                  
+                  print("fine_chan index,MHz,wavelength")
+                  print(fine_chan_index)
+                  print(freq_MHz_fine_chan)
+                  print(wavelength)
+                  
+                  
+                  if wsclean:
+                     real_vis_data = visibilities[:,0,0,0,fine_chan_index,0,0]
+                  else:
+                     real_vis_data = visibilities[:,0,0,fine_chan_index,0,0]
+                  
+                  UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+                  VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+                  real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+   
+                  
+   
+                  #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+                  baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+                  VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+                  real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+                  
+                  #leave this here!!
+                  UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+                  
+                  #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+                  #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
+                   
+                  baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
+                  
+                  
+                  baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+                  
+   
+                  n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+                  print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,EDA2_obs_time,fine_chan_index))      
+   
+                  baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
+                  print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
+                  
+                  X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(X_short_parallel_array_filename,X_short_parallel_array[0:n_baselines_included])
                
-               X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel[0:n_baselines_included])
-               print("saved %s" % X_short_parallel_array_filename_pure_parallel)
+                  print("saved %s" % X_short_parallel_array_filename)
                
-               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-               np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
-               print("saved %s" % real_vis_data_sorted_array_filename)
-               
-               #update for fine chans
-               if include_angular_info:
-                  Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
-                  np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
-                  print("saved %s" % Y_short_parallel_angular_array_filename)
+                  X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline[0:n_baselines_included])
+                  print("saved %s" % X_short_parallel_array_filename_pure_inline)
+                  
+                  X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel[0:n_baselines_included])
+                  print("saved %s" % X_short_parallel_array_filename_pure_parallel)
+                  
+                  real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                  np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
+                  print("saved %s" % real_vis_data_sorted_array_filename)
+                  
+                  #update for fine chans
+                  if include_angular_info:
+                     Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
+                     np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
+                     print("saved %s" % Y_short_parallel_angular_array_filename)
                
    return(diffuse_global_value)
 
