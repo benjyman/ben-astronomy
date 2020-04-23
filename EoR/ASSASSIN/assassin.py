@@ -1564,8 +1564,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
    obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
    
-   print(obs_time_list)
-   sys.exit()
    
    sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
@@ -1577,7 +1575,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    wavelength_fine_chan = 300./freq_MHz_fine_chan
                
    #do for each obs_time:
-   for obs_time in obs_time_list:
+   for EDA2_obs_time in obs_time_list:
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)             
       X_short_parallel_array_filename = "X_uniform_resp_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)               
       X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)               
@@ -9092,10 +9090,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
             ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
             miriad_vis_name = uvfits_filename.split('.')[0] + '.vis'
             
-            
-            
-            
-            
+
             if not wsclean:
                cmd = "rm -rf %s %s" % (miriad_vis_name,calibrated_uvfits_filename)
                print(cmd)
