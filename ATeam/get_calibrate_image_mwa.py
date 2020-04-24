@@ -455,7 +455,7 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #sys.exit()
 
 #chgcentre for obs pointed off cena (iamge 7 and 8)
-chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],target='CenA')
+#chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],target='CenA')
 chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],target='CenA')
 
 sys.exit()
