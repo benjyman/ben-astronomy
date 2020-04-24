@@ -30,14 +30,14 @@ import numpy as np
 
 #image 7
 #the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
-obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
-obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
+#obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
+#obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
 
 
 #image 8:
 #the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
-#obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
-#obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
+obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
+obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
       
 #image 11:
 #obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
@@ -454,9 +454,9 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 
 #sys.exit()
 
-#chgcentre for obs pointed off cena (iamge 7 and 8)
-#chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],target='CenA')
-chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],target='CenA')
+#chgcentre for obs pointed off cena (image 7 and 8)
+chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_8/2015'],target='CenA')
+chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_8/2018'],target='CenA')
 
 sys.exit()
 
