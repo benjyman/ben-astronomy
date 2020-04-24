@@ -29,11 +29,13 @@ import numpy as np
 #obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
 
 #image 7
+#the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
 obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
 obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
 
 
 #image 8:
+#the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
 #obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
 #obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
       
@@ -208,6 +210,21 @@ def jointly_deconvolve_idg(obsid_list,ms_dir_list,outname,wsclean_options):
    print(cmd)
    os.system(cmd)
 
+def chgcentre_ms(obsid_list,ms_dir_list,target="CenA"):
+   ms_list = []
+   if target=="CenA":
+      new_ra = "13h25m27.6152s"
+      new_dec = "-43d01m08.805s"
+   for ms_dir in ms_dir_list:
+      for obsid in obsid_list:
+         ms_name = "%s/%s.ms" % (ms_dir,obsid)
+         if os.path.isdir(ms_name):
+            ms_list.append(ms_name)
+   for ms_index,ms in enumerate(ms_list):
+      cmd = "chgcentre %s %s %s" % (ms,new_ra,new_dec)
+      print(cmd)
+      os.system(cmd)
+      
 def self_cal(obsid_list,ms_dir_list,calibrate_options,self_cal_number):
    ms_list = []
    solution_list = []
@@ -387,6 +404,7 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
       
 
 
+
 #run in separate screens
 #2015 data:
 #download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
@@ -420,21 +438,28 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #model_image_name = "/md0/ATeam/CenA/CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb.fits"
 #masked_fits_image_filename = mask_model_image(model_image_name,subtraction_radius_deg=4)
 
-##Dont use:!!!!!
-###masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
-###calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
-###calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
+####Dont use:!!!!!
+#####masked_fits_image_filename = "CenA_2015_2018_joint_idg_12_obs_145_selfcal_03_robust0-MFS-image-pb_masked_4.000_deg-I.fits"
+#####calibrate_obs(obsid_list_2015,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2015")
+#####calibrate_obs(obsid_list_2018,model_image=masked_fits_image_filename,generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_2/2018")
 
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
 #calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
+#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_7/2018")
 
 #ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],data_column="CORRECTED_DATA")
-ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],data_column="CORRECTED_DATA")
+
+#sys.exit()
+
+#chgcentre for obs pointed off cena (iamge 7 and 8)
+chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_7/2015'],target='CenA')
+chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_7/2018'],target='CenA')
 
 sys.exit()
+
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
 obsid_list = obsid_list_2015 + obsid_list_2018
