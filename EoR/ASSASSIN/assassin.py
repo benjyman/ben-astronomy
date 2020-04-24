@@ -1559,6 +1559,8 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
 
 def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,fine_chan_index,model_type,include_angular_info=True):
    centre_freq = float(freq_MHz_list[freq_MHz_index])
+   centre_wavelength = 300./centre_freq
+   Jy_to_K = (centre_wavelength**2) / (2. * k * 1.0e26) 
 
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.    
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)
@@ -1680,7 +1682,8 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             figmap.savefig(fig_name)
             print("saved %s" % fig_name) 
             
-            jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
+            #try just using centre wavelength (defined above)
+            #jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
             
             if include_angular_info:
                Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
