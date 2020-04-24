@@ -293,7 +293,7 @@ def generate_sbatch_script_CenA(image_number,n_selfcals,download=False,model_cal
       
       wsclean_options_2 = "-size 4096 4096 -j 8 -mwa-path /fred/oz048/MWA/CODE/MWA_Tools/mwapy/data -auto-threshold 1 -auto-mask 3 -multiscale -niter 1000000 -mgain 0.85 -save-source-list -data-column CORRECTED_DATA -scale 0.004 -weight briggs 0  -small-inversion -make-psf -pol I -use-idg -grid-with-beam -idg-mode hybrid -pb-undersampling 4 -channels-out 10 -join-channels -fit-spectral-pol 2"
       wsclean_out_filename = generate_wsclean_image(obsid_list,ms_dir_list,out_image_name_base=out_image_name_base,wsclean_options=wsclean_options_2,dest_dir='/fred/oz048/bmckinle/ATeam/CenA/image%s' % image_number,self_cal_number=n_selfcals)
-      cmd = 'id%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (selfcal_job_index+1,job_id_list_string,wsclean_out_filename)
+      cmd = 'id%s=$(sbatch --dependency=afterok:$jid%s %s | cut -f 4 -d " ") \n' % (n_selfcals,job_id_list_string,wsclean_out_filename)
       cmd_list.append(cmd)
     
       #FIRST=$(sbatch testrun.sh | cut -f 4 -d' ')
