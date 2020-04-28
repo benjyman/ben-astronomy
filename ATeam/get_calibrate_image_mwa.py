@@ -455,10 +455,10 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #sys.exit()
 
 #chgcentre for obs pointed off cena (image 7 and 8)
-chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_8/2015'],target='CenA')
-chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_8/2018'],target='CenA')
+#chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_8/2015'],target='CenA')
+#chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_8/2018'],target='CenA')
 
-sys.exit()
+#sys.exit()
 
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
@@ -626,8 +626,8 @@ ms_dir_list=["/md0/ATeam/CenA/image_3/2015","/md0/ATeam/CenA/image_3/2018"]
 #############
 #averaging images bit (keep at bottom)
 base_dir = "/md0/ATeam/CenA/"
-image_list = ["CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits","image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","image_3/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image3-MFS-image-pb.fits","image_4/image_04_selfcal_04_robust0-MFS-image-pb.fits","image_5/image_05_selfcal_05_robust0-MFS-image-pb.fits","image_6/image_06_selfcal_04_robust0-MFS-image-pb.fits"]
-output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb_6_ims"
+image_list = ["CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image1-MFS-image-pb.fits","image_2/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image2-MFS-image-pb.fits","image_3/CenA_2015_2018_joint_idg_12_obs_145_selfcal_04_robust0_image3-MFS-image-pb.fits","image_4/image_04_selfcal_04_robust0-MFS-image-pb.fits","image_5/image_05_selfcal_05_robust0-MFS-image-pb.fits","image_6/image_06_selfcal_04_robust0-MFS-image-pb.fits","image_7/image_07_selfcal_05_robust0-MFS-image-pb.fits","image_8/image_08_selfcal_05_robust0-MFS-image-pb.fits"]
+output_name_base = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims"
 average_images(base_dir=base_dir,image_list=image_list,output_name_base=output_name_base)
 
 
