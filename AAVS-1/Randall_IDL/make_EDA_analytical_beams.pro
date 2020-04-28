@@ -14,13 +14,13 @@ pro make_EDA_analytical_beams
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
    fine_chan_width = 28935./1000000.
-   float_array_length = UINT(32. * 150.)
+   float_array_length = UINT(32. * 100.)
    float_array = findgen(float_array_length,increment=fine_chan_width)
    
    ;PRINT, float_array
    
    for freq_MHz_index = 1,float_array_length do begin
-      freq_MHz_float = float_array[freq_MHz_index] + 50.
+      freq_MHz_float = float_array[freq_MHz_index] + (50. - (32.*fine_chan_width))
       HELP, freq_MHz_float
       freq_MHz_string = STRING(freq_MHz_float, FORMAT='(F7.3)')
       HELP, freq_MHz_string
