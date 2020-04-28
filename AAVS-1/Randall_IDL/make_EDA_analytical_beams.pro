@@ -29,7 +29,7 @@ pro make_EDA_analytical_beams
       beam_name_string_y = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_yy.fits'
       ;beam_name_string_no_cos_za_y = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_yy_no_cos_za.fits'
    
-      lambda = 300.0/freq_MHz
+      lambda = 300.0/freq_MHz_float
       d_in_lambda = d_m/lambda
       gp_norm = end_fire_2element(d_in_lambda,0.0)
       ground_plane_effect[p] = end_fire_2element(d_in_lambda,za[p])/gp_norm
@@ -37,13 +37,13 @@ pro make_EDA_analytical_beams
       field_y[p] = proj_y*ground_plane_effect[p]
       ;xx
       ; include a 1/cos(za) term to account for pixel area changing in sine projection
-      write_beam_fits,float(field_x^2)/cos(za),beam_name_string_x,0.0,0.0,freq_MHz,0.0
+      write_beam_fits,float(field_x^2)/cos(za),beam_name_string_x,0.0,0.0,freq_MHz_float,0.0
       ; write one without the 1/cos(za) term to use for the beam weights
-      ;write_beam_fits,float(field_x^2),beam_name_string_no_cos_za_x,0.0,0.0,freq_MHz,0.0
+      ;write_beam_fits,float(field_x^2),beam_name_string_no_cos_za_x,0.0,0.0,freq_MHz_float,0.0
       ;yy
       ; include a 1/cos(za) term to account for pixel area changing in sine projection
-      write_beam_fits,float(field_y^2)/cos(za),beam_name_string_y,0.0,0.0,freq_MHz,0.0
+      write_beam_fits,float(field_y^2)/cos(za),beam_name_string_y,0.0,0.0,freq_MHz_float,0.0
       ; write one without the 1/cos(za) term to use for the beam weights
-      ;write_beam_fits,float(field_y^2),beam_name_string_no_cos_za_y,0.0,0.0,freq_MHz,0.0
+      ;write_beam_fits,float(field_y^2),beam_name_string_no_cos_za_y,0.0,0.0,freq_MHz_float,0.0
    endfor
 end
