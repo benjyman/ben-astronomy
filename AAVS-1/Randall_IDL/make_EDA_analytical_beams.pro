@@ -22,7 +22,7 @@ pro make_EDA_analytical_beams
    for freq_MHz_index = 1,float_array_length do begin
       freq_MHz_float = float_array[freq_MHz_index]
       HELP, freq_MHz_float
-      freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.3)')
+      freq_MHz_string = STRING(freq_MHz_float, FORMAT='(F5.3)')
       HELP, freq_MHz_string
       beam_name_string_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx.fits'
       ;beam_name_string_no_cos_za_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx_no_cos_za.fits'
