@@ -2616,6 +2616,8 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
       
                      X_short_parallel_array[baseline_vector_index] = X_short_parallel
                      
+                     
+                     
                      X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
                      X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
                      
@@ -2641,6 +2643,10 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   #print(fine_chan_index)
                   #print(freq_MHz_fine_chan)
                   #print(wavelength)
+                  
+                  
+                  max_X_list.append(np.nanmax(X_short_parallel_array))
+                  min_X_list.append(np.nanmin(X_short_parallel_array))
                   
                   
                   if wsclean:
@@ -2700,8 +2706,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                      Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol_%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,EDA2_obs_time)
                      np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
                      print("saved %s" % Y_short_parallel_angular_array_filename)
-               
-   return(diffuse_global_value)
+      
+              
+   return(diffuse_global_value,max_X_list,min_X_list)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
    freq_MHz = freq_MHz_list[freq_MHz_index]
@@ -4124,7 +4131,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
          ###THis is the one that works for the SIMS! at 20200422
          if EDA2_data:
-            t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
+            t_sky_theoretical,max_X_list,min_X_list = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
+            print(max_X_list)
+            print(min_X_list)
+            sys.exit()
          else:
             t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
