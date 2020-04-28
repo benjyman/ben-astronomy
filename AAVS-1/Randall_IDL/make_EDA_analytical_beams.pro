@@ -14,6 +14,7 @@ pro make_EDA_analytical_beams
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
    for freq_MHz = 50,200.0 do begin
+      PRINT, freq_MHz
       freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.3)')
       PRINT, freq_MHz_string
       beam_name_string_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx.fits'
