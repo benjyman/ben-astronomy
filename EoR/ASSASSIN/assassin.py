@@ -9152,7 +9152,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                print(cmd)
                os.system(cmd)
             
-            
+               #flag three edge chans for each coarse band
+               cmd = "uvflag vis=%s edge=3,3 flagval=flag options=full" % (miriad_vis_name)
+               print(cmd)
+               os.system(cmd)
+               
                ##check data, see how many chans there are in uvfits
                #with fits.open(uvfits_filename) as hdulist:
                #    uvtable = hdulist[0].data
