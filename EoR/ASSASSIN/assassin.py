@@ -9657,9 +9657,14 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   #calibrate
                   
-                  cmd = "calibrate  %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
+                  #calibrate on all 32 chans to increase SNR (poor results if you don't do this)
+                  cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
                   print(cmd)
                   os.system(cmd)
+                  
+                  #cmd = "calibrate  %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
+                  #print(cmd)
+                  #os.system(cmd)
                   
                   
                   
@@ -11094,10 +11099,10 @@ chan_num = 0
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 plot_cal = False
-wsclean = False
+wsclean = True
 concat=False
 calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
-#sys.exit()
+sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
