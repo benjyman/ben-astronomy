@@ -14,11 +14,11 @@ pro make_EDA_analytical_beams
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
    for freq_MHz = 50, 200 do begin
-   
-      beam_name_string_x = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_xx.fits'
-      beam_name_string_no_cos_za_x = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_xx_no_cos_za.fits'
-      beam_name_string_y = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_yy.fits'
-      beam_name_string_no_cos_za_y = 'model_' + STRTRIM(freq_MHz, 2) + '_MHz_yy_no_cos_za.fits'
+      freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.2)')
+      beam_name_string_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx.fits'
+      beam_name_string_no_cos_za_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx_no_cos_za.fits'
+      beam_name_string_y = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_yy.fits'
+      beam_name_string_no_cos_za_y = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_yy_no_cos_za.fits'
    
       lambda = 300.0/freq_MHz
       d_in_lambda = d_m/lambda
