@@ -341,7 +341,8 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
       data_region = image_data[region_y_start:region_y_end,region_x_start:region_x_end]
       
       #write out the image region as fits just to check
-      fits.writeto('region_check_%s.fits' % image_name_base,data_region,clobber=True)
+      region_check_name = 'region_check_%s.fits' % image_name_base 
+      fits.writeto(region_check_name,data_region,clobber=True)
       
       if weighted_average==True:
          #get rms of region
