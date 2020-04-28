@@ -15,6 +15,7 @@ pro make_EDA_analytical_beams
    
    for freq_MHz = 50,200.0 do begin
       freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.3)')
+      PRINT, freq_MHz_string
       beam_name_string_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx.fits'
       ;beam_name_string_no_cos_za_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx_no_cos_za.fits'
       beam_name_string_y = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_yy.fits'
