@@ -2504,7 +2504,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   gsm_map_angular = gsm_map - diffuse_global_value
                   gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
                
-               
+               fine_chan_index_array = range(n_fine_chans)
                for fine_chan_index in fine_chan_index_array:
                   fine_chan_index = int(fine_chan_index)
                   
