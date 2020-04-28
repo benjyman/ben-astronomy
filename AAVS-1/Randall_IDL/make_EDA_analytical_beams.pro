@@ -14,7 +14,7 @@ pro make_EDA_analytical_beams
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
    fine_chan_width = 28935./1000000.
-   float_array_length = 32. * 150
+   float_array_length = UINT(32. * 150.)
    float_array = findgen(float_array_length,INCREMENT=fine_chan_width)
    
    PRINT, float_array
