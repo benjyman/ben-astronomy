@@ -13,7 +13,7 @@ pro make_EDA_analytical_beams
    proj_x = sqrt(1-(sin(az[p])*sin(za[p]))^2)
    proj_y = sqrt(1-(cos(az[p])*sin(za[p]))^2)
    
-   for freq_MHz = 50,200.0 do begin
+   for freq_MHz = 50,200.0F do begin
       HELP, freq_MHz
       freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.3)')
       HELP, freq_MHz_string
