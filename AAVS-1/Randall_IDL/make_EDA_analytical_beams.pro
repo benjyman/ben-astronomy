@@ -1,5 +1,5 @@
 pro make_EDA_analytical_beams
-   ; .comp /data/code/git/ben-astronomy/AAVS-1/Randall_IDL/antennas.pro
+   ; .comp /md0/code/git/ben-astronomy/AAVS-1/Randall_IDL/antennas.pro
    
    dipole_height_m = 0.3
    d_m = 2*dipole_height_m
