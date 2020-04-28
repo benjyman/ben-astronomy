@@ -2500,17 +2500,141 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   
                   gsm_map = ov.generate(centre_freq)
    
-                  #Need to update this to do each fine chan
-                  gsm_map_angular = gsm_map - diffuse_global_value
-                  gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
+               #Need to update this to do each fine chan
+               gsm_map_angular = gsm_map - diffuse_global_value
+               gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
                
+               # no point doing this for each fine chan, can move down further (beam and phase angle barely changes, makes no diff to derived t_sky)
+               #fine_chan_index_array = range(n_fine_chans)
+               #for fine_chan_index in fine_chan_index_array:
+               #fine_chan_index = int(fine_chan_index)
+               
+               ##data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+               #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               
+               #wavelength = 300./float(freq_MHz_fine_chan)
+               
+               #print("fine_chan index,MHz,wavelength")
+               #print(fine_chan_index)
+               #print(freq_MHz_fine_chan)
+               #print(wavelength)
+                  
+               #beam stuff in function
+               short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
+               #short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m)
+      
+               baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
+               
+               if pol == 'Y':
+                  baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
+                  baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
+               else:
+                  baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
+                  baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
+               
+               #print baseline_phi_rad_array.shape
+               baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
+               
+               baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
+               #print baseline_vector_array_unit[0,:]
+               baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
+               baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
+               
+               
+               #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+               #https://vpython.org/contents/docs/VisualIntro.html
+               #rotate about x axis
+               #forget about rotating the vectors its the phase angle hpx array you need to rotate!
+               rot_axis = [0,1,0]
+               rot_theta = 0. #np.pi / 4.
+               
+               baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+               
+               #print baseline_vector_array_unit_rotated[0,:]
+               
+               
+               baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
+               baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
+               
+               baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
+               
+               sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+               #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+               #print sky_vector_array_unrotated_test
+               #sys.exit()
+               #do the same rotation for the sky vector
+               sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+               
+               baseline_vector_array = baseline_vector_array
+               
+               X_short_parallel_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+               Y_short_parallel_angular_array = np.full(len(baseline_vector_array),0,dtype=complex)
+               
+               X_short_parallel_array_pure_parallel = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+               X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
+            
+               #need do this bit just once for each chan
+               for baseline_vector_index in range(0,max_baselines_included):
+                  #Just try doing the integral (sum) all in one go with one baseline
+                  #baseline_vector_test = baseline_vector_array[0]
+                  
+                  baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
+                  
+                  baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
+                  baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
+                  
+                  b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+               
+                  b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
+                  b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
+                  
+                  
+                  phase_angle_array = 2.*np.pi*b_dot_r_array/centre_wavelength
+                  
+                  phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/centre_wavelength
+                  phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/centre_wavelength
+                  
+                  element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+                  
+                  element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+                  element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
+                  
+                  #for angular info
+                  if include_angular_info:
+                     element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
+      
+                  X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+               
+                  X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+                  X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+               
+               
+                  if include_angular_info:
+                     Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+      
+                  X_short_parallel_array[baseline_vector_index] = X_short_parallel
+                  
+                  
+                  
+                  X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+                  X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+                  
+                  
+                  if include_angular_info:
+                     Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
+                  
+                  #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
+                  #save for each obs separately
+                  
+               ##This stuff got moved up to do new beams and new phase angle for each fine chan, but made no diff to result
                fine_chan_index_array = range(n_fine_chans)
-               max_X_list = []
-               min_X_list = []
                for fine_chan_index in fine_chan_index_array:
                   fine_chan_index = int(fine_chan_index)
                   
-                  ##data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+                  #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
                   freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
                   #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                   
@@ -2520,136 +2644,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   print(fine_chan_index)
                   print(freq_MHz_fine_chan)
                   print(wavelength)
-                  
-                  #beam stuff in function
-                  #short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,centre_wavelength,dipole_height_m)
-                  short_dipole_parallel_beam_map = make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m)
-      
-                  baseline_phi_rad_array = np.arctan(UU_m_array_sorted/VV_m_array_sorted)
-                  
-                  if pol == 'Y':
-                     baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. + np.pi/2.
-                     baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. 
-                  else:
-                     baseline_phi_rad_array_pure_parallel = baseline_phi_rad_array * 0. 
-                     baseline_phi_rad_array_pure_inline = baseline_phi_rad_array * 0. + np.pi/2.      
-               
-                  #print baseline_phi_rad_array.shape
-                  baseline_theta_rad_array = baseline_phi_rad_array * 0. + np.pi/2. 
-                  
-                  baseline_vector_array_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array)
-                  #print baseline_vector_array_unit[0,:]
-                  baseline_vector_array_pure_parallel_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_parallel)
-                  baseline_vector_array_pure_inline_unit=hp.ang2vec(baseline_theta_rad_array,baseline_phi_rad_array_pure_inline)
-                  
-                  
-                  #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
-                  #https://vpython.org/contents/docs/VisualIntro.html
-                  #rotate about x axis
-                  #forget about rotating the vectors its the phase angle hpx array you need to rotate!
-                  rot_axis = [0,1,0]
-                  rot_theta = 0. #np.pi / 4.
-                  
-                  baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
-                  
-                  #print baseline_vector_array_unit_rotated[0,:]
-                  
-                  
-                  baseline_vector_array_pure_parallel_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_parallel_unit)
-                  baseline_vector_array_pure_inline_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_pure_inline_unit)
-                  
-                  baseline_vector_array = baseline_vector_array_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-                  baseline_vector_array_pure_parallel = baseline_vector_array_pure_parallel_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-                  baseline_vector_array_pure_inline = baseline_vector_array_pure_inline_unit_rotated * np.transpose([baseline_length_array_m_sorted,baseline_length_array_m_sorted,baseline_length_array_m_sorted])
-                  
-                  sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
-                  #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
-                  #print sky_vector_array_unrotated_test
-                  #sys.exit()
-                  #do the same rotation for the sky vector
-                  sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
-                  
-                  baseline_vector_array = baseline_vector_array
-                  
-                  X_short_parallel_array = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-                  Y_short_parallel_angular_array = np.full(len(baseline_vector_array),0,dtype=complex)
-                  
-                  X_short_parallel_array_pure_parallel = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-                  X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
-            
-                  #need do this bit just once for each chan
-                  for baseline_vector_index in range(0,max_baselines_included):
-                     #Just try doing the integral (sum) all in one go with one baseline
-                     #baseline_vector_test = baseline_vector_array[0]
-                     
-                     baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
-                     
-                     baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
-                     baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
-                     
-                     b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
-                
-                     b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
-                     b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
-                     
-                     
-                     phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
-                     
-                     phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
-                     phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
-                     
-                     element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
-                     
-                     element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
-                     element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
-                     
-                     #for angular info
-                     if include_angular_info:
-                        element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
-      
-                     X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-               
-                     X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-                     X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-               
-               
-                     if include_angular_info:
-                        Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
-      
-                     X_short_parallel_array[baseline_vector_index] = X_short_parallel
-                     
-                     
-                     
-                     X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
-                     X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
-                     
-                     
-                     if include_angular_info:
-                        Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
-                     
-                  #now for each fine chan work out the frequency and wavelength and do the baseline cutoff and save stuff
-                  #save for each obs separately
-                  
-                  ##This stuff got moved up to do new beams and new phase angle for each fine chan
-                  #fine_chan_index_array = range(n_fine_chans)
-                  #for fine_chan_index in fine_chan_index_array:
-                  #fine_chan_index = int(fine_chan_index)
-                  #
-                  ##data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
-                  #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-                  ##freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-                  #
-                  #wavelength = 300./float(freq_MHz_fine_chan)
-                  #
-                  #print("fine_chan index,MHz,wavelength")
-                  #print(fine_chan_index)
-                  #print(freq_MHz_fine_chan)
-                  #print(wavelength)
-                  
-                  
-                  max_X_list.append(np.nanmax(X_short_parallel_array))
-                  min_X_list.append(np.nanmin(X_short_parallel_array))
-                  
                   
                   if wsclean:
                      real_vis_data = visibilities[:,0,0,0,fine_chan_index,0,0]
@@ -2709,9 +2703,6 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                      np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
                      print("saved %s" % Y_short_parallel_angular_array_filename)
       
-               print(max_X_list)
-               print(min_X_list)
-               sys.exit()
               
    return(diffuse_global_value)
 
