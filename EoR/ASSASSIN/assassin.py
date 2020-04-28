@@ -2709,9 +2709,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                      np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array[0:n_baselines_included])
                      print("saved %s" % Y_short_parallel_angular_array_filename)
       
-              print(max_X_list)
-              print(min_X_list)
-              sys.exit()
+               print(max_X_list)
+               print(min_X_list)
+               sys.exit()
               
    return(diffuse_global_value)
 
