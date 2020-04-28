@@ -9153,7 +9153,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                os.system(cmd)
             
                #flag three edge chans for each coarse band
-               cmd = "uvflag vis=%s edge=3,3 flagval=flag options=full" % (miriad_vis_name)
+               cmd = "uvflag vis=%s edge=3,3 flagval=flag options=brief,noquery" % (miriad_vis_name)
                print(cmd)
                os.system(cmd)
                
