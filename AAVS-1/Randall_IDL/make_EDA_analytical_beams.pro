@@ -15,12 +15,13 @@ pro make_EDA_analytical_beams
    
    fine_chan_width = 28935./1000000.
    float_array_length = UINT(32. * 150.)
-   float_array = findgen(float_array_length,increment=0.028935)
+   float_array = findgen(float_array_length,increment=fine_chan_width)
    
-   PRINT, float_array
+   ;PRINT, float_array
    
-   for freq_MHz = 50,200.0 do begin
-      HELP, freq_MHz
+   for freq_MHz_index = 1,float_array_length do begin
+      freq_MHz_float = float_array[freq_MHz_index]
+      HELP, freq_MHz_float
       freq_MHz_string = STRING(freq_MHz, FORMAT='(F5.3)')
       HELP, freq_MHz_string
       beam_name_string_x = 'model_' + STRTRIM(freq_MHz_string, 2) + '_MHz_xx.fits'
