@@ -7978,7 +7978,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                      
                   if use_analytic_beam:
                      if pol=='X':
-                        beam_image_sin_projected_fitsname = "model_%s_MHz_%0.3f.fits" % (freq_MHz,'xx')
+                        beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'xx')
                         beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'xx')
                      else:
                         beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'yy')
