@@ -10968,10 +10968,17 @@ EDA2_chan_list = range(64,127)
 #   ['20191202T172027'],
 #   ]
 
-#20200217 data (don't use 'edge' times):
-EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200303_data/",EDA2_chan_list)
-#EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200304_data/",EDA2_chan_list)
 
+
+
+#EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
+#EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
+#inv fine chans
+EDA2_data_dir = '/md0/EoR/EDA2/inv_uvfits/20200303_213605/'
+#20200217 data (don't use 'edge' times):
+#EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200303_data/",EDA2_chan_list)
+#EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200304_data/",EDA2_chan_list)
+EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 
 
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -10986,8 +10993,7 @@ EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan]
 #EDA2_obs_time_list = ['20191202T172027']
 
 EDA2_chan_list_array = np.asarray(EDA2_chan_list)
-#EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
-EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
+
 #EDA2_obs_time = '20191202T171727'
 #freq_MHz_array = np.round(400./512.*EDA2_chan_list_array)
 freq_MHz_array = 400./512.*EDA2_chan_list_array
