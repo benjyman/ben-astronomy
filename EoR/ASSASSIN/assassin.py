@@ -11034,25 +11034,25 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
-#chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
+chan_num = 0
+freq_MHz_list = [freq_MHz_array[chan_num]]
 ##if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-#   if len(freq_MHz_list)==1:
-#      EDA2_chan = EDA2_chan_list[chan_num]
-#   else:
-#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-#   new_dir = "./%s" % EDA2_chan
-#   os.chdir(new_dir)
-#   freq_MHz_input_list = [freq_MHz]
-#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#   #the concat step is causing /tmp to fill with casa crash reports
-#   cmd = "rm -rf /tmp/*" 
-#   print(cmd)
-#   os.system(cmd)
-#   os.chdir('./..')
-##sys.exit()
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   if len(freq_MHz_list)==1:
+      EDA2_chan = EDA2_chan_list[chan_num]
+   else:
+      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   #the concat step is causing /tmp to fill with casa crash reports
+   cmd = "rm -rf /tmp/*" 
+   print(cmd)
+   os.system(cmd)
+   os.chdir('./..')
+sys.exit()
 
 #Step 2: calibrate
 
@@ -11133,7 +11133,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
