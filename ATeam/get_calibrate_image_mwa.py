@@ -347,7 +347,7 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
       if weighted_average==True:
          #get rms of region
          rms = np.sqrt(np.mean(np.square(data_region)))
-         variance_weight = 1./rms**2
+         variance_weight = 1./rms**4
          weights_list.append(variance_weight)
          #print "rms %3f" % rms
       
