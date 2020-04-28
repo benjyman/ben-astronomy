@@ -15,7 +15,7 @@ pro make_EDA_analytical_beams
    
    fine_chan_width = 28935./1000000.
    float_array_length = UINT(32. * 150.)
-   float_array = findgen(float_array_length,INCREMENT=fine_chan_width)
+   float_array = findgen(float_array_length,INCREMENT=0.028935)
    
    PRINT, float_array
    
