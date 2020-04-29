@@ -21,7 +21,7 @@ pro make_EDA_analytical_beams
    
    for freq_MHz_index = 1,float_array_length do begin
       freq_MHz_float = float_array[freq_MHz_index] + (50. - (32.*fine_chan_width))
-      freq_MHz_float_round = FLOAT(CEIL(freq_MHz_float*100)/100)
+      freq_MHz_float_round = FLOAT(ROUND(freq_MHz_float*1000)/1000)
       HELP, freq_MHz_float
       ;freq_MHz_string = STRING(freq_MHz_float, FORMAT='(F7.3)')
       freq_MHz_string = STRING(freq_MHz_float_round, FORMAT='%0.3f')
