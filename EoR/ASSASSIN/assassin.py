@@ -2340,7 +2340,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    lst_deg = (float(lst_hrs)/24.)*360.
    
    #this needs to change for each chan or you are wasting time
-   max_baselines_included = 20 #I think 1680 is the most baselines I've seen used for the current data at lowest freq (but that was for concat... think you only need 320 max at lowest freq)
+   #max_baselines_included = 200 #I think 1680 is the most baselines I've seen used for the current data at lowest freq (but that was for concat... think you only need 320 max at lowest freq)
          
    #get the diffuse global diffuse value used in the simulation (from gsm)
    EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
@@ -2423,6 +2423,13 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
             #leave this here!!
             UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
             
+            baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / centre_wavelength
+                  
+            baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+                  
+            n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+            print("n_baselines_included %s for obs %s, EDA2 chan %s" % (n_baselines_included,EDA2_obs_time,EDA2_chan))      
+   
             if calculate_uniform_response:
             
                n_pix = hp.nside2npix(NSIDE)
@@ -2577,7 +2584,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                X_short_parallel_array_pure_inline = np.full(len(baseline_vector_array),np.nan,dtype=complex)
             
                #need do this bit just once for each chan
-               for baseline_vector_index in range(0,max_baselines_included):
+               for baseline_vector_index in range(0,n_baselines_included):
                   #Just try doing the integral (sum) all in one go with one baseline
                   #baseline_vector_test = baseline_vector_array[0]
                   
@@ -2611,13 +2618,10 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
                   X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
                
-               
                   if include_angular_info:
                      Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
       
                   X_short_parallel_array[baseline_vector_index] = X_short_parallel
-                  
-                  
                   
                   X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
                   X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
@@ -2638,44 +2642,34 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
                   #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                   
-                  wavelength = 300./float(freq_MHz_fine_chan)
+                  #wavelength = 300./float(freq_MHz_fine_chan)
                   
                   print("fine_chan index,MHz,wavelength")
                   print(fine_chan_index)
                   print(freq_MHz_fine_chan)
-                  print(wavelength)
+                  #print(wavelength)
                   
                   if wsclean:
                      real_vis_data = visibilities[:,0,0,0,fine_chan_index,0,0]
                   else:
                      real_vis_data = visibilities[:,0,0,fine_chan_index,0,0]
                   
-                  UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
-                  VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+                  ##UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+                  ##VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
                   real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
    
-                  
-   
                   #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-                  baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
-                  VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+                  ##baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+                  ##VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
                   real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
                   
                   #leave this here!!
-                  UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+                  ##UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
                   
                   #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
                   #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
                    
-                  baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
-                  
-                  
-                  baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
-                  
-   
-                  n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-                  print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,EDA2_obs_time,fine_chan_index))      
-   
+
                   baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
                   np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
                   print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
@@ -11079,21 +11073,21 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 ###if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-#   if len(freq_MHz_list)==1:
-#      EDA2_chan = EDA2_chan_list[chan_num]
-#   else:
-#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-#   new_dir = "./%s" % EDA2_chan
-#   os.chdir(new_dir)
-#   freq_MHz_input_list = [freq_MHz]
-#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#   #the concat step is causing /tmp to fill with casa crash reports
-#   cmd = "rm -rf /tmp/*" 
-#   print(cmd)
-#   os.system(cmd)
-#   os.chdir('./..')
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   if len(freq_MHz_list)==1:
+      EDA2_chan = EDA2_chan_list[chan_num]
+   else:
+      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   #the concat step is causing /tmp to fill with casa crash reports
+   cmd = "rm -rf /tmp/*" 
+   print(cmd)
+   os.system(cmd)
+   os.chdir('./..')
 #sys.exit()
 
 #Step 2: calibrate
@@ -11104,10 +11098,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = False
-#wsclean = True
-#concat=True
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
+plot_cal = False
+wsclean = False
+concat=False
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
@@ -11150,9 +11144,6 @@ model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_global_angular'
 
 
-
-
-
 #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
 
 #to save time:
@@ -11175,20 +11166,20 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 10
-chan_num = 0
+#chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+2]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+2]
-#wsclean=False # for sims
-wsclean=True # for data
+#freq_MHz_list = freq_MHz_array[chan_num:chan_num+2]
+#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+2]
+#wsclean=False # for sims or miriad cal
+#wsclean=True # for data
 fast=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast)
 
