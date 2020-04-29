@@ -7948,7 +7948,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                reprojected_gsm_fitsname_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.fits" % (sky_model,lst_deg,freq_MHz_fine_chan)
                reprojected_gsm_im_name_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_reprojected.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
                
-               
                hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
                #print hdu_gsm.header
                #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
@@ -7963,8 +7962,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                pyfits.writeto(reprojected_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,clobber=True)
                pyfits.update(reprojected_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,header=no_source_header)
                print("wrote image %s" %  reprojected_gsm_fitsname_fine_chan)
-      
-                        
+             
                #Do this GSM map stuff here as it doesn't depend on pol
                cmd = "rm -rf %s" % (reprojected_gsm_im_name_fine_chan)
                print(cmd)
@@ -7973,9 +7971,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                cmd = "fits in=%s out=%s op=xyin" % (reprojected_gsm_fitsname_fine_chan,reprojected_gsm_im_name_fine_chan)
                print(cmd)
                os.system(cmd)
-      
-      
-                       
+         
                #uvmodel requires the model to be in Jy/pix
                #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
                
@@ -8042,24 +8038,23 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             #########################################
             #########################################
             #THis is done above per fine chan
-            #cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
-            #print(cmd)
-            #os.system(cmd)
+            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
+            print(cmd)
+            os.system(cmd)
             
-            #cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
-            #print(cmd)
-            #os.system(cmd)
+            cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
+            print(cmd)
+            os.system(cmd)
             
-            #cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name)
-            #print(cmd)
-            #os.system(cmd)
+            cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name)
+            print(cmd)
+            os.system(cmd)
 
-            #cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name_no_cos_za,beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za)
-            #print(cmd)
-            #os.system(cmd)
+            cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name_no_cos_za,beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za)
+            print(cmd)
+            os.system(cmd)
               
             #just for sky-averaged temp plotting:
-            apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%0.3f_MHz_Tb.fits" % (lst_deg,pol,freq_MHz)
             with fits.open(apparent_sky_im_Tb_fits_name) as hdu_list:
                data = hdu_list[0].data
             
