@@ -8041,23 +8041,25 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             
             #########################################
             #########################################
-            cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
-            print(cmd)
-            os.system(cmd)
+            #THis is done above per fine chan
+            #cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_gsm_im_name,apparent_sky_im_Tb_name)
+            #print(cmd)
+            #os.system(cmd)
             
-            cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
-            print(cmd)
-            os.system(cmd)
+            #cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_Tb_name,apparent_sky_im_Tb_fits_name)
+            #print(cmd)
+            #os.system(cmd)
             
-            cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name)
-            print(cmd)
-            os.system(cmd)
+            #cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name)
+            #print(cmd)
+            #os.system(cmd)
 
-            cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name_no_cos_za,beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za)
-            print(cmd)
-            os.system(cmd)
+            #cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name_no_cos_za,beam_image_sin_projected_regrid_gsm_fits_name_no_cos_za)
+            #print(cmd)
+            #os.system(cmd)
               
             #just for sky-averaged temp plotting:
+            apparent_sky_im_Tb_fits_name = "apparent_sky_LST_%03d_%s_pol_%0.3f_MHz_Tb.fits" % (lst_deg,pol,freq_MHz)
             with fits.open(apparent_sky_im_Tb_fits_name) as hdu_list:
                data = hdu_list[0].data
             
