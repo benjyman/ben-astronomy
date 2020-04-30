@@ -4243,7 +4243,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
          t_sky_measured_array_filename_flagged = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          t_sky_measured_error_array_filename_flagged = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-   
+         freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    
          #this replaces all the matrix stuff you do in model_tsky_from_saved_data
          
@@ -4303,7 +4303,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
          np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
          np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
-    
+         np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
   
       
       
@@ -4401,10 +4401,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+    
+      
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-
+      freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+      
       #print(t_sky_measured_array)
       #print(t_sky_measured_array.shape)
       #print(t_sky_measured_error_array)
@@ -4465,10 +4468,12 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-   
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+    
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-         
+      freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+        
       if EDA2_data==True:
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
@@ -4547,10 +4552,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+    
+    
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-
+      freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+       
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
@@ -4598,10 +4606,12 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-   
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+    
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-         
+      freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+          
       if EDA2_data==True:
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
@@ -4710,10 +4720,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+    
+    
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      
+      freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+       
+       
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
@@ -11269,8 +11283,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-model_type_list = ['OLS_fixed_intercept']
+model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+#model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -11317,7 +11331,7 @@ include_angular_info = True
 wsclean=False # for sims or miriad cal
 #wsclean=True # for data
 fast=False
-no_modelling=True
+no_modelling=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling)
 
 
