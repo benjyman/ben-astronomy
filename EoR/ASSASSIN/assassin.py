@@ -4510,8 +4510,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Sky temperature (K)")
    if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-      print(signal_type_list)
-      plt.legend(loc='upper right')
+      #print(signal_type_list)
+      if len(freq_MHz_list)==1:
+         plt.legend(loc='lower right')
+      else:
+         plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
    if EDA2_data:
