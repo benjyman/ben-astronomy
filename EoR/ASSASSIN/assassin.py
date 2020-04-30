@@ -4438,6 +4438,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    ###Also plot the average measurement for each EDA2 coarse chan
    t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
    t_sky_measure_av_per_EDA2_chan_err = np.full(len(freq_MHz_list),np.nan)
+   t_sky_measure_av_per_EDA2_chan_weighted = np.full(len(freq_MHz_list),np.nan)
+   t_sky_measure_av_per_EDA2_chan_err_weighted = np.full(len(freq_MHz_list),np.nan)
+   
    
    plt.clf()
    
@@ -4445,10 +4448,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
          label1='ignore angular response'
+         label3='ignore angular resp. weighted'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
+         label3='subtract angular resp. weighted'
       else:
          label1='recovered'
+         label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    
@@ -4476,17 +4482,20 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             weighted_sum = np.sum(weighted_array)
             sum_of_weights = np.sum(weight_array)
             weighted_mean = weighted_sum / sum_of_weights
+            st_dev_w_mean = np.sqrt(1./(sum_of_weights))
             
-            st_dev_w_mean = np.sqrt(1/(sum_of_weights))
+            t_sky_measure_av_per_EDA2_chan_weighted[freq_MHz_index] = weighted_mean
+            t_sky_measure_av_per_EDA2_chan_err_weighted[freq_MHz_index] = st_dev_w_mean
             
-            print(weighted_mean)
-            print(st_dev_w_mean)
-            sys.exit()
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err = t_sky_measured_error_array
-
+         t_sky_measure_av_per_EDA2_chan_weighted = t_sky_measured_array
+         t_sky_measure_av_per_EDA2_chan_err_weighted = t_sky_measured_error_array
+         
       plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1)
+      if EDA2_data:
+         plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan_weighted,yerr=t_sky_measure_av_per_EDA2_chan_err_weighted,label=label3)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
