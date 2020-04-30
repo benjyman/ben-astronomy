@@ -4477,11 +4477,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             sum_of_weights = np.sum(weight_array)
             weighted_mean = weighted_sum / sum_of_weights
             
-            print(weight_array)
-            print(weighted_array)
-            print(weighted_sum)
-            print(sum_of_weights)
+            st_dev_w_mean = np.sqrt(1/(sum_of_weights))
+            
             print(weighted_mean)
+            print(st_dev_w_mean)
             sys.exit()
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
