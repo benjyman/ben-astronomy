@@ -4581,10 +4581,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
          label1='ignore angular response'
+         label3='ignore angular resp. weighted'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
+         label3='subtract angular resp. weighted'
       else:
          label1='recovered'
+         label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
    
@@ -4595,20 +4598,37 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
             freq_range_max = freq_MHz + (centre_chan_index * fine_chan_width_Hz/1000000.)
-            print(freq_range_min)
-            print(freq_range_max)
+            #print(freq_range_min)
+            #print(freq_range_max)
             
             indices = np.where(np.logical_and(freq_MHz_fine_array>=freq_range_min,freq_MHz_fine_array<=freq_range_max))
             t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
-            print(t_sky_measured_EDA2_chan)
-            print(freq_MHz_fine_array[indices])
+            t_sky_measured_error_chan = t_sky_measured_error_array[indices]
+            #print(t_sky_measured_EDA2_chan)
+            #print(freq_MHz_fine_array[indices])
             t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.nanmean(t_sky_measured_EDA2_chan)
             t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.nanstd(t_sky_measured_EDA2_chan)
+            
+            #weighted average:
+            weight_array = 1./(t_sky_measured_error_chan**2)
+            weighted_array = t_sky_measured_EDA2_chan * weight_array
+            weighted_sum = np.sum(weighted_array)
+            sum_of_weights = np.sum(weight_array)
+            weighted_mean = weighted_sum / sum_of_weights
+            st_dev_w_mean = np.sqrt(1./(sum_of_weights))
+            
+            t_sky_measure_av_per_EDA2_chan_weighted[freq_MHz_index] = weighted_mean
+            t_sky_measure_av_per_EDA2_chan_err_weighted[freq_MHz_index] = st_dev_w_mean
+            
       else:
          t_sky_measure_av_per_EDA2_chan = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err = t_sky_measured_error_array
-
+         t_sky_measure_av_per_EDA2_chan_weighted = t_sky_measured_array
+         t_sky_measure_av_per_EDA2_chan_err_weighted = t_sky_measured_error_array
+         
       plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1)
+      if EDA2_data:
+         plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan_weighted,yerr=t_sky_measure_av_per_EDA2_chan_err_weighted,label=label3)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
@@ -4623,8 +4643,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Sky temperature (K)")
    if ('diffuse_global' in signal_type_list or 'diffuse' in signal_type_list or 'diffuse_angular' in signal_type_list):
-      print(signal_type_list)
-      plt.legend(loc='upper right')
+      #print(signal_type_list)
+      if len(freq_MHz_list)==1:
+         plt.legend(loc='lower right')
+      else:
+         plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
    if EDA2_data:
