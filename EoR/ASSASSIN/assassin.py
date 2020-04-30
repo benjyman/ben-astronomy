@@ -4099,7 +4099,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
 
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False):
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -4228,78 +4228,81 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #this array needs to be bigger now as we are using the fine channels of EDA2 data
    
-   t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
-   t_sky_measured_array = np.full(t_sky_array_length,np.nan)
-   t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
-   t_sky_measured_array_flagged = np.full(t_sky_array_length,np.nan)
-   t_sky_measured_error_array_flagged = np.full(t_sky_array_length,np.nan)
-   freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
    
-   for model_type in model_type_list:
-      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_array_filename_flagged = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_error_array_filename_flagged = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-
-
-      #this replaces all the matrix stuff you do in model_tsky_from_saved_data
+   if not no_modelling:
+   
+      t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
+      t_sky_measured_array = np.full(t_sky_array_length,np.nan)
+      t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
+      t_sky_measured_array_flagged = np.full(t_sky_array_length,np.nan)
+      t_sky_measured_error_array_flagged = np.full(t_sky_array_length,np.nan)
+      freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
       
-      for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-         if EDA2_data==True:
-            EDA2_chan = EDA2_chan_list[freq_MHz_index]
-            if len(n_obs_concat_list) > 0:
-               #n_obs_concat = n_obs_concat_list[freq_MHz_index]
-               n_obs_concat = n_obs_concat_list[0]
-            else:
-               n_obs_concat = 1
-            #fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
-            #omit 2 fine chans at the low end and 3 edge chans at the high end and you are sweet, no gaps
-            #fine_chan_index_array = n_fine_chans_used - np.arange(n_fine_chans-5)+2
-            fine_chan_index_array = np.arange(n_fine_chans-5)+2
-            for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
-               freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index_index
-               ######freq_MHz_index_fine = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-               #oversampled PFB - dont need all this edge chan stuff
-               #channel_remainder = freq_MHz_index_fine % n_fine_chans
-               #print channel_remainder
-               #if (channel_remainder < n_chans_omitted_each_edge or channel_remainder >= (n_fine_chans-n_chans_omitted_each_edge)):
-               #   edge_chan=True
-               #else:
-               #   edge_chan=False
-               edge_chan=False 
-               
-               if EDA2_data:
-                  if wsclean:
-                     t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
-                  else:
-                     t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,fine_chan_index=fine_chan_index,model_type=model_type)
+      for model_type in model_type_list:
+         t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+         t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+         t_sky_measured_array_filename_flagged = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+         t_sky_measured_error_array_filename_flagged = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+   
+   
+         #this replaces all the matrix stuff you do in model_tsky_from_saved_data
+         
+         for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+            if EDA2_data==True:
+               EDA2_chan = EDA2_chan_list[freq_MHz_index]
+               if len(n_obs_concat_list) > 0:
+                  #n_obs_concat = n_obs_concat_list[freq_MHz_index]
+                  n_obs_concat = n_obs_concat_list[0]
                else:
-                  t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
+                  n_obs_concat = 1
+               #fine_chan_index_array = range(n_fine_chans)[n_chans_omitted_each_edge:n_fine_chans-n_chans_omitted_each_edge]
+               #omit 2 fine chans at the low end and 3 edge chans at the high end and you are sweet, no gaps
+               #fine_chan_index_array = n_fine_chans_used - np.arange(n_fine_chans-5)+2
+               fine_chan_index_array = np.arange(n_fine_chans-5)+2
+               for fine_chan_index_index,fine_chan_index in enumerate(fine_chan_index_array):
+                  freq_MHz_index_fine = freq_MHz_index*n_fine_chans_used + fine_chan_index_index
+                  ######freq_MHz_index_fine = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+                  #oversampled PFB - dont need all this edge chan stuff
+                  #channel_remainder = freq_MHz_index_fine % n_fine_chans
+                  #print channel_remainder
+                  #if (channel_remainder < n_chans_omitted_each_edge or channel_remainder >= (n_fine_chans-n_chans_omitted_each_edge)):
+                  #   edge_chan=True
+                  #else:
+                  #   edge_chan=False
+                  edge_chan=False 
+                  
+                  if EDA2_data:
+                     if wsclean:
+                        t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
+                     else:
+                        t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,fine_chan_index=fine_chan_index,model_type=model_type)
+                  else:
+                     t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
+                  
+                  print(freq_MHz_fine)
+                  print(freq_MHz_index_fine)
+                  
+                  
+                  t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
+                  t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
+                  t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
+                  t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
+                  freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
+         
                
-               print(freq_MHz_fine)
-               print(freq_MHz_index_fine)
+            else:
+               EDA2_chan = None
+               n_obs_concat = 1
+               fine_chan_index=0
+               t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
+               t_sky_measured_array[freq_MHz_index] = t_sky_measured
+               t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
+               freq_MHz_fine_array = freq_MHz_array    
                
-               
-               t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
-               t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
-               t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
-               t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
-               freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
-      
-            
-         else:
-            EDA2_chan = None
-            n_obs_concat = 1
-            fine_chan_index=0
-            t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
-            t_sky_measured_array[freq_MHz_index] = t_sky_measured
-            t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
-            freq_MHz_fine_array = freq_MHz_array    
-            
-      np.save(t_sky_measured_array_filename,t_sky_measured_array)
-      np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
-      np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
-      np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
+         np.save(t_sky_measured_array_filename,t_sky_measured_array)
+         np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array) 
+         np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
+         np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
     
   
       
@@ -11314,7 +11317,8 @@ include_angular_info = True
 wsclean=False # for sims or miriad cal
 #wsclean=True # for data
 fast=False
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast)
+no_modelling=True
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling)
 
 
 
