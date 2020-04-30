@@ -1847,7 +1847,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
       plt.legend(loc=1)
       plt.text(x_pos, y_pos, fit_string)
       #plt.ylim([0, 3.5])
-      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       plt.close()
@@ -1864,7 +1864,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    fit_string = "y=%0.1fx" % t_sky_jy      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
    
 
-   return(mean_t_sky_K.real,std_dev_t_sky_K,mean_t_sky_K.real,std_dev_t_sky_K,freq_MHz_fine_chan)
+   return(mean_t_sky_K.real,std_dev_t_sky_K,t_sky_K_flagged.real,t_sky_error_K_flagged,freq_MHz_fine_chan)
 
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
