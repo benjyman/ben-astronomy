@@ -1580,6 +1580,8 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
    #do for each obs_time:
    t_sky_K_list = []
    t_sky_error_K_list = []
+   t_sky_K_list_flagged = []
+   t_sky_error_K_list_flagged = []
    
    for EDA2_obs_time in obs_time_list:
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol_%s.npy" % (freq_MHz_fine_chan,pol,EDA2_obs_time)             
@@ -1593,6 +1595,8 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          print("%s does not exist, setting T_sky to nan" % X_short_parallel_array_filename)
          t_sky_K_list.append(np.nan)
          t_sky_error_K_list.append(np.nan)
+         t_sky_K_list_flagged.append(np.nan)
+         t_sky_error_K_list_flagged.append(np.nan)
          continue
       else:
          X_short_parallel_array = np.load(X_short_parallel_array_filename)
@@ -1798,73 +1802,93 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          t_sky_K_list.append(t_sky_K)
          t_sky_error_K_list.append(t_sky_error_K)
    
-    
+         #FLAGGING bit
+         #now use the fit to identify outliers probably due to rfi
+         #subtract the model from the data
+         real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array_nonans - results.fittedvalues
+         #take the mean 
+         real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
+         real_vis_data_sorted_array_subtr_model_std = np.nanstd(real_vis_data_sorted_array_subtr_model)
+      
+         #mask values greater than 5 sigma away from mean
+         thresh = 5.* real_vis_data_sorted_array_subtr_model_std
+         real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
+         real_vis_data_sorted_array_flagged[(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
+         
+         
+      
+         #get rid of nans
+         #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
+         #X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
+         
+         if (X_short_parallel_array_nonans.shape[0]>0):
+            model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array_nonans,missing='drop')
+            results = model.fit()
+            ##print results.summary()
+            parameters = results.params
+            print parameters
+         
+            t_sky_jy = parameters[0]
+            t_sky_error_jy = results.bse[0]
+            
+            X_short_parallel_array_nonans_nonans = X_short_parallel_array_nonans[np.logical_not(np.isnan(real_vis_data_sorted_array_flagged))]
+            
+            
+            
+            fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+         
+            print("diffuse_global_value is %0.4E" % diffuse_global_value) 
+         
+            ratio_in_out = diffuse_global_value / t_sky_K
+            print("ratio between input and output T_sky_flagged is %0.4f" % ratio_in_out )
+         
+            y_pos = np.max(results.fittedvalues)
+            x_pos = 1.2 * np.min(X_short_parallel_array)
+         
+
+            plt.clf()
+            plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+            plt.plot(X_short_parallel_array_nonans_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         
+            map_title="Flagged data and fit" 
+            plt.xlabel("Expected global-signal response")
+            plt.ylabel("Real component of visibility (Jy) flagged")
+            plt.legend(loc=1)
+            plt.text(x_pos, y_pos, fit_string)
+            #plt.ylim([0, 3.5])
+            fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            plt.close()
+            print("saved %s" % fig_name) 
+         else:
+            t_sky_jy = np.nan
+            t_sky_error_jy = np.nan
+            
+          
+         #convert to K
+         t_sky_K_flagged = jy_to_K * t_sky_jy
+         t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
+         print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+
+         t_sky_K_list_flagged.append(t_sky_K_flagged)
+         t_sky_error_K_list_flagged.append(t_sky_error_K_flagged)
+         
    t_sky_K_array = np.asarray(t_sky_K_list)
    t_sky_error_K_array = np.asarray(t_sky_error_K_list)
    
    mean_t_sky_K = np.nanmean(t_sky_K_array)
    std_dev_t_sky_K = np.nanstd(t_sky_K_array)
 
-
-   #FLAGGING bit
-   #now use the fit to identify outliers probably due to rfi
-   #subtract the model from the data
-   real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array_nonans - results.fittedvalues
-   #take the mean 
-   real_vis_data_sorted_array_subtr_model_mean = np.nanmean(real_vis_data_sorted_array_subtr_model)
-   real_vis_data_sorted_array_subtr_model_std = np.nanstd(real_vis_data_sorted_array_subtr_model)
-
-   #mask values greater than 5 sigma away from mean
-   thresh = 5.* real_vis_data_sorted_array_subtr_model_std
-   real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
-   real_vis_data_sorted_array_flagged[(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
+   t_sky_K_array_flagged = np.asarray(t_sky_K_list_flagged)
+   t_sky_error_K_array_flagged = np.asarray(t_sky_error_K_list_flagged)
+   
+   mean_t_sky_K_flagged = np.nanmean(t_sky_K_array_flagged)
+   std_dev_t_sky_K_flagged = np.nanstd(t_sky_K_array_flagged)
    
    
 
-   #get rid of nans
-   #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
-   #X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
-   
-   if (X_short_parallel_array_nonans.shape[0]>0):
-      model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array_nonans,missing='drop')
-      results = model.fit()
-      ##print results.summary()
-      parameters = results.params
-      print parameters
-   
-      t_sky_jy = parameters[0]
-      t_sky_error_jy = results.bse[0]
-      
-      X_short_parallel_array_nonans_nonans = X_short_parallel_array_nonans[np.logical_not(np.isnan(real_vis_data_sorted_array_flagged))]
-      
-      plt.clf()
-      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
-      plt.plot(X_short_parallel_array_nonans_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-   
-      map_title="Flagged data and fit" 
-      plt.xlabel("Expected global-signal response")
-      plt.ylabel("Real component of visibility (Jy) flagged")
-      plt.legend(loc=1)
-      plt.text(x_pos, y_pos, fit_string)
-      #plt.ylim([0, 3.5])
-      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      plt.close()
-      print("saved %s" % fig_name) 
-   else:
-      t_sky_jy = np.nan
-      t_sky_error_jy = np.nan
-      
-    
-   #convert to K
-   t_sky_K_flagged = jy_to_K * t_sky_jy
-   t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
-   print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-   fit_string = "y=%0.1fx" % t_sky_jy      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-   
-
-   return(mean_t_sky_K.real,std_dev_t_sky_K,t_sky_K_flagged.real,t_sky_error_K_flagged,freq_MHz_fine_chan)
+   return(mean_t_sky_K.real,std_dev_t_sky_K,mean_t_sky_K_flagged.real,std_dev_t_sky_K_flagged,freq_MHz_fine_chan)
 
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
