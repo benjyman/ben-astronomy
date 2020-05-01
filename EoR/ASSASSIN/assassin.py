@@ -4415,11 +4415,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
       
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
-      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
       #print(t_sky_measured_array)
       #print(t_sky_measured_array.shape)
       #print(t_sky_measured_error_array)
@@ -4483,11 +4483,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
-      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
       
        
       if EDA2_data==True:
@@ -4572,11 +4572,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
-      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
    if len(freq_MHz_list)==1:
@@ -4628,11 +4628,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
-      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
       
           
@@ -4748,11 +4748,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
-      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
-      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+      t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
        
       #subtract a polynomial fit
