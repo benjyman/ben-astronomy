@@ -4390,7 +4390,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       t_sky_theoretical_array = np.asarray(t_sky_theoretical_list)      
    else:
       label2 = 'input'
-
+   
+   #for plotting a subset of chans:
+   if EDA2_data:
+      fine_chans_per_EDA2_chan = n_fine_chans-5
+      length_freq_MHz_fine_chan_to_plot = int(len(EDA2_chan_list_input) * fine_chans_per_EDA2_chan)
+   else:
+      length_freq_MHz_fine_chan_to_plot = len(freq_MHz_list)
+   
    #unflagged
    plt.clf()
    for model_type in model_type_list:
@@ -4408,9 +4415,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
       
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-      
+      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
       #print(t_sky_measured_array)
       #print(t_sky_measured_array.shape)
       #print(t_sky_measured_error_array)
@@ -4474,9 +4483,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
-        
+      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+      
+       
       if EDA2_data==True:
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
@@ -4559,8 +4572,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
    if len(freq_MHz_list)==1:
@@ -4612,8 +4628,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+       
+      
           
       if EDA2_data==True:
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
@@ -4727,8 +4748,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
+      t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
       t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+      t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+      freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
        
       #subtract a polynomial fit
@@ -11326,11 +11350,11 @@ include_angular_info = True
 
 #up to here with plot_only = False
 #chan_num = 10
-#chan_num = 0
+chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[chan_num:chan_num+5]
-#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+5]
+freq_MHz_list = freq_MHz_array[chan_num:chan_num+5]
+EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+5]
 wsclean=False # for sims or miriad cal
 #wsclean=True # for data
 fast=False
