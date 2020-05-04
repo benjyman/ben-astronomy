@@ -10283,6 +10283,7 @@ def image_eda2_data(eda2_data_uvfits_name_list):
 
 
 def plot_baseline_length_counts(array_layout_filename):
+
    plot_basename = array_layout_filename.split('/')[-1].split('.')[0]
 
    antenna_position_x_list=[]
@@ -10301,10 +10302,19 @@ def plot_baseline_length_counts(array_layout_filename):
    antenna_position_x_m_array = np.asarray(antenna_position_x_list)
    antenna_position_y_m_array = np.asarray(antenna_position_y_list)
 
-   print(len(antenna_position_x_m_array))
+   n_ants = len(antenna_position_x_m_array)
+   
+   n_baselines = (n_ants * (n_ants-1))/2
+   print(n_baselines)
    sys.exit()
 
-   #for ant1 in range(256):
+   for ant1 in range(n_ants):
+      for ant2 in range(n_ants):.
+         if ant1!=ant2:
+            x_length = antenna_position_x_m_array[ant1] - antenna_position_x_m_array[ant2]
+            y_length = antenna_position_y_m_array[ant1] - antenna_position_y_m_array[ant2]
+            baseline_length = np.sqrt(x_length**2 + y_length**2)
+            print(baseline_length)
    
    
 
