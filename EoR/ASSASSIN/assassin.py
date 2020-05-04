@@ -10202,7 +10202,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                 os.system(cmd)
                 
                 #apply sols
-                cmd = "applysolutions [-datacolumn CORRECTED_DATA %s %s " % (concat_ms_name_wsclean_cal,gain_solutions_name)
+                cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (concat_ms_name_wsclean_cal,gain_solutions_name)
                 print(cmd)
                 os.system(cmd)
                 
