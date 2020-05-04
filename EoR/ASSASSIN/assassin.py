@@ -10164,7 +10164,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
           if wsclean==True:
              print("concatenating using CASA")
              
-             casa_cmd_filename = "casa_command.py"
+             casa_cmd_filename = "casa_command_concat.py"
              
              cmd = "rm -rf %s %s %s" % (concat_ms_name_wsclean_cal,concat_uvfits_name_wsclean_cal,casa_cmd_filename)
              print(cmd)
@@ -10173,7 +10173,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              vis_string = "','".join(wsclean_cal_ms_name_list)
              
              #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
-             cmd = "concat(vis=['%s'],concatvis='%s')" % (vis_string,concat_ms_name_wsclean_cal)
+             cmd = "concat(vis=['%s'],concatvis='%s',forcesingleephemfield='zenith',dirtol='3600arcsec')" % (vis_string,concat_ms_name_wsclean_cal)
              print(cmd)
              os.system(cmd)
 
@@ -10204,7 +10204,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                 print(cmd)
                 os.system(cmd)
                 
-                
+             casa_cmd_filename = "casa_command_exportuvfits.py"   
+
              cmd = "rm -rf %s " % (casa_cmd_filename)
              print(cmd)
              os.system(cmd)
