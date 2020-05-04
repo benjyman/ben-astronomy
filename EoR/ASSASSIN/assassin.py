@@ -10282,10 +10282,11 @@ def image_eda2_data(eda2_data_uvfits_name_list):
          os.system(cmd)
 
 
-def plot_baseline_length_counts(array_layout_filename):
-
+def plot_baseline_length_counts(array_layout_filename,freq_MHz,lambda_threshold=0.5,m_threshold=3.0):
+   
    plot_basename = array_layout_filename.split('/')[-1].split('.')[0]
-
+   wavelength = 300.float(freq_MHz)
+   
    antenna_position_x_list=[]
    antenna_position_y_list=[]
    
@@ -10305,7 +10306,7 @@ def plot_baseline_length_counts(array_layout_filename):
    n_ants = len(antenna_position_x_m_array)
    
    n_baselines_predicted = (n_ants * (n_ants-1))/2
-   print(n_baselines_predicted)
+   #print(n_baselines_predicted)
    
    for ant1 in range(n_ants/2):
       for ant2 in range(n_ants):
@@ -10315,8 +10316,8 @@ def plot_baseline_length_counts(array_layout_filename):
             baseline_length = np.sqrt(x_length**2 + y_length**2)
             baseline_length_list.append(baseline_length)
             
-   print(len(baseline_length_list))
-   print(baseline_length_list[0:10])
+   #print(len(baseline_length_list))
+
    
    baseline_length_array = np.asarray(baseline_length_list)
    #histogram of baseline lengths
@@ -10330,9 +10331,22 @@ def plot_baseline_length_counts(array_layout_filename):
    plt.close()
    print("saved %s" % fig_name)  
    
+   baseline_length_array_m_inds = baseline_length_array.argsort()
+   baseline_length_array_sorted = baseline_length_array[baseline_length_array_m_inds]
+   baseline_length_array_sorted_m_cut = baseline_length_array_sorted[baseline_length_array_sorted<m_threshold]
    
-
-
+   baseline_length_array_sorted_lambda = baseline_length_array_sorted / wavelength
+   baseline_length_array_sorted_lambda_cut = baseline_length_array_sorted_lambda[baseline_length_array_sorted_lambda < lambda_threshold]
+   
+   n_m_cut = len(baseline_length_array_sorted_m_cut)
+   n_wavelength_cut = len(baseline_length_array_sorted_lambda_cut)
+   
+   print("n_baselines theoretical is %s" % n_baselines_predicted
+   print("n_baselines from list length is %s" % len(baseline_length_list)
+   print("n baseline less than %s m is %s" % (m_threshold,n_m_cut))
+   print("n baseline less than %s wavelengths is %s" % (lambda_threshold,n_wavelength_cut))
+   
+   
 def plot_antenna_array(array_layout_filename,ylim=18):
    # txt file needs to be miriad format (E W U)
    antenna_layout_basename = array_layout_filename.split('/')[-1].split('.')[0]
