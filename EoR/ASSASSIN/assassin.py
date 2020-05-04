@@ -10318,6 +10318,18 @@ def plot_baseline_length_counts(array_layout_filename):
    print(len(baseline_length_list))
    print(baseline_length_list[0:10])
    
+   baseline_length_array = np.asarray(baseline_length_list)
+   #histogram of baseline lengths
+   #plot a histogram of Y values
+   plt.clf()
+   n, bins, patches = plt.hist(baseline_length_array)
+   map_title="Histogram of baseline lengths" 
+   fig_name= "hist_baseline_lenghts_%s.png" % (plot_basename)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name)  
+   
    
 
 
