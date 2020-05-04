@@ -10281,7 +10281,34 @@ def image_eda2_data(eda2_data_uvfits_name_list):
          print(cmd)
          os.system(cmd)
 
-         
+
+def plot_baseline_length_counts(array_layout_filename):
+   plot_basename = array_layout_filename.split('/')[-1].split('.')[0]
+
+   antenna_position_x_list=[]
+   antenna_position_y_list=[]
+   
+   baseline_list = []
+   
+   with open(array_layout_filename,'r') as f:
+      lines = f.readlines()
+   for line in lines:
+      antenna_position_x = float(line.strip().split()[0])
+      antenna_position_y = float(line.strip().split()[1])
+      antenna_position_x_list.append(antenna_position_x)
+      antenna_position_y_list.append(antenna_position_y)   
+   
+   antenna_position_x_m_array = np.asarray(antenna_position_x_list)
+   antenna_position_y_m_array = np.asarray(antenna_position_y_list)
+
+   print(len(antenna_position_x_m_array))
+   sys.exit()
+
+   #for ant1 in range(256):
+   
+   
+
+
 def plot_antenna_array(array_layout_filename,ylim=18):
    # txt file needs to be miriad format (E W U)
    antenna_layout_basename = array_layout_filename.split('/')[-1].split('.')[0]
@@ -11258,6 +11285,12 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time_list[0][4::])
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
+
+
+#EDA2
+#plot_antenna_array(array_layout_filename=array_ant_locations_filename)
+plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename)
+sys.exit()
 
 #Step 1: simulate
 
