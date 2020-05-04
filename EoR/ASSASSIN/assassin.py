@@ -4106,7 +4106,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
-   
+
    if EDA2_data:
       n_edge_chans_omitted = 5 #two at start and 3 at end
       n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
@@ -4189,7 +4189,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #using global variable chan num so I can run lots in parallel (yes I know this is bad programming)
          if EDA2_data==True:
             if len(freq_MHz_list)==1:
-               EDA2_chan = EDA2_chan_list[chan_num]
+               EDA2_chan = EDA2_chan_list[0]
                EDA2_obs_time = EDA2_obs_time_list[chan_num]
             else:
                EDA2_chan = EDA2_chan_list[freq_MHz_index]
