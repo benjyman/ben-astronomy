@@ -10285,7 +10285,7 @@ def image_eda2_data(eda2_data_uvfits_name_list):
 def plot_baseline_length_counts(array_layout_filename,freq_MHz,lambda_threshold=0.5,m_threshold=3.0):
    
    plot_basename = array_layout_filename.split('/')[-1].split('.')[0]
-   wavelength = 300.float(freq_MHz)
+   wavelength = 300./float(freq_MHz)
    
    antenna_position_x_list=[]
    antenna_position_y_list=[]
