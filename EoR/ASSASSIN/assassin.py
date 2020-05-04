@@ -11304,7 +11304,7 @@ wsclean = True
 concat=True
 per_chan_cal = True
 calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-#sys.exit()
+sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
