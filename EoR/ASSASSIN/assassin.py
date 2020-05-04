@@ -10341,8 +10341,8 @@ def plot_baseline_length_counts(array_layout_filename,freq_MHz,lambda_threshold=
    n_m_cut = len(baseline_length_array_sorted_m_cut)
    n_wavelength_cut = len(baseline_length_array_sorted_lambda_cut)
    
-   print("n_baselines theoretical is %s" % n_baselines_predicted
-   print("n_baselines from list length is %s" % len(baseline_length_list)
+   print("n baselines theoretical is %s" % n_baselines_predicted)
+   print("n baselines from list length is %s" % len(baseline_length_list))
    print("n baseline less than %s m is %s" % (m_threshold,n_m_cut))
    print("n baseline less than %s wavelengths is %s" % (lambda_threshold,n_wavelength_cut))
    
