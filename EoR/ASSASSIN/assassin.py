@@ -10316,7 +10316,7 @@ def plot_baseline_length_counts(array_layout_filename):
             baseline_length_list.append(baseline_length)
             
    print(len(baseline_length_list))
-   print(baseline_length_list)
+   print(baseline_length_list[0:10])
    
    
 
