@@ -10342,6 +10342,7 @@ def plot_baseline_length_counts(array_layout_filename,freq_MHz,lambda_threshold=
    n_wavelength_cut = len(baseline_length_array_sorted_lambda_cut)
    
    print("n baselines theoretical is %s" % n_baselines_predicted)
+   print("n baselines from list length is %s" % len(baseline_length_list))
    print("n baseline less than %s m is %s" % (m_threshold,n_m_cut))
    print("n baseline less than %s wavelengths is %s" % (lambda_threshold,n_wavelength_cut))
    
@@ -11326,7 +11327,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #EDA2
 #plot_antenna_array(array_layout_filename=array_ant_locations_filename)
-plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename)
+plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename,50.)
 sys.exit()
 
 #Step 1: simulate
