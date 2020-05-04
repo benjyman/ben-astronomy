@@ -10289,7 +10289,7 @@ def plot_baseline_length_counts(array_layout_filename):
    antenna_position_x_list=[]
    antenna_position_y_list=[]
    
-   baseline_list = []
+   baseline_length_list = []
    
    with open(array_layout_filename,'r') as f:
       lines = f.readlines()
@@ -10304,17 +10304,19 @@ def plot_baseline_length_counts(array_layout_filename):
 
    n_ants = len(antenna_position_x_m_array)
    
-   n_baselines = (n_ants * (n_ants-1))/2
-   print(n_baselines)
-   sys.exit()
-
+   n_baselines_predicted = (n_ants * (n_ants-1))/2
+   print(n_baselines_predicted)
+   
    for ant1 in range(n_ants):
       for ant2 in range(n_ants):
          if ant1!=ant2:
             x_length = antenna_position_x_m_array[ant1] - antenna_position_x_m_array[ant2]
             y_length = antenna_position_y_m_array[ant1] - antenna_position_y_m_array[ant2]
             baseline_length = np.sqrt(x_length**2 + y_length**2)
-            print(baseline_length)
+            baseline_length_list.append(baseline_length)
+            
+   print(len(baseline_length_list))
+   print(baseline_length_list)
    
    
 
