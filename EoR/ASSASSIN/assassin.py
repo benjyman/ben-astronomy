@@ -10307,7 +10307,7 @@ def plot_baseline_length_counts(array_layout_filename):
    n_baselines_predicted = (n_ants * (n_ants-1))/2
    print(n_baselines_predicted)
    
-   for ant1 in range(n_ants):
+   for ant1 in range(n_ants/2):
       for ant2 in range(n_ants):
          if ant1!=ant2:
             x_length = antenna_position_x_m_array[ant1] - antenna_position_x_m_array[ant2]
