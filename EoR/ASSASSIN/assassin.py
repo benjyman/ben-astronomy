@@ -9302,6 +9302,8 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
        miriad_cal_uvfits_name_list = []
        wsclean_cal_ms_name_list = []
        
+       
+       
        for EDA2_obs_time in obs_time_list:    
             #EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
             simulation_uvfits_name = "%s/eda_model_LST_%03d_%s_%0.3f_MHz_D_gsm.uvfits" % (EDA2_chan,lst_deg,pol,freq_MHz)
@@ -10173,7 +10175,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
              vis_string = "','".join(wsclean_cal_ms_name_list)
              
              #need to write these commmands to files and then run 'casa -c --nohead --nogui file.py'
-             cmd = "concat(vis=['%s'],concatvis='%s',forcesingleephemfield='zenith',dirtol='3600arcsec')" % (vis_string,concat_ms_name_wsclean_cal)
+             cmd = "concat(vis=['%s'],concatvis='%s',forcesingleephemfield=0,dirtol='3600arcsec')" % (vis_string,concat_ms_name_wsclean_cal)
              print(cmd)
              os.system(cmd)
 
