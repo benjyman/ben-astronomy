@@ -11371,13 +11371,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
+#plot_cal = False
 ##wsclean = False
-wsclean = True
-concat=True
-per_chan_cal = True
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-sys.exit()
+#wsclean = True
+#concat=True
+#per_chan_cal = True
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
@@ -11442,7 +11442,7 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order=7
 
 plot_only = False
-baseline_length_thresh_lambda = 0.23
+baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 
