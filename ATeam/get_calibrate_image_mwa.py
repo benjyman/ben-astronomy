@@ -418,9 +418,9 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 
 #run in separate screens
 #2015 data:
-download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
+#download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
-#download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
+download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
 sys.exit()
 
 #2015 data:
