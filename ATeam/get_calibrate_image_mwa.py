@@ -25,14 +25,13 @@ import numpy as np
 #obsid_list_2018 = ['1202239904','1202326064','1202410528','1202411608','1202418952','1202672864']
 
 #image 6
-obsid_list_2015 = ['1115307768','1116343632','1116429792','1116603776','1116604056','1116773232']
-obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
+#obsid_list_2015 = ['1115307768','1116343632','1116429792','1116603776','1116604056','1116773232']
+#obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','1202851152','1203015384']
 
 #image 7
 #the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
 #obsid_list_2015 = ['1120470256','1120815968','1120902392','1120988824','1121075248','1121161680']
 #obsid_list_2018 = ['1244807072','1244376256','1243859272','1243341384','1243169056','1242739136'] #actually 2019
-
 
 #image 8:
 #the 2018/2019 data are actuall pointed off CenA (credit Natasha), use chgcentre....
@@ -40,8 +39,8 @@ obsid_list_2018 = ['1202679384','1202756888','1202764984','1202843048','12028511
 #obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
 
 #image_9
-#obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
-#obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
+obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
+obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
 
 #image_10
 #obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
@@ -416,10 +415,10 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 
 #run in separate screens
 #2015 data:
-#download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
+download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
 #download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-#sys.exit()
+sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
@@ -468,10 +467,10 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_8/2018'],target='CenA')
 
 #could it be that the phase centres for all obs are not exactly aligned? Try using chgcentre on image 6 ...
-chgcentre_ms(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image6/2015'],target='CenA')
-chgcentre_ms(obsid_list_2018,['/md0/ozstar/ATeam/CenA/image6/2018'],target='CenA')
+#chgcentre_ms(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image6/2015'],target='CenA')
+#chgcentre_ms(obsid_list_2018,['/md0/ozstar/ATeam/CenA/image6/2018'],target='CenA')
 
-sys.exit()
+#sys.exit()
 
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
