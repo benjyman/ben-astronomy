@@ -48,15 +48,6 @@ obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','12367998
 
 
 
-##nope:
-#image 11:
-#obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
-#obsid_list_2018 = ['1200604688','1200691136','1200777584','1200864032','1200950480','1201895248']
-
-#image 12
-#obsid_list_2015 = ['1086605808','1086613608','1086691968','1086699768','1086778136','1086785936']
-#obsid_list_2018 = ['1201123376','1201296272','1201382720','1201469160','1201555608','1201814952']
-
 def download_obs(obsid_list,dest_dir,timeres=4,freqres=40,ms=True):
    #write the csv file
    csv_filename = "%s/manta_ray_download.csv" % dest_dir
@@ -420,8 +411,8 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #2015 data:
 #download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
-download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-sys.exit()
+#download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
+#sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
