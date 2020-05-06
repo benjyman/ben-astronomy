@@ -2208,6 +2208,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #
    #sys.exit()
    
+   print(X_short_parallel_array)
+   print(real_vis_data_sorted_array)
+
    if np.nansum(np.abs(X_short_parallel_array) > 0):
       #random intercept model may work if you split data up into different bins for the value of X
       #Actually, should calculate the angular response for each baseline, then divide X up according to similar values of the angular response
