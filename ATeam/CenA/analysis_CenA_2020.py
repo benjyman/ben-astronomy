@@ -9,7 +9,7 @@ def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    model_freq_MHz = 1446.0
    #from NED
    model_flux_density_core = 78.3 #clarke et al 1992 VLA (from Israel 1998)
-   predicted_new_flux_density_core = model_flux_density_core * (model_freq_MHz / freq_MHz)**alpha
+   predicted_new_flux_density_core = model_flux_density_core * (freq_MHz / model_freq_MHz)**alpha
    
    scaling_factor = predicted_new_flux_density_core / measured_new_flux_density_core
    
