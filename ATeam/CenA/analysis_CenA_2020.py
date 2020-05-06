@@ -33,7 +33,7 @@ def source_find_image(image_name):
 
 image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 
-get_scaling_factor_from_core(image_name,185.,-0.7)
+get_scaling_factor_from_core(image_name,185.,-0.5)
 
 
 #source_find_image(image_name)
