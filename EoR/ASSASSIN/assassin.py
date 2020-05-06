@@ -1919,7 +1919,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
    else:
       freq_MHz_fine_chan = centre_freq     
-   wavelength = 300./float(freq_MHz_fine_chan)  
+   #wavelength = 300./float(freq_MHz_fine_chan)  
+   wavelength = 300./float(centre_freq)  
    
    if edge_chan:
       return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan) 
