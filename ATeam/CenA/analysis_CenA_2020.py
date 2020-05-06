@@ -3,8 +3,21 @@
 
 import os,sys
 
-def get_scaling_factor_from_core(image_name,freq_MHz):
-   print('')
+def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
+   #get this from image using masking etc eventually, for now just use kvis
+   measured_new_flux_density_core = 1053.0
+   model_freq_MHz = 1446.0
+   #from NED
+   model_flux_density_core = 78.3 #clarke et al 1992 VLA (from Israel 1998)
+   predicted_new_flux_density_core = model_flux_density_core * (model_freq_MHz / freq_MHz)**alpha
+   
+   scaling_factor = predicted_new_flux_density_core / measured_new_flux_density_core
+   
+   print("predicted core flux density is %0.3f Jy" % predicted_new_flux_density_core)
+   print("measured core flux density is %0.3f Jy" % measured_new_flux_density_core)
+   print("Scaling factor is %0.3f" % scaling_factor)
+   
+   
    
 def source_find_image(image_name):
    output_base = image_name.split('/')[-1].split('.fits')[0]
@@ -18,7 +31,10 @@ def source_find_image(image_name):
    print(cmd)
    os.system(cmd)   
 
-
 image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-source_find_image(image_name)
+
+get_scaling_factor_from_core(image_name,185.,-0.5)
+
+
+#source_find_image(image_name)
    
