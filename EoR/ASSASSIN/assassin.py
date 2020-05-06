@@ -2792,7 +2792,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
               
    return(diffuse_global_value)
 
-def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False):
+def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -3634,109 +3634,112 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          #calculate the expected unity sky signal analytically
          if not fast:
-            for baseline_vector_index in range(0,n_baselines_included):
-               #Just try doing the integral (sum) all in one go with one baseline
-               #baseline_vector_test = baseline_vector_array[0]
+            if calculate_uniform_response:
+               print("calculating uniform response")
+               for baseline_vector_index in range(0,n_baselines_included):
+                  #Just try doing the integral (sum) all in one go with one baseline
+                  #baseline_vector_test = baseline_vector_array[0]
+                  
+                  baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
+                  
+                  baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
+                  baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
+                  
+                  #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
+                  #print baseline_vector_for_dot_array_mag
                
-               baseline_vector_for_dot_array = baseline_vector_array[baseline_vector_index,:]
-               
-               baseline_vector_for_dot_array_pure_parallel = baseline_vector_array_pure_parallel[baseline_vector_index,:]
-               baseline_vector_for_dot_array_pure_inline = baseline_vector_array_pure_inline[baseline_vector_index,:]
-               
-               #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
-               #print baseline_vector_for_dot_array_mag
+                  #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
+                  #print b_dot_r_single
+                  #print baseline_vector_for_dot_array[0:3]
+                  b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+             
+                  b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
+                  b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
+                  
+                  
+                  phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+                  
+                  phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
+                  phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
+                  
+                  #Need to rotate the phase angle maps to match rotated beam and the sky
+                  #might change this so that we just rotate the sky map instead - cause this rotation is in the baseline loop and 
+                  #so it slows everything down a lot!
+                  #phase_angle_array = rotate_map(phase_angle_array, rot_theta_beam, rot_phi_beam)
+                  #phase_angle_array_pure_parallel = rotate_map(phase_angle_array_pure_parallel, rot_theta_beam, rot_phi_beam)
+                  #phase_angle_array_pure_inline = rotate_map(phase_angle_array_pure_inline, rot_theta_beam, rot_phi_beam)
+                  
+                  #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
+                  element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+                  
+                  element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+                  element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
+                  
+                  #for angular info
+                  if include_angular_info:
+                     element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
+                     #print short_dipole_parallel_beam_map[0:100]
+                     #print gsm_map_angular[:3]
+                     #print phase_angle_array[0:3]
+                     #print element_short_parallel_angular_array[0:3]
+                  
+                  #print element_iso_array[0:5]
+                  #visibility_iso = np.sum(element_iso_array)
+                  # Maybe this should be (1/2.*np.pi) as we are only looking at half the sky .... or 1/4pi as in singh et al?
+                  
+                  #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
+                  #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
+                  
+                  #this one gives approximately the right answer ....  no exactly!
+                  X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
             
-               #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
-               #print b_dot_r_single
-               #print baseline_vector_for_dot_array[0:3]
-               b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
-          
-               b_dot_r_array_pure_parallel = (baseline_vector_for_dot_array_pure_parallel * sky_vector_array).sum(axis=1)
-               b_dot_r_array_pure_inline = (baseline_vector_for_dot_array_pure_inline * sky_vector_array).sum(axis=1)
-               
-               
-               phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
-               
-               phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
-               phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
-               
-               #Need to rotate the phase angle maps to match rotated beam and the sky
-               #might change this so that we just rotate the sky map instead - cause this rotation is in the baseline loop and 
-               #so it slows everything down a lot!
-               #phase_angle_array = rotate_map(phase_angle_array, rot_theta_beam, rot_phi_beam)
-               #phase_angle_array_pure_parallel = rotate_map(phase_angle_array_pure_parallel, rot_theta_beam, rot_phi_beam)
-               #phase_angle_array_pure_inline = rotate_map(phase_angle_array_pure_inline, rot_theta_beam, rot_phi_beam)
-               
-               #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
-               element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
-               
-               element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
-               element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
-               
-               #for angular info
-               if include_angular_info:
-                  element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
-                  #print short_dipole_parallel_beam_map[0:100]
-                  #print gsm_map_angular[:3]
-                  #print phase_angle_array[0:3]
-                  #print element_short_parallel_angular_array[0:3]
-               
-               #print element_iso_array[0:5]
-               #visibility_iso = np.sum(element_iso_array)
-               # Maybe this should be (1/2.*np.pi) as we are only looking at half the sky .... or 1/4pi as in singh et al?
-               
-               #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
-               #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
-               
-               #this one gives approximately the right answer ....  no exactly!
-               X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-         
-               X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-               X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-         
-         
-               if include_angular_info:
-                  Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
-               
-               #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (float(n_pix))
-               #get rid of 1/4pi?, but divide by 2 cause only 1 polarisation (this is a fudge, I dunno about this unit conversion at all......)
-               #X_short_parallel =  (1./2.) * np.sum(element_short_parallel_array)
-               
-               #print visibility_iso
-               #only interested in the real component (that has the global signal)
-               X_short_parallel_array[baseline_vector_index] = X_short_parallel
-               
-               X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
-               X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
-               
-               
-               if include_angular_info:
-                  Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
-               
-            #print X_short_parallel_array
-            #save X_short_parallel_array
-            X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(X_short_parallel_array_filename,X_short_parallel_array)
-         
-            print("saved %s" % X_short_parallel_array_filename)
-         
-            X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
-            print("saved %s" % X_short_parallel_array_filename_pure_inline)
+                  X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+                  X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
             
-            X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
-            print("saved %s" % X_short_parallel_array_filename_pure_parallel)
             
+                  if include_angular_info:
+                     Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+                  
+                  #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (float(n_pix))
+                  #get rid of 1/4pi?, but divide by 2 cause only 1 polarisation (this is a fudge, I dunno about this unit conversion at all......)
+                  #X_short_parallel =  (1./2.) * np.sum(element_short_parallel_array)
+                  
+                  #print visibility_iso
+                  #only interested in the real component (that has the global signal)
+                  X_short_parallel_array[baseline_vector_index] = X_short_parallel
+                  
+                  X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+                  X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+                  
+                  
+                  if include_angular_info:
+                     Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
+                  
+               #print X_short_parallel_array
+               #save X_short_parallel_array
+               X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               np.save(X_short_parallel_array_filename,X_short_parallel_array)
+            
+               print("saved %s" % X_short_parallel_array_filename)
+            
+               X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
+               print("saved %s" % X_short_parallel_array_filename_pure_inline)
+               
+               X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
+               print("saved %s" % X_short_parallel_array_filename_pure_parallel)
+               
+               #update for fine chans
+               if include_angular_info:
+                  Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+                  np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
+                  print("saved %s" % Y_short_parallel_angular_array_filename)
+               
             real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
             print("saved %s" % real_vis_data_sorted_array_filename)
             
-            #update for fine chans
-            if include_angular_info:
-               Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-               np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
-               print("saved %s" % Y_short_parallel_angular_array_filename)
          else:
             print("already got expected unity sky values, X, from miriad sims")              
             pass
@@ -4104,7 +4107,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
 
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True):
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -4214,11 +4217,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          ###THis is the one that works for the SIMS! at 20200422
          if EDA2_data:
             if wsclean:
-               t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
+               t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
             else:
-               t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=True)
+               t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=calculate_uniform_response)
          else:
-            t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast)
+            t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -11373,13 +11376,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
-#wsclean = False
-wsclean = True
-concat=True
-per_chan_cal = True
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-sys.exit()
+#plot_cal = False
+##wsclean = False
+#wsclean = True
+#concat=True
+#per_chan_cal = True
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
 #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
@@ -11443,23 +11446,24 @@ model_type_list = ['OLS_fixed_intercept']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 10
-chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
+chan_num = 15
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
+#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
 #wsclean=False # for sims or miriad cal
 wsclean=True # for data
 fast=False
 no_modelling=False
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling)
+calculate_uniform_response=False
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
 
 
