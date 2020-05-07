@@ -39,12 +39,12 @@ import numpy as np
 #obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
 
 #image_9
-obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
-obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
+#obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
+#obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
 
 #image_10
-#obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
-#obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
+obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
+obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
 
 #image_11 (20-15 obs uncald are already on ozstar, need to identify 2018 obs)
 #obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
@@ -456,11 +456,11 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
-calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_9/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_9/2018")
+calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2015")
+calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2018")
 
-ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_9/2015'],data_column="CORRECTED_DATA")
-ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_9/2018'],data_column="CORRECTED_DATA")
+ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_10/2015'],data_column="CORRECTED_DATA")
+ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_10/2018'],data_column="CORRECTED_DATA")
 
 sys.exit()
 
