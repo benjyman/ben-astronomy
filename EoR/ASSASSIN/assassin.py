@@ -1919,8 +1919,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
    else:
       freq_MHz_fine_chan = centre_freq     
-   #wavelength = 300./float(freq_MHz_fine_chan)  
-   wavelength = 300./float(centre_freq)  
+   wavelength = 300./float(freq_MHz_fine_chan)  
+   #wavelength = 300./float(centre_freq)  
    
    if edge_chan:
       return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan) 
@@ -11453,11 +11453,11 @@ include_angular_info = True
 
 #up to here with plot_only = False
 #chan_num = 10
-chan_num = 9
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
-#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
+chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+freq_MHz_list = freq_MHz_array[chan_num:chan_num+10]
+EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+10]
 #wsclean=False # for sims or miriad cal
 wsclean=True # for data
 fast=False
