@@ -3213,8 +3213,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          fine_chan_index = int(fine_chan_index)
          if EDA2_data:
             #for 20200303 and 20200304 data fine chan order is reversed
-            freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+            #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+            freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
             #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
          else:
             freq_MHz_fine_chan = freq_MHz
