@@ -43,12 +43,12 @@ import numpy as np
 #obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
 
 #image_10
-obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
-obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
+#obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
+#obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
 
 #image_11 (20-15 obs uncald are already on ozstar, need to identify 2018 obs)
-#obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
-#obsid_list_2018 = ['1233431304','1233345136','1233263472','1233258976','1233172808','1233086648']
+obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
+obsid_list_2018 = ['1233431304','1233345136','1233263472','1233258976','1233172808','1233086648']
 
 ###
 ##image_12 (20-15 obs uncald are already on ozstar, need to identify 2018 obs)
@@ -419,8 +419,8 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #2015 data:
 #download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
-#download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-#sys.exit()
+download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
+sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
@@ -456,13 +456,13 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #yes:
 #The above strategy doesn't work cause you are using a deconvolved image in Jy/beam!
 #Use the same strategy as before with the first good 145 image i.e. the .txt model 
-calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2015")
-calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2018")
+#calibrate_obs(obsid_list_2015,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2015")
+#calibrate_obs(obsid_list_2018,model_wsclean_txt='/md0/code/git/ben-astronomy/ATeam/CenA/models/CenA_core_wsclean_model.txt',generate_new_beams=True,ms_dir="/md0/ATeam/CenA/image_10/2018")
 
-ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_10/2015'],data_column="CORRECTED_DATA")
-ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_10/2018'],data_column="CORRECTED_DATA")
+#ms_qa(obsid_list_2015,['/md0/ATeam/CenA/image_10/2015'],data_column="CORRECTED_DATA")
+#ms_qa(obsid_list_2018,['/md0/ATeam/CenA/image_10/2018'],data_column="CORRECTED_DATA")
 
-sys.exit()
+#sys.exit()
 
 #chgcentre for obs pointed off cena (image 7 and 8)
 #chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_8/2015'],target='CenA')
