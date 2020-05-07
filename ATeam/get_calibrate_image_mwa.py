@@ -39,16 +39,16 @@ import numpy as np
 #obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704','1234292944'] #actually 2019
 
 #image_9
-#obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
-#obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
+obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
+obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
 
 #image_10
 #obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
 #obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
 
 #image_11 (20-15 obs uncald are already on ozstar, need to identify 2018 obs)
-obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
-obsid_list_2018 = ['1233431304','1233345136','1233263472','1233258976','1233172808','1233086648']
+#obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
+#obsid_list_2018 = ['1233431304','1233345136','1233263472','1233258976','1233172808','1233086648']
 
 ###
 ##image_12 (20-15 obs uncald are already on ozstar, need to identify 2018 obs)
@@ -419,8 +419,8 @@ def average_images(base_dir,image_list,output_name_base,weighted_average=True):
 #2015 data:
 #download_obs(obsid_list_2015,dest_dir='2015',timeres=8,freqres=80,ms=True)
 #2018 data:
-download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
-sys.exit()
+#download_obs(obsid_list_2018,dest_dir='2018',timeres=4,freqres=40,ms=True)  
+#sys.exit()
 
 #2015 data:
 #unzip_obs(obsid_list_2015,ms=True)
@@ -465,14 +465,14 @@ sys.exit()
 #sys.exit()
 
 #chgcentre for obs pointed off cena (image 7 and 8)
-#chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_8/2015'],target='CenA')
-#chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_8/2018'],target='CenA')
+chgcentre_ms(obsid_list_2015,['/md0/ATeam/CenA/image_9/2015'],target='CenA')
+chgcentre_ms(obsid_list_2018,['/md0/ATeam/CenA/image_9/2018'],target='CenA')
 
-#could it be that the phase centres for all obs are not exactly aligned? Try using chgcentre on image 6 ...
+
 #chgcentre_ms(obsid_list_2015,['/md0/ozstar/ATeam/CenA/image6/2015'],target='CenA')
 #chgcentre_ms(obsid_list_2018,['/md0/ozstar/ATeam/CenA/image6/2018'],target='CenA')
 
-#sys.exit()
+sys.exit()
 
 
 #use uniform weighting and auto thresholds for initial imaging and selfcal then one final robust 0 clean, will probably need to run first, see where it goes non-linear and adjust the niter
