@@ -9663,7 +9663,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      centre_freq = float(freq_MHz)
                      fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
                      
-                     freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+                     #dont reverse chan order
+                     freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                     #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+                     
                      wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
                      
                      gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
@@ -9804,21 +9807,21 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   
                   
                   
-                  # predict a model onto the ms for calibration
-                  #cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
-                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                  print(cmd)
-                  os.system(cmd)                  
+                  ## predict a model onto the ms for calibration
+                  ##cmd = "wsclean -predict -name %s -size 512 512 -scale 1800asec -pol xx %s " % (apparent_sky_fits_name, EDA2_chan,EDA2_obs_time,ms_name)
+                  #cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy %s " % (apparent_sky_fits_name_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  #print(cmd)
+                  #os.system(cmd)                  
                   
-                  ##make an image to check 
-                  cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  ## predict a multi-channel model
-                  #cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  ###make an image to check 
+                  #cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
                   #print(cmd)
                   #os.system(cmd)
+                  
+                  # predict a multi-channel model
+                  cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                  print(cmd)
+                  os.system(cmd)
                   
                   ##make  images to check 
                   #cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
@@ -9871,10 +9874,10 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      print(cmd)
                      os.system(cmd)
                      
-                     ##make an image to check (both pols) 32 chans
-                     cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-                     print(cmd)
-                     os.system(cmd) 
+                     ###make an image to check (both pols) 32 chans, skip for now, takes ages
+                     #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+                     #print(cmd)
+                     #os.system(cmd) 
                      
                      #write out the uvfits file
                      casa_cmd_filename = 'export_individual_uvfits.sh'
@@ -11351,21 +11354,21 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 ###if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-#   if len(freq_MHz_list)==1:
-#      EDA2_chan = EDA2_chan_list[chan_num]
-#   else:
-#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-#   new_dir = "./%s" % EDA2_chan
-#   os.chdir(new_dir)
-#   freq_MHz_input_list = [freq_MHz]
-#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-#   #the concat step is causing /tmp to fill with casa crash reports
-#   cmd = "rm -rf /tmp/*" 
-#   print(cmd)
-#   os.system(cmd)
-#   os.chdir('./..')
+for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+   if len(freq_MHz_list)==1:
+      EDA2_chan = EDA2_chan_list[chan_num]
+   else:
+      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+   new_dir = "./%s" % EDA2_chan
+   os.chdir(new_dir)
+   freq_MHz_input_list = [freq_MHz]
+   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+   #the concat step is causing /tmp to fill with casa crash reports
+   cmd = "rm -rf /tmp/*" 
+   print(cmd)
+   os.system(cmd)
+   os.chdir('./..')
 #sys.exit()
 
 #Step 2: calibrate
