@@ -11354,22 +11354,22 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 ###if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
-for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-   if len(freq_MHz_list)==1:
-      EDA2_chan = EDA2_chan_list[chan_num]
-   else:
-      EDA2_chan = EDA2_chan_list[freq_MHz_index]
-   new_dir = "./%s" % EDA2_chan
-   os.chdir(new_dir)
-   freq_MHz_input_list = [freq_MHz]
-   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
-   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
-   #the concat step is causing /tmp to fill with casa crash reports
-   cmd = "rm -rf /tmp/*" 
-   print(cmd)
-   os.system(cmd)
-   os.chdir('./..')
-#sys.exit()
+#for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+#   if len(freq_MHz_list)==1:
+#      EDA2_chan = EDA2_chan_list[chan_num]
+#   else:
+#      EDA2_chan = EDA2_chan_list[freq_MHz_index]
+#   new_dir = "./%s" % EDA2_chan
+#   os.chdir(new_dir)
+#   freq_MHz_input_list = [freq_MHz]
+#   lst_hrs_list_input = [lst_hrs_list[freq_MHz_index]]
+#   simulate(lst_list=lst_hrs_list_input,freq_MHz_list=freq_MHz_input_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=True)
+#   #the concat step is causing /tmp to fill with casa crash reports
+#   cmd = "rm -rf /tmp/*" 
+#   print(cmd)
+#   os.system(cmd)
+#   os.chdir('./..')
+##sys.exit()
 
 #Step 2: calibrate
 
@@ -11379,12 +11379,12 @@ for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-plot_cal = False
+#plot_cal = False
 #wsclean = False
-wsclean = True
-concat=True
-per_chan_cal = True
-calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#wsclean = True
+#concat=True
+#per_chan_cal = True
+#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
