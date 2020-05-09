@@ -11379,12 +11379,12 @@ for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = False
-##wsclean = False
-#wsclean = True
-#concat=True
-#per_chan_cal = True
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+plot_cal = False
+#wsclean = False
+wsclean = True
+concat=True
+per_chan_cal = True
+calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
