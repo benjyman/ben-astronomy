@@ -365,12 +365,14 @@ def get_obsid_list(image_number):
       obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
       obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
    elif image_number==10:
+      #leaving out '1234301040' high std dev
       obsid_list_2015 = ['1123495280','1123409544','1123322416','1123237216','1123235984','1122976704']
-      obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800','1234301040']
+      obsid_list_2018 = ['1242487840','1242229352','1242057920','1241713264','1236799800']
    elif image_number==11: 
       obsid_list_2015 = ['1086347312','1086355112','1086433480','1086441280','1086519640','1086527440']
       obsid_list_2018 = []
    elif image_number==12:
+      #not used
       obsid_list_2015 = ['1086605808','1086613608','1086691968','1086699768','1086778136','1086785936']
       obsid_list_2018 = []
 
@@ -388,7 +390,7 @@ def get_obsid_list(image_number):
 #image12: 1086605808 112-119 again, same 1086613608, same 1086699768,  1086778136
  
 
-image_number = 9
+image_number = 10
 n_selfcals = 5
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
