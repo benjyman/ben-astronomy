@@ -362,7 +362,8 @@ def get_obsid_list(image_number):
       obsid_list_2015 = ['1121248104','1121334536','1121420968','1121507392','1121593824','1121680256']
       obsid_list_2018 = ['1242479744','1242221248','1242049824','1241705168','1236791704'] #actually 2019
    elif image_number==9:
-      obsid_list_2015 = ['1121321488','1121323288','1121325984','1123754200','1123668136','1123581872']
+      #bad: 1121321488?
+      obsid_list_2015 = ['1121323288','1121325984','1123754200','1123668136','1123581872']
       obsid_list_2018 = ['1244815176','1244384352','1243867368','1243349480','1243177152','1242747232']
    elif image_number==10:
       #leaving out '1234301040' high std dev
@@ -390,7 +391,7 @@ def get_obsid_list(image_number):
 #image12: 1086605808 112-119 again, same 1086613608, same 1086699768,  1086778136
  
 
-image_number = 10
+image_number = 9
 n_selfcals = 5
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=True,model_cal=False)
 generate_sbatch_script_CenA(image_number=image_number,n_selfcals=n_selfcals,download=False,model_cal=True)
