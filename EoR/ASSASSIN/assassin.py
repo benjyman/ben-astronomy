@@ -10239,7 +10239,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
 
              #image the concat file to check spectral behaviour
              ##make an image to check (both pols) 32 chans
-             cmd = "wsclean -name concat_cal_chan_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name_wsclean_cal)
+             cmd = "wsclean -name concat_cal_chan_%s_ms -size %s %s -auto-threshold 5 -niter 10000 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name_wsclean_cal)
              print(cmd)
              os.system(cmd)
                           
@@ -11416,8 +11416,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -11449,24 +11449,23 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #poly_order_list=[5,6,7]
 #poly_order=7
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.50
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 10
-#up to 45 with processing
-chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
-EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
+chan_num = 46
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
+#EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
 #wsclean=False # for sims or miriad cal
 wsclean=True # for data
 fast=False
 no_modelling=False
-calculate_uniform_response=False
+calculate_uniform_response=True
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
 
