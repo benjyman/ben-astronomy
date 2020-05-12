@@ -4792,7 +4792,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #in log log space:
       sky_array = t_sky_measure_av_per_EDA2_chan[t_sky_measure_av_per_EDA2_chan>0.]
       log_sky_array = np.log10(sky_array)
-      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+      freq_array_cut = freq_MHz_array[t_sky_measure_av_per_EDA2_chan>0.]
       log_freq_MHz_array = np.log10(freq_array_cut)
       coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
       ffit = poly.polyval(log_freq_MHz_array, coefs)
