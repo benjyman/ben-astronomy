@@ -10482,7 +10482,7 @@ def plot_antenna_array(array_layout_filename,ylim=18):
    antenna_position_plot_title = 'Antenna Positions AAVS-1 Tests'
    
    fig, ax = plt.subplots()
-   ax.scatter(antenna_position_x_m,antenna_position_y_m, marker='.')
+   ax.scatter(antenna_position_x_m,antenna_position_y_m, marker='+')
    
    #don't have the names
    #for i, name in enumerate(antenna_name_list):
