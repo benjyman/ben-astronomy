@@ -4790,7 +4790,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
       #subtract a polynomial fit
       #in log log space:
-      sky_array = t_sky_measure_av_per_EDA2_chan[t_sky_measured_array>0.]
+      sky_array = t_sky_measure_av_per_EDA2_chan[t_sky_measure_av_per_EDA2_chan>0.]
       log_sky_array = np.log10(sky_array)
       freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
       log_freq_MHz_array = np.log10(freq_array_cut)
