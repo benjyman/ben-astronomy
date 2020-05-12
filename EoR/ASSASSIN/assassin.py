@@ -4809,7 +4809,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("freq (MHz)")
-   plt.legend(loc=1)
+   if len(model_type_list)>1:
+      plt.legend(loc=1)
    
    plt.ylim([y_min, y_max])
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
