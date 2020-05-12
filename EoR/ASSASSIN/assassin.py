@@ -4762,8 +4762,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       else:
          label1='recovered'
          
-      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
     
     
@@ -4774,15 +4774,25 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
       freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
-       
+      for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+         freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
+         freq_range_max = freq_MHz + (centre_chan_index * fine_chan_width_Hz/1000000.)
+         #print(freq_range_min)
+         #print(freq_range_max)
+         
+         indices = np.where(np.logical_and(freq_MHz_fine_array>=freq_range_min,freq_MHz_fine_array<=freq_range_max))
+         t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
+         t_sky_measured_error_chan = t_sky_measured_error_array[indices]
+         #print(t_sky_measured_EDA2_chan)
+         #print(freq_MHz_fine_array[indices])
+         t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.nanmean(t_sky_measured_EDA2_chan)
+         t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.nanstd(t_sky_measured_EDA2_chan)
+         
       #subtract a polynomial fit
       #in log log space:
-      sky_array = t_sky_measured_array[t_sky_measured_array>0.]
+      sky_array = t_sky_measure_av_per_EDA2_chan[t_sky_measured_array>0.]
       log_sky_array = np.log10(sky_array)
-      if n_fine_chans_used==1:
-         freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
-      else:
-         freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
+      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
       log_freq_MHz_array = np.log10(freq_array_cut)
       coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
       ffit = poly.polyval(log_freq_MHz_array, coefs)
@@ -4829,6 +4839,76 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
    plt.close() 
+   
+   #repeat for per chan av
+   if EDA2_data:
+      plt.clf()
+      for model_type in model_type_list:
+         #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+         if model_type=='OLS_fixed_intercept':
+            if EDA2_data:
+               label1='measured sky temp.'
+            else:
+               label1='ignore angular response'
+            y_offset=1
+            colour='tab:blue'
+         elif  model_type=='OLS_fixed_int_subtr_Y':
+            label1='subtract angular response'
+            y_offset=0
+            colour='tab:orange'
+         else:
+            label1='recovered'
+            
+         t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+         t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+         freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+       
+       
+         t_sky_measured_array = np.load(t_sky_measured_array_filename)
+         t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
+         t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
+         t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
+         freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
+         freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+          
+          
+         #subtract a polynomial fit
+         #in log log space:
+         sky_array = t_sky_measured_array[t_sky_measured_array>0.]
+         log_sky_array = np.log10(sky_array)
+         if n_fine_chans_used==1:
+            freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+         else:
+            freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
+         log_freq_MHz_array = np.log10(freq_array_cut)
+         coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+         ffit = poly.polyval(log_freq_MHz_array, coefs)
+         ffit_linear = 10**ffit
+         
+         #log_residual = log_signal_array_short_baselines - log_ffit
+         residual_of_log_fit = ffit_linear - sky_array
+         
+         rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+         print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+         
+         max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+         y_max = 1.5 * max_abs_residuals
+         y_min = 1.5 * -max_abs_residuals
+      
+         plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
+         plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+         
+      map_title="Residual for log polynomial order %s fit " % poly_order
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("freq (MHz)")
+      plt.legend(loc=1)
+      
+      plt.ylim([y_min, y_max])
+      fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars_per_chan_av.png" % (poly_order,lst_string,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      plt.close()    
    
                
    #n baselines plot
