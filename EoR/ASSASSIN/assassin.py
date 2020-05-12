@@ -10496,7 +10496,7 @@ def plot_antenna_array(array_layout_filename,ylim=18):
    y0,y1 = ax.get_ylim()
    ax.set_aspect(abs(x1-x0)/abs(y1-y0))
    plt.title(antenna_position_plot_title)
-   plt.savefig(antenna_position_plot_figname,dpi = 300)
+   plt.savefig(antenna_position_plot_figname,dpi = 900)
    print("saved %s" % antenna_position_plot_figname)
    plt.close()
 
