@@ -4408,7 +4408,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
-         label1='ignore angular response'
+         if EDA2_data:
+            label1='measured sky temp.'
+         else:
+            label1='ignore angular response'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
       else:
@@ -4475,7 +4478,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
-         label1='ignore angular response'
+         if EDA2_data:
+            label1='measured sky temp.'
+         else:
+            label1='ignore angular response'
          label3='ignore angular resp. weighted'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
@@ -4565,7 +4571,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
-         label1='ignore angular response'
+         if EDA2_data:
+            label1='measured sky temp.'
+         else:
+            label1='ignore angular response'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
       else:
@@ -4620,7 +4629,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
-         label1='ignore angular response'
+         if EDA2_data:
+            label1='measured sky temp.'
+         else:
+            label1='ignore angular response'
          label3='ignore angular resp. weighted'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
@@ -4737,7 +4749,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
-         label1='ignore angular response'
+         if EDA2_data:
+            label1='measured sky temp.'
+         else:
+            label1='ignore angular response'
          y_offset=1
          colour='tab:blue'
       elif  model_type=='OLS_fixed_int_subtr_Y':
