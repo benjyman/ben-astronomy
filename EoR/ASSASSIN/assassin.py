@@ -4821,7 +4821,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("freq (MHz)")
-   if len(model_type_list>1):
+   if len(model_type_list)>1:
       plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    plt.ylim([y_min, y_max])
@@ -4903,7 +4903,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       map_title="Residual for log polynomial order %s fit " % poly_order
       plt.ylabel("Residual Tb (K)")
       plt.xlabel("freq (MHz)")
-      if len(model_type_list>1):
+      if len(model_type_list)>1=:
          plt.legend(loc=1)
       
       plt.ylim([y_min, y_max])
