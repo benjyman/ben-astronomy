@@ -4844,7 +4844,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
          if model_type=='OLS_fixed_intercept':
             if EDA2_data:
-               label1='measured sky temp.'
+               label1='ignore angular response'
             else:
                label1='ignore angular response'
             y_offset=1
@@ -11524,8 +11524,8 @@ sys.exit()
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-model_type_list = ['OLS_fixed_intercept']
+model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+#model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
