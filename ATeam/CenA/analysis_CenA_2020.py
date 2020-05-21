@@ -31,10 +31,49 @@ def source_find_image(image_name):
    print(cmd)
    os.system(cmd)   
 
-image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+def regrid_optical(template_imagename,input_imagename):
+   imported_template_imagename = template_imagename.split('.fits')[0]+'.image'
+   imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
+   regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
+   regridded_fitsname = input_imagename.split('.fits')[0]+'_regridded.fits'
+   
+   casa_string = "importfits(fitsimage='%s',imagename='%s')" % (template_imagename,imported_template_imagename)
+   casa_filename = 'casa_import_fits.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa -c --nocrashreport %s" % casa_filename
+   print(cmd)
+   os.system(cmd)
 
-get_scaling_factor_from_core(image_name,185.,-0.7)
+   casa_string = "importfits(fitsimage='%s',imagename='%s')" % (input_imagename,imported_input_imagename)
+   casa_filename = 'casa_import_fits2.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa -c --nocrashreport %s" % casa_filename
+   print(cmd)
+   os.system(cmd)
+    
+   casa_string = "imregrid(imagename='%s',output='%s',template='%s')" % (imported_input_imagename,regridded_imagename,imported_template_imagename)
+   casa_filename = 'casa_imregrid.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa -c --nocrashreport %s" % casa_filename
+   print(cmd)
+   os.system(cmd)
 
+   casa_string = "exportfits(imagename='%s',fitsimage='%s')" % (regridded_imagename,regridded_fitsname)
+   casa_filename = 'casa_export_fits.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa -c --nocrashreport %s" % casa_filename
+   print(cmd)
+   os.system(cmd)   
+
+
+#image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+#get_scaling_factor_from_core(image_name,185.,-0.7)
 
 #source_find_image(image_name)
-   
+
+template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
+regrid_optical(template_imagename,input_imagename)
