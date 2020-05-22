@@ -84,4 +84,7 @@ def regrid_optical(template_imagename,input_imagename):
 #source_find_image(image_name)
 
 template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
+input_imagename = 'CenA_WCS.fits'
 regrid_optical(template_imagename,input_imagename)
+
+
