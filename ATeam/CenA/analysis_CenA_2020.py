@@ -40,6 +40,8 @@ def regrid_optical(template_imagename,input_imagename):
    #Then can view with ds9 with coordinate grid in publication mode and can rotate the image to match what you want 
    #can also do overlays. explore ds9 command line options again
    #The below works for just the NML
+   #...or make a very high res radio image just for the WCS and regrid with that!
+   #wsclean -name CenA_optical_template -size 4500 4500 -scale 0.0003135 -pol xx -interval 1 3 -channel-range 1 3 1121321488.ms 
    imported_template_imagename = template_imagename.split('.fits')[0]+'.image'
    imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
    regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
@@ -83,7 +85,8 @@ def regrid_optical(template_imagename,input_imagename):
 
 #source_find_image(image_name)
 
-template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
+#template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
+template_imagename = 'CenA_optical_template-image.fits'
 input_imagename = 'CenA_WCS_edhead.fits'
 regrid_optical(template_imagename,input_imagename)
 
