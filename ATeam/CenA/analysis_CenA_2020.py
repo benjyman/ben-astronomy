@@ -32,6 +32,14 @@ def source_find_image(image_name):
    os.system(cmd)   
 
 def regrid_optical(template_imagename,input_imagename):
+   #optical stuff from Connor etc is difficult as the WSCS from PixelInsight doesnt seem to match what 
+   #kvis or ds9 expects. To get around it I did this:
+   #Detele  the CD_1, CD1_2, CD2_1, CD2_2 rotation parameters
+   #leave the CROTA and B
+   #Change the CDELT parameters to both be positive
+   #Then can view with ds9 with coordinate grid in publication mode and can rotate the image to match what you want 
+   #can also do overlays. explore ds9 command line options again
+   #The below works for just the NML
    imported_template_imagename = template_imagename.split('.fits')[0]+'.image'
    imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
    regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
