@@ -47,7 +47,7 @@ def regrid_optical(template_imagename,input_imagename):
    regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
    regridded_fitsname = input_imagename.split('.fits')[0]+'_regridded.fits'
    
-   casa_string = "importfits(fitsimage='%s',imagename='%s')" % (template_imagename,imported_template_imagename)
+   casa_string = "importfits(fitsimage='%s',imagename='%s',overwrite=True)" % (template_imagename,imported_template_imagename)
    casa_filename = 'casa_import_fits.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
@@ -55,7 +55,7 @@ def regrid_optical(template_imagename,input_imagename):
    print(cmd)
    os.system(cmd)
 
-   casa_string = "importfits(fitsimage='%s',imagename='%s')" % (input_imagename,imported_input_imagename)
+   casa_string = "importfits(fitsimage='%s',imagename='%s',overwrite=True)" % (input_imagename,imported_input_imagename)
    casa_filename = 'casa_import_fits2.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
@@ -63,7 +63,7 @@ def regrid_optical(template_imagename,input_imagename):
    print(cmd)
    os.system(cmd)
     
-   casa_string = "imregrid(imagename='%s',output='%s',template='%s')" % (imported_input_imagename,regridded_imagename,imported_template_imagename)
+   casa_string = "imregrid(imagename='%s',output='%s',template='%s',overwrite=True)" % (imported_input_imagename,regridded_imagename,imported_template_imagename)
    casa_filename = 'casa_imregrid.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
@@ -71,7 +71,7 @@ def regrid_optical(template_imagename,input_imagename):
    print(cmd)
    os.system(cmd)
 
-   casa_string = "exportfits(imagename='%s',fitsimage='%s')" % (regridded_imagename,regridded_fitsname)
+   casa_string = "exportfits(imagename='%s',fitsimage='%s',overwrite=True)" % (regridded_imagename,regridded_fitsname)
    casa_filename = 'casa_export_fits.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
