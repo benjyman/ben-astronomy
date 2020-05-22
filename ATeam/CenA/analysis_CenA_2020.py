@@ -49,7 +49,7 @@ def regrid_optical(template_imagename,input_imagename):
    casa_filename = 'casa_import_fits.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
-   cmd = "casa -c --nocrashreport %s" % casa_filename
+   cmd = "casa --nocrashreport -c %s" % casa_filename
    print(cmd)
    os.system(cmd)
 
@@ -57,7 +57,7 @@ def regrid_optical(template_imagename,input_imagename):
    casa_filename = 'casa_import_fits2.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
-   cmd = "casa -c --nocrashreport %s" % casa_filename
+   cmd = "casa --nocrashreport -c %s" % casa_filename
    print(cmd)
    os.system(cmd)
     
@@ -65,7 +65,7 @@ def regrid_optical(template_imagename,input_imagename):
    casa_filename = 'casa_imregrid.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
-   cmd = "casa -c --nocrashreport %s" % casa_filename
+   cmd = "casa --nocrashreport -c %s" % casa_filename
    print(cmd)
    os.system(cmd)
 
@@ -73,7 +73,7 @@ def regrid_optical(template_imagename,input_imagename):
    casa_filename = 'casa_export_fits.sh'
    with open(casa_filename,'w') as f:
       f.write(casa_string)
-   cmd = "casa -c --nocrashreport %s" % casa_filename
+   cmd = "casa --nocrashreport -c %s" % casa_filename
    print(cmd)
    os.system(cmd)   
 
