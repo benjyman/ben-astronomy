@@ -577,6 +577,7 @@ def plot_iso_ant_int_response():
       #this one gives approximately the right answer ....  no exactly!
       X_iso_parallel =  np.sum(element_iso_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
       
+      print(baseline_length_lambda)
       print(X_iso_parallel.real)
       
       X_iso_parallel_array[wavelength_index] = X_iso_parallel.real
