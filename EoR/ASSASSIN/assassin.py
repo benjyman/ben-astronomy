@@ -521,7 +521,7 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
    return total_signal
 
 def plot_iso_ant_int_response():
-   for wavelength in range(1,6,0.1):
+   for wavelength in np.arange(1,6,0.1):
       #for fig1 of paper
       n_pix = hp.nside2npix(NSIDE)
       pixel_solid_angle = (4.*np.pi) / n_pix
