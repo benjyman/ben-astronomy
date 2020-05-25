@@ -598,7 +598,7 @@ def plot_iso_ant_int_response(plot_only=True):
    plt.clf()
    map_title="X_iso_parallel"
    plt.plot(baseline_length_lambda_array,X_iso_parallel_array_norm)
-   plt.ylabel("Response")
+   plt.ylabel("Interferometer response")
    plt.xlabel("Baseline length (wavelengths)")
    fig_name="X_iso_parallel.png"
    figmap = plt.gcf()
