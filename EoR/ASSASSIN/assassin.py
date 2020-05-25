@@ -522,8 +522,9 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
 
 def plot_iso_ant_int_response():
    wavelength = 1.
-   baseline_length_m_array = np.arange(0,2,0.1)
-   baseline_length_lambda_array = baseline_length_m_array / wavelength
+   #baseline_length_m_array = np.arange(0,2,0.1)
+   #baseline_length_lambda_array = baseline_length_m_array / wavelength
+   baseline_length_lambda_array = np.arange(0,2,0.01)
    X_iso_parallel_array = np.full(len(baseline_length_lambda_array),np.nan)
    for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_length_lambda_array):
       #for fig1 of paper
@@ -579,16 +580,19 @@ def plot_iso_ant_int_response():
       print(X_iso_parallel.real)
       
       X_iso_parallel_array[baseline_length_lambda_index] = X_iso_parallel.real
+   
+   X_iso_parallel_array_max = np.nanmax(X_iso_parallel_array)
+   X_iso_parallel_array_norm = X_iso_parallel_array / X_iso_parallel_array_max
       
    X_iso_parallel_array_filename = "X_iso_parallel_array.npy" 
-   np.save(X_iso_parallel_array_filename,X_iso_parallel_array)
+   np.save(X_iso_parallel_array_filename,X_iso_parallel_array_norm)
    baseline_length_lambda_array_filename = "baseline_length_lambda_fig1_array.npy" 
    np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
    
 
    plt.clf()
    map_title="X_iso_parallel"
-   plt.plot(baseline_length_lambda_array,X_iso_parallel_array)
+   plt.plot(baseline_length_lambda_array,X_iso_parallel_array_norm)
    plt.ylabel("Response")
    plt.xlabel("Baseline length (wavelengths)")
    fig_name="X_iso_parallel.png"
