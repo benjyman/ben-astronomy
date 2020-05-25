@@ -521,13 +521,12 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
    return total_signal
 
 def plot_iso_ant_int_response():
-   baseline_length_m = 1.
-   wavelength_array = np.arange(0.5,10,0.1)
+   wavelength = 1.
+   baseline_length_m = np.arange(0,2,0.1)
+   baseline_length_lambda = baseline_length_m / wavelength
    X_iso_parallel_array = np.full(len(wavelength_array),np.nan)
    baseline_length_lambda_array = np.full(len(wavelength_array),np.nan)
-   for wavelength_index,wavelength in enumerate(wavelength_array):
-      baseline_length_lambda = baseline_length_m / wavelength
-      baseline_length_lambda_array[wavelength_index] = baseline_length_lambda
+   for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_length_lambda_array):
       #for fig1 of paper
       n_pix = hp.nside2npix(NSIDE)
       pixel_solid_angle = (4.*np.pi) / n_pix
@@ -580,7 +579,7 @@ def plot_iso_ant_int_response():
       print(baseline_length_lambda)
       print(X_iso_parallel.real)
       
-      X_iso_parallel_array[wavelength_index] = X_iso_parallel.real
+      X_iso_parallel_array[baseline_length_lambda_index] = X_iso_parallel.real
       
    X_iso_parallel_array_filename = "X_iso_parallel_array.npy" 
    np.save(X_iso_parallel_array_filename,X_iso_parallel_array)
