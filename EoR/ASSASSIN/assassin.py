@@ -590,7 +590,7 @@ def plot_iso_ant_int_response():
 
    plt.clf()
    map_title="X_iso_parallel"
-   plt.plot(baseline_length_array,X_iso_parallel_array)
+   plt.plot(baseline_length_lambda_array,X_iso_parallel_array)
    plt.ylabel("Response")
    plt.xlabel("Baseline length (wavelengths)")
    fig_name="X_iso_parallel.png"
