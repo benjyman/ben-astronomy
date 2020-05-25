@@ -526,7 +526,7 @@ def plot_iso_ant_int_response():
    X_iso_parallel_array = np.full(len(wavelength_array),np.nan)
    baseline_length_lambda_array = np.full(len(wavelength_array),np.nan)
    for wavelength_index,wavelength in enumerate(wavelength_array):
-      baseline_length_lambda = baseline_length_m \ wavelength
+      baseline_length_lambda = baseline_length_m / wavelength
       baseline_length_lambda_array[wavelength_index] = baseline_length_lambda
       #for fig1 of paper
       n_pix = hp.nside2npix(NSIDE)
