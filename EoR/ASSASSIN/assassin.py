@@ -522,7 +522,7 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
 
 def plot_iso_ant_int_response():
    baseline_length_m = 1.
-   wavelength_array = np.arange(1,2,0.1)
+   wavelength_array = np.arange(1,10,0.1)
    X_iso_parallel_array = np.full(len(wavelength_array),np.nan)
    baseline_length_lambda_array = np.full(len(wavelength_array),np.nan)
    for wavelength_index,wavelength in enumerate(wavelength_array):
