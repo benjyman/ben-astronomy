@@ -519,7 +519,111 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
 
    total_signal = S_21_EDGES + polynomial
    return total_signal
-     
+
+def plot_iso_ant_int_response():
+   n_pix = hp.nside2npix(NSIDE)
+   hpx_index_array = np.arange(0,n_pix,1)
+               
+   #for fig1 of paper
+   baseline_theta_rad = np.pi/2.
+   baseline_phi_rad = 0.
+   baseline_vector_for_dot_array = hp.ang2vec(baseline_theta_rad,baseline_phi_rad)
+   
+   #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
+   #print baseline_vector_for_dot_array_mag
+   
+   #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+   #https://vpython.org/contents/docs/VisualIntro.html
+   #rotate about x axis
+   #forget about rotating the vectors its the phase angle hpx array you need to rotate!
+   rot_axis = [0,1,0]
+   rot_theta = 0. #np.pi / 4.
+   
+   #baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+   #print baseline_vector_array_unit_rotated[0,:]
+
+   sky_vector_array = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+   #sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+   #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+   #print sky_vector_array_unrotated_test
+   #sys.exit()
+   #do the same rotation for the sky vector
+   #sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+               
+               
+               
+   #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
+   #print b_dot_r_single
+   #print baseline_vector_for_dot_array[0:3]
+   b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+   
+   sys.exit（）
+   
+   
+   phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+   
+   phase_angle_array_pure_parallel = 2.*np.pi*b_dot_r_array_pure_parallel/wavelength
+   phase_angle_array_pure_inline = 2.*np.pi*b_dot_r_array_pure_inline/wavelength
+   
+   #Need to rotate the phase angle maps to match rotated beam and the sky
+   #might change this so that we just rotate the sky map instead - cause this rotation is in the baseline loop and 
+   #so it slows everything down a lot!
+   #phase_angle_array = rotate_map(phase_angle_array, rot_theta_beam, rot_phi_beam)
+   #phase_angle_array_pure_parallel = rotate_map(phase_angle_array_pure_parallel, rot_theta_beam, rot_phi_beam)
+   #phase_angle_array_pure_inline = rotate_map(phase_angle_array_pure_inline, rot_theta_beam, rot_phi_beam)
+   
+   #element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
+   element_short_parallel_array = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array)
+   
+   element_short_parallel_array_pure_parallel = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_parallel)
+   element_short_parallel_array_pure_inline = short_dipole_parallel_beam_map * np.exp(-1j*phase_angle_array_pure_inline)
+   
+   #for angular info
+   if include_angular_info:
+      element_short_parallel_angular_array = short_dipole_parallel_beam_map * gsm_map_angular * np.exp(-1j*phase_angle_array)
+      #print short_dipole_parallel_beam_map[0:100]
+      #print gsm_map_angular[:3]
+      #print phase_angle_array[0:3]
+      #print element_short_parallel_angular_array[0:3]
+   
+   #print element_iso_array[0:5]
+   #visibility_iso = np.sum(element_iso_array)
+   # Maybe this should be (1/2.*np.pi) as we are only looking at half the sky .... or 1/4pi as in singh et al?
+   
+   #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
+   #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
+   
+   #this one gives approximately the right answer ....  no exactly!
+   X_short_parallel =  np.sum(element_short_parallel_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+   
+   X_short_parallel_pure_parallel =  np.sum(element_short_parallel_array_pure_parallel) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+   X_short_parallel_pure_inline =  np.sum(element_short_parallel_array_pure_inline) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+   
+   
+   if include_angular_info:
+      Y_short_parallel_angular =  np.sum(element_short_parallel_angular_array) * pixel_solid_angle
+   
+   #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (float(n_pix))
+   #get rid of 1/4pi?, but divide by 2 cause only 1 polarisation (this is a fudge, I dunno about this unit conversion at all......)
+   #X_short_parallel =  (1./2.) * np.sum(element_short_parallel_array)
+   
+   #print visibility_iso
+   #only interested in the real component (that has the global signal)
+   X_short_parallel_array[baseline_vector_index] = X_short_parallel
+   
+   X_short_parallel_array_pure_parallel[baseline_vector_index] = X_short_parallel_pure_parallel
+   X_short_parallel_array_pure_inline[baseline_vector_index] = X_short_parallel_pure_inline
+   
+   
+   if include_angular_info:
+      Y_short_parallel_angular_array[baseline_vector_index] = Y_short_parallel_angular
+   
+   #print X_short_parallel_array
+   #save X_short_parallel_array
+   X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+   np.save(X_short_parallel_array_filename,X_short_parallel_array)
+
+   
    
 def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    #Global signal
@@ -11552,14 +11656,19 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-lst_hrs_list=['2']
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+#lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-poly_order=7
+#poly_order=7
+
+plot_iso_ant_int_response()
+sys.exit()
+
 
 plot_only = True
-baseline_length_thresh_lambda = 2.
+baseline_length_thresh_lambda = 0.50
 include_angular_info = True
+
 
 
 #up to here with plot_only = False
