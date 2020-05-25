@@ -521,7 +521,13 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
    return total_signal
 
 def plot_iso_ant_int_response():
-   for wavelength in np.arange(1,6,0.1):
+   baseline_length_m = 1.
+   wavelength_array = np.arange(1,2,0.1)
+   X_iso_parallel_array = np.full(len(wavelength_array),np.nan)
+   baseline_length_lambda_array = np.full(len(wavelength_array),np.nan)
+   for wavelength_index,wavelength in enumerate(wavelength_array):
+      baseline_length_lambda = baseline_length_m \ wavelength
+      baseline_length_lambda_array[wavelength_index] = baseline_length_lambda
       #for fig1 of paper
       n_pix = hp.nside2npix(NSIDE)
       pixel_solid_angle = (4.*np.pi) / n_pix
@@ -530,7 +536,7 @@ def plot_iso_ant_int_response():
       
       baseline_theta_rad = np.pi/2.
       baseline_phi_rad = 0.
-      baseline_vector_for_dot_array = hp.ang2vec(baseline_theta_rad,baseline_phi_rad)
+      baseline_vector_for_dot_array = baseline_length_lambda * hp.ang2vec(baseline_theta_rad,baseline_phi_rad)
       
       #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
       #print baseline_vector_for_dot_array_mag
@@ -571,10 +577,25 @@ def plot_iso_ant_int_response():
       #this one gives approximately the right answer ....  no exactly!
       X_iso_parallel =  np.sum(element_iso_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
       
-      print(X_iso_parallel)
+      print(X_iso_parallel.real)
+      
+      X_iso_parallel_array[wavelength_index] = X_iso_parallel.real
+      
+   X_iso_parallel_array_filename = "X_iso_parallel_array.npy" 
+   np.save(X_iso_parallel_array_filename,X_iso_parallel_array)
+   baseline_length_lambda_array_filename = "baseline_length_lambda_fig1_array.npy" 
+   np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
+   
 
-      #X_iso_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-      #np.save(X_iso_parallel_array_filename,X_iso_parallel_array)
+   plt.clf()
+   map_title="X_iso_parallel"
+   plt.plot(baseline_length_array,X_iso_parallel_array)
+   plt.ylabel("Response")
+   plt.xlabel("Baseline length (wavelengths)")
+   fig_name="X_iso_parallel.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
 
    
    
