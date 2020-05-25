@@ -520,76 +520,81 @@ def global_sig_EDGES_and_diffuse_fg_func_order_7(nu_array,A_EDGES,a0,a1,a2,a3,a4
    total_signal = S_21_EDGES + polynomial
    return total_signal
 
-def plot_iso_ant_int_response():
-   wavelength = 1.
-   #baseline_length_m_array = np.arange(0,2,0.1)
-   #baseline_length_lambda_array = baseline_length_m_array / wavelength
-   baseline_length_lambda_array = np.arange(0,2,0.01)
-   X_iso_parallel_array = np.full(len(baseline_length_lambda_array),np.nan)
-   for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_length_lambda_array):
-      #for fig1 of paper
-      n_pix = hp.nside2npix(NSIDE)
-      pixel_solid_angle = (4.*np.pi) / n_pix
-      hpx_index_array = np.arange(0,n_pix,1)
-      iso_beam_map = np.full(hp.nside2npix(NSIDE),1.)             
-      
-      baseline_theta_rad = np.pi/2.
-      baseline_phi_rad = 0.
-      baseline_vector_for_dot_array = baseline_length_lambda * hp.ang2vec(baseline_theta_rad,baseline_phi_rad)
-      
-      #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
-      #print baseline_vector_for_dot_array_mag
-      
-      #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
-      #https://vpython.org/contents/docs/VisualIntro.html
-      #rotate about x axis
-      #forget about rotating the vectors its the phase angle hpx array you need to rotate!
-      rot_axis = [0,1,0]
-      rot_theta = 0. #np.pi / 4.
-      
-      #baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
-      #print baseline_vector_array_unit_rotated[0,:]
-   
-      sky_vector_array = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
-      #sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
-      #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
-      #print sky_vector_array_unrotated_test
-      #sys.exit()
-      #do the same rotation for the sky vector
-      #sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
-                  
-                  
-                  
-      #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
-      #print b_dot_r_single
-      #print baseline_vector_for_dot_array[0:3]
-      b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
-   
-      phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
-      
-      element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
-    
-      
-      #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
-      #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
-      
-      #this one gives approximately the right answer ....  no exactly!
-      X_iso_parallel =  np.sum(element_iso_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
-      
-      print(baseline_length_lambda)
-      print(X_iso_parallel.real)
-      
-      X_iso_parallel_array[baseline_length_lambda_index] = X_iso_parallel.real
-   
-   X_iso_parallel_array_max = np.nanmax(X_iso_parallel_array)
-   X_iso_parallel_array_norm = X_iso_parallel_array / X_iso_parallel_array_max
-      
+def plot_iso_ant_int_response(plot_only=True):
    X_iso_parallel_array_filename = "X_iso_parallel_array.npy" 
-   np.save(X_iso_parallel_array_filename,X_iso_parallel_array_norm)
-   baseline_length_lambda_array_filename = "baseline_length_lambda_fig1_array.npy" 
-   np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
+   baseline_length_lambda_array_filename = "baseline_length_lambda_fig1_array.npy"
+   if not plot_only:
+      wavelength = 1.
+      #baseline_length_m_array = np.arange(0,2,0.1)
+      #baseline_length_lambda_array = baseline_length_m_array / wavelength
+      baseline_length_lambda_array = np.arange(0,2,0.01)
+      X_iso_parallel_array = np.full(len(baseline_length_lambda_array),np.nan)
+      for baseline_length_lambda_index,baseline_length_lambda in enumerate(baseline_length_lambda_array):
+         #for fig1 of paper
+         n_pix = hp.nside2npix(NSIDE)
+         pixel_solid_angle = (4.*np.pi) / n_pix
+         hpx_index_array = np.arange(0,n_pix,1)
+         iso_beam_map = np.full(hp.nside2npix(NSIDE),1.)             
+         
+         baseline_theta_rad = np.pi/2.
+         baseline_phi_rad = 0.
+         baseline_vector_for_dot_array = baseline_length_lambda * hp.ang2vec(baseline_theta_rad,baseline_phi_rad)
+         
+         #baseline_vector_for_dot_array_mag = np.linalg.norm(baseline_vector_for_dot_array)
+         #print baseline_vector_for_dot_array_mag
+         
+         #Need to rotate all these vectors by -pi/2, just like the hpx beam map, since hp doesnt use alt/az, so theta=pi/2 is actually pointing at the zenith in orthographic proj
+         #https://vpython.org/contents/docs/VisualIntro.html
+         #rotate about x axis
+         #forget about rotating the vectors its the phase angle hpx array you need to rotate!
+         rot_axis = [0,1,0]
+         rot_theta = 0. #np.pi / 4.
+         
+         #baseline_vector_array_unit_rotated = rotate_vector(rot_axis,rot_theta,baseline_vector_array_unit)
+         #print baseline_vector_array_unit_rotated[0,:]
+      
+         sky_vector_array = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+         #sky_vector_array_unrotated = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array)))
+         #sky_vector_array_unrotated_test = np.transpose(np.asarray(hp.pix2vec(NSIDE,hpx_index_array[1])))
+         #print sky_vector_array_unrotated_test
+         #sys.exit()
+         #do the same rotation for the sky vector
+         #sky_vector_array = rotate_vector(rot_axis,rot_theta,sky_vector_array_unrotated)
+                     
+                     
+                     
+         #b_dot_r_single = np.dot(baseline_vector_test_for_dot_array[4],sky_vector_array[4])
+         #print b_dot_r_single
+         #print baseline_vector_for_dot_array[0:3]
+         b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
+      
+         phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
+         
+         element_iso_array = iso_beam_map*np.exp(-1j*phase_angle_array)
+       
+         
+         #This one gives an answer that is almost exactly 6 PI too big .... (making this smaller makes Tsky smaller)
+         #X_short_parallel = (1./(4.*np.pi)) * np.sum(element_short_parallel_array) * (2.*np.pi/float(n_pix))
+         
+         #this one gives approximately the right answer ....  no exactly!
+         X_iso_parallel =  np.sum(element_iso_array) * pixel_solid_angle # (4.*np.pi/float(n_pix))
+         
+         print(baseline_length_lambda)
+         print(X_iso_parallel.real)
+         
+         X_iso_parallel_array[baseline_length_lambda_index] = X_iso_parallel.real
+      
+      X_iso_parallel_array_max = np.nanmax(X_iso_parallel_array)
+      X_iso_parallel_array_norm = X_iso_parallel_array / X_iso_parallel_array_max
+         
+      
+      np.save(X_iso_parallel_array_filename,X_iso_parallel_array_norm) 
+      np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
    
-
+   else:
+      baseline_length_lambda_array = np.load(baseline_length_lambda_array_filename)
+      X_iso_parallel_array_norm = np.load(X_iso_parallel_array_filename)
+      
    plt.clf()
    map_title="X_iso_parallel"
    plt.plot(baseline_length_lambda_array,X_iso_parallel_array_norm)
