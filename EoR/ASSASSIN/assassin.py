@@ -11552,10 +11552,10 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#lst_hrs_list=['2']
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-#poly_order=7
+poly_order=7
 
 plot_only = True
 baseline_length_thresh_lambda = 2.
@@ -11571,7 +11571,6 @@ include_angular_info = True
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
 #wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-freq_MHz_list = np.arange(50,200,1)
 wsclean=True # for data
 fast=False
 no_modelling=True
