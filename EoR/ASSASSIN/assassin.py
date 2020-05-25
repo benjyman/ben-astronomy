@@ -557,8 +557,7 @@ def plot_iso_ant_int_response():
    #print baseline_vector_for_dot_array[0:3]
    b_dot_r_array = (baseline_vector_for_dot_array * sky_vector_array).sum(axis=1)
    
-   sys.exit（）
-   
+   sys.exit()
    
    phase_angle_array = 2.*np.pi*b_dot_r_array/wavelength
    
@@ -11663,7 +11662,6 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 
 plot_iso_ant_int_response()
 sys.exit()
-
 
 plot_only = True
 baseline_length_thresh_lambda = 0.50
