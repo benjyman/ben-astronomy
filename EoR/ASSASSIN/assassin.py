@@ -1952,7 +1952,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                plt.xlabel("Expected global-signal response")
                plt.ylabel("Real component of visibility (Jy) flagged")
                plt.legend(loc=1)
-               plt.text(x_pos_K, y_pos_K, fit_string)
+               plt.text(x_pos, y_pos, fit_string)
                #plt.ylim([0, 3.5])
                fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
                figmap = plt.gcf()
