@@ -2537,8 +2537,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #plot in K
       real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
       fitted_values_K = results.fittedvalues * jy_to_K
-      y_pos = np.max(fitted_values_K)
-      x_pos = 1.2 * np.min(X_short_parallel_array)
+      y_pos = 0.9 * np.max(fitted_values_K)
+      x_pos = 1.4 * np.min(X_short_parallel_array)
    
       plt.clf()
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -2548,7 +2548,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.xlabel("Expected global-signal response")
       plt.ylabel("Real component of visibility (K)")
       plt.legend(loc=1)
-      plt.text(x_pos, y_pos, fit_string)
+      plt.text(x_pos, y_pos, fit_string_K)
       #plt.ylim([0, 3.5])
       fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
       figmap = plt.gcf()
