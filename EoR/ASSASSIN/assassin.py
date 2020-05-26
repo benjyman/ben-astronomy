@@ -2527,17 +2527,42 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name) 
+      
+      #convert to K
+      t_sky_K_flagged = jy_to_K * t_sky_jy
+      t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
+      print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+      fit_string_K = "y=%0.1fx" % t_sky_K_flagged      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+   
+      #plot in K
+      real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
+      fitted_values_K = results.fittedvalues * jy_to_K
+      y_pos = np.max(fitted_values_K)
+      x_pos = 1.2 * np.min(X_short_parallel_array)
+   
+      plt.clf()
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+
+      map_title="Flagged data and fit" 
+      plt.xlabel("Expected global-signal response")
+      plt.ylabel("Real component of visibility (K)")
+      plt.legend(loc=1)
+      plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name) 
+      
    else:
       t_sky_jy = np.nan
       t_sky_error_jy = np.nan
-      
+      t_sky_K_flagged_K = np.nan
+      t_sky_error_K_flagged = np.nan
     
-   #convert to K
-   t_sky_K_flagged = jy_to_K * t_sky_jy
-   t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
-   print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-   fit_string = "y=%0.1fx" % t_sky_jy      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-   
+
    
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
@@ -4420,9 +4445,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                EDA2_chan = None
                n_obs_concat = 1
                fine_chan_index=0
-               t_sky_measured,t_sky_measured_error,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index)
+               t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
                t_sky_measured_array[freq_MHz_index] = t_sky_measured
                t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
+               t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
+               t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
                freq_MHz_fine_array = freq_MHz_array    
                
          np.save(t_sky_measured_array_filename,t_sky_measured_array)
