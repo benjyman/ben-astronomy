@@ -11670,7 +11670,7 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
 poly_order=7
@@ -11685,7 +11685,7 @@ include_angular_info = True
 
 
 #up to here with plot_only = False
-chan_num = 26
+chan_num = 89
 #chan_num = 46
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
