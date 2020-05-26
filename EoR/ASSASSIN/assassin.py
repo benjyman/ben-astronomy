@@ -1858,6 +1858,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
          X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
          
          if (real_vis_data_sorted_array_nonans.shape==results.fittedvalues.shape):
+            #plot in Jy
             plt.clf()
             if model_type=='OLS_with_intercept':
                plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -1921,19 +1922,28 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                
                X_short_parallel_array_nonans_nonans = X_short_parallel_array_nonans[np.logical_not(np.isnan(real_vis_data_sorted_array_flagged))]
                
-               
+               #convert to K
+               t_sky_K_flagged = jy_to_K * t_sky_jy
+               t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
+               print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
                
                fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-            
+               fit_string_K = "y=%0.1fx" % t_sky_K_flagged
+              
                print("diffuse_global_value is %0.4E" % diffuse_global_value) 
             
-               ratio_in_out = diffuse_global_value / t_sky_K
+               ratio_in_out = diffuse_global_value / t_sky_K_flagged
                print("ratio between input and output T_sky_flagged is %0.4f" % ratio_in_out )
-            
+                
+               fitted_values_K = results.fittedvalues * jy_to_K
+                 
                y_pos = np.max(results.fittedvalues)
                x_pos = 1.2 * np.min(X_short_parallel_array)
             
-   
+               y_pos_K = np.max(fitted_values_K)
+               x_pos_K = 1.2 * np.min(X_short_parallel_array)
+            
+               #plot in Jy
                plt.clf()
                plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
                plt.plot(X_short_parallel_array_nonans_nonans, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
@@ -1949,15 +1959,37 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                figmap.savefig(fig_name)
                plt.close()
                print("saved %s" % fig_name) 
+               
+               #plot in K
+               
+               real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
+               
+               
+               plt.clf()
+               plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+               plt.plot(X_short_parallel_array_nonans_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+            
+               map_title="Flagged data and fit" 
+               plt.xlabel("Expected global-signal response")
+               plt.ylabel("Real component of visibility (K)")
+               plt.legend(loc=1)
+               plt.text(x_pos_K, y_pos_K, fit_string_K)
+               #plt.ylim([0, 3.5])
+               fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_flagged_K.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time,model_type)
+               figmap = plt.gcf()
+               figmap.savefig(fig_name)
+               plt.close()
+               print("saved %s" % fig_name) 
+               
+               
             else:
                t_sky_jy = np.nan
                t_sky_error_jy = np.nan
+               t_sky_K_flagged = np.nan
+               t_sky_error_K_flagged = np.nan
                
              
-            #convert to K
-            t_sky_K_flagged = jy_to_K * t_sky_jy
-            t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
-            print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+            
    
             t_sky_K_list_flagged.append(t_sky_K_flagged)
             t_sky_error_K_list_flagged.append(t_sky_error_K_flagged)
@@ -11610,8 +11642,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -11638,13 +11670,13 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#lst_hrs_list=['2']
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-#poly_order=7
+poly_order=7
 
-plot_iso_ant_int_response()
-sys.exit()
+#plot_iso_ant_int_response()
+#sys.exit()
 
 plot_only = True
 baseline_length_thresh_lambda = 0.50
@@ -11653,17 +11685,17 @@ include_angular_info = True
 
 
 #up to here with plot_only = False
-#chan_num = 10
+chan_num = 0
 #chan_num = 46
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
-#wsclean=False # for sims or miriad cal
+wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-wsclean=True # for data
+#wsclean=True # for data
 fast=False
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
