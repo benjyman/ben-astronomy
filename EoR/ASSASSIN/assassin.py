@@ -4437,7 +4437,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                   t_sky_measured_array[freq_MHz_index_fine] = t_sky_measured
                   t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
                   t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
-                  t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
+                  t_sky_measured_error_array_flagged[freq_MHz_index] = t_sky_measured_error_flagged
                   freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
          
                
