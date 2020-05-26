@@ -1941,7 +1941,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                x_pos = 1.2 * np.min(X_short_parallel_array)
             
                y_pos_K = 1300.0 # np.max(fitted_values_K)
-               x_pos_K = 0.45 # 1.2 * np.min(X_short_parallel_array)
+               x_pos_K = 0.60 # 1.2 * np.min(X_short_parallel_array)
             
                #plot in Jy
                plt.clf()
