@@ -2538,7 +2538,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #plot in K
       real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
       fitted_values_K = results.fittedvalues * jy_to_K
-      y_pos_K = -0.0 # * np.max(fitted_values_K)
+      y_pos_K = 1200 # * np.max(fitted_values_K)
       x_pos_K = 0.45 #1.4 * np.min(X_short_parallel_array)
    
       plt.clf()
@@ -4425,7 +4425,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                   
                   if EDA2_data:
                      if wsclean:
-                        t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
+                        t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs=lst_hrs,pol=pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,model_type=model_type,EDA2_data=EDA2_data,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,fine_chan_index=fine_chan_index,edge_chan=edge_chan,wsclean=wsclean,fast=fast)
                      else:
                         t_sky_measured,t_sky_measured_error,t_sky_measured_flagged,t_sky_measured_error_flagged,freq_MHz_fine = model_tsky_from_saved_data_eda2(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,fine_chan_index=fine_chan_index,model_type=model_type)
                   else:
