@@ -2539,7 +2539,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
       fitted_values_K = results.fittedvalues * jy_to_K
       y_pos_K = 1200 # * np.max(fitted_values_K)
-      x_pos_K = 0.45 #1.4 * np.min(X_short_parallel_array)
+      x_pos_K = 0.46 #1.4 * np.min(X_short_parallel_array)
    
       plt.clf()
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
