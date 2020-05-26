@@ -11457,7 +11457,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = False
+EDA2_data = True
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -11698,11 +11698,11 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-freq_MHz_array = np.asarray(freq_MHz_list)
-lst_hrs_list=['2']
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+#freq_MHz_array = np.asarray(freq_MHz_list)
+#lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-poly_order=7
+#poly_order=7
 
 #plot_iso_ant_int_response()
 #sys.exit()
@@ -11714,15 +11714,15 @@ include_angular_info = True
 
 
 #up to here with plot_only = False
-chan_num = 20
+chan_num = 89 - 64
 #chan_num = 46
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
-wsclean=False # for sims or miriad cal
+#wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-#wsclean=True # for data
+wsclean=True # for data
 fast=False
 no_modelling=False
 calculate_uniform_response=False
