@@ -11711,7 +11711,7 @@ poly_order=7
 #sys.exit()
 
 plot_only = True
-baseline_length_thresh_lambda = 2.0
+baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
 
