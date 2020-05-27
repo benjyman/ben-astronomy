@@ -2191,7 +2191,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #offset X and real_vis by some arbitrary amount 0.5?
          #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
          #need to multiply (scale) not add!
-         real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * (-0.4)  #2. / (2.*np.pi)
+         real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * (0.4)  #2. / (2.*np.pi)
          
          
          #plot X and pure inline and parallel for fig 1 of paper
