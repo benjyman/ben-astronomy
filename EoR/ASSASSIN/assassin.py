@@ -2231,7 +2231,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          
-         sys.exit()
+         
          
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
          
@@ -2550,8 +2550,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_short_parallel_array_nonans_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
 
       map_title="Flagged data and fit" 
-      plt.xlabel("Expected global-signal response")
-      plt.ylabel("Real component of visibility (K)")
+      plt.xlabel("Global response (unity sky)")
+      plt.ylabel("Visibility amplitude (simulations)")
       plt.legend(loc=1)
       plt.text(x_pos_K, y_pos_K, fit_string_K)
       #plt.ylim([0, 3.5])
@@ -2560,7 +2560,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name) 
-
+      sys.exit()
    else:
       t_sky_jy = np.nan
       t_sky_error_jy = np.nan
