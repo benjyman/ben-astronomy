@@ -1735,7 +1735,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             real_vis_data_sorted_max = np.nanmax(real_vis_data_sorted_array)
             real_vis_data_sorted_array_norm = real_vis_data_sorted_array / real_vis_data_sorted_max
             
-            real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2. / (2.*np.pi)
+            real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * (-0.4)    #2. / (2.*np.pi)
             
             
             #plot X and pure inline and parallel for fig 1 of paper
@@ -1772,6 +1772,8 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             print("saved %s" % fig_name) 
+            
+            sys.exit()
             
             #try just using centre wavelength (defined above)
             jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
@@ -11458,7 +11460,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = True
+EDA2_data = False
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -11699,24 +11701,24 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#freq_MHz_array = np.asarray(freq_MHz_list)
-#lst_hrs_list=['2']
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+freq_MHz_array = np.asarray(freq_MHz_list)
+lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-#poly_order=7
+poly_order=7
 
 #plot_iso_ant_int_response()
 #sys.exit()
 
 plot_only = True
-baseline_length_thresh_lambda = 0.50
+baseline_length_thresh_lambda = 2.0
 include_angular_info = True
 
 
 
 #up to here with plot_only = False
-chan_num = 90 - 64
-#chan_num = 46
+#chan_num = 90 - 64
+chan_num = 20
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
