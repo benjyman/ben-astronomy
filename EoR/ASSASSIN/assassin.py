@@ -1809,7 +1809,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             figmap.savefig(fig_name)
             print("saved %s" % fig_name) 
             
-            sys.exit()
+            
             
          if np.nansum(np.abs(X_short_parallel_array) > 0):
             if model_type=='OLS_fixed_intercept':
@@ -2272,7 +2272,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
-      
+         
+         
+         sys.exit()
+         
    ##Assign vis and X values a group according to the Y_angular response
    ##Dont need this anymore, is for mixedlm which didnt work.
    #Y_angular_group_array = X_short_parallel_array * 0
