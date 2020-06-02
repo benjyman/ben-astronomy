@@ -2273,6 +2273,31 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          
+         #Repeat in K
+         #also include Y and the sum of X plus Y
+         real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
+         X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
+         full_response_Jy_L = full_response_Jy * jy_to_K
+         
+         plt.clf()
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+         
+         #need to update update full response to include fine chans
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,s=1,label='Expected uniform diffuse response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response')
+         ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+         map_title="Response to uniform sky vs baseline length data" 
+         plt.xlabel("Baseline length (wavelengths)")
+         plt.ylabel("Visibility amplitude (K)")
+         plt.legend(loc=1)
+         #plt.ylim([0, 20])
+         fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
+         
          
          sys.exit()
          
