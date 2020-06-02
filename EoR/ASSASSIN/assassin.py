@@ -2277,7 +2277,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #also include Y and the sum of X plus Y
          real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
          X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
-         full_response_Jy_L = full_response_Jy * jy_to_K
+         full_response_Jy_K = full_response_Jy * jy_to_K
          
          plt.clf()
          #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
