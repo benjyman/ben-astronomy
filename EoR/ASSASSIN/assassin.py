@@ -1808,7 +1808,9 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             print("saved %s" % fig_name) 
-   
+            
+            sys.exit()
+            
          if np.nansum(np.abs(X_short_parallel_array) > 0):
             if model_type=='OLS_fixed_intercept':
                model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
