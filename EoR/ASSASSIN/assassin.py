@@ -185,8 +185,8 @@ pol_list = ['X']
 #signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
-#signal_type_list=['diffuse_global','noise']
-signal_type_list=['global_EDGES']
+signal_type_list=['diffuse_global','noise']
+#signal_type_list=['global_EDGES']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -1785,7 +1785,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
             
                #need to update full response to include fine chans
-               #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
+               full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
          
          
       
@@ -1797,7 +1797,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
             
             #need to update update full response to include fine chans
-            #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
+            plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
             ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
             map_title="Response to uniform sky vs baseline length data" 
             plt.xlabel("Baseline length (wavelengths)")
@@ -2243,8 +2243,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
             Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
          
+            X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
+            
             #need to update full response to include fine chans
-            #full_response_Jy = ((diffuse_global_value * X_short_parallel_array) / jy_to_K) + Y_short_parallel_angular_array_Jy
+            full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
       
       
    
@@ -2252,11 +2254,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #also include Y and the sum of X plus Y
          plt.clf()
          #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+         #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
          #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
          
          #need to update update full response to include fine chans
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,s=1,label='Expected uniform diffuse response Jy')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response Jy')
          ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
@@ -11462,7 +11465,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = False
+EDA2_data = True
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -11675,8 +11678,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-model_type_list = ['OLS_fixed_intercept']
+model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+#model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
