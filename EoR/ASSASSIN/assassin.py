@@ -2281,12 +2281,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          plt.clf()
          #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_K,s=1,label='%s visibility amplitude' % real_or_simulated_string)
          #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
          
          #need to update update full response to include fine chans
-         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,s=1,label='Expected uniform diffuse response')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,s=1,label='Expected full response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,s=1,label='Expected uniform diffuse response')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,s=1,label='Expected full response')
          ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
