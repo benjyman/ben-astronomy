@@ -5158,7 +5158,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    
    T_rms2 = ((c**2 / (freq_MHz_list*1000000.)**2) / (2*A_eff_for_calc_array)) * T_rms1
    
-   T_rms3 =  (2*A_eff_for_calc_array) * T_rms1
+   T_rms3 = T_rms1 / (2*A_eff_for_calc_array)
    
    
    plt.clf()
