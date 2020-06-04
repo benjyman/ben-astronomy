@@ -5168,7 +5168,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    map_title="T_rms EDA2" 
    plt.xlabel("freq (MHz)")
    plt.ylabel("T_rms (K)")
-   #plt.legend(loc=1)
+   plt.legend(loc=1)
    #plt.ylim([0, 20])
    fig_name= "T_rms_EDA2.png"
    figmap = plt.gcf()
