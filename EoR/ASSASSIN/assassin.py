@@ -5105,8 +5105,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
          
          #include expected noise estimate:
-         #expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-         #plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
+         expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+         plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
       
       
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -5148,19 +5148,19 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    ffit = poly.polyval(freq_MHz_for_A_eff_array_per_dipole, coefs)
    
    #plot it to check 
-   plt.clf()
-   plt.plot(freq_MHz_for_A_eff_array_per_dipole,A_eff_array_per_dipole)
-   plt.plot(freq_MHz_for_A_eff_array_per_dipole,ffit)
-   map_title="A_eff EDA2 dipoles" 
-   plt.xlabel("freq (MHz)")
-   plt.ylabel("A_eff (m)")
-   #plt.legend(loc=1)
-   #plt.ylim([0, 20])
-   fig_name= "A_eff_EDA2.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name) 
-   plt.close()  
+   #plt.clf()
+   #plt.plot(freq_MHz_for_A_eff_array_per_dipole,A_eff_array_per_dipole)
+   #plt.plot(freq_MHz_for_A_eff_array_per_dipole,ffit)
+   #map_title="A_eff EDA2 dipoles" 
+   #plt.xlabel("freq (MHz)")
+   #plt.ylabel("A_eff (m)")
+   ##plt.legend(loc=1)
+   ##plt.ylim([0, 20])
+   #fig_name= "A_eff_EDA2.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name) 
+   #plt.close()  
    
    A_eff_for_calc_array = poly.polyval(freq_MHz_list, coefs)
    
@@ -5171,20 +5171,20 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    #T_rms3 = T_rms1 / (2*A_eff_for_calc_array)
    
    
-   plt.clf()
-   plt.plot(freq_MHz_list,T_rms1,label='T_rms1')
-   #plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
-   #plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
-   map_title="T_rms EDA2" 
-   plt.xlabel("freq (MHz)")
-   plt.ylabel("T_rms (K)")
-   #plt.legend(loc=1)
-   #plt.ylim([0, 20])
-   fig_name= "T_rms_EDA2.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name) 
-   plt.close() 
+   #plt.clf()
+   #plt.plot(freq_MHz_list,T_rms1,label='T_rms1')
+   ##plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
+   ##plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
+   #map_title="T_rms EDA2" 
+   #plt.xlabel("freq (MHz)")
+   #plt.ylabel("T_rms (K)")
+   ##plt.legend(loc=1)
+   ##plt.ylim([0, 20])
+   #fig_name= "T_rms_EDA2.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name) 
+   #plt.close() 
    
    return T_rms1  
    
