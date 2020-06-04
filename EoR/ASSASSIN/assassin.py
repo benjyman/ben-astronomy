@@ -4289,6 +4289,9 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
 
 
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True):
+   #for plot_expected_rms_noise_eda2 below
+   int_time = 0.28 * 5.
+   bw = 27./32. * fine_chan_width_Hz
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -4962,6 +4965,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
+      t_sky_theoretical_array_cut = [t_sky_measured_array>0.]
       log_sky_array = np.log10(sky_array)
       if n_fine_chans_used==1:
          freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
@@ -4989,6 +4993,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
       #plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+   
+   
+   #include expected noise estimate:
+   expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,int_time=int_time,bandwidth=bw)
+   sys.exit()
       
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
@@ -5020,6 +5029,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
    plt.close() 
+   
+   
+   
    
    #repeat for per chan av
    if EDA2_data:
@@ -5118,7 +5130,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    print("saved %s" % fig_name) 
    plt.close()  
            
-def plot_expected_rms_noise_eda2(freq_MHz_list,int_time,bandwidth):
+def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,bandwidth):
    print("plotting expected noise")
    #from EDA1 paper wayth et al 2017, table 2:
    A_eff_array_per_dipole = np.asarray([970.,950.,914.,874.,832.,771.,707.,638.,568.,498.,435.,377.,329.,288.,252.,222.,196.]) / 256.
@@ -5129,6 +5141,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,int_time,bandwidth):
    
    #plot it to check 
    plt.clf()
+   plt.plot(freq_MHz_for_A_eff_array_per_dipole,A_eff_array_per_dipole)
    plt.plot(freq_MHz_for_A_eff_array_per_dipole,ffit)
    map_title="A_eff EDA2 dipoles" 
    plt.xlabel("freq (MHz)")
@@ -5141,6 +5154,24 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,int_time,bandwidth):
    print("saved %s" % fig_name) 
    plt.close()  
    
+   A_eff_for_calc_array = poly.polyval(freq_MHz_list, coefs)
+   
+   T_rms1 = t_sky_theoretical_array / np.sqrt(int_time * bandwidth)
+   
+   plt.clf()
+   plt.plot(freq_MHz_for_A_eff_array_per_dipole,T_rms1)
+   map_title="T_rms EDA2" 
+   plt.xlabel("freq (MHz)")
+   plt.ylabel("T_rms (K)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "T_rms_EDA2.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
+   plt.close() 
+   
+   return T_rms1  
    
 
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
@@ -11774,11 +11805,6 @@ plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
-int_time = 0.28 * 5.
-bw = 27./32. * fine_chan_width_Hz
-
-plot_expected_rms_noise_eda2(freq_MHz_list=freq_MHz_array,int_time=int_time,bandwidth=bw)
-sys.exit()
 
 #up to here with plot_only = False
 #chan_num = 90 - 64
