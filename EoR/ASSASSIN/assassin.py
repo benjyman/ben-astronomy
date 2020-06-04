@@ -4289,7 +4289,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True):
    #for plot_expected_rms_noise_eda2 below
    int_time = 0.28 * 5.
-   bw_Hz = 27./32. * fine_chan_width_Hz
+   bw_Hz = 27. * fine_chan_width_Hz
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -5057,21 +5057,16 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
          freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
          
-         print(length_freq_MHz_fine_chan_to_plot)
-         print(t_sky_measured_array)
-         print(freq_MHz_fine_array)
         
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
             freq_range_max = freq_MHz + (centre_chan_index * fine_chan_width_Hz/1000000.)
-            print(freq_range_min)
-            print(freq_range_max)
+            #print(freq_range_min)
+            #print(freq_range_max)
             
             indices = np.where(np.logical_and(freq_MHz_fine_array>=freq_range_min,freq_MHz_fine_array<=freq_range_max))
             t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
             t_sky_measured_error_chan = t_sky_measured_error_array[indices]
-            print(t_sky_measured_EDA2_chan)
-            print(freq_MHz_fine_array[indices])
             t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.nanmean(t_sky_measured_EDA2_chan)
             t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.nanstd(t_sky_measured_EDA2_chan)
           
