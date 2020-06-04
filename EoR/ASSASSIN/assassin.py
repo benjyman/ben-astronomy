@@ -5118,6 +5118,31 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    print("saved %s" % fig_name) 
    plt.close()  
            
+def plot_expected_rms_noise_eda2(freq_MHz_list,int_time,bandwidth):
+   print("plotting expected noise")
+   #from EDA1 paper wayth et al 2017, table 2:
+   A_eff_array_per_dipole = np.asarray([970.,950.,914.,874.,832.,771.,707.,638.,568.,498.,435.,377.,329.,288.,252.,222.,196.]) / 256.
+   freq_MHz_for_A_eff_array_per_dipole = np.asarray([60.,70.,80.,90.,100.,110.,120.,130.,140.,150.,160.,170.,180.,190.,200.,210.,220.])    
+   #fit a line:
+   coefs = poly.polyfit(freq_MHz_for_A_eff_array_per_dipole, A_eff_array_per_dipole, 1)
+   ffit = poly.polyval(freq_MHz_for_A_eff_array_per_dipole, coefs)
+   
+   #plot it to check 
+   plt.clf()
+   plt.plot(freq_MHz_for_A_eff_array_per_dipole,ffit)
+   map_title="A_eff EDA2 dipoles" 
+   plt.xlabel("freq (MHz)")
+   plt.ylabel("A_eff (m)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "A_eff_EDA2.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
+   plt.close()  
+   
+   
+
 def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sky_model,array_ant_locations_filename,array_label):
    with open(array_ant_locations_filename,'r') as f:
       lines = f.readlines()
@@ -11749,7 +11774,11 @@ plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
+int_time = 0.28 * 5.
+bw = 27./32. * fine_chan_width_Hz
 
+plot_expected_rms_noise_eda2(freq_MHz_list=freq_MHz_array,int_time=int_time,bandwidth=bw)
+sys.exit()
 
 #up to here with plot_only = False
 #chan_num = 90 - 64
