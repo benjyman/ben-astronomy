@@ -4994,7 +4994,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
       #include expected noise estimate:
       expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_MHz_list,t_sky_theoretical_array=t_sky_theoretical_array,int_time=int_time,bandwidth_Hz=bw_Hz)
-      sys.exit()
+      plt.plot(freq_MHz_list,expected_noise,label="expected rms noise")
       
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
@@ -5155,20 +5155,19 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    
    T_rms1 = t_sky_theoretical_array / np.sqrt(int_time * bandwidth_Hz)
    
+   #T_rms2 = ((c**2 / (freq_MHz_list*1000000.)**2) / (2*A_eff_for_calc_array)) * T_rms1
    
-   T_rms2 = ((c**2 / (freq_MHz_list*1000000.)**2) / (2*A_eff_for_calc_array)) * T_rms1
-   
-   T_rms3 = T_rms1 / (2*A_eff_for_calc_array)
+   #T_rms3 = T_rms1 / (2*A_eff_for_calc_array)
    
    
    plt.clf()
    plt.plot(freq_MHz_list,T_rms1,label='T_rms1')
-   plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
-   plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
+   #plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
+   #plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
    map_title="T_rms EDA2" 
    plt.xlabel("freq (MHz)")
    plt.ylabel("T_rms (K)")
-   plt.legend(loc=1)
+   #plt.legend(loc=1)
    #plt.ylim([0, 20])
    fig_name= "T_rms_EDA2.png"
    figmap = plt.gcf()
