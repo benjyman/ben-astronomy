@@ -5154,7 +5154,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    
    A_eff_for_calc_array = poly.polyval(freq_MHz_list, coefs)
    
-   T_rms1 = t_sky_theoretical_array[0,:] / np.sqrt(int_time * bandwidth)
+   T_rms1 = t_sky_theoretical_array[0] / np.sqrt(int_time * bandwidth)
    
    plt.clf()
    plt.plot(freq_MHz_list,T_rms1)
