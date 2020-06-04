@@ -5129,7 +5129,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    plt.close()  
            
 def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,bandwidth_MHz):
-bandwidth_Hz = bandwidth_MHz / 1000000.
+   bandwidth_Hz = bandwidth_MHz / 1000000.
    print("plotting expected noise")
    #from EDA1 paper wayth et al 2017, table 2:
    A_eff_array_per_dipole = np.asarray([970.,950.,914.,874.,832.,771.,707.,638.,568.,498.,435.,377.,329.,288.,252.,222.,196.]) / 256.
