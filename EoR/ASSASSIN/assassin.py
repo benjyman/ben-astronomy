@@ -4963,7 +4963,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
-      t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
       log_sky_array = np.log10(sky_array)
       if n_fine_chans_used==1:
          freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
@@ -4994,7 +4993,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    
       #include expected noise estimate:
-      expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,int_time=int_time,bandwidth_MHz=bw)
+      expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_MHz_list,t_sky_theoretical_array=t_sky_theoretical_array,int_time=int_time,bandwidth_MHz=bw)
       sys.exit()
       
    map_title="Residual for log polynomial order %s fit " % poly_order
