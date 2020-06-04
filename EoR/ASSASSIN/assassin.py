@@ -5056,18 +5056,22 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
          freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
          freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
+         
+         print(length_freq_MHz_fine_chan_to_plot)
+         print(t_sky_measured_array)
+         print(freq_MHz_fine_array)
         
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
             freq_range_max = freq_MHz + (centre_chan_index * fine_chan_width_Hz/1000000.)
-            #print(freq_range_min)
-            #print(freq_range_max)
+            print(freq_range_min)
+            print(freq_range_max)
             
             indices = np.where(np.logical_and(freq_MHz_fine_array>=freq_range_min,freq_MHz_fine_array<=freq_range_max))
             t_sky_measured_EDA2_chan = t_sky_measured_array[indices]
             t_sky_measured_error_chan = t_sky_measured_error_array[indices]
-            #print(t_sky_measured_EDA2_chan)
-            #print(freq_MHz_fine_array[indices])
+            print(t_sky_measured_EDA2_chan)
+            print(freq_MHz_fine_array[indices])
             t_sky_measure_av_per_EDA2_chan[freq_MHz_index] = np.nanmean(t_sky_measured_EDA2_chan)
             t_sky_measure_av_per_EDA2_chan_err[freq_MHz_index] = np.nanstd(t_sky_measured_EDA2_chan)
           
