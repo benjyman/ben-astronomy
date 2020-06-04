@@ -11790,11 +11790,11 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-freq_MHz_array = np.asarray(freq_MHz_list)
-lst_hrs_list=['2']
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+#freq_MHz_array = np.asarray(freq_MHz_list)
+#lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-poly_order=7
+#poly_order=7
 
 #plot_iso_ant_int_response()
 #sys.exit()
