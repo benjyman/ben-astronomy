@@ -5103,7 +5103,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
          #include expected noise estimate:
          expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-         plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
+         #plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
       
       
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -11828,7 +11828,7 @@ include_angular_info = True
 #sim for paper plot 1 
 wsclean=True # for data
 fast=False
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
