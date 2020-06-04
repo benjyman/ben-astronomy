@@ -5157,7 +5157,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,int_time,
    T_rms1 = t_sky_theoretical_array / np.sqrt(int_time * bandwidth)
    
    plt.clf()
-   plt.plot(freq_MHz_for_A_eff_array_per_dipole,T_rms1)
+   plt.plot(freq_MHz_list,T_rms1)
    map_title="T_rms EDA2" 
    plt.xlabel("freq (MHz)")
    plt.ylabel("T_rms (K)")
