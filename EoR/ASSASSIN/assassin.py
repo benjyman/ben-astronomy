@@ -5096,7 +5096,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          max_abs_residuals = np.max(np.abs(residual_of_log_fit))
          y_max = 1.5 * max_abs_residuals
          y_min = 1.5 * -max_abs_residuals
-      
+         
+         print(freq_array_cut)
+         print(residual_of_log_fit)
+         
          plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
          plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
          
