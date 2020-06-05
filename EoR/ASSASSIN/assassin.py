@@ -4362,7 +4362,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
    
    t_sky_theoretical_array_filename = "t_sky_theoretical_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
-   n_baselines_used_array_filename = "n_baselines_used_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+   n_baselines_used_array_filename = "n_baselines_used_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
    
    ##for including angular info:
    t_sky_measured_global_array_filename = "t_sky_measured_global_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
