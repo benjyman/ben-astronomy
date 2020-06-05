@@ -5008,7 +5008,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
    
       expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-      plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
+      plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red')
          
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
