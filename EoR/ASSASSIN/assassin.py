@@ -4362,8 +4362,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
    
    t_sky_theoretical_array_filename = "t_sky_theoretical_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
-   n_baselines_used_array_filename = "n_baselines_used_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-   
+
    ##for including angular info:
    t_sky_measured_global_array_filename = "t_sky_measured_global_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
@@ -4506,7 +4505,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    ###t_sky_measured_array = np.load(t_sky_measured_array_filename)
    ####t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
    t_sky_theoretical_array = np.load(t_sky_theoretical_array_filename)
-   n_baselines_used_array = np.load(n_baselines_used_array_filename)
+   
    #if include_angular_info:
    #   t_sky_measured_global_array = np.load(t_sky_measured_global_array_filename)
    #   t_sky_measured_angular_array = np.load(t_sky_measured_angular_array_filename)
@@ -5048,7 +5047,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-       
+         n_baselines_used_array_filename = "n_baselines_used_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+   
        
          t_sky_measured_array = np.load(t_sky_measured_array_filename)
          t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
@@ -5056,7 +5056,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
          freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
          freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
-         
+         n_baselines_used_array = np.load(n_baselines_used_array_filename)
         
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
             freq_range_min = freq_MHz - (centre_chan_index * fine_chan_width_Hz/1000000.)
