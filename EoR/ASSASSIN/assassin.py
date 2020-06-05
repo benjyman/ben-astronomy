@@ -3668,7 +3668,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
             diffuse_global_value = diffuse_global_value_array[0]
          else:
-            diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
+            diffuse_global_value = diffuse_global_value_array[0]
+            #diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
          
          #ov1 = GlobalSkyModel()
          
