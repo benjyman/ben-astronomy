@@ -4515,13 +4515,12 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #make a plot of diffuse global input  
    if 'diffuse_global' in signal_type_list:
-      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
-      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
-      diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+      #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
+      #diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
       #diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
       
       plt.clf()
-      plt.plot(freq_MHz_array,diffuse_global_value_array_X,label='sim input X')
+      plt.plot(freq_MHz_array,t_sky_theoretical_array,label='sim input X')
       #plt.plot(freq_MHz_array,diffuse_global_value_array_Y,label='sim input Y')
       map_title="t_sky beam averaged input" 
       plt.xlabel("freq (MHz)")
@@ -4535,7 +4534,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
     
       #subtract a polynomial fit just do for X for now
       #in log log space:
-      sky_array = diffuse_global_value_array_X[t_sky_measured_array>0.]
+      sky_array = t_sky_theoretical_array[t_sky_measured_array>0.]
       log_sky_array = np.log10(sky_array)
       freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
       log_freq_MHz_array = np.log10(freq_array_cut)
@@ -11824,7 +11823,7 @@ poly_order=7
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
