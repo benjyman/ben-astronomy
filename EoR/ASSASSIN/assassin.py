@@ -4514,56 +4514,57 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
 
    
    #make a plot of diffuse global input  
-   if 'diffuse_global' in signal_type_list:
-      #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
-      #diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
-      #diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
-      
-      plt.clf()
-      plt.plot(freq_MHz_array,t_sky_theoretical_array,label='sim input X')
-      #plt.plot(freq_MHz_array,diffuse_global_value_array_Y,label='sim input Y')
-      map_title="t_sky beam averaged input" 
-      plt.xlabel("freq (MHz)")
-      plt.ylabel("t_sky (K)")
-      plt.legend(loc=1)
-      #plt.ylim([0, 20])
-      fig_name= "t_sky_beam_av_input_%s%s.png" % (lst_string,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
-    
-      #subtract a polynomial fit just do for X for now
-      #in log log space:
-      sky_array = t_sky_theoretical_array[t_sky_measured_array>0.]
-      log_sky_array = np.log10(sky_array)
-      freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
-      log_freq_MHz_array = np.log10(freq_array_cut)
-      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
-      ffit = poly.polyval(log_freq_MHz_array, coefs)
-      ffit_linear = 10**ffit
-      
-      #log_residual = log_signal_array_short_baselines - log_ffit
-      residual_of_log_fit = ffit_linear - sky_array
-      
-      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-      print("rms_of_residuals for X is %0.3f K" % rms_of_residuals)
-      
-      max_abs_residuals = np.max(np.abs(residual_of_log_fit))
-      y_max = 1.5 * max_abs_residuals
-      y_min = 1.5 * -max_abs_residuals
-      
-      plt.clf()
-      plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit X')
-      map_title="Residual for log polynomial order %s fit " % poly_order
-      plt.ylabel("Residual Tb (K)")
-      plt.xlabel("freq (MHz)")
-      plt.legend(loc=1)
-      plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
-      plt.ylim([y_min, y_max])
-      fig_name= "eda2_log_fit_residual_tsy_input_poly_%s_lst_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
+   #dont need this at the moment
+   #if 'diffuse_global' in signal_type_list:
+   #   sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % concat_output_name_base
+   #   diffuse_global_value_array_X = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   #   #diffuse_global_value_array_Y = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
+   #   
+   #   plt.clf()
+   #   plt.plot(freq_MHz_array,diffuse_global_value_array_X,label='sim input X')
+   #   #plt.plot(freq_MHz_array,diffuse_global_value_array_Y,label='sim input Y')
+   #   map_title="t_sky beam averaged input" 
+   #   plt.xlabel("freq (MHz)")
+   #   plt.ylabel("t_sky (K)")
+   #   plt.legend(loc=1)
+   #   #plt.ylim([0, 20])
+   #   fig_name= "t_sky_beam_av_input_%s%s.png" % (lst_string,signal_type_postfix)
+   #   figmap = plt.gcf()
+   #   figmap.savefig(fig_name)
+   #   print("saved %s" % fig_name)
+   # 
+   #   #subtract a polynomial fit just do for X for now
+   #   #in log log space:
+   #   sky_array = t_sky_theoretical_array[t_sky_measured_array>0.]
+   #   log_sky_array = np.log10(sky_array)
+   #   freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
+   #   log_freq_MHz_array = np.log10(freq_array_cut)
+   #   coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+   #   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   #   ffit_linear = 10**ffit
+   #   
+   #   #log_residual = log_signal_array_short_baselines - log_ffit
+   #   residual_of_log_fit = ffit_linear - sky_array
+   #   
+   #   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+   #   print("rms_of_residuals for X is %0.3f K" % rms_of_residuals)
+   #   
+   #   max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+   #   y_max = 1.5 * max_abs_residuals
+   #   y_min = 1.5 * -max_abs_residuals
+   #   
+   #   plt.clf()
+   #   plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit X')
+   #   map_title="Residual for log polynomial order %s fit " % poly_order
+   #   plt.ylabel("Residual Tb (K)")
+   #   plt.xlabel("freq (MHz)")
+   #   plt.legend(loc=1)
+   #   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
+   #   plt.ylim([y_min, y_max])
+   #   fig_name= "eda2_log_fit_residual_tsy_input_poly_%s_lst_%s%s.png" % (poly_order,lst_string,signal_type_postfix)
+   #   figmap = plt.gcf()
+   #   figmap.savefig(fig_name)
+   #   print("saved %s" % fig_name) 
    
    
    #Get the theoretical diffuse value from the chan folders instead (in case you have run each chan separately for solve_from_uvfits) 
