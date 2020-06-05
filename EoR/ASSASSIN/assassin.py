@@ -5185,7 +5185,9 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    plt.close() 
    
    print(freq_MHz_list)
+   print(n_baselines_used_array)
    print(t_sky_theoretical_array)
+   
    print(T_rms3)
    sys.exit()
    
