@@ -4368,6 +4368,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    
    #freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+   n_baselines_used_array_filename = "n_baselines_included_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    
    
    if not plot_only:
@@ -5047,8 +5048,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-         n_baselines_used_array_filename = "n_baselines_included_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-   
+         
        
          t_sky_measured_array = np.load(t_sky_measured_array_filename)
          t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
