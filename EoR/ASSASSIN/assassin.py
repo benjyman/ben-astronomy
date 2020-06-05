@@ -4970,6 +4970,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       n_baselines_used_array = np.load(n_baselines_used_array_filename)
       n_baselines_used_array = n_baselines_used_array[0:length_freq_MHz_fine_chan_to_plot]
        
+       
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
@@ -5185,20 +5186,20 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    T_rms3 =  ((c**2 / (freq_MHz_list*1000000.)**2) / (A_eff_for_calc_array)) * T_rms1
    
    
-   plt.clf()
-   #plt.plot(freq_MHz_list,T_rms1,label='T_rms1')
-   ##plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
-   plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
-   map_title="T_rms EDA2" 
-   plt.xlabel("freq (MHz)")
-   plt.ylabel("T_rms (K)")
-   ##plt.legend(loc=1)
-   ##plt.ylim([0, 20])
-   fig_name= "T_rms_EDA2.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name) 
-   plt.close() 
+   #plt.clf()
+   ##plt.plot(freq_MHz_list,T_rms1,label='T_rms1')
+   ###plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
+   #plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
+   #map_title="T_rms EDA2" 
+   #plt.xlabel("freq (MHz)")
+   #plt.ylabel("T_rms (K)")
+   ###plt.legend(loc=1)
+   ###plt.ylim([0, 20])
+   #fig_name= "T_rms_EDA2.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name) 
+   #plt.close() 
    
    print(freq_MHz_list)
    print(n_baselines_used_array)
