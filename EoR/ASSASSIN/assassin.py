@@ -5179,8 +5179,8 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    
    A_eff_for_calc_array = poly.polyval(freq_MHz_list, coefs)
    
-   #T_rms1 = t_sky_theoretical_array / np.sqrt(2 * n_baselines_used_array * int_time * bandwidth_Hz)
-   T_rms1 = t_sky_theoretical_array / np.sqrt(n_baselines_used_array * int_time * bandwidth_Hz)
+   T_rms1 = t_sky_theoretical_array / np.sqrt(2 * n_baselines_used_array * int_time * bandwidth_Hz)
+   #T_rms1 = t_sky_theoretical_array / np.sqrt(n_baselines_used_array * int_time * bandwidth_Hz)
    #T_rms2 = ((c**2 / (freq_MHz_list*1000000.)**2) / (2*A_eff_for_calc_array)) * T_rms1
    
    T_rms3 =  ((c**2 / (freq_MHz_list*1000000.)**2) / (A_eff_for_calc_array)) * T_rms1
