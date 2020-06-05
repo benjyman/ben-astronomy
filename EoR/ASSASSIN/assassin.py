@@ -4407,11 +4407,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
-         #n_baselines_used_array[freq_MHz_index] = n_baselines_used  
+         n_baselines_used_array[freq_MHz_index] = n_baselines_used  
       #np.save(t_sky_measured_array_filename,t_sky_measured_array)
       #np.save(t_sky_measured_error_array_filename,t_sky_measured_error_array)
       np.save(t_sky_theoretical_array_filename,t_sky_theoretical_array)
-      #np.save(n_baselines_used_array_filename,n_baselines_used_array)
+      np.save(n_baselines_used_array_filename,n_baselines_used_array)
       #if include_angular_info:
       #   np.save(t_sky_measured_global_array_filename,t_sky_measured_global_array)
       #   np.save(t_sky_measured_angular_array_filename,t_sky_measured_angular_array)
@@ -4506,7 +4506,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    ###t_sky_measured_array = np.load(t_sky_measured_array_filename)
    ####t_sky_measured_error_array = np.load(t_sky_measured_error_array_filename)
    t_sky_theoretical_array = np.load(t_sky_theoretical_array_filename)
-   #n_baselines_used_array = np.load(n_baselines_used_array_filename)
+   n_baselines_used_array = np.load(n_baselines_used_array_filename)
    #if include_angular_info:
    #   t_sky_measured_global_array = np.load(t_sky_measured_global_array_filename)
    #   t_sky_measured_angular_array = np.load(t_sky_measured_angular_array_filename)
