@@ -11822,13 +11822,13 @@ model_type_list = ['OLS_fixed_intercept']
 #sys.exit()
 
 plot_only = False
-baseline_length_thresh_lambda = 0.23
+baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 90 - 64
-chan_num = 0
+chan_num = 89    #89 = 70MHz
 freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
