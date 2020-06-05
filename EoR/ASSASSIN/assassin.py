@@ -2128,7 +2128,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          #Bad temporary hack just to get figure done for paper:
          X_short_parallel_array_filename = "X_short_parallel_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine)_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
          real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
