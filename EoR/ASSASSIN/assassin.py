@@ -3776,7 +3776,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
             hp.orthview(map=gsm_map,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
             #hp.mollview(map=gsm_map,coord='C',title=map_title,rot=(0,0,0),min=0, max=7000)
-            fig_name="check_%s_%s_hrs_LST_%0.3f_MHz_%0.3f_pol.png" % (sky_model,lst_hrs,freq_MHz,pol)
+            fig_name="check_%s_%s_hrs_LST_%0.3f_MHz_%s_pol.png" % (sky_model,lst_hrs,freq_MHz,pol)
             figmap = plt.gcf()
             figmap.savefig(fig_name,dpi=500)
             print("saved %s" % fig_name)    
