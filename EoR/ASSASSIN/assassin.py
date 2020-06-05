@@ -4959,7 +4959,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-    
+      
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
@@ -4967,12 +4967,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       t_sky_measured_error_array = t_sky_measured_error_array[0:length_freq_MHz_fine_chan_to_plot]
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
       freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
-       
+      n_baselines_used_array = np.load(n_baselines_used_array_filename)
+      n_baselines_used_array = n_baselines_used_array[0:length_freq_MHz_fine_chan_to_plot]
        
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
       t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
+      n_baselines_used_array_cut = n_baselines_used_array[t_sky_measured_array>0.]
+      
       log_sky_array = np.log10(sky_array)
       if n_fine_chans_used==1:
          freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
