@@ -4991,20 +4991,23 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
    
-      
+      expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+      plt.plot(freq_array_cut,expected_noise,label="expected rms noise")
+         
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("freq (MHz)")
-   if len(model_type_list)>1:
-      plt.legend(loc=1)
-   
+   #if len(model_type_list)>1:
+   #   plt.legend(loc=1)
+   plt.legend(loc=1)
    plt.ylim([y_min, y_max])
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
    plt.close()         
-            
+
+   sys.exit()
             
    plt.clf()
    plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
@@ -5189,7 +5192,6 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    print(t_sky_theoretical_array)
    
    print(T_rms3)
-   sys.exit()
    
    return T_rms3  
    
@@ -11812,30 +11814,30 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#freq_MHz_array = np.asarray(freq_MHz_list)
-#lst_hrs_list=['2']
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+freq_MHz_array = np.asarray(freq_MHz_list)
+lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-#poly_order=7
+poly_order=7
 
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
 
 #up to here with plot_only = False
-chan_num = 90 - 64 #90 = 70MHz
- 
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#chan_num = 90 - 64 #90 = 70MHz
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
-#wsclean=False # for sims or miriad cal
+wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-wsclean=True # for data
+#wsclean=True # for data
 fast=False
 no_modelling=True
 calculate_uniform_response=False
