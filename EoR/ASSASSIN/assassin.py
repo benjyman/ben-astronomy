@@ -2108,7 +2108,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       ##
       diffuse_global_value = diffuse_global_value_array[0]
    else:
-      diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
+      diffuse_global_value = diffuse_global_value_array[0]
+      #diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
    
    #in here put bit to read X from miriad_sim_uvfits
    if not fast:
