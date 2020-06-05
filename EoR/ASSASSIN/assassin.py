@@ -4946,7 +4946,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          if EDA2_data:
             label1='measured sky temp.'
          else:
-            label1='ignore angular response'
+            #label1='ignore angular response'
+            label1='residual from log fit'
          y_offset=1
          colour='tab:blue'
       elif  model_type=='OLS_fixed_int_subtr_Y':
