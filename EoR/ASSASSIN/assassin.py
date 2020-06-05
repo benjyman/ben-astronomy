@@ -3967,7 +3967,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #nup
             ########################
     
-   return(beam_weighted_av_sky)
+   return(beam_weighted_av_sky,n_baselines_included)
    
          
          ##normalise both X and real vis to max 1
@@ -4398,11 +4398,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          ###THis is the one that works for the SIMS! at 20200422
          if EDA2_data:
             if wsclean:
-               t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
+               t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
             else:
                t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=calculate_uniform_response)
          else:
-            t_sky_theoretical = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
+            t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -11821,23 +11821,23 @@ model_type_list = ['OLS_fixed_intercept']
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = True
-baseline_length_thresh_lambda = 0.5
+plot_only = False
+baseline_length_thresh_lambda = 0.23
 include_angular_info = True
 
 
 #up to here with plot_only = False
 #chan_num = 90 - 64
-#chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+chan_num = 0
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
 #wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
 wsclean=True # for data
 fast=False
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
