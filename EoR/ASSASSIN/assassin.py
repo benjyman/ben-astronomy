@@ -4288,8 +4288,8 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
 
 def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True):
    #for plot_expected_rms_noise_eda2 below
-   int_time = 0.28 * 5.
-   bw_Hz = 27. * fine_chan_width_Hz
+   int_time = 4.*60. #0.28 * 5.
+   bw_Hz = 1000000 #27. * fine_chan_width_Hz
 
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
@@ -11821,7 +11821,7 @@ model_type_list = ['OLS_fixed_intercept']
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -11837,7 +11837,7 @@ EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #sim for paper plot 1 
 wsclean=True # for data
 fast=False
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
