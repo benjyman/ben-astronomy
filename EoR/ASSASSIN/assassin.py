@@ -197,7 +197,7 @@ pol_list = ['X']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise']
-signal_type_list=['global_EDGES']
+signal_type_list=['global_EDGES','noise']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
