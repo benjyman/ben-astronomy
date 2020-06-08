@@ -4134,6 +4134,8 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    pol = pol_list[0]
    freq_MHz_array = np.asarray(freq_MHz_list)
    
+   linestyle_list = ['--','-.',':']
+   
    lst_string = '_'.join(lst_hrs_list)
    lst_hrs = lst_hrs_list[0]
    
@@ -4242,10 +4244,11 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       #print fitpars,std_devs
     
    #plot the recovered polynomial and recovered global signal separately 
+   #fig8a paper1
    plt.clf()
    for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
-      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='recovered order %s' % poly_order_list[joint_fit_global_EDGES_index])
-   plt.plot(freq_MHz_array_okay,global_signal_model_okay,label='EDGES input',linestyle='dashed')
+      plt.plot(freq_MHz_array_okay,joint_fit_global_EDGES,label='recovered order %s' % poly_order_list[joint_fit_global_EDGES_index],linestyle=linestyle_list[joint_fit_global_EDGES_index])
+   plt.plot(freq_MHz_array_okay,global_signal_model_okay,label='EDGES input',linestyle='-')
    map_title="t_sky gobal EDGES joint fit" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("T_sky (K)")
@@ -4256,6 +4259,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
    
+   #fig8b paper 1
    plt.clf()
    for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
       plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s' % poly_order_list[joint_fit_global_EDGES_index])
