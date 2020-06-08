@@ -4287,7 +4287,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       
    map_title="residuals from joint fitting" 
    plt.xlabel("Frequency (MHz)")
-   plt.ylabel("Residual T_sky (K)")
+   plt.ylabel("Residual Tb (K)")
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    #plt.ylim([0, 20])
