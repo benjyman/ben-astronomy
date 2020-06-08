@@ -4622,6 +4622,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    
    model_type_linestyle_list = ['--','-.']
+   color_list=[color_dark_blue,color_orange_red]
    #unflagged
    plt.clf()
    for model_type_index,model_type in enumerate(model_type_list):
@@ -4660,7 +4661,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print(t_sky_theoretical_array)
       print(freq_MHz_list)
       #fig5 and fig6a, paper 1 
-      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle=model_type_linestyle_list[model_type_index],alpha=0.7)
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_list[model_type_index],linestyle=model_type_linestyle_list[model_type_index],alpha=0.7)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
