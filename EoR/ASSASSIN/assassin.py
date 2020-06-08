@@ -4283,7 +4283,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       max_abs_residuals = np.max(np.abs(residuals)) * 0.9
 
       #plot residuals
-      plt.plot(freq_MHz_array_okay,residuals,label='Residuals poly order %s' % poly_order_list[joint_fit_index] )
+      plt.plot(freq_MHz_array_okay,residuals,label='Residuals poly order %s' % poly_order_list[joint_fit_index],linestyle=linestyle_list[joint_fit_global_EDGES_index])
       
    map_title="residuals from joint fitting" 
    plt.xlabel("Frequency (MHz)")
@@ -4291,7 +4291,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    #plt.ylim([0, 20])
-   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string,linestyle=linestyle_list[joint_fit_global_EDGES_index])
+   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
