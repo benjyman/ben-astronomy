@@ -4973,7 +4973,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #no error bar plot what we want
    plt.clf()
-   linestyle_list=['-','--']
+   linestyle_list=['--','-']
    for model_type_index,model_type in enumerate(model_type_list):
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
