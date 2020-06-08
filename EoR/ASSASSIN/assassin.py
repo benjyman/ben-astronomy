@@ -4259,7 +4259,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
    
-   #fig8b paper 1
+   
    plt.clf()
    for joint_fit_global_EDGES_index,joint_fit_global_EDGES in enumerate(joint_fit_global_EDGES_list):
       plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s' % poly_order_list[joint_fit_global_EDGES_index],linestyle=linestyle_list[joint_fit_global_EDGES_index])
@@ -4274,7 +4274,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
    
    
-   
+   #fig8b paper 1
    #residuals from fit:\
    plt.clf()
    for joint_fit_index,joint_fit in enumerate(joint_fit_list):
@@ -4291,7 +4291,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.legend(loc=1)
    plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    #plt.ylim([0, 20])
-   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
+   fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string,linestyle=linestyle_list[joint_fit_global_EDGES_index])
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
