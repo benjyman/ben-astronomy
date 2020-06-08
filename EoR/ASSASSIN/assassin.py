@@ -4251,7 +4251,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.plot(freq_MHz_array_okay,global_signal_model_okay,label='EDGES input',linestyle='-',alpha=0.7)
    map_title="t_sky gobal EDGES joint fit" 
    plt.xlabel("Frequency (MHz)")
-   plt.ylabel("T_sky (K)")
+   plt.ylabel("Sky temperature (K)")
    plt.legend(loc="lower right")
    #plt.ylim([0, 20])
    fig_name= "t_sky_joint_fit_global_EDGES_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
@@ -4265,7 +4265,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       plt.plot(freq_MHz_array_okay,joint_fit_diffuse_global_foreground,label='Diffuse poly order %s' % poly_order_list[joint_fit_global_EDGES_index],linestyle=linestyle_list[joint_fit_global_EDGES_index])
    map_title="t_sky diffuse joint fit" 
    plt.xlabel("Frequency (MHz)")
-   plt.ylabel("T_sky (K)")
+   plt.ylabel("Sky temperature (K)")
    plt.legend(loc=1)
    #plt.ylim([0, 20])
    fig_name= "t_sky_joint_fit_diffuse_global_foreground_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
