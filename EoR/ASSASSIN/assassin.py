@@ -4620,9 +4620,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    else:
       length_freq_MHz_fine_chan_to_plot = len(freq_MHz_list)
    
+   
+   model_type_linestyle_list = ['--','-.']
    #unflagged
    plt.clf()
-   for model_type in model_type_list:
+   for model_type_index,model_type in enumerate(model_type_list):
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
          if EDA2_data:
@@ -4658,12 +4660,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print(t_sky_theoretical_array)
       print(freq_MHz_list)
       #fig5 and fig6a, paper 1 
-      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle='-',alpha=0.7)
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle=model_type_linestyle_list[model_type_index],alpha=0.7)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
-      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_orange_red,linestyle=':')
- 
+      #plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_orange_red,linestyle=':')
+      #fig9:
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_green,linestyle=':')
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
    #if include_angular_info:
