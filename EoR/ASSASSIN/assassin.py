@@ -4680,6 +4680,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
   
+   
+  
    ###Also plot the average measurement for each EDA2 coarse chan
    t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
    t_sky_measure_av_per_EDA2_chan_err = np.full(len(freq_MHz_list),np.nan)
