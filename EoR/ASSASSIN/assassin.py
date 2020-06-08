@@ -2246,7 +2246,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Global response (unity sky)',color=color_dark_blue,marker='+')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=2,label='Visibility amplitude (simulations)',color=color_orange_red,marker='.') #% real_or_simulated_string)
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Visibility amplitude (simulations)',color=color_orange_red,marker='.') #% real_or_simulated_string)
          #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
@@ -2255,7 +2255,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #plt.ylim([0, 20])
          fig_name= "X_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          figmap = plt.gcf()
-         figmap.savefig(fig_name,dpi=1000)
+         figmap.savefig(fig_name,dpi=100)
          print("saved %s" % fig_name) 
          
          
