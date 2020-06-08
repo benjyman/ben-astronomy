@@ -4651,8 +4651,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #print(freq_MHz_fine_array)
       #print(freq_MHz_fine_array.shape)
       # 
-      #print(t_sky_theoretical_array)
-      #print(freq_MHz_list)
+      print(t_sky_theoretical_array)
+      print(freq_MHz_list)
       #fig5, paper 1
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle='-',alpha=0.7)
    if len(freq_MHz_list)==1:
