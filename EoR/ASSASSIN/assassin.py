@@ -4973,7 +4973,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #no error bar plot what we want
    plt.clf()
-   for model_type in model_type_list:
+   linestyle_list=['-','--']
+   for model_type_index,model_type in enumerate(model_type_list):
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
       if model_type=='OLS_fixed_intercept':
          if EDA2_data:
@@ -4982,11 +4983,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #label1='ignore angular response'
             label1='residual from log fit'
          y_offset=1
-         colour='tab:blue'
+         #colour='tab:blue'
+         colour=color_dark_blue
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
          y_offset=0
-         colour='tab:orange'
+         #colour='tab:orange'
+         colour=color_orange_red
       else:
          label1='recovered'
       
@@ -5042,10 +5045,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print(sky_array)
       print(residual_of_log_fit)
       
-      plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
-      #plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+      plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
+      plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       #plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
-      plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+      #plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
        
       #comment out for fig9b
       #expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
