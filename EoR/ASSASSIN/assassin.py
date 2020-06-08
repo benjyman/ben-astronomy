@@ -4649,14 +4649,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #print(freq_MHz_fine_array)
       #print(freq_MHz_fine_array.shape)
       # 
-      print(t_sky_theoretical_array)
-      print(freq_MHz_list)
-      
-      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
+      #print(t_sky_theoretical_array)
+      #print(freq_MHz_list)
+      #fig5, paper 1
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle='-')
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
-      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_orange_red,linestyle='.')
  
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
@@ -4674,13 +4674,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    if EDA2_data:
       plt.ylim([500, 5000])
    else:
-      plt.ylim([0, 4000])
+      #plt.ylim([0, 4000])
+      #fig5:
+      plt.ylim([0.1, -0.6])
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
   
-   
+   sys.exit()
   
    ###Also plot the average measurement for each EDA2 coarse chan
    t_sky_measure_av_per_EDA2_chan = np.full(len(freq_MHz_list),np.nan)
@@ -11861,7 +11863,7 @@ poly_order=7
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
