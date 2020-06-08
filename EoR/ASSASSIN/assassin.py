@@ -2224,6 +2224,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #thresh 2.0 lambda
          #make sure using new numbering sys for freq e.g. 70.000_MHz not 70_MHz
          ## plot X and real vis vs baseline length
+         print(baseline_length_array_lambda_sorted_cut.shape)
+         print(X_short_parallel_array_norm.shape)
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2',color=color_light_blue,marker='.')
          plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color=color_orange,linestyle='--')
