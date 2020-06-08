@@ -1744,9 +1744,9 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             #thresh 2.0 lambda
             ## plot X and real vis vs baseline length
             plt.clf()
-            plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2')
-            plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color='red')
-            plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='inline',color='green')
+            plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2',color='#377eb8',marker='.')
+            plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color='#ff7f00',linestyle='--')
+            plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_inline,label='inline',color='#4daf4a',linestyle='-')
             #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_offset,s=1,label='real vis norm')
             #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
             map_title="Response to uniform sky vs baseline length" 
