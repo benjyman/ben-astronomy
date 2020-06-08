@@ -2215,7 +2215,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #real_vis_data_sorted_array_norm_offset = real_vis_data_sorted_array_norm + 0.5
          #need to multiply (scale) not add!
          #real_vis_data_sorted_array_norm_scaled = real_vis_data_sorted_array_norm * 2. / (2.*np.pi)
-         #for fig4:
+         #for fig4a:
          real_vis_data_sorted_array_norm_scaled = X_short_parallel_array_norm * (-0.4)
          
          #plot X and pure inline and parallel for fig 1 of paper
@@ -11876,7 +11876,7 @@ wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
 #wsclean=True # for data
 fast=False
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=True
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
