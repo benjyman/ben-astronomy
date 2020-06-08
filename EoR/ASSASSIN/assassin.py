@@ -193,10 +193,10 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-#signal_type_list=['diffuse','noise']
+signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
-signal_type_list=['diffuse_global','noise','global_EDGES']
+#signal_type_list=['diffuse_global','noise','global_EDGES']
 #signal_type_list=['global_EDGES','noise']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
@@ -11887,7 +11887,7 @@ wsclean=False # for sims or miriad cal
 fast=False
 no_modelling=True
 calculate_uniform_response=False
-#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
 #Need to change colors of plots throughout so they are suitable for color blindness and use dotted, dashed, or dot dashed lines instead of just colours (and different symbols in scatter plots)
 #See: https://davidmathlogic.com/colorblind/#%23D81B60-%231E88E5-%23FFC107-%23004D40     for colors to use
@@ -11901,7 +11901,7 @@ calculate_uniform_response=False
 #need to sim the actual LST of the obs. Wait for new data from Marcin (current 12/2/2020)
 
 
-joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order_list=poly_order_list,global_signal_model=s_21_array_EDGES,plot_only=plot_only)
+#joint_model_fit_t_sky_measured(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order_list=poly_order_list,global_signal_model=s_21_array_EDGES,plot_only=plot_only)
 
 
 #model_tsky_from_saved_data(freq_MHz=50,lst_hrs=2,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label)
