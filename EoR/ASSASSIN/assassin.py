@@ -1770,8 +1770,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             print("saved %s" % fig_name) 
             ##
             
-            sys.exit()
-            
             ## plot X and real vis vs baseline length for fig2
             plt.clf()
             plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
@@ -2223,6 +2221,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          #This is paper 1, fig3, at 70 MHz, /md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_EDGES/x_pol
          #thresh 2.0 lambda
+         #make sure using new numbering sys for freq e.g. 70.000_MHz not 70_MHz
          ## plot X and real vis vs baseline length
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2',color=color_light_blue,marker='.')
@@ -2240,12 +2239,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          ##
-      
-         ## plot X and real vis vs baseline length for fig2
+         
+         sys.exit()
+         
+         ## plot X and real vis vs baseline length for fig4, paper 1
          
          plt.clf()
-         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Global response (unity sky)')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Visibility amplitude (simulations)') #% real_or_simulated_string)
+         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Global response (unity sky)',color=color_dark_blue,marker='+')
+         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_norm_scaled,s=1,label='Visibility amplitude (simulations)',color=color_orange_red,marker='.') #% real_or_simulated_string)
          #plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
