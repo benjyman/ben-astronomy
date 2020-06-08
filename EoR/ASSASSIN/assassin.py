@@ -14,7 +14,6 @@ import os,sys
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 from astropy.time import Time
 from astropy.time import TimeDelta
 import astropy.units as u
