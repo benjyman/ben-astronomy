@@ -4283,7 +4283,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
       max_abs_residuals = np.max(np.abs(residuals)) * 0.9
 
       #plot residuals
-      plt.plot(freq_MHz_array_okay,residuals,label='Residuals poly order %s' % poly_order_list[joint_fit_index],linestyle=linestyle_list[joint_fit_global_EDGES_index])
+      plt.plot(freq_MHz_array_okay,residuals,label='Residuals poly order %s' % poly_order_list[joint_fit_index],linestyle=linestyle_list[joint_fit_index])
       
    map_title="residuals from joint fitting" 
    plt.xlabel("Frequency (MHz)")
