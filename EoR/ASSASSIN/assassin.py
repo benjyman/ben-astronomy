@@ -4381,8 +4381,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    t_sky_measured_angular_array_filename = "t_sky_measured_angular_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
    
    #freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
-   n_baselines_used_array_filename = "n_baselines_included_lst_%s%s.npy" % (lst_string,signal_type_postfix)
-   
+   #n_baselines_used_array_filename = "n_baselines_included_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+   n_baselines_used_array_filename = "n_baselines_used_array_lsts_%s%s.npy" % (lst_string,signal_type_postfix)
    
    if not plot_only:
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
