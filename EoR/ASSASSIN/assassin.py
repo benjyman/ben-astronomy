@@ -2261,9 +2261,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          print("saved %s" % fig_name) 
          
          
-         sys.exit()
-         
-         
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
          
          if include_angular_info:
@@ -11867,9 +11864,9 @@ include_angular_info = True
 
 #up to here with plot_only = False
 #chan_num = 90 - 64 #90 = 70MHz
-chan_num = 20
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#chan_num = 20
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
 wsclean=False # for sims or miriad cal
@@ -11877,7 +11874,7 @@ wsclean=False # for sims or miriad cal
 #wsclean=True # for data
 fast=False
 no_modelling=True
-calculate_uniform_response=True
+calculate_uniform_response=False
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
 #Need to change colors of plots throughout so they are suitable for color blindness and use dotted, dashed, or dot dashed lines instead of just colours (and different symbols in scatter plots)
