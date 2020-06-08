@@ -2240,7 +2240,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          print("saved %s" % fig_name) 
          ##
          
-         sys.exit()
+         
          
          ## plot X and real vis vs baseline length for fig4, paper 1
          
@@ -2258,6 +2258,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          
+         
+         sys.exit()
          
          
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
