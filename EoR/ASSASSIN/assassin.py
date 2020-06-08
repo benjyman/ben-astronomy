@@ -196,8 +196,8 @@ pol_list = ['X']
 #signal_type_list=['diffuse','noise']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
-#signal_type_list=['diffuse_global','noise']
-signal_type_list=['global_EDGES','noise']
+signal_type_list=['diffuse_global','noise']
+#signal_type_list=['global_EDGES','noise']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -4625,7 +4625,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             label1='measured sky temp.'
          else:
             #label1='ignore angular response'
-            #fig5: 
+            #fig5: and fig6a
             label1='recovered'
             label2='input'
       elif  model_type=='OLS_fixed_int_subtr_Y':
@@ -4653,7 +4653,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       # 
       print(t_sky_theoretical_array)
       print(freq_MHz_list)
-      #fig5, paper 1
+      #fig5 and fig6a, paper 1 
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_dark_blue,linestyle='-',alpha=0.7)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
@@ -4675,8 +4675,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   #else:
-      #plt.ylim([0, 4000])
+   else:
+      plt.ylim([0, 4000])
       #commented out for fig5
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
