@@ -4624,7 +4624,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          if EDA2_data:
             label1='measured sky temp.'
          else:
-            label1='ignore angular response'
+            #label1='ignore angular response'
+            #fig5: 
+            label1='recovered'
+            label2='input'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
       else:
@@ -4672,10 +4675,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
+   #else:
       #plt.ylim([0, 4000])
-      #fig5:
-      plt.ylim([0.1, -0.6])
+      #commented out for fig5
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
