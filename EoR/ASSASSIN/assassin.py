@@ -11751,6 +11751,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #Step 1: simulate
 
+#need to re-simulate diffuse_global_noise?
+
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+freq_MHz_array = np.asarray(freq_MHz_list)
+lst_hrs_list=['2']
+#poly_order_list=[5,6,7]
+poly_order=7
 
 #cd into each chan dir separately and run simulate to get apparent sky images (don't worry that it crashes on concat freq step)
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
@@ -11758,7 +11765,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #sims:
 #freq_MHz_list=[50.]
 #lst_hrs_list = ['2']
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+sys.exit()
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
