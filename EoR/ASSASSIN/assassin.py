@@ -4634,7 +4634,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #label1='ignore angular response'
             #fig5: and fig6a
             #label1='recovered'
-            #fig9:
+            #fig9a:
             label1='ignore angular response'
             label2='input'
       elif  model_type=='OLS_fixed_int_subtr_Y':
@@ -4989,9 +4989,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          colour='tab:orange'
       else:
          label1='recovered'
-         
-      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      
+      #for fig9b change this to unflagged
+      #t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       
     
@@ -5035,7 +5039,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #y=_max = 100
       #y_min = -100
       
-      print(t_sky_measured_array)
+      print(sky_array)
       print(residual_of_log_fit)
       
       plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
@@ -5046,7 +5050,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #comment out for fig9b
       #expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
       #plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
-         
+   
+   #fig9b paper1
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("freq (MHz)")
