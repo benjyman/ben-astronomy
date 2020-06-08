@@ -2110,8 +2110,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    if EDA2_data==True:
       sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)
    else:
-      #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
-      sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
    #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
    freq_MHz_index = int(freq_MHz - 50)
    diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
@@ -3696,8 +3695,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
             diffuse_global_value = diffuse_global_value_array[0]
          else:
-            diffuse_global_value = diffuse_global_value_array[0]
-            #diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
+            #diffuse_global_value = diffuse_global_value_array[0]
+            diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
          
          #ov1 = GlobalSkyModel()
          
