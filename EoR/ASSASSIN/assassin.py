@@ -4633,7 +4633,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          else:
             #label1='ignore angular response'
             #fig5: and fig6a
-            label1='recovered'
+            #label1='recovered'
+            #fig9:
+            label1='ignore angular response'
             label2='input'
       elif  model_type=='OLS_fixed_int_subtr_Y':
          label1='subtract angular response'
