@@ -4660,8 +4660,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #print(freq_MHz_fine_array)
       #print(freq_MHz_fine_array.shape)
       # 
-      print(t_sky_theoretical_array)
-      print(freq_MHz_list)
+      #print(t_sky_theoretical_array)
+      #print(freq_MHz_list)
       #fig5 and fig6a, paper 1 
       plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_list[model_type_index],linestyle=model_type_linestyle_list[model_type_index],alpha=0.7)
    if len(freq_MHz_list)==1:
@@ -5034,14 +5034,18 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       ##temporary just for paper:
       #y=_max = 100
       #y_min = -100
-   
+      
+      print(t_sky_measured_array)
+      print(residual_of_log_fit)
+      
       plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
       #plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       #plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
-   
-      expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-      plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
+       
+      #comment out for fig9b
+      #expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+      #plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
          
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
