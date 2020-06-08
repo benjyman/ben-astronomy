@@ -59,7 +59,7 @@ iers.conf.auto_download = False
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
 color_black = '#000000'
 color_orange='#E69F00'
-color_light_blue = '#E69F00'
+color_light_blue = '#56B4E9'
 color_green = '#009E73'
 color_yellow = '#F0E442'
 color_dark_blue = '#0072B2'
