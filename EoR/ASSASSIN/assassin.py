@@ -4655,7 +4655,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
-      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_orange_red,linestyle='.')
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_orange_red,linestyle=':')
  
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
