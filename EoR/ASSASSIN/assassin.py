@@ -11861,7 +11861,7 @@ poly_order=7
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
