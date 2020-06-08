@@ -4128,7 +4128,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #print "saved figure: %s" % figname
          #plt.close()    
 
-def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order_list,global_signal_model,plot_only=False):
+def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order_list,global_signal_model,plot_only=False,model_type='OLS_fixed_intercept'):
 
    poly_order_list_string = '_'.join(str(e) for e in poly_order_list)
    pol = pol_list[0]
