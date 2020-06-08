@@ -4621,7 +4621,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       length_freq_MHz_fine_chan_to_plot = len(freq_MHz_list)
    
    
-   model_type_linestyle_list = ['--','-.']
+   model_type_linestyle_list = ['--','-']
    color_list=[color_dark_blue,color_orange_red]
    #unflagged
    plt.clf()
