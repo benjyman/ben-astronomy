@@ -11852,8 +11852,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -11901,9 +11901,9 @@ freq_MHz_list = [freq_MHz_array[chan_num]]
 EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
-wsclean=False # for sims or miriad cal
+#wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-#wsclean=True # for data
+wsclean=True # for data
 fast=False
 no_modelling=False
 calculate_uniform_response=False
