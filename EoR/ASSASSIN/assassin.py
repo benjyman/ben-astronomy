@@ -4795,7 +4795,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    figmap.savefig(fig_name)
    print("saved %s" % fig_name) 
    
-   ####Flagged
+   ####Flagged fig11 paper1
    plt.clf()
    for model_type in model_type_list:
       #['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
@@ -4821,11 +4821,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
       freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
-      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1)
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,linestyle='-')
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
-      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
  
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
@@ -4914,13 +4914,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measure_av_per_EDA2_chan_weighted = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err_weighted = t_sky_measured_error_array
          
-      plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1)
+      plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1,linestyle='-')
       #if EDA2_data:
       #   plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan_weighted,yerr=t_sky_measure_av_per_EDA2_chan_err_weighted,label=label3)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
-      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2)
+      plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
    
    #if 'diffuse_global' in signal_type_list:
    #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
