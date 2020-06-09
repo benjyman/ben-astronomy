@@ -2298,7 +2298,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #plt.ylim([0, 20])
          fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          figmap = plt.gcf()
-         figmap.savefig(fig_name,dpi=1000)
+         figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          
          
@@ -2326,7 +2326,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #plt.ylim([0, 20])
          fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          figmap = plt.gcf()
-         figmap.savefig(fig_name)
+         figmap.savefig(fig_name,dpi=1000)
          print("saved %s" % fig_name) 
          
          sys.exit()
