@@ -11897,10 +11897,10 @@ include_angular_info = True
 
 
 #up to here with plot_only = False
-chan_num = 90 - 64 #90 = 70MHz
+#chan_num = 90 - 64 #90 = 70MHz
 #chan_num = 20
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
 #wsclean=False # for sims or miriad cal
