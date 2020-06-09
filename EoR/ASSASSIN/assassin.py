@@ -5194,18 +5194,19 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
                
    #n baselines plot
-   plt.clf()
-   plt.plot(freq_MHz_list,n_baselines_used_array)
-   map_title="n_baselines_included" 
-   plt.xlabel("freq (MHz)")
-   plt.ylabel("number of baselines")
-   #plt.legend(loc=1)
-   #plt.ylim([0, 20])
-   fig_name= "n_baselines_included_lst_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name) 
-   plt.close()  
+   if not EDA2_data:
+      plt.clf()
+      plt.plot(freq_MHz_list,n_baselines_used_array)
+      map_title="n_baselines_included" 
+      plt.xlabel("freq (MHz)")
+      plt.ylabel("number of baselines")
+      #plt.legend(loc=1)
+      #plt.ylim([0, 20])
+      fig_name= "n_baselines_included_lst_%s%s_%s.png" % (lst_string,signal_type_postfix,model_type)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      plt.close()  
            
 def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselines_used_array,int_time,bandwidth_Hz):
    print("plotting expected noise")
