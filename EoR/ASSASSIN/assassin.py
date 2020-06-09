@@ -2605,10 +2605,11 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.clf()
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_flagged_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
-
+ 
+      #fig10 (and 5b and 6b for sims i think)
       map_title="Flagged data and fit" 
       plt.xlabel("Global response (unity sky)")
-      plt.ylabel("Visibility amplitude (simulations)")
+      plt.ylabel("Visibility amplitude (K)")
       plt.legend(loc=1)
       plt.text(x_pos_K, y_pos_K, fit_string_K)
       #plt.ylim([0, 3.5])
