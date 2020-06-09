@@ -5019,7 +5019,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #subtract a polynomial fit
       #in log log space:
       sky_array = t_sky_measured_array[t_sky_measured_array>0.]
-      t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
+      #t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
       n_baselines_used_array_cut = n_baselines_used_array[t_sky_measured_array>0.]
       
       log_sky_array = np.log10(sky_array)
