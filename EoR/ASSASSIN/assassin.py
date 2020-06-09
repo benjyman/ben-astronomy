@@ -4821,7 +4821,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
       freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
-      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,linestyle='-',alpha=0.5)
+      plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,linestyle='-',alpha=0.7)
    if len(freq_MHz_list)==1:
       plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
    else:
@@ -4914,7 +4914,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measure_av_per_EDA2_chan_weighted = t_sky_measured_array
          t_sky_measure_av_per_EDA2_chan_err_weighted = t_sky_measured_error_array
          
-      plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1,linestyle='-',alpha=0.5)
+      plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan,yerr=t_sky_measure_av_per_EDA2_chan_err,label=label1,linestyle='-',alpha=0.7)
       #if EDA2_data:
       #   plt.errorbar(freq_MHz_list,t_sky_measure_av_per_EDA2_chan_weighted,yerr=t_sky_measure_av_per_EDA2_chan_err_weighted,label=label3)
    if len(freq_MHz_list)==1:
