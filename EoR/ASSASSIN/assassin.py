@@ -1919,7 +1919,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             real_vis_data_sorted_array_flagged = np.copy(real_vis_data_sorted_array_nonans)
             real_vis_data_sorted_array_flagged[(np.abs(real_vis_data_sorted_array_subtr_model) > thresh)] = np.nan
             
-            sys.exit()
          
             #get rid of nans
             #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
@@ -2543,7 +2542,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    plt.close()
    print("saved %s" % fig_name)  
    
-
+   
    
    #now use the fit to identify outliers probably due to rfi
    #subtract the model from the data
@@ -2618,6 +2617,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name) 
+      
+      sys.exit()
       
    else:
       t_sky_jy = np.nan
