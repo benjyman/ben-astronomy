@@ -82,6 +82,7 @@ def regrid_optical(template_imagename,input_imagename):
    os.system(cmd)   
 
 def edit_optical_header(optical_image,edhead_image_output_name):
+   n_decimals = 15
    with fits.open(optical_image) as hdulist:
       data = hdulist[0].data
       header1 = hdulist[0].header
@@ -92,24 +93,24 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    del header1['CD2_1']
    del header1['CD2_2']   
    cdelt_old = header1['CDELT1']  
-   cdelt_new = np.abs(float(cdelt_old))
+   cdelt_new = np.around(np.abs(float(cdelt_old)),decimals=n_decimals)
    header1['CDELT1'] = cdelt_new
-   cdelt_new = np.abs(float(header1['CDELT2']))
+   cdelt_new = np.around(np.abs(float(header1['CDELT2'])),decimals=n_decimals)
    header1['CDELT2'] = cdelt_new  
    #actually these all need to be in the right numeric format
-   old_val = float(header1['CRPIX1'])
+   old_val = np.around(float(header1['CRPIX1']),decimals=n_decimals)
    header1['CRPIX1'] = old_val
-   old_val = float(header1['CRPIX2'])
+   old_val = np.around(float(header1['CRPIX2']),decimals=n_decimals)
    header1['CRPIX2'] = old_val
-   old_val = float(header1['CRVAL1'])
+   old_val = np.around(float(header1['CRVAL1']),decimals=n_decimals)
    header1['CRVAL1'] = old_val   
-   old_val = float(header1['CRVAL2'])
+   old_val = np.around(float(header1['CRVAL2']),decimals=n_decimals)
    header1['CRVAL2'] = old_val      
-   old_val = float(header1['CDELT1'])
+   old_val = np.around(float(header1['CDELT1']),decimals=n_decimals)
    header1['CDELT1'] = old_val        
-   old_val = float(header1['CROTA1'])
+   old_val = np.around(float(header1['CROTA1']),decimals=n_decimals)
    header1['CROTA1'] = old_val    
-   old_val = float(header1['CROTA2'])
+   old_val = np.around(float(header1['CROTA2']),decimals=n_decimals)
    header1['CROTA2'] = old_val     
    
    
