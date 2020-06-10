@@ -138,7 +138,7 @@ template_imagename = 'CenA_optical_template-image.fits'
 #input_name_list = ['1_Stacked_Image.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
-input_name_list = ['CenA_WCS_Ha_edhead.fits']
+input_name_list = ['CenA_WCS_Ha.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
