@@ -85,7 +85,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
       data = hdulist[0].data
       header1 = hdulist[0].header
   
-   del header1['CD_1']
+   del header1['CD1_1']
    del header1['CD1_2']
    del header1['CD2_1']
    del header1['CD2_2']   
@@ -113,7 +113,7 @@ template_imagename = 'CenA_optical_template-image.fits'
 #regrid all of the 'new connor' images so that we can clearly show the new filament, that it is not a HII region,
 # and how it lines up with the radio (and x-ray!) and is a similar distance from the core to the inner filament in the north
 #in benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor/new_connor
-#first edit the headers    #Detele  the CD_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
+#first edit the headers    #Detele  the CD1_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
 input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('fits')[0]+'_edhead.fits'
