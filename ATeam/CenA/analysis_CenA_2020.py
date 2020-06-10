@@ -2,6 +2,7 @@
 #code to analyse CenA data including flux-scale setting and measurements for paper
 
 import os,sys
+from astropy.io import fits
 
 def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    #get this from image using masking etc eventually, for now just use kvis
@@ -79,6 +80,23 @@ def regrid_optical(template_imagename,input_imagename):
    print(cmd)
    os.system(cmd)   
 
+def edit_optical_header(optical_image,edhead_image_output_name):
+   with fits.open(optical_image) as hdulist:
+      data = hdulist[0].data
+      header1 = hdulist[0].header
+  
+   del header1['CD_1']
+   del header1['CD1_2']
+   del header1['CD2_1']
+   del header1['CD2_2']   
+   cdelt_old = header1['CDELT1']  
+   cdelt_new = float(cdelt_old)*-1.0
+   header1['CDELT1'] = cdelt_new
+   
+   #write new fits file
+   pyfits.writeto(edhead_image_output_name,data,clobber=True)
+   pyfits.update(edhead_image_output_name,data,header=header1)
+   print("wrote image %s" %  edhead_image_output_name)     
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 #get_scaling_factor_from_core(image_name,185.,-0.7)
@@ -88,7 +106,26 @@ def regrid_optical(template_imagename,input_imagename):
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
 template_imagename = 'CenA_optical_template-image.fits'
 #input_imagename = 'CenA_WCS_edhead.fits'
-input_imagename = 'CenA_WCS_Ha_edhead.fits'
-regrid_optical(template_imagename,input_imagename)
+#input_imagename = 'CenA_WCS_Ha_edhead.fits'
+#regrid_optical(template_imagename,input_imagename)
+
+#this works well.
+#regrid all of the 'new connor' images so that we can clearly show the new filament, that it is not a HII region,
+# and how it lines up with the radio (and x-ray!) and is a similar distance from the core to the inner filament in the north
+#in benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor/new_connor
+#first edit the headers    #Detele  the CD_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
+input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
+for input_name in input_name_list:
+   edhead_name = input_name.split('fits')[0]+'_edhead.fits'
+   edit_optical_header(input_name,edhead_name)
+   regrid_optical(template_imagename,edhead_name)
+   
+
+
+
+
+
+
+
 
 
