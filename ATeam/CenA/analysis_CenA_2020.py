@@ -125,8 +125,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
 template_imagename = 'CenA_optical_template-image.fits'
 #input_imagename = 'CenA_WCS_edhead.fits'
 #input_imagename = 'CenA_WCS_Ha_edhead.fits'
-
-regrid_optical(template_imagename,input_imagename)
+#regrid_optical(template_imagename,input_imagename)
 
 #this works well.
 #regrid all of the 'new connor' images so that we can clearly show the new filament, that it is not a HII region,
@@ -137,6 +136,7 @@ regrid_optical(template_imagename,input_imagename)
 #input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 #input_name_list = ['1_Stacked_Image.fits']
 input_name_list = ['CenA_WCS_edhead.fits']
+#input_name_list = ['CenA_WCS_Ha_edhead.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
