@@ -112,7 +112,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    header1['CROTA2'] = old_val     
    
    print header1
-   sys.exit()
+   #sys.exit()
    
    #write new fits file
    fits.writeto(edhead_image_output_name,data,clobber=True)
