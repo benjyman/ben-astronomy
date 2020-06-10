@@ -82,6 +82,8 @@ def regrid_optical(template_imagename,input_imagename):
    os.system(cmd)   
 
 def edit_optical_header(optical_image,edhead_image_output_name):
+   #if the regridding doesnt seem to get the RA or DEC going the right way it is 
+   #probably because the cdelt is the wrong sign. multiply by -1. below
    n_decimals = 10
    with fits.open(optical_image) as hdulist:
       data = hdulist[0].data
