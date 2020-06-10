@@ -119,7 +119,7 @@ template_imagename = 'CenA_optical_template-image.fits'
 input_name_list = ['1_Stacked_Image.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
-   #edit_optical_header(input_name,edhead_name)
+   edit_optical_header(input_name,edhead_name)
    regrid_optical(template_imagename,edhead_name)
    
 
