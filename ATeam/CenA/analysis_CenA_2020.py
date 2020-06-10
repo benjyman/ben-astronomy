@@ -93,6 +93,8 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    cdelt_old = header1['CDELT1']  
    cdelt_new = np.abs(float(cdelt_old))
    header1['CDELT1'] = cdelt_new
+   cdelt_new = np.abs(float(header1['CDELT2']))
+   header1['CDELT2'] = cdelt_new  
    #actually these all need to be in the right numeric format
    old_val = float(header1['CRPIX1'])
    header1['CRPIX1'] = old_val
@@ -103,9 +105,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    old_val = float(header1['CRVAL2'])
    header1['CRVAL2'] = old_val      
    old_val = float(header1['CDELT1'])
-   header1['CDELT1'] = old_val      
-   old_val = float(header1['CDELT2'])
-   header1['CDELT2'] = old_val    
+   header1['CDELT1'] = old_val        
    old_val = float(header1['CROTA1'])
    header1['CROTA1'] = old_val    
    old_val = float(header1['CROTA2'])
