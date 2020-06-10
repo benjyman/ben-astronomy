@@ -93,9 +93,6 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    cdelt_new = float(cdelt_old)*-1.0
    header1['CDELT1'] = cdelt_new
    
-   print header1
-   
-   sys.exit()
    #write new fits file
    fits.writeto(edhead_image_output_name,data,clobber=True)
    fits.update(edhead_image_output_name,data,header=header1)
@@ -122,7 +119,7 @@ input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
-   regrid_optical(template_imagename,edhead_name)
+   #regrid_optical(template_imagename,edhead_name)
    
 
 
