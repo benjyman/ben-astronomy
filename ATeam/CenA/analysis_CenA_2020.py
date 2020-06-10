@@ -94,7 +94,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    del header1['CD2_2']   
    cdelt_old = header1['CDELT1']  
    cdelt_new = np.around(np.abs(float(cdelt_old)),decimals=n_decimals)
-   header1['CDELT1'] = cdelt_new
+   header1['CDELT1'] = cdelt_new *-1.
    cdelt_new = np.around(np.abs(float(header1['CDELT2'])),decimals=n_decimals)
    header1['CDELT2'] = cdelt_new  *-1.
    #actually these all need to be in the right numeric format
