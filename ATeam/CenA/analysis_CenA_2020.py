@@ -116,7 +116,7 @@ template_imagename = 'CenA_optical_template-image.fits'
 #first edit the headers    #Detele  the CD1_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
 input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 for input_name in input_name_list:
-   edhead_name = input_name.split('fits')[0]+'_edhead.fits'
+   edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
    regrid_optical(template_imagename,edhead_name)
    
