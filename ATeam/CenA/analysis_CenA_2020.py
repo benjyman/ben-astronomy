@@ -113,7 +113,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    old_val = np.around(float(header1['CROTA2']),decimals=n_decimals)
    header1['CROTA2'] = old_val     
    
-   print header1
+   #print header1
    #sys.exit()
    
    #write new fits file
@@ -138,11 +138,11 @@ template_imagename = 'CenA_optical_template-image.fits'
 #in benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor/new_connor
 #first edit the headers    #Detele  the CD1_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
 #cp /md0/ATeam/CenA/paper_2020/optical/CenA_optical_template-image.fits .
-#input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
+input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 #input_name_list = ['1_Stacked_Image.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
-input_name_list = ['CenA_WCS_Ha.fits']
+#input_name_list = ['CenA_WCS_Ha.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
