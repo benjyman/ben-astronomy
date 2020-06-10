@@ -94,8 +94,8 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    header1['CDELT1'] = cdelt_new
    
    #write new fits file
-   pyfits.writeto(edhead_image_output_name,data,clobber=True)
-   pyfits.update(edhead_image_output_name,data,header=header1)
+   fits.writeto(edhead_image_output_name,data,clobber=True)
+   fits.update(edhead_image_output_name,data,header=header1)
    print("wrote image %s" %  edhead_image_output_name)     
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
