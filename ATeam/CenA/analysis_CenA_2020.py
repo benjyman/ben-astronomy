@@ -85,7 +85,8 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    with fits.open(optical_image) as hdulist:
       data = hdulist[0].data
       header1 = hdulist[0].header
-  
+   while('HISTORY' in header1):
+      del header1['HISTORY']
    del header1['CD1_1']
    del header1['CD1_2']
    del header1['CD2_1']
