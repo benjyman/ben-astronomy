@@ -105,14 +105,14 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    old_val = np.around(float(header1['CRVAL1']),decimals=n_decimals)
    header1['CRVAL1'] = old_val   
    old_val = np.around(float(header1['CRVAL2']),decimals=n_decimals)
-   header1['CRVAL2'] = old_val      
-   old_val = np.around(float(header1['CDELT1']),decimals=n_decimals)
-   header1['CDELT1'] = old_val        
+   header1['CRVAL2'] = old_val            
    old_val = np.around(float(header1['CROTA1']),decimals=n_decimals)
    header1['CROTA1'] = old_val    
    old_val = np.around(float(header1['CROTA2']),decimals=n_decimals)
    header1['CROTA2'] = old_val     
    
+   print header1
+   sys.exit()
    
    #write new fits file
    fits.writeto(edhead_image_output_name,data,clobber=True)
