@@ -82,7 +82,7 @@ def regrid_optical(template_imagename,input_imagename):
    os.system(cmd)   
 
 def edit_optical_header(optical_image,edhead_image_output_name):
-   n_decimals = 15
+   n_decimals = 5
    with fits.open(optical_image) as hdulist:
       data = hdulist[0].data
       header1 = hdulist[0].header
