@@ -3,6 +3,7 @@
 
 import os,sys
 from astropy.io import fits
+import numpy as np
 
 def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    #get this from image using masking etc eventually, for now just use kvis
@@ -90,7 +91,7 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    del header1['CD2_1']
    del header1['CD2_2']   
    cdelt_old = header1['CDELT1']  
-   cdelt_new = float(cdelt_old)*-1.0
+   cdelt_new = np.abs(float(cdelt_old))
    header1['CDELT1'] = cdelt_new
    #actually these all need to be in the right numeric format
    old_val = float(header1['CRPIX1'])
