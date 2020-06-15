@@ -138,7 +138,10 @@ template_imagename = 'CenA_optical_template-image.fits'
 #in benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor/new_connor
 #first edit the headers    #Detele  the CD1_1, CD1_2, CD2_1, CD2_2 rotation parameters, leave the CROTA and B, Change the CDELT parameters to both be positive
 #cp /md0/ATeam/CenA/paper_2020/optical/CenA_optical_template-image.fits .
-input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
+#new connor:
+#input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
+#mike sidonio:
+input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.fits']
 #input_name_list = ['1_Stacked_Image.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
@@ -148,6 +151,17 @@ for input_name in input_name_list:
    edit_optical_header(input_name,edhead_name)
    regrid_optical(template_imagename,edhead_name)
    
+#benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor
+#kvis ../../../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08.fits *_edhead_regridded.fits ../../x_ray/XMM_2001.fits 
+#or on Mac: ~/Documents/Astronomy/ATeam/CenA/2020_paper/draft/overlays/optical/new_connor/regridded/
+#kvis *_edhead_regridded.fits  ~/Documents/Astronomy/ATeam/CenA/CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits  ../../../x_ray/XMM_2001.fits  
+#radio contours 0.1 0.2 0.4 0.8 1 2 4 8 16 32 64
+#x xay contours 5 6 7 8 9
+#look at new filament at 13:24:34.9, -43:09:11.09
+#show doesnt get subtracted by HII regions, matches exactly with radio 'bulge'
+#dealing with HII regions: http://www.arciereceleste.it/tutorial-pixinsight/cat-tutorial-eng/85-enhance-galaxy-ha-eng
+
+
 
 
 
