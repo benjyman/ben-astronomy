@@ -148,8 +148,10 @@ input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.f
 #input_name_list = ['CenA_WCS_Ha.fits']
 for input_name in input_name_list:
    #edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
-   edit_optical_header(input_name,edhead_name)
-   regrid_optical(template_imagename,edhead_name)
+   #edit_optical_header(input_name,edhead_name)
+   #regrid_optical(template_imagename,edhead_name)
+   #try no edhead for mikes:
+   regrid_optical(template_imagename,input_name)
    
 #benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor
 #kvis ../../../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08.fits *_edhead_regridded.fits ../../x_ray/XMM_2001.fits 
