@@ -121,10 +121,44 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    fits.update(edhead_image_output_name,data,header=header1)
    print("wrote image %s" %  edhead_image_output_name)     
 
+def regrid_to_J2000(input_imagename):
+   imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
+   regridded_imagename = input_imagename.split('.fits')[0]+'_regridJ2000.image'
+   regridded_fitsname = input_imagename.split('.fits')[0]+'_regridJ2000.fits'
+
+   casa_string = "importfits(fitsimage='%s',imagename='%s',overwrite=True)" % (input_imagename,imported_input_imagename)
+   casa_filename = 'casa_import_fits2.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa --nocrashreport -c %s" % casa_filename
+   print(cmd)
+   os.system(cmd)
+    
+   casa_string = "imregrid(imagename='%s',output='%s',template='J2000',overwrite=True)" % (imported_input_imagename,regridded_imagename)
+   casa_filename = 'casa_imregrid.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa --nocrashreport -c %s" % casa_filename
+   print(cmd)
+   os.system(cmd)
+
+   casa_string = "exportfits(imagename='%s',fitsimage='%s',overwrite=True)" % (regridded_imagename,regridded_fitsname)
+   casa_filename = 'casa_export_fits.sh'
+   with open(casa_filename,'w') as f:
+      f.write(casa_string)
+   cmd = "casa --nocrashreport -c %s" % casa_filename
+   print(cmd)
+   os.system(cmd)   
+
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 #get_scaling_factor_from_core(image_name,185.,-0.7)
 
 #source_find_image(image_name)
+
+#regrid VLA image to J2000:
+#image_name = "NGC_5128_I_21cm_chs1996.fits"
+#regrid_to_J2000(image_name)
+#sys.exit()
 
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
 template_imagename = 'CenA_optical_template-image.fits'
@@ -141,17 +175,18 @@ template_imagename = 'CenA_optical_template-image.fits'
 #new connor:
 #input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 #mike sidonio:
-input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.fits']
+#input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.fits']
+input_name_list = ['CenA_Ha_1050min_median_solved.fits','CenA_Lum_1470min_median_grad_solved.fits']
 #input_name_list = ['1_Stacked_Image.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
 #input_name_list = ['CenA_WCS_Ha.fits']
 for input_name in input_name_list:
-   #edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
-   #edit_optical_header(input_name,edhead_name)
-   #regrid_optical(template_imagename,edhead_name)
+   edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
+   edit_optical_header(input_name,edhead_name)
+   regrid_optical(template_imagename,edhead_name)
    #try no edhead for mikes:
-   regrid_optical(template_imagename,input_name)
+   #regrid_optical(template_imagename,input_name)
    
 #benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor
 #kvis ../../../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08.fits *_edhead_regridded.fits ../../x_ray/XMM_2001.fits 
