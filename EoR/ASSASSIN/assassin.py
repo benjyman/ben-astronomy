@@ -626,7 +626,7 @@ def plot_S21(nu_array=None,C=0.,A=1.,delta_nu=20.,nu_c=78.):
    map_title="S_21 vs freq"
    plt.plot(nu_array,S_21)
    plt.ylabel("Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    fig_name="s_21_vs_freq.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -645,7 +645,7 @@ def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.
    map_title="S_21 vs freq"
    plt.plot(nu_array,S_21_EDGES)
    plt.ylabel("Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    fig_name="s_21_EDGES_vs_freq.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -1349,7 +1349,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                plt.plot(freq_MHz_array,residual,label='residual')
                map_title="Residual for polynomial order %s fit to diffuse" % poly_order
                plt.ylabel("Residual Tb (K)")
-               plt.xlabel("freq (MHz)")
+               plt.xlabel("Frequency (MHz)")
                plt.legend(loc=1)
                fig_name= "%s_residual_sky_average_beam_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
@@ -1367,7 +1367,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                #plt.plot(freq_MHz_array,residual,label='residual')
                #map_title="Residual for polynomial order %s fit to diffuse" % poly_order
                #plt.ylabel("Residual Tb (K)")
-               #plt.xlabel("freq (MHz)")
+               #plt.xlabel("Frequency (MHz)")
                #plt.legend(loc=1)
                #fig_name= "%s_residual_sky_average_beam_poly_%s.png" % (model_vis_name_base,poly_order)
                #figmap = plt.gcf()
@@ -1388,7 +1388,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                plt.plot(freq_MHz_array,residual_of_log_fit,label='residual of log fit')
                map_title="Residual for log polynomial order %s fit to diffuse" % poly_order
                plt.ylabel("Residual Tb (K)")
-               plt.xlabel("freq (MHz)")
+               plt.xlabel("Frequency (MHz)")
                plt.legend(loc=1)
                fig_name= "%s_log_fit_residual_sky_average_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
@@ -1400,7 +1400,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
                plt.plot(freq_MHz_array,sky_averaged_diffuse_array_beam_lsts,label=sky_model)
                map_title="Polynomial order %s fit %s" % (poly_order,sky_model)
                plt.ylabel("Tb (K)")
-               plt.xlabel("freq (MHz)")
+               plt.xlabel("Frequency (MHz)")
                plt.legend(loc=1)
                fig_name= "%s_log_fit_sky_average_poly_%s.png" % (model_vis_name_base,poly_order)
                figmap = plt.gcf()
@@ -1438,7 +1438,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual of log fit')
             #map_title="All base abs residual for log polynomial order %s fit to diffuse" % poly_order
             #plt.ylabel("All base abs residual Tb (K)")
-            #plt.xlabel("freq (MHz)")
+            #plt.xlabel("Frequency (MHz)")
             #plt.legend(loc=1)
             #fig_name= "%s_log_fit_residual_poly_%s_all_base_abs.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
@@ -1473,7 +1473,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual of log fit')
             #map_title="All base residual for log polynomial order %s fit to diffuse" % poly_order
             #plt.ylabel("All base residual Tb (K)")
-            #plt.xlabel("freq (MHz)")
+            #plt.xlabel("Frequency (MHz)")
             #plt.legend(loc=1)
             #fig_name= "%s_log_fit_residual_poly_%s_all_base.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
@@ -1497,7 +1497,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #plt.plot(freq_MHz_array,signal_array_short_baselines_Tb[0,:],label='data')
             #map_title="Polynomial order %s fit %s" % (poly_order,sky_model)
             #plt.ylabel("Extracted Tb (K)")
-            #plt.xlabel("freq (MHz)")
+            #plt.xlabel("Frequency (MHz)")
             #plt.legend(loc=1)
             #fig_name= "%s_model_short_poly_%s.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
@@ -1511,7 +1511,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             plt.plot(good_freq_MHz_array,residual,label='residual')
             map_title="Residual for polynomial order %s fit to diffuse" % poly_order
             plt.ylabel("Residual Tb (K)")
-            plt.xlabel("freq (MHz)")
+            plt.xlabel("Frequency (MHz)")
             plt.legend(loc=1)
             fig_name= "%s_residual_short_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
@@ -1533,7 +1533,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             #plt.plot(log_freq_MHz_array,log_residual,label='residual of log fit')
             #map_title="Log Residual for polynomial order %s fit to diffuse" % poly_order
             #plt.ylabel("Log residual Tb (K)")
-            #plt.xlabel("log freq (MHz)")
+            #plt.xlabel("log Frequency (MHz)")
             #plt.legend(loc=1)
             #fig_name= "%s_log_fit_residual_poly_%s.png" % (model_vis_name_base,poly_order)
             #figmap = plt.gcf()
@@ -1547,7 +1547,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual of log fit')
             map_title="Residual for log polynomial order %s fit to diffuse" % poly_order
             plt.ylabel("Residual Tb (K)")
-            plt.xlabel("freq (MHz)")
+            plt.xlabel("Frequency (MHz)")
             plt.legend(loc=1)
             fig_name= "%s_log_fit_residual_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
@@ -1569,7 +1569,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             plt.plot(freq_MHz_array,signal_array_short_baselines_weighted_Tb[0,:],label='data')
             map_title="Polynomial order %s fit %s" % (poly_order,sky_model)
             plt.ylabel("Weighted extracted Tb (K)")
-            plt.xlabel("freq (MHz)")
+            plt.xlabel("Frequency (MHz)")
             plt.legend(loc=1)
             fig_name= "%s_model_short_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
@@ -1583,7 +1583,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             plt.plot(good_freq_MHz_array,residual,label='residual')
             map_title="Weighted residual for polynomial order %s fit to diffuse" % poly_order
             plt.ylabel("Residual Tb (K)")
-            plt.xlabel("freq (MHz)")
+            plt.xlabel("Frequency (MHz)")
             plt.legend(loc=1)
             fig_name= "%s_residual_short_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
@@ -1604,7 +1604,7 @@ def model_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,p
             plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
             map_title="Weighted residual for log polynomial order %s fit to diffuse" % poly_order
             plt.ylabel("Residual Tb (K)")
-            plt.xlabel("freq (MHz)")
+            plt.xlabel("Frequency (MHz)")
             plt.legend(loc=1)
             fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
             figmap = plt.gcf()
@@ -1648,7 +1648,7 @@ def model_signal_from_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,
       plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
       map_title="Weighted residual for log polynomial order %s fit to diffuse" % poly_order
       plt.ylabel("Residual Tb (K)")
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       plt.legend(loc=1)
       fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (final_output_name_base,poly_order)
       figmap = plt.gcf()
@@ -4297,7 +4297,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Residual Tb (K)")
    plt.legend(loc=1)
-   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
+   plt.text(50, max_abs_residuals, "rms=%0.3f K" % rms_of_residuals)
    #plt.ylim([0, 20])
    fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
    figmap = plt.gcf()
@@ -4563,7 +4563,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   plt.plot(freq_MHz_array,diffuse_global_value_array_X,label='sim input X')
    #   #plt.plot(freq_MHz_array,diffuse_global_value_array_Y,label='sim input Y')
    #   map_title="t_sky beam averaged input" 
-   #   plt.xlabel("freq (MHz)")
+   #   plt.xlabel("Frequency (MHz)")
    #   plt.ylabel("t_sky (K)")
    #   plt.legend(loc=1)
    #   #plt.ylim([0, 20])
@@ -4596,7 +4596,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   plt.plot(freq_array_cut,residual_of_log_fit,label='residual of log fit X')
    #   map_title="Residual for log polynomial order %s fit " % poly_order
    #   plt.ylabel("Residual Tb (K)")
-   #   plt.xlabel("freq (MHz)")
+   #   plt.xlabel("Frequency (MHz)")
    #   plt.legend(loc=1)
    #   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
    #   plt.ylim([y_min, y_max])
@@ -5057,7 +5057,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print(residual_of_log_fit)
       
       plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
-      plt.text(50, max_abs_residuals + y_offset, "%srms=%0.3f" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
+      plt.text(50, max_abs_residuals + y_offset, "%srms=%0.3f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
       #plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
       #plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
        
@@ -5069,7 +5069,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #fig9b paper1
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    #if len(model_type_list)>1:
    #   plt.legend(loc=1)
    plt.legend(loc=1)
@@ -5088,10 +5088,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   plt.plot(freq_array_cut,residual_of_log_fit_glob_ang,label='residual of glob ang')
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    if len(model_type_list)>1:
       plt.legend(loc=1)
-   plt.text(50, max_abs_residuals, "rms=%0.3f" % rms_of_residuals)
+   plt.text(50, max_abs_residuals, "rms=%0.3f K" % rms_of_residuals)
    plt.ylim([y_min, y_max])
    fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_%s.png" % (poly_order,lst_string,signal_type_postfix,model_type)
    figmap = plt.gcf()
@@ -5175,7 +5175,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          print(residual_of_log_fit)
          
          plt.plot(freq_array_cut,residual_of_log_fit,label=label1)
-         plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+         plt.text(50, max_abs_residuals + y_offset, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
          
          
          #include expected noise estimate:
@@ -5186,7 +5186,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
       map_title="Residual for log polynomial order %s fit " % poly_order
       plt.ylabel("Residual Tb (K)")
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       #if len(model_type_list)>1:
       #   plt.legend(loc=1)
       
@@ -5204,7 +5204,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.clf()
       plt.plot(freq_MHz_list,n_baselines_used_array)
       map_title="n_baselines_included" 
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       plt.ylabel("number of baselines")
       #plt.legend(loc=1)
       #plt.ylim([0, 20])
@@ -5229,7 +5229,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    #plt.plot(freq_MHz_for_A_eff_array_per_dipole,A_eff_array_per_dipole)
    #plt.plot(freq_MHz_for_A_eff_array_per_dipole,ffit)
    #map_title="A_eff EDA2 dipoles" 
-   #plt.xlabel("freq (MHz)")
+   #plt.xlabel("Frequency (MHz)")
    #plt.ylabel("A_eff (m)")
    ##plt.legend(loc=1)
    ##plt.ylim([0, 20])
@@ -5253,7 +5253,7 @@ def plot_expected_rms_noise_eda2(freq_MHz_list,t_sky_theoretical_array,n_baselin
    ###plt.plot(freq_MHz_list,T_rms2,label='T_rms2')
    #plt.plot(freq_MHz_list,T_rms3,label='T_rms3')
    #map_title="T_rms EDA2" 
-   #plt.xlabel("freq (MHz)")
+   #plt.xlabel("Frequency (MHz)")
    #plt.ylabel("T_rms (K)")
    ###plt.legend(loc=1)
    ###plt.ylim([0, 20])
@@ -5592,7 +5592,7 @@ def extract_signal_from_sims(lst_list,freq_MHz_list,pol_list,signal_type_list,ou
                   #map_title="unweighted real vis vs freq x pol"
                   #plt.plot(freq_MHz_list,np.real(signal_array_unweighted[0,:,0]))
                   #plt.ylabel("unweighted sum vis real Jy")
-                  #plt.xlabel("freq (MHz)")
+                  #plt.xlabel("Frequency (MHz)")
                   #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
                   #figmap = plt.gcf()
                   #figmap.savefig(fig_name)
@@ -6342,7 +6342,7 @@ def extract_signal_from_multiple(uvfits_list_filename):
                #map_title="unweighted real vis vs freq x pol"
                #plt.plot(freq_MHz_list,np.real(signal_array_unweighted[0,:,0]))
                #plt.ylabel("unweighted sum vis real Jy")
-               #plt.xlabel("freq (MHz)")
+               #plt.xlabel("Frequency (MHz)")
                #fig_name= plot_basename + "_real_vis_vs_freq_unweighted.png"
                #figmap = plt.gcf()
                #figmap.savefig(fig_name)
@@ -6463,7 +6463,7 @@ def plot_from_uvfits(uvfits_name, freq_MHz):
    #map_title="abs vis vs freq for short baselines"
    #plt.plot(freq_MHz_list,log_abs_max_vis_vs_freq_array,linestyle='none',marker='.')
    #plt.ylabel("log abs(max vis)")
-   #plt.xlabel("freq (MHz)")
+   #plt.xlabel("Frequency (MHz)")
    #fig_name= plot_basename + "log_abs_max_vis_vs_freq.png"
    #figmap = plt.gcf()
    #figmap.savefig(fig_name)
@@ -6940,7 +6940,7 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
       plt.plot(freq_MHz_array,spectrum,label='spectrum')
       map_title = "%s fit pix %s" % (sky_model,pix)
       plt.ylabel("Tb (K)")
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       plt.legend(loc=1)
       fig_name = "%s_cube_hpx_fit_pix_%s.png" % (sky_model,pix_index)
       figmap = plt.gcf()
@@ -6953,7 +6953,7 @@ def generate_smooth_hpx_cube(sky_model,freq_MHz_list,gsm_smooth_poly_order):
       plt.plot(freq_MHz_array,residual,label='residual')
       map_title = "%s residual %s" % (sky_model,pix)
       plt.ylabel("residual Tb (K)")
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       plt.legend(loc=1)
       fig_name = "%s_cube_hpx_fit_residual_pix_%s.png" % (sky_model,pix_index)
       figmap = plt.gcf()
@@ -9419,7 +9419,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines_Tb[0,:])
          #map_title="all baselines real Tb vs freq %s pol" % (pol)
          #plt.ylabel("sum vis real Tb")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s%s_real_vis_vs_freq_all_baselines_Tb.png" % (outbase_name,model_vis_name_base)
          #figmap = plt.gcf()
@@ -9431,7 +9431,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines_Tb[0,:])
          map_title="short baselines real Tb vs freq %s pol" % (pol)
          plt.ylabel("sum vis real Tb (K)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_real_vis_vs_freq_short_baselines_Tb.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9443,7 +9443,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines_weighted_Tb[0,:])
          map_title="short baselines weighted real Tb vs freq %s pol" % (pol)
          plt.ylabel("sum vis real Tb (K)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_real_vis_vs_freq_short_baselines_weighted_Tb.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9455,7 +9455,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines_abs_Tb[0,:])
          #map_title="all baselines abs Tb vs freq %s pol" % (pol)
          #plt.ylabel("sum vis real Tb")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_abs_vis_vs_freq_all_baselines_Tb.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9467,7 +9467,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines[0,:])
          map_title="short baselines real vis vs freq %s pol" % (pol)
          plt.ylabel("sum vis real (Jy)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_real_vis_vs_freq_short_baselines.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9479,7 +9479,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines_log)
          map_title="short baselines log abs real vis vs freq %s pol" % (pol)
          plt.ylabel("log sum abs real vis (Jy)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_log_abs_real_vis_vs_freq_short_baseline.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9491,7 +9491,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines_weighted[0,:])
          map_title="short baselines weighted real vis vs freq %s pol" % (pol)
          plt.ylabel("sum vis real (Jy)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_real_vis_vs_freq_short_baselines_weighted.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9503,7 +9503,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,signal_short_baselines_weighted_log)
          map_title="short baselines weighted real vis vs freq %s pol" % (pol)
          plt.ylabel("log sum abs real vis (Jy)")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_log_real_vis_vs_freq_short_baselines_weighted.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9515,7 +9515,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines[0,:])
          #map_title="all baselines real vis vs freq %s pol" % (pol)
          #plt.ylabel("sum vis real Jy")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_real_vis_vs_freq_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9527,7 +9527,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines_log)
          #map_title="all baselines log abs real vis vs freq %s pol" % (pol)
          #plt.ylabel("log sum abs real vis Jy")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_log_abs_real_vis_vs_freq_all_baseline.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9539,7 +9539,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines_abs[0,:])
          #map_title="all baselines abs vis vs freq %s pol" % (pol)
          #plt.ylabel("sum vis real Jy")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_abs_vis_vs_freq_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9551,7 +9551,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,signal_all_baselines_abs_log)
          #map_title="all baselines log abs vis vs freq %s pol" % (pol)
          #plt.ylabel("log sum abs vis Jy")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_log_abs_vis_vs_freq_all_baseline.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9563,7 +9563,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,number_baselines_used_array[0,:])
          map_title="Number of short baselines used"
          plt.ylabel("Number of baselines")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_number_of_baselines_used.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -9575,7 +9575,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          #plt.plot(freq_MHz_list,sum_of_weights_all_baselines_array[0,:])
          #map_title="Sum of u,v=0 weights all baselines"
          #plt.ylabel("Sum of weights")
-         #plt.xlabel("freq (MHz)")
+         #plt.xlabel("Frequency (MHz)")
          #plt.legend(loc=1)
          #fig_name= "%s_sum_of_weights_all_baselines.png" % (model_vis_name_base)
          #figmap = plt.gcf()
@@ -9587,7 +9587,7 @@ def plot_signal(lst_list,freq_MHz_list,pol_list,signal_type_list,outbase_name,sk
          plt.plot(freq_MHz_list,sum_of_weights_short_baselines_array[0,:])
          map_title="Sum of u,v=0 weights short baselines"
          plt.ylabel("Sum of weights")
-         plt.xlabel("freq (MHz)")
+         plt.xlabel("Frequency (MHz)")
          plt.legend(loc=1)
          fig_name= "%s_sum_of_weights_short_baselines.png" % (model_vis_name_base)
          figmap = plt.gcf()
@@ -10941,7 +10941,7 @@ def model_average_from_arrays(n_arrays,min_spacing_m,zero_spacing_leakage_thresh
    plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
    map_title="Weighted residual for log polynomial order %s fit" % poly_order
    plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    plt.legend(loc=1)
    fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (model_vis_name_base,poly_order)
    figmap = plt.gcf()
@@ -10990,7 +10990,7 @@ def model_and_plot_random_array_layout_residuals(n_arrays,min_spacing_m,zero_spa
       plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
       map_title="Weighted residual for log polynomial order %s fit" % poly_order
       plt.ylabel("Residual Tb (K)")
-      plt.xlabel("freq (MHz)")
+      plt.xlabel("Frequency (MHz)")
       plt.legend(loc=1)
       fig_name= "%s_log_fit_residual_weighted_poly_%s.png" % (plot_name_base,poly_order)
       figmap = plt.gcf()
@@ -11343,7 +11343,7 @@ def model_and_plot_assassin_residuals_selective(n_ants_per_m_of_circumference,n_
    plt.plot(good_freq_MHz_array,best_residual_of_log_fit,label='residual from log fit')
    map_title="Weighted residual for log polynomial order %s fit" % poly_order
    plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    plt.legend(loc=1)
    fig_name= "%s_best_log_fit_residual_poly_%s_selective.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
@@ -11442,7 +11442,7 @@ def model_and_plot_assassin_residuals(n_ants_per_m_of_circumference,n_circles,ma
    plt.plot(good_freq_MHz_array,residual_of_log_fit,label='residual from log fit')
    map_title="Weighted residual for log polynomial order %s fit" % poly_order
    plt.ylabel("Residual Tb (K)")
-   plt.xlabel("freq (MHz)")
+   plt.xlabel("Frequency (MHz)")
    plt.legend(loc=1)
    fig_name= "%s_log_fit_residual_poly_%s_all.png" % (final_plot_name_base,poly_order)
    figmap = plt.gcf()
