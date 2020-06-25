@@ -193,10 +193,11 @@ pol_list = ['X']
 #pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
-signal_type_list=['diffuse','noise']
+#signal_type_list=['diffuse','noise'] #fig9
+signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
-#signal_type_list=['diffuse_global','noise','global_EDGES']
+#signal_type_list=['diffuse_global','noise','global_EDGES'] #fig8b
 #signal_type_list=['global_EDGES','noise']
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
@@ -4297,13 +4298,12 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("Residual Tb (K)")
    plt.legend(loc=1)
-   plt.text(50, max_abs_residuals, "rms=%0.3f K" % rms_of_residuals)
+   plt.text(55, max_abs_residuals, "rms=%0.3f K" % rms_of_residuals,color='green')
    #plt.ylim([0, 20])
    fig_name= "t_sky_residuals_joint_fit_LST_%s%s_order_%s.png" % (lst_string,signal_type_postfix,poly_order_list_string)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
-   
    
    
    
@@ -4989,9 +4989,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             label1='measured sky temp.'
          else:
             #fig9
-            label1='ignore angular response'
+            #label1='ignore angular response'
             #fig7:
-            #label1='residual from log fit'
+            label1='residual from log fit'
          y_offset=1
          #colour='tab:blue'
          colour=color_dark_blue
@@ -5056,17 +5056,17 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print(sky_array)
       print(residual_of_log_fit)
       
-      plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
-      plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
+      plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index + 1])
+      #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
       #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
-      #plt.text(50, 0.075, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
+      plt.text(50, 0.075, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
        
       #comment out for fig9b
-      #if not EDA2_data:
-         #expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-         #plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
+      if not EDA2_data:
+         expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+         plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
    
-   #fig9b paper1
+   #fig9b paper1 (#and 7b)
    map_title="Residual for log polynomial order %s fit " % poly_order
    plt.ylabel("Residual Tb (K)")
    plt.xlabel("Frequency (MHz)")
@@ -5080,7 +5080,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    print("saved %s" % fig_name)
    plt.close()         
 
-            
+   
+    
    plt.clf()
    plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
    #if include_angular_info:
@@ -11864,8 +11865,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
