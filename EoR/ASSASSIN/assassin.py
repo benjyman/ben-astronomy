@@ -5050,15 +5050,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       y_min = 1.5 * -max_abs_residuals
    
       ##temporary just for paper fig12a:
-      y_max = 100
-      y_min = -100
+      #y_max = 100
+      #y_min = -100
       
       print(sky_array)
       print(residual_of_log_fit)
       
-      plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index+1])
-      #plt.text(50, max_abs_residuals + y_offset, "%srms=%0.3f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
-      plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
+      plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
+      plt.text(50, max_abs_residuals + y_offset, "%srms=%0.3f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
+      #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
       #plt.text(50, 0.075, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
        
       #comment out for fig9b
@@ -11649,7 +11649,7 @@ s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = True
+EDA2_data = False
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -11893,11 +11893,11 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#freq_MHz_array = np.asarray(freq_MHz_list)
-#lst_hrs_list=['2']
+freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+freq_MHz_array = np.asarray(freq_MHz_list)
+lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-#poly_order=7
+poly_order=7
 
 #plot_iso_ant_int_response()
 #sys.exit()
@@ -11914,9 +11914,9 @@ include_angular_info = True
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 #freq_MHz_list = freq_MHz_array[chan_num:chan_num+35]
 #EDA2_chan_list = EDA2_chan_list[chan_num:chan_num+35]
-#wsclean=False # for sims or miriad cal
+wsclean=False # for sims or miriad cal
 #sim for paper plot 1 
-wsclean=True # for data
+#wsclean=True # for data
 fast=False
 no_modelling=True
 calculate_uniform_response=False
