@@ -5052,14 +5052,13 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       ##temporary just for paper fig12a:
       y_max = 100
       y_min = -100
-      max_abs_residuals = 75
       
       print(sky_array)
       print(residual_of_log_fit)
       
       plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
-      plt.text(50, max_abs_residuals + y_offset, "%srms=%2.1f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
-      #plt.text(50, 75, "rms=%0.3f" % rms_of_residuals,{'color': colour})
+      #plt.text(50, max_abs_residuals + y_offset, "%srms=%0.3f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
+      plt.text(50, 75, "rms=%2.1f" % rms_of_residuals,{'color': colour})
       #plt.text(50, 0.075, "rms=%0.3f" % rms_of_residuals,{'color': colour})
        
       #comment out for fig9b
