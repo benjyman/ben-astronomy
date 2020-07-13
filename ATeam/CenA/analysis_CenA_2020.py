@@ -96,10 +96,10 @@ def edit_optical_header(optical_image,edhead_image_output_name):
    del header1['CD2_2']   
    cdelt_old = header1['CDELT1']  
    cdelt_new = np.around(np.abs(float(cdelt_old)),decimals=n_decimals)
-   #only for Connors, not Rolfs:
+   #only for Connors, not Rolfs: RA 
    header1['CDELT1'] = cdelt_new * -1.
    cdelt_new = np.around(np.abs(float(header1['CDELT2'])),decimals=n_decimals)
-   header1['CDELT2'] = cdelt_new # *-1. #only for Connors, not Rolfs:
+   header1['CDELT2'] = cdelt_new *-1. #only for Connors, not Rolfs:
    #actually these all need to be in the right numeric format
    old_val = np.around(float(header1['CRPIX1']),decimals=5)
    header1['CRPIX1'] = old_val
@@ -151,6 +151,144 @@ def regrid_to_J2000(input_imagename):
    print(cmd)
    os.system(cmd)   
 
+def spectral_index_map(image_1_name,image_2_name,freq_MHz_low,freq_MHz_high,output_name_base,mask_level):
+   spec_index_im_name = "%s_spec_index.im" % output_name_base
+   spec_index_fits_name = "%s_spec_index.fits" % output_name_base
+   #use image_1 as template, image_1 to be lowest freq
+   
+   #low freq
+   hdulist = fits.open("%s" % (image_1_name))
+   image_header = hdulist[0].header
+   image_data = hdulist[0].data 
+   target_bmaj = float(image_header['BMAJ']) *60.*60. 
+   target_bmin = float(image_header['BMIN']) *60.*60.
+   target_bpa = float(image_header['BPA'])    
+   #freq_Hz_low = float(image_header['CRVAL3'])
+   #freq_MHz_low = freq_Hz_low/1000000.
+   hdulist.close()
+
+   #hdulist = fits.open("%s" % (image_2_name))
+   #image_header = hdulist[0].header
+   #image_data = hdulist[0].data 
+   #freq_Hz_high = float(image_header['CRVAL3'])
+   #freq_MHz_high = freq_Hz_high/1000000.
+   #hdulist.close()
+   
+   #read image_1 into miriad
+   image_name_base_low = 'low'
+   image_name_base_high = 'high'
+   
+   #read in images to miriad
+   im_name_low = "%s.im" % image_name_base_low
+   im_name_high = "%s.im" % image_name_base_high
+   im_name_high_regrid = "%s_regrid.im" % image_name_base_high
+   im_name_high_regrid_convol = "%s_regrid_convol.im" % image_name_base_high
+   
+   cmd = "rm -rf %s %s %s %s" % (im_name_low,im_name_high,im_name_high_regrid,im_name_high_regrid_convol)
+   print(cmd)
+   os.system(cmd)
+   
+   cmd = "fits in=%s out=%s op=xyin" % (image_1_name,im_name_low)
+   print(cmd)
+   os.system(cmd)
+
+   cmd = "fits in=%s out=%s op=xyin" % (image_2_name,im_name_high)
+   print(cmd)
+   os.system(cmd)
+
+   #regrid im2 to im1
+   cmd = "regrid in=%s out=%s tin=%s" % (im_name_high,im_name_high_regrid,im_name_low)
+   print(cmd)
+   os.system(cmd) 
+   
+   #smooth im2 down
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_high_regrid,target_bmaj,target_bmin,target_bpa,im_name_high_regrid_convol)
+   print(cmd)
+   os.system(cmd)
+   
+   ##############
+   #OPTIONAL FITS output
+   #output the regrid convol
+   regrid_convol_fitsname = "rosat_diffuse_north_regrid_convol_mwa_2deg.fits"
+   cmd = "rm -rf %s" % (regrid_convol_fitsname)
+   print(cmd)
+   os.system(cmd)  
+
+   cmd = "fits in=%s out=%s op=xyout" % (im_name_high_regrid_convol,regrid_convol_fitsname)
+   print(cmd)
+   os.system(cmd) 
+ 
+   #make the spec index map
+   cmd = "rm -rf %s %s" % (spec_index_im_name,spec_index_fits_name)
+   print(cmd)
+   os.system(cmd)
+  
+   cmd = "maths exp=log\(%s/%s\)/log\(%0.2f/%0.2f\) mask=%s>%0.5f  out=%s" % (im_name_high_regrid_convol,im_name_low,freq_MHz_high,freq_MHz_low,im_name_high_regrid_convol,mask_level,spec_index_im_name)
+   print(cmd)
+   os.system(cmd) 
+   
+   cmd = "fits in=%s out=%s op=xyout" % (spec_index_im_name,spec_index_fits_name)
+   print(cmd)
+   os.system(cmd)
+
+def regrid_concvol(image_1_name,image_2_name,target_bmaj_deg,target_bmin_deg,target_bpa_deg,output_name_base):
+   output_im_name = "%s_regrid_convol.im" % output_name_base
+   output_fits_name = "%s_regrid_convol.fits" % output_name_base
+   #use image_1 as template
+   
+   target_bmaj = float(target_bmaj_deg) *60.*60. 
+   target_bmin = float(target_bmin_deg) *60.*60.
+   target_bpa = float(target_bpa_deg)    
+   
+   #read image_1 into miriad
+   image_name_base_1 = 'template'
+   image_name_base_2 = 'image_2'
+   
+   #read in images to miriad
+   im_name_1 = "%s.im" % image_name_base_1
+   im_name_2 = "%s.im" % image_name_base_2
+   im_name_2_regrid = "%s_regrid.im" % image_name_base_2
+   
+   cmd = "rm -rf %s %s %s %s %s" % (im_name_1,im_name_2,output_im_name,output_fits_name,im_name_2_regrid)
+   print(cmd)
+   os.system(cmd)
+   
+   cmd = "fits in=%s out=%s op=xyin" % (image_1_name,im_name_1)
+   print(cmd)
+   os.system(cmd)
+
+   cmd = "fits in=%s out=%s op=xyin" % (image_2_name,im_name_2)
+   print(cmd)
+   os.system(cmd)
+
+   #regrid im2 to im1
+   cmd = "regrid in=%s out=%s tin=%s" % (im_name_2,im_name_2_regrid,im_name_1)
+   print(cmd)
+   os.system(cmd) 
+   
+   #smooth im2 down
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_name)
+   print(cmd)
+   os.system(cmd)
+   
+   ##############
+   #OPTIONAL FITS output
+   #output the regrid convol
+   cmd = "fits in=%s out=%s op=xyout" % (output_im_name,output_fits_name)
+   print(cmd)
+   os.system(cmd)
+   
+   #use miriad linmos to combine images on to the template image grid.
+
+#spectral index ASKAP MWA:
+#spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
+
+
+#regridding x ray rosat from galacto:
+#regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','g000p00r1b120pm.fits',0.5,0.5,0,'CenA_rosat_north_to_mwa')
+regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','932527p-p10.fits',0.24,0.24,0,'CenA_middle_rosat_postage_to_mwa_lowband')
+sys.exit()
+
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 #get_scaling_factor_from_core(image_name,185.,-0.7)
 
@@ -162,7 +300,9 @@ def regrid_to_J2000(input_imagename):
 #sys.exit()
 
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
-template_imagename = 'CenA_optical_template-image.fits'
+#template_imagename = 'CenA_optical_template-image.fits'
+template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
+
 #input_imagename = 'CenA_WCS_edhead.fits'
 #input_imagename = 'CenA_WCS_Ha_edhead.fits'
 #regrid_optical(template_imagename,input_imagename)
@@ -177,8 +317,8 @@ template_imagename = 'CenA_optical_template-image.fits'
 #input_name_list = ['1_Stacked_Image.fits','2_Gradient_Removal.fits','3_Separate_HII_regions_from_Ha.fits','4_Noise_Reduction.fits','5_Combined_Ha_with_RGB.fits','6_Histogram_Stretch.fits','7_Artifact_fixing_final_image.fits']
 #mike sidonio:
 #input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.fits']
-input_name_list = ['CenA_Ha_1050min_median_solved.fits','CenA_Lum_1470min_median_grad_solved.fits']
-#input_name_list = ['1_Stacked_Image.fits']
+#input_name_list = ['CenA_Ha_1050min_median_solved.fits','CenA_Lum_1470min_median_grad_solved.fits']
+input_name_list = ['3_Separate_HII_regions_from_Ha.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
 #input_name_list = ['CenA_WCS_Ha.fits']
