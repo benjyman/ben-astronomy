@@ -231,9 +231,9 @@ def spectral_index_map(image_1_name,image_2_name,freq_MHz_low,freq_MHz_high,outp
    print(cmd)
    os.system(cmd)
 
-def regrid_concvol(image_1_name,image_2_name,target_bmaj_deg,target_bmin_deg,target_bpa_deg,output_name_base):
-   output_im_name = "%s_regrid_convol.im" % output_name_base
-   output_fits_name = "%s_regrid_convol.fits" % output_name_base
+def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_deg,target_bpa_deg,output_name_base):
+   output_im_name = "%s_mosaic.im" % output_name_base
+   output_fits_name = "%s_mosaic.fits" % output_name_base
    #use image_1 as template
    
    target_bmaj = float(target_bmaj_deg) *60.*60. 
@@ -242,41 +242,50 @@ def regrid_concvol(image_1_name,image_2_name,target_bmaj_deg,target_bmin_deg,tar
    
    #read image_1 into miriad
    image_name_base_1 = 'template'
-   image_name_base_2 = 'image_2'
-   
-   #read in images to miriad
    im_name_1 = "%s.im" % image_name_base_1
-   im_name_2 = "%s.im" % image_name_base_2
-   im_name_2_regrid = "%s_regrid.im" % image_name_base_2
-   
-   cmd = "rm -rf %s %s %s %s %s" % (im_name_1,im_name_2,output_im_name,output_fits_name,im_name_2_regrid)
+
+   cmd = "rm -rf %s %s %s " % (im_name_1,output_im_name,output_fits_name)
    print(cmd)
    os.system(cmd)
    
    cmd = "fits in=%s out=%s op=xyin" % (image_1_name,im_name_1)
    print(cmd)
    os.system(cmd)
-
-   cmd = "fits in=%s out=%s op=xyin" % (image_2_name,im_name_2)
-   print(cmd)
-   os.system(cmd)
-
-   #regrid im2 to im1
-   cmd = "regrid in=%s out=%s tin=%s" % (im_name_2,im_name_2_regrid,im_name_1)
-   print(cmd)
-   os.system(cmd) 
    
-   #smooth im2 down
-   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_name)
-   print(cmd)
-   os.system(cmd)
+   for image_2_name in image_2_name_list:
    
-   ##############
-   #OPTIONAL FITS output
-   #output the regrid convol
-   cmd = "fits in=%s out=%s op=xyout" % (output_im_name,output_fits_name)
-   print(cmd)
-   os.system(cmd)
+      image_name_base_2 = image_2_name.split('.fits')[0]
+      output_im_2_name = "%s_regrid_convol.im" % image_name_base_2
+      output_im_2_fits_name = "%s_regrid_convol.fits" % image_name_base_2
+      
+      #read in images to miriad
+      im_name_2 = "%s.im" % image_name_base_2
+      im_name_2_regrid = "%s_regrid.im" % image_name_base_2
+      
+      cmd = "rm -rf %s %s %s %s" % (im_name_2,output_im_2_name,output_im_2_fits_name,im_name_2_regrid)
+      print(cmd)
+      os.system(cmd)
+   
+      cmd = "fits in=%s out=%s op=xyin" % (image_2_name,im_name_2)
+      print(cmd)
+      os.system(cmd)
+   
+      #regrid im2 to im1
+      cmd = "regrid in=%s out=%s tin=%s" % (im_name_2,im_name_2_regrid,im_name_1)
+      print(cmd)
+      os.system(cmd) 
+      
+      #smooth im2 down
+      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      print(cmd)
+      os.system(cmd)
+      
+      ##############
+      #OPTIONAL FITS output
+      #output the regrid convol
+      cmd = "fits in=%s out=%s op=xyout" % (output_im_2_name,output_im_2_fits_name)
+      print(cmd)
+      os.system(cmd)
    
    #use miriad linmos to combine images on to the template image grid.
 
@@ -286,7 +295,8 @@ def regrid_concvol(image_1_name,image_2_name,target_bmaj_deg,target_bmin_deg,tar
 
 #regridding x ray rosat from galacto:
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','g000p00r1b120pm.fits',0.5,0.5,0,'CenA_rosat_north_to_mwa')
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','932527p-p10.fits',0.24,0.24,0,'CenA_middle_rosat_postage_to_mwa_lowband')
+cen_A_rosat_p10_list = ['932527p-p10.fits','932429p-p10.fits']
+regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p10_list,0.24,0.24,0,'CenA_middle_rosat_postage_to_mwa_lowband')
 sys.exit()
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
