@@ -320,7 +320,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       sum_image_data += np.nan_to_num(image_data_convol)
       
       #divide the bit of overlap by 2:
-      sum_image_data[image_data_convol>0 and sum_image_data>0] /= 2. 
+      both_inds = np.where(image_data_convol>0 and sum_image_data>0)
+      sum_image_data[both_inds] /= 2. 
    
    av_image_data = sum_image_data / float(len(image_2_name_list))
    
