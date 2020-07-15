@@ -250,7 +250,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    target_bmin = float(target_bmin_deg) *60.*60.
    target_bpa = float(target_bpa_deg)    
    
-   beam_in_pix = target_bmaj / (pix_size_deg * 60 * 60)
+   beam_in_pix = target_bmaj_deg / pix_size_deg
+   print(beam_in_pix)
+   sys.exit()
    
    #read image_1 into miriad
    image_name_base_1 = 'template'
