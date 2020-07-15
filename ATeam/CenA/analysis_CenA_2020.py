@@ -255,10 +255,6 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    beam_in_pix = target_bmaj_deg / pix_size_deg
    
    
-   print(target_bmaj_deg)
-   print(pix_size_deg)
-   print(beam_in_pix)
-   
    sys.exit()
    #read image_1 into miriad
    image_name_base_1 = 'template'
@@ -351,7 +347,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    av_image_data[np.isinf(av_image_data)] = 0.0
    
    #smooth
-   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(beam_in_pix, beam_in_pix), order=0)
+   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(10, 10), order=0)
    
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
