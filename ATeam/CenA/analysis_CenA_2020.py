@@ -262,6 +262,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['CTYPE1'] = 'RA--CAR'
       if image_header['CTYPE2'] == 'EQU--CAR':
          image_header['CTYPE2'] = 'DEC--CAR'
+      if image_header['CTYPE3'] != None:
+         image_header['CTYPE3'] = 'FREQ'
       print(image_header)
       sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
