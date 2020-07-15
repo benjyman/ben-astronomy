@@ -259,7 +259,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    os.system(cmd)
    
    sum_image_data = image_data_1 * 0
-   count_image_data = image_data_1 * 0
+   count_image_data_sum = image_data_1 * 0
    for image_2_name in image_2_name_list:
       #fix header bits of images to be regridded
       hdulist = fits.open("%s" % (image_2_name))
@@ -318,8 +318,11 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       image_data_convol = hdulist[0].data  
       hdulist.close()
       
+      count_image_data = image_data_convol * 0
+      count_image_data[image_data_convol>0] = 1
+      
       sum_image_data += np.nan_to_num(image_data_convol)
-      count_image_data[sum_image_data>0] = 1
+      count_image_data_sum += count_image_data
       
       
    
@@ -327,8 +330,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 
    
    #write to fits:
-   fits.writeto(output_fits_name,count_image_data,clobber=True)
-   fits.update(output_fits_name,count_image_data,header=image_header_1)
+   fits.writeto(output_fits_name,count_image_data_sum,clobber=True)
+   fits.update(output_fits_name,count_image_data_sum,header=image_header_1)
    print("wrote image %s" %  output_fits_name) 
    #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    #print(cmd)
