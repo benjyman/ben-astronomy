@@ -324,8 +324,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       
       
    
-   av_image_data = sum_image_data / float(len(image_2_name_list))
-   av_image_data / count_image_data
+   av_image_data = sum_image_data / count_image_data
+
    
    #write to fits:
    fits.writeto(output_fits_name,av_image_data,clobber=True)
