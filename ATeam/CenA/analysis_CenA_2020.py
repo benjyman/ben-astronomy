@@ -272,12 +272,12 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['CUNIT3'] = 'Hz'
          image_header['TELESCOP'] = 'ATCA'
       #resolution of PSPC on XRT on Rosat about 20''
-      #try:
-      #   bmaj = image_header['BMAJ']
-      #except:
-      #   image_header['BMAJ'] = 20.
-      #   image_header['BMIN'] = 20.    
-      #   image_header['BPA'] = 0.  
+      try:
+         bmaj = image_header['BMAJ']
+      except:
+         image_header['BMAJ'] = 20.
+         image_header['BMIN'] = 20.    
+         image_header['BPA'] = 0.  
       #print(image_header)
       #sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
