@@ -317,7 +317,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       image_data_convol = hdulist[0].data  
       hdulist.close()
       
-      sum_image_data += (overlap_area_data)
+      sum_image_data += (image_data_convol)
      
       
    
