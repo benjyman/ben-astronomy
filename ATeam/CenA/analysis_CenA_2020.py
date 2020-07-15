@@ -319,7 +319,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       hdulist.close()
       
       sum_image_data += np.nan_to_num(image_data_convol)
-      image_data_convol[np.nan_to_num(image_data_convol)!=0] = 1
+      image_data_convol[np.nan_to_num(image_data_convol)>0] = 1
       count_image_data += image_data_convol
       
       
@@ -328,8 +328,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 
    
    #write to fits:
-   fits.writeto(output_fits_name,av_image_data,clobber=True)
-   fits.update(output_fits_name,av_image_data,header=image_header_1)
+   fits.writeto(output_fits_name,count_image_data,clobber=True)
+   fits.update(output_fits_name,count_image_data,header=image_header_1)
    print("wrote image %s" %  output_fits_name) 
    #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    #print(cmd)
