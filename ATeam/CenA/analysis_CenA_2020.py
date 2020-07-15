@@ -270,7 +270,6 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['CRPIX3'] = 1.
          image_header['CDELT3'] = 30720000.
          image_header['CUNIT3'] = 'Hz'
-         image_header['TELESCOP'] = 'ATCA'
       #resolution of PSPC on XRT on Rosat about 20''
       try:
          bmaj = image_header['BMAJ']
@@ -278,6 +277,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['BMAJ'] = 20.
          image_header['BMIN'] = 20.    
          image_header['BPA'] = 0.  
+         image_header['TELESCOP'] = 'ATCA'
       #print(image_header)
       #sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
@@ -330,7 +330,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #use miriad linmos to combine images on to the template image grid.
    linmos_image_list_string = ','.join(linmos_image_list)
 
-   cmd = "linmos in=%s out=%s" % (im_name_1,output_im_name)
+   cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    print(cmd)
    os.system(cmd)
 
