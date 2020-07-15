@@ -319,11 +319,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       
       overlap_area_data = sum_image_data + image_data_convol
       overlap_indices = np.argwhere(np.logical_not(np.isnan(overlap_area_data)))
-      
-      print(overlap_indices)
 
       sum_image_data += np.nan_to_num(image_data_convol)
-      #sum_image_data[overlap_indices] = sum_image_data[overlap_indices] / 2.
+      sum_image_data[overlap_indices] = overlap_area_data[overlap_indices] / 2.
       
       
    
