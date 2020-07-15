@@ -232,8 +232,10 @@ def spectral_index_map(image_1_name,image_2_name,freq_MHz_low,freq_MHz_high,outp
    os.system(cmd)
 
 def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_deg,target_bpa_deg,output_name_base):
-   output_im_name = "%s_mosaic.im" % output_name_base
-   output_fits_name = "%s_mosaic.fits" % output_name_base
+   mosaic_im_name = "%s_mosaic.im" % output_name_base
+   mosaic_fits_name = "%s_mosaic.fits" % output_name_base
+   mosaic_im_name_smooth = "%s_mosaic_smooth.im" % output_name_base
+   mosaic_fits_name_smooth = "%s_mosaic_smooth.fits" % output_name_base
    #use image_1 as template
    
    #read template image to get data grid array:
@@ -300,7 +302,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       print(cmd)
       os.system(cmd) 
       
-      #smooth im2 down
+      ##smooth im2 down
       cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       print(cmd)
       os.system(cmd)
@@ -312,8 +314,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       print(cmd)
       os.system(cmd)
    
+      #sum up the un convol images
       #read in fits file and get data array
-      hdulist = fits.open("%s" % (output_im_2_fits_name))
+      hdulist = fits.open("%s" % (im_name_2_regrid))
       image_header_convol = hdulist[0].header
       image_data_convol = np.nan_to_num(hdulist[0].data)
       hdulist.close()
@@ -330,13 +333,24 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 
    
    #write to fits:
-   fits.writeto(output_fits_name,av_image_data,clobber=True)
-   fits.update(output_fits_name,av_image_data,header=image_header_1)
+   fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
+   fits.update(mosaic_fits_name,av_image_data,header=image_header_1)
    print("wrote image %s" %  output_fits_name) 
    #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    #print(cmd)
    #os.system(cmd)
 
+   cmd = "fits in=%s out=%s op=xyin" % (mosaic_fits_name,mosaic_im_name)
+   print(cmd)
+   os.system(cmd)
+   
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
+   print(cmd)
+   os.system(cmd)
+
+   cmd = "fits in=%s out=%s op=xyout" % (mosaic_im_name_smooth,mosaic_fits_name_smooth)
+   print(cmd)
+   os.system(cmd)   
 #spectral index ASKAP MWA:
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
 
