@@ -312,9 +312,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd) 
       
       #smooth im2 down
-      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      #cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       #rosat (no final):
-      #cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       print(cmd)
       os.system(cmd)
       
