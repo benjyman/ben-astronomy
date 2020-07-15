@@ -252,6 +252,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
+   linmos_image_list = []
    for image_2_name in image_2_name_list:
    
       image_name_base_2 = image_2_name.split('.fits')[0]
@@ -280,6 +281,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       print(cmd)
       os.system(cmd)
       
+      linmos_image_list.append(output_im_2_name)
+      
       ##############
       #OPTIONAL FITS output
       #output the regrid convol
@@ -288,6 +291,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd)
    
    #use miriad linmos to combine images on to the template image grid.
+   linmos_image_list_string = ','.join(linmos_image_list)
+   print(linmos_image_list_string)
+
 
 #spectral index ASKAP MWA:
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
