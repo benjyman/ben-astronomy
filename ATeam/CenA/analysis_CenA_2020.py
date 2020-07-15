@@ -315,7 +315,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       #read in fits file and get data array
       hdulist = fits.open("%s" % (output_im_2_fits_name))
       image_header_convol = hdulist[0].header
-      image_data_convol = hdulist[0].data  
+      image_data_convol = np.nan_to_num(hdulist[0].data)
       hdulist.close()
       
       count_image_data = image_data_convol * 0
