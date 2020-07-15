@@ -258,7 +258,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   sum_image_data = image_data_1 * 0. 
+   sum_image_data = image_data_1 * 0
+   count_image_data = image_data_1 * 0
    for image_2_name in image_2_name_list:
       #fix header bits of images to be regridded
       hdulist = fits.open("%s" % (image_2_name))
@@ -317,12 +318,14 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       image_data_convol = hdulist[0].data  
       hdulist.close()
       
-      sum_image_data += (image_data_convol)
+      sum_image_data += np.nan_to_num(image_data_convol)
+      image_data_convol[np.nan_to_num(image_data_convol)!=0] = 1
+      count_image_data += image_data_convol
       
-      sum_image_data[~np.isnan(sum_image_data)] = 0.
       
    
    av_image_data = sum_image_data / float(len(image_2_name_list))
+   av_image_data / count_image_data
    
    #write to fits:
    fits.writeto(output_fits_name,av_image_data,clobber=True)
