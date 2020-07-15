@@ -242,12 +242,15 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #read template image to get data grid array:
    hdulist = fits.open("%s" % (image_1_name))
    image_header_1 = hdulist[0].header
-   image_data_1 = hdulist[0].data     
+   image_data_1 = hdulist[0].data  
+   pix_size_deg = float(image_header_1['CDELT1']) 
    hdulist.close()
    
    target_bmaj = float(target_bmaj_deg) *60.*60. 
    target_bmin = float(target_bmin_deg) *60.*60.
    target_bpa = float(target_bpa_deg)    
+   
+   beam_in_pix = target_bmaj / (pix_size_deg * 60 * 60)
    
    #read image_1 into miriad
    image_name_base_1 = 'template'
@@ -340,7 +343,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    av_image_data[np.isinf(av_image_data)] = 0.0
    
    #smooth
-   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(5, 5), order=0)
+   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(beam_in_pix, beam_in_pix), order=0)
    
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
