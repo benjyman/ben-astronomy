@@ -243,7 +243,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    hdulist = fits.open("%s" % (image_1_name))
    image_header_1 = hdulist[0].header
    image_data_1 = hdulist[0].data  
-   pix_size_deg = float(image_header_1['CDELT1']) 
+   pix_size_deg = abs(float(image_header_1['CDELT1']))
    hdulist.close()
    
    target_bmaj = float(target_bmaj_deg) *60.*60. 
@@ -251,8 +251,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    target_bpa = float(target_bpa_deg)    
    
    beam_in_pix = target_bmaj_deg / pix_size_deg
-   print(beam_in_pix)
-   sys.exit()
+
    
    #read image_1 into miriad
    image_name_base_1 = 'template'
