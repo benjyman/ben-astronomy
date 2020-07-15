@@ -340,7 +340,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
    fits.update(mosaic_fits_name,av_image_data,header=image_header_1)
-   print("wrote image %s" %  output_fits_name) 
+   print("wrote image %s" %  mosaic_fits_name) 
    #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    #print(cmd)
    #os.system(cmd)
