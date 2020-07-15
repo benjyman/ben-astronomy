@@ -252,7 +252,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    image_name_base_1 = 'template'
    im_name_1 = "%s.im" % image_name_base_1
 
-   cmd = "rm -rf %s %s %s " % (im_name_1,output_im_name,output_fits_name)
+   cmd = "rm -rf %s %s %s %s %s " % (im_name_1,mosaic_im_name,mosaic_fits_name,mosaic_im_name_smooth,mosaic_fits_name_smooth)
    print(cmd)
    os.system(cmd)
    
