@@ -330,7 +330,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #use miriad linmos to combine images on to the template image grid.
    linmos_image_list_string = ','.join(linmos_image_list)
 
-   cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
+   cmd = "linmos in=%s out=%s" % (im_name_1,output_im_name)
    print(cmd)
    os.system(cmd)
 
