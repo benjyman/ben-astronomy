@@ -288,6 +288,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       #read in images to miriad
       im_name_2 = "%s.im" % image_name_base_2
       im_name_2_regrid = "%s_regrid.im" % image_name_base_2
+      fits_name_2_regrid = "%s_regrid.fits" % image_name_base_2
       
       cmd = "rm -rf %s %s %s %s" % (im_name_2,output_im_2_name,output_im_2_fits_name,im_name_2_regrid)
       print(cmd)
@@ -301,6 +302,10 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       cmd = "regrid in=%s out=%s tin=%s" % (im_name_2,im_name_2_regrid,im_name_1)
       print(cmd)
       os.system(cmd) 
+      
+      cmd = "fits in=%s out=%s op=xyout" % (im_name_2_regrid,fits_name_2_regrid)
+      print(cmd)
+      os.system(cmd)
       
       ##smooth im2 down
       cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
@@ -316,7 +321,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    
       #sum up the un convol images
       #read in fits file and get data array
-      hdulist = fits.open("%s" % (im_name_2_regrid))
+      hdulist = fits.open("%s" % (fits_name_2_regrid))
       image_header_convol = hdulist[0].header
       image_data_convol = np.nan_to_num(hdulist[0].data)
       hdulist.close()
