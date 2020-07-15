@@ -258,7 +258,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   sum_image_data = image_data_1*0. + np.nan
+   sum_image_data = image_data_1 * 0. 
    for image_2_name in image_2_name_list:
       #fix header bits of images to be regridded
       hdulist = fits.open("%s" % (image_2_name))
@@ -318,7 +318,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       hdulist.close()
       
       overlap_area_data = sum_image_data + image_data_convol
-      overlap_indices = np.argwhere(np.isnan(overlap_area_data))
+      overlap_indices = np.argwhere(np.logical_not(np.isnan(overlap_area_data)))
       
       print(overlap_indices)
 
