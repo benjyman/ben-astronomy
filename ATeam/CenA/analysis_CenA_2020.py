@@ -318,7 +318,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       hdulist.close()
       
       sum_image_data += (image_data_convol)
-     
+      
+      sum_image_data[~np.isnan(sum_image_data)] = 0.
       
    
    av_image_data = sum_image_data / float(len(image_2_name_list))
