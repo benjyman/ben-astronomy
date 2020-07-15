@@ -237,7 +237,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #use image_1 as template
    
    #read template image to get data grid array:
-   hdulist = fits.open("%s" % (image_2_name))
+   hdulist = fits.open("%s" % (image_1_name))
    image_header_1 = hdulist[0].header
    image_data_1 = hdulist[0].data     
    hdulist.close()
@@ -312,7 +312,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd)
    
       #read in fits file and get data array
-      hdulist = fits.open("%s" % (image_2_name))
+      hdulist = fits.open("%s" % (output_im_2_fits_name))
       image_header_convol = hdulist[0].header
       image_data_convol = hdulist[0].data  
       hdulist.close()
