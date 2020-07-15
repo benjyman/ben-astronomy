@@ -255,7 +255,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    beam_in_pix = target_bmaj_deg / pix_size_deg
    
    
-   print(target_bmaj)
+   print(target_bmaj_deg)
    print(pix_size_deg)
    print(beam_in_pix)
    
