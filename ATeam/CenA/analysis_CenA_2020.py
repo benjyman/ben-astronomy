@@ -270,6 +270,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['CRPIX3'] = 1.
          image_header['CDELT3'] = 30720000.
          image_header['CUNIT3'] = 'Hz'
+         image_header['TELESCOP'] = 'ATCA'
       #resolution of PSPC on XRT on Rosat about 20''
       #try:
       #   bmaj = image_header['BMAJ']
