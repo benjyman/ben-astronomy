@@ -267,12 +267,16 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       except:
          image_header['CTYPE3'] = 'FREQ'
          image_header['CRVAL3'] = 184955000.
-      print(image_header)
-      sys.exit()
+      #print(image_header)
+      #sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
       #freq_MHz_low = freq_Hz_low/1000000.
       hdulist.close()
    
+      #write new fits file
+      fits.writeto(image_2_name,image_data,clobber=True)
+      fits.update(image_2_name,image_data,header=image_header)
+      print("wrote image %s" %  image_2_name)  
    
    
       image_name_base_2 = image_2_name.split('.fits')[0]
