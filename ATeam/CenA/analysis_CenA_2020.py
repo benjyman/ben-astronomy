@@ -335,7 +335,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       
    
    av_image_data = sum_image_data / count_image_data_sum
-   av_image_data[np.isnan(av_image_data)] = 0.
+   av_image_data[np.isnan(av_image_data)] = 0.001
    print(av_image_data)
    
    #write to fits:
