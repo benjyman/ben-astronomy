@@ -267,13 +267,16 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       except:
          image_header['CTYPE3'] = 'FREQ'
          image_header['CRVAL3'] = 184955000.
+         image_header['CRPIX3'] = 1.
+         image_header['CDELT3'] = 30720000.
+         image_header['CUNIT3'] = 'Hz'
       #resolution of PSPC on XRT on Rosat about 20''
-      try:
-         bmaj = image_header['BMAJ']
-      except:
-         image_header['BMAJ'] = 20.
-         image_header['BMIN'] = 20.    
-         image_header['BPA'] = 0.  
+      #try:
+      #   bmaj = image_header['BMAJ']
+      #except:
+      #   image_header['BMAJ'] = 20.
+      #   image_header['BMIN'] = 20.    
+      #   image_header['BPA'] = 0.  
       #print(image_header)
       #sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
@@ -308,9 +311,9 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd) 
       
       #smooth im2 down
-      #cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       #rosat (no final):
-      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      #cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       print(cmd)
       os.system(cmd)
       
