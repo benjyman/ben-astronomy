@@ -236,6 +236,12 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    output_fits_name = "%s_mosaic.fits" % output_name_base
    #use image_1 as template
    
+   #read template image to get data grid array:
+   hdulist = fits.open("%s" % (image_2_name))
+   image_header_1 = hdulist[0].header
+   image_data_1 = hdulist[0].data     
+   hdulist.close()
+   
    target_bmaj = float(target_bmaj_deg) *60.*60. 
    target_bmin = float(target_bmin_deg) *60.*60.
    target_bpa = float(target_bpa_deg)    
@@ -252,7 +258,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   linmos_image_list = []
+   sum_image_data = image_data_1*0.
    for image_2_name in image_2_name_list:
       #fix header bits of images to be regridded
       hdulist = fits.open("%s" % (image_2_name))
@@ -262,25 +268,6 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
          image_header['CTYPE1'] = 'RA--CAR'
       if image_header['CTYPE2'] == 'EQU--CAR':
          image_header['CTYPE2'] = 'DEC--CAR'
-      try:
-         freq = image_header['CTYPE3']
-      except:
-         image_header['CTYPE3'] = 'FREQ'
-         image_header['CRVAL3'] = 184955000.
-         image_header['RESTFREQ'] = 184955000.
-         image_header['CRPIX3'] = 1
-         image_header['CDELT3'] = 30720000.
-         image_header['CUNIT3'] = 'Hz'
-      #resolution of PSPC on XRT on Rosat about 20''
-      try:
-         bmaj = image_header['BMAJ']
-      except:
-         image_header['BMAJ'] = 20.
-         image_header['BMIN'] = 20.    
-         image_header['BPA'] = 0.  
-         image_header['TELESCOP'] = 'ATCA'
-      #print(image_header)
-      #sys.exit()
       #freq_Hz_low = float(image_header['CRVAL3'])
       #freq_MHz_low = freq_Hz_low/1000000.
       hdulist.close()
@@ -313,27 +300,34 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd) 
       
       #smooth im2 down
-      #cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
-      #rosat (no final):
-      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
+      cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_2_regrid,target_bmaj,target_bmin,target_bpa,output_im_2_name)
       print(cmd)
       os.system(cmd)
       
-      linmos_image_list.append(output_im_2_name)
-      
       ##############
-      #OPTIONAL FITS output
+      #FITS output
       #output the regrid convol
       cmd = "fits in=%s out=%s op=xyout" % (output_im_2_name,output_im_2_fits_name)
       print(cmd)
       os.system(cmd)
    
-   #use miriad linmos to combine images on to the template image grid.
-   linmos_image_list_string = ','.join(linmos_image_list)
-
-   cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
-   print(cmd)
-   os.system(cmd)
+      #read in fits file and get data array
+      hdulist = fits.open("%s" % (image_2_name))
+      image_header_convol = hdulist[0].header
+      image_data_convol = hdulist[0].data  
+      hdulist.close()
+      
+      sum_image_data += image_data_convol
+   
+   av_image_data = sum_image_data / float(len(image_2_name_list))
+   
+   #write to fits:
+   fits.writeto(output_fits_name,av_image_data,clobber=True)
+   fits.update(output_fits_name,av_image_data,header=image_header_convol)
+   print("wrote image %s" %  output_fits_name) 
+   #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
+   #print(cmd)
+   #os.system(cmd)
 
 #spectral index ASKAP MWA:
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
