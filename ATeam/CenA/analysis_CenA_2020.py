@@ -329,7 +329,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       count_image_data = image_data_convol * 0
       count_image_data[image_data_convol>0] = 1
       
-      sum_image_data += np.nan_to_num(image_data_convol)
+      sum_image_data += image_data_convol
       count_image_data_sum += count_image_data
       
       
@@ -349,7 +349,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f  out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
    print(cmd)
    os.system(cmd)
 
