@@ -349,7 +349,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (im_name_1,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
    print(cmd)
    os.system(cmd)
 
