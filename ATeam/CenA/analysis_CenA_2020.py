@@ -349,7 +349,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    print(cmd)
    os.system(cmd)
    
-   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
+   cmd = "convol map=%s fwhm=%4f,%4f pa=%4f options=final out=%s " % (mosaic_im_name,target_bmaj,target_bmin,target_bpa,mosaic_im_name_smooth)
    print(cmd)
    os.system(cmd)
 
@@ -363,7 +363,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 #regridding x ray rosat from galacto:
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','g000p00r1b120pm.fits',0.5,0.5,0,'CenA_rosat_north_to_mwa')
 cen_A_rosat_p10_list = ['932527p-p10.fits','932429p-p10.fits']
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p10_list,0.24,0.24,0,'CenA_middle_rosat_postage_to_mwa_lowband')
+regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p10_list,0.24,0.24,0,'rosat')
 sys.exit()
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
