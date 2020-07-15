@@ -335,7 +335,8 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       
    
    av_image_data = sum_image_data / count_image_data_sum
-   av_image_data = np.nan_to_num(av_image_data)
+   av_image_data = np.nan_to_num(av_image_data) + 0.00001
+   
    
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
