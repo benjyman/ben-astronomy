@@ -254,6 +254,21 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    
    linmos_image_list = []
    for image_2_name in image_2_name_list:
+      #fix header bits of images to be regridded
+      hdulist = fits.open("%s" % (image_2_name))
+      image_header = hdulist[0].header
+      image_data = hdulist[0].data     
+      if image_header['CTYPE1'] == 'EQU--CAR':
+         image_header['CTYPE1'] = 'RA--CAR'
+      if image_header['CTYPE2'] == 'EQU--CAR':
+         image_header['CTYPE2'] = 'DEC--CAR'
+      print(image_header)
+      sys.exit()
+      #freq_Hz_low = float(image_header['CRVAL3'])
+      #freq_MHz_low = freq_Hz_low/1000000.
+      hdulist.close()
+   
+   
    
       image_name_base_2 = image_2_name.split('.fits')[0]
       output_im_2_name = "%s_regrid_convol.im" % image_name_base_2
