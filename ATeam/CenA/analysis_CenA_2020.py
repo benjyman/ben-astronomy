@@ -341,7 +341,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    av_image_data[np.isinf(av_image_data)] = 0.0
    
    #smooth
-   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(10, 10), order=0)
+   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(2, 2), order=0)
    
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
