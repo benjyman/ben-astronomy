@@ -341,7 +341,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    av_image_data[np.isinf(av_image_data)] = 0.0
    
    #smooth
-   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(2, 2), order=0)
+   av_image_data_smooth = ndimage.gaussian_filter(av_image_data, sigma=(3, 3), order=0)
    
    #write to fits:
    fits.writeto(mosaic_fits_name,av_image_data,clobber=True)
@@ -373,7 +373,7 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p10_list,0.24,0.24,0,'rosat_low')
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p20_list,0.24,0.24,0,'rosat_mid')
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p30_list,0.02,0.02,0,'rosat_high_1arcmin')
+regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p30_list,0.2,0.2,0,'rosat_high_12arcmin')
 
 sys.exit()
 
