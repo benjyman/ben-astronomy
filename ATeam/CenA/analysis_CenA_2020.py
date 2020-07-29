@@ -34,7 +34,7 @@ def source_find_image(image_name):
    print(cmd)
    os.system(cmd)   
 
-def regrid_optical(template_imagename,input_imagename):
+def regrid_optical(template_imagename,input_imagename,smooth=0):
    #optical stuff from Connor etc is difficult as the WSCS from PixelInsight doesnt seem to match what 
    #kvis or ds9 expects. To get around it I did this:
    #Detele  the CD_1, CD1_2, CD2_1, CD2_2 rotation parameters
@@ -49,6 +49,7 @@ def regrid_optical(template_imagename,input_imagename):
    imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
    regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
    regridded_fitsname = input_imagename.split('.fits')[0]+'_regridded.fits'
+   regridded_fitsname_smooth = input_imagename.split('.fits')[0]+'_regridded_smooth.fits'
    
    casa_string = "importfits(fitsimage='%s',imagename='%s',overwrite=True)" % (template_imagename,imported_template_imagename)
    casa_filename = 'casa_import_fits.sh'
@@ -80,7 +81,22 @@ def regrid_optical(template_imagename,input_imagename):
       f.write(casa_string)
    cmd = "casa --nocrashreport -c %s" % casa_filename
    print(cmd)
-   os.system(cmd)   
+   os.system(cmd)  
+   
+   if smooth!=0:
+      hdulist = fits.open("%s" % (regridded_fitsname))
+      image_header = hdulist[0].header
+      image_data = np.nan_to_num(hdulist[0].data)
+      hdulist.close()
+
+      data_smooth = ndimage.gaussian_filter(image_data, sigma=(smooth, smooth), order=0)
+   
+      #write to fits:
+      fits.writeto(regridded_fitsname_smooth,data_smooth,clobber=True)
+      fits.update(regridded_fitsname_smooth,data_smooth,header=image_header)
+      print("wrote image %s" %  regridded_fitsname_smooth) 
+      
+    
 
 def edit_optical_header(optical_image,edhead_image_output_name):
    #if the regridding doesnt seem to get the RA or DEC going the right way it is 
@@ -376,10 +392,7 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p30_list,0.08,0.08,0,'rosat_high_5arcmin')
 #sys.exit()
 
-#smooth connors Halpha image:
-connor_list = ["3_Separate_HII_regions_from_Ha_edhead_regridded.fits"]
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',connor_list,0.008,0.008,0,'H_alpha_cont_sub_connor_30arcsec')
-sys.exit()
+
 
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
@@ -418,7 +431,7 @@ input_name_list = ['3_Separate_HII_regions_from_Ha.fits']
 for input_name in input_name_list:
    edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    edit_optical_header(input_name,edhead_name)
-   regrid_optical(template_imagename,edhead_name)
+   regrid_optical(template_imagename,edhead_name,smooth=2)
    #try no edhead for mikes:
    #regrid_optical(template_imagename,input_name)
    
