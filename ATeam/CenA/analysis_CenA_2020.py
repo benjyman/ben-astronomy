@@ -301,7 +301,7 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
       os.system(cmd)
    
       #regrid im2 to im1
-      cmd = "regrid in=%s out=%s tin=%s" % (im_name_2,im_name_2_regrid,im_name_1)
+      cmd = "regrid in=%s out=%s tin=%s tol=0" % (im_name_2,im_name_2_regrid,im_name_1)
       print(cmd)
       os.system(cmd) 
       
