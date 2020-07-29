@@ -393,8 +393,8 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 #sys.exit()
 
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
-#template_imagename = 'CenA_optical_template-image.fits'
-template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
+template_imagename = 'CenA_optical_template-image.fits'
+#template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
 
 #input_imagename = 'CenA_WCS_edhead.fits'
 #input_imagename = 'CenA_WCS_Ha_edhead.fits'
