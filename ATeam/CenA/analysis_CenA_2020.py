@@ -377,9 +377,9 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 #sys.exit()
 
 #smooth connors Halpha image:
-connor_list = ["3_Separate_HII_regions_from_Ha_edhead_regridded.fits"]
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',connor_list,0.008,0.008,0,'H_alpha_cont_sub_connor_30arcsec')
-sys.exit()
+#connor_list = ["3_Separate_HII_regions_from_Ha_edhead_regridded.fits"]
+#regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',connor_list,0.008,0.008,0,'H_alpha_cont_sub_connor_30arcsec')
+#sys.exit()
 
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
