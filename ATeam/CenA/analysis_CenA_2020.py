@@ -373,9 +373,14 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p10_list,0.24,0.24,0,'rosat_low')
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p20_list,0.24,0.24,0,'rosat_mid')
-regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p30_list,0.08,0.08,0,'rosat_high_5arcmin')
+#regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',cen_A_rosat_p30_list,0.08,0.08,0,'rosat_high_5arcmin')
+#sys.exit()
 
+#smooth connors Halpha image:
+connor_list = ["3_Separate_HII_regions_from_Ha_edhead.fits"]
+regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits',connor_list,0.008,0.008,0,'H_alpha_cont_sub_connor_30arcsec')
 sys.exit()
+
 
 #image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 #get_scaling_factor_from_core(image_name,185.,-0.7)
