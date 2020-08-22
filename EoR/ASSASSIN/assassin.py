@@ -2221,6 +2221,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          #plot X and pure inline and parallel for fig 1 of paper
          
+         #print(len(X_short_parallel_array_norm))
+         #print(len(baseline_length_array_lambda_sorted_cut))
+         
          #This is paper 1, fig3, at 70 MHz, /md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_EDGES/x_pol
          #thresh 2.0 lambda
          #make sure using new numbering sys for freq e.g. 70.000_MHz not 70_MHz
@@ -3545,7 +3548,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          if not fast:
             #save the baseline length array sorted
-            baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+            if EDA2_data:
+               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+            else:
+               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
             np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
             print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
          
@@ -3970,8 +3976,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
                   np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
                   print("saved %s" % Y_short_parallel_angular_array_filename)
-               
-            real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+             
+            if EDA2_data:   
+               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+            else:
+               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
             np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
             print("saved %s" % real_vis_data_sorted_array_filename)
             
@@ -5078,7 +5087,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       if not EDA2_data:
          t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
          n_baselines_used_array_cut = n_baselines_used_array[t_sky_measured_array>0.]
-      
+         t_sky_measured_error_array_cut = t_sky_measured_error_array[t_sky_measured_array>0.]
+         
       log_sky_array = np.log10(sky_array)
       if n_fine_chans_used==1:
          freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
@@ -5116,13 +5126,18 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
          #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
          #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
-         plt.text(50, 0.075, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
-          
+         plt.text(50, 0.15, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
+        
+         
+         
          #comment out for fig9b
          if not EDA2_data:
             expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
             plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
-   
+            #for referee comments on fig7b:
+            plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
+            print(expected_noise)
+             
    if plot_log == True:
       #fig9b paper1 (#and 7b)
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -5138,7 +5153,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       print("saved %s" % fig_name)
       plt.close()         
     
-      sys.exit()
       
        
       plt.clf()
@@ -11973,9 +11987,10 @@ model_type_list = ['OLS_fixed_intercept']
 #for sims:
 freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 freq_MHz_array = np.asarray(freq_MHz_list)
+
 lst_hrs_list=['2']
 #poly_order_list=[5,6,7]
-poly_order=7
+poly_order=5
 
 #plot_iso_ant_int_response()
 #sys.exit()
