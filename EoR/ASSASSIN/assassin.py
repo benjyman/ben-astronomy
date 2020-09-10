@@ -5136,8 +5136,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
             #for referee comments on fig7b:
             plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
-            print(expected_noise)
+            #print(expected_noise)
              
+   
+   
    if plot_log == True:
       #fig9b paper1 (#and 7b)
       map_title="Residual for log polynomial order %s fit " % poly_order
