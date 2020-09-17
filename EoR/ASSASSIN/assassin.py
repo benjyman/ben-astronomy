@@ -194,7 +194,8 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise'] #fig9, 10b?
-signal_type_list=['diffuse_global','noise'] #fig7
+signal_type_list=['single_point'] #tests with Jack and WODEN
+#signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
@@ -8010,6 +8011,9 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
 
    concat_output_name_base_X = "%s_X_%s" % (array_label,outbase_name)
    concat_output_name_base_Y = "%s_Y_%s" % (array_label,outbase_name)
+   if 'single_point' in signal_type_list:
+       concat_output_name_base_X += '_SP'
+       concat_output_name_base_Y += '_SP'
    if 'noise' in signal_type_list:
        concat_output_name_base_X += '_N'
        concat_output_name_base_Y += '_N'
