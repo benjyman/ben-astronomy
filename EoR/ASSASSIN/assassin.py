@@ -8919,7 +8919,6 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                print(cmd)
                os.system(cmd)
                
-               sys.exit()
                
             if 'noise' in signal_type_list:
             
