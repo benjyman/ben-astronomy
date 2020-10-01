@@ -8911,7 +8911,16 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             os.system(cmd)                      
                
             #then put into the vis 
-            
+            if 'single_point' in signal_type_list:
+               model_vis_name_base += '_SP'
+               out_vis_name = model_vis_name_base + '.vis'
+               
+               cmd = "uvgen source=$MIRCAT/point_zenith.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 systemp=%s jyperk=%s out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec, harange_string, systemp, JperK, out_vis_name)
+               print(cmd)
+               os.system(cmd)
+               
+               sys.exit()
+               
             if 'noise' in signal_type_list:
             
                out_vis_name =  "%s_N_LST_%03d_%s_%0.3f_MHz.vis" % (array_label,lst_deg,pol,freq_MHz)
@@ -11893,6 +11902,7 @@ lst_hrs_list = ['0']
 #freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 freq_MHz_array = np.asarray(freq_MHz_list)
 #lst_hrs_list=['2']
+#do it here: /md0/EoR/ASSASSIN/solve_for_tsky_weighted/jack_tests/single_point
 simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 sys.exit()
 
