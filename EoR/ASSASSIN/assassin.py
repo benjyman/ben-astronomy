@@ -11888,13 +11888,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #sims:
-#freq_MHz_list=[50.]
-#lst_hrs_list = ['2']
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+freq_MHz_list=[70.]
+lst_hrs_list = ['0']
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 freq_MHz_array = np.asarray(freq_MHz_list)
-lst_hrs_list=['2']
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
-
+#lst_hrs_list=['2']
+simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+sys.exit()
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
