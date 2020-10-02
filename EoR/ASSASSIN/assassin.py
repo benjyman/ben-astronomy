@@ -11747,7 +11747,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array2 = UU_s_array2 * c   
    VV_s_array2 = uvtable2['VV']
    VV_m_array2 = VV_s_array2 * c
-   #print(n_vis2)
+   print(n_vis2)
+   print(len(VV_m_array2))
    
    baseline_length_array_m1 = np.sqrt(UU_m_array1**2 + VV_m_array1**2)
    baseline_length_array_m_inds1 = baseline_length_array_m1.argsort()
