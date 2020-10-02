@@ -11734,6 +11734,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print(n_vis1)
    print(UU_m_array1[0:10])
    print(VV_m_array1[0:10])
+   print(UU_m_array1[255:265])
+   print(VV_m_array1[255:265])
    #print(len(VV_m_array1))
 
    hdulist2 = fits.open(uvfitsname2)
@@ -11749,7 +11751,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array2 = UU_s_array2 * c   
    VV_s_array2 = uvtable2['VV']
    VV_m_array2 = VV_s_array2 * c
-   print(n_vis2)
+   #print(n_vis2)
    #print(len(VV_m_array2))
    
    baseline_length_array_m1 = np.sqrt(UU_m_array1**2 + VV_m_array1**2)
@@ -11764,11 +11766,11 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
    VV_m_array_sorted_orig2 = VV_m_array2[baseline_length_array_m_inds2] 
    
-   print(baseline_length_array_m_sorted_orig1[0:10])
-   print(baseline_length_array_m_sorted_orig2[0:10])
+   #print(baseline_length_array_m_sorted_orig1[0:10])
+   #print(baseline_length_array_m_sorted_orig2[0:10])
    
-   print(VV_m_array_sorted_orig1[0:10])
-   print(VV_m_array_sorted_orig2[0:10])  
+   #print(VV_m_array_sorted_orig1[0:10])
+   #print(VV_m_array_sorted_orig2[0:10])  
    
 
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
