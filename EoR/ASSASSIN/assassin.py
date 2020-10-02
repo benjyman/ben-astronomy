@@ -11776,8 +11776,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
 
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
-#compare_uvfits(uvfitsname1,uvfitsname2)
-#sys.exit()
+compare_uvfits(uvfitsname1,uvfitsname2)
+sys.exit()
 
 #SIMS
 
