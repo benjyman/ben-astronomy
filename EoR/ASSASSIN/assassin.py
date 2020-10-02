@@ -11754,7 +11754,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array_sorted_orig1 = UU_m_array1[baseline_length_array_m_inds1]
    VV_m_array_sorted_orig1 = VV_m_array1[baseline_length_array_m_inds1]
    
-   baseline_length_array_m1 = np.sqrt(UU_m_array2**2 + VV_m_array2**2)
+   baseline_length_array_m2 = np.sqrt(UU_m_array2**2 + VV_m_array2**2)
    baseline_length_array_m_inds2 = baseline_length_array_m2.argsort()
    baseline_length_array_m_sorted_orig2 = baseline_length_array_m2[baseline_length_array_m_inds2]
    UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
