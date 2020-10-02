@@ -11748,9 +11748,21 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    VV_m_array2 = VV_s_array2 * c
    #print(n_vis2)
    
-   print(UU_m_array1[0:10])
-   print(UU_m_array2[0:10])
-
+   baseline_length_array_m1 = np.sqrt(UU_m_array1**2 + VV_m_array1**2)
+   baseline_length_array_m_inds1 = baseline_length_array_m1.argsort()
+   baseline_length_array_m_sorted_orig1 = baseline_length_array_m1[baseline_length_array_m_inds1]
+   UU_m_array_sorted_orig1 = UU_m_array1[baseline_length_array_m_inds1]
+   VV_m_array_sorted_orig1 = VV_m_array1[baseline_length_array_m_inds1]
+   
+   baseline_length_array_m1 = np.sqrt(UU_m_array2**2 + VV_m_array2**2)
+   baseline_length_array_m_inds2 = baseline_length_array_m2.argsort()
+   baseline_length_array_m_sorted_orig2 = baseline_length_array_m2[baseline_length_array_m_inds2]
+   UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
+   VV_m_array_sorted_orig2 = VV_m_array2[baseline_length_array_m_inds2] 
+   
+   print(UU_m_array_sorted_orig1[0:10])
+   print(UU_m_array_sorted_orig2[0:10])
+            
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
 compare_uvfits(uvfitsname1,uvfitsname2)
