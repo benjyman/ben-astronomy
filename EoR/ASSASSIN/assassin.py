@@ -11731,7 +11731,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array1 = UU_s_array1 * c   
    VV_s_array1 = uvtable1['VV']
    VV_m_array1 = VV_s_array1 * c
-   print(n_vis1)
+   #print(n_vis1)
 
    hdulist2 = fits.open(uvfitsname2)
    #hdulist2.info()
@@ -11746,8 +11746,10 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array2 = UU_s_array2 * c   
    VV_s_array2 = uvtable2['VV']
    VV_m_array2 = VV_s_array2 * c
-   print(n_vis2)
+   #print(n_vis2)
    
+   print(UU_m_array1[0:10])
+   print(UU_m_array2[0:10])
 
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
