@@ -11741,6 +11741,9 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print(n_vis1)
    #print(len(VV_m_array1))
 
+   UU_m_array1_one_timestep = UU_m_array1[0:32385]
+   VV_m_array1_one_timestep = VV_m_array1[0:32385]
+   
    hdulist2 = fits.open(uvfitsname2)
    #hdulist2.info()
    #info_string2 = [(x,x.data.shape,x.data.dtype.names) for x in hdulist2]
@@ -11757,12 +11760,11 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    #print(n_vis2)
    #print(len(VV_m_array2))
    
-   baseline_length_array_m1 = np.sqrt(UU_m_array1**2 + VV_m_array1**2)
-   baseline_length_array_m1_one_timestep = baseline_length_array_m1[0:32385]
-   baseline_length_array_m_inds1 = baseline_length_array_m1_one_timestep.argsort()
-   baseline_length_array_m_sorted_orig1 = baseline_length_array_m1_one_timestep[baseline_length_array_m_inds1]
-   UU_m_array_sorted_orig1 = UU_m_array1[baseline_length_array_m_inds1]
-   VV_m_array_sorted_orig1 = VV_m_array1[baseline_length_array_m_inds1]
+   baseline_length_array_m1 = np.sqrt(UU_m_array1_one_timestep**2 + VV_m_array1_one_timestep**2)
+   baseline_length_array_m_inds1 = baseline_length_array_m1.argsort()
+   baseline_length_array_m_sorted_orig1 = baseline_length_array_m1[baseline_length_array_m_inds1]
+   UU_m_array_sorted_orig1 = UU_m_array1_one_timestep[baseline_length_array_m_inds1]
+   VV_m_array_sorted_orig1 = VV_m_array1_one_timestep[baseline_length_array_m_inds1]
    
    baseline_length_array_m2 = np.sqrt(UU_m_array2**2 + VV_m_array2**2)
    baseline_length_array_m_inds2 = baseline_length_array_m2.argsort()
