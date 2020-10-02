@@ -8923,6 +8923,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                print(cmd)
                os.system(cmd)
                
+               base_vis_name = out_vis_name
                
             if 'noise' in signal_type_list:
             
@@ -11733,10 +11734,6 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    VV_s_array1 = uvtable1['VV']
    VV_m_array1 = VV_s_array1 * c
    print(n_vis1)
-   print(UU_m_array1[0:10])
-   print(VV_m_array1[0:10])
-   print(UU_m_array1[65270:65279])
-   print(VV_m_array1[65270:65279])
    #print(len(VV_m_array1))
 
    hdulist2 = fits.open(uvfitsname2)
