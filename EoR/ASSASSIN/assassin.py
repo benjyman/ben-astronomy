@@ -11762,6 +11762,9 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    
    print(baseline_length_array_m_sorted_orig1[0:10])
    print(baseline_length_array_m_sorted_orig2[0:10])
+   
+   print(UU_m_array_sorted_orig1[0:10])
+   print(UU_m_array_sorted_orig2[0:10])  
             
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
