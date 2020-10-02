@@ -11731,7 +11731,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array1 = UU_s_array1 * c   
    VV_s_array1 = uvtable1['VV']
    VV_m_array1 = VV_s_array1 * c
-   #print(n_vis1)
+   print(n_vis1)
+   print(len(VV_m_array1))
 
    hdulist2 = fits.open(uvfitsname2)
    #hdulist2.info()
