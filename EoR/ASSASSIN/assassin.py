@@ -11758,8 +11758,9 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    #print(len(VV_m_array2))
    
    baseline_length_array_m1 = np.sqrt(UU_m_array1**2 + VV_m_array1**2)
-   baseline_length_array_m_inds1 = baseline_length_array_m1.argsort()
-   baseline_length_array_m_sorted_orig1 = baseline_length_array_m1[baseline_length_array_m_inds1]
+   baseline_length_array_m1_one_timestep = baseline_length_array_m1[0:32385]
+   baseline_length_array_m_inds1 = baseline_length_array_m1_one_timestep.argsort()
+   baseline_length_array_m_sorted_orig1 = baseline_length_array_m1_one_timestep[baseline_length_array_m_inds1]
    UU_m_array_sorted_orig1 = UU_m_array1[baseline_length_array_m_inds1]
    VV_m_array_sorted_orig1 = VV_m_array1[baseline_length_array_m_inds1]
    
@@ -11769,11 +11770,11 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
    VV_m_array_sorted_orig2 = VV_m_array2[baseline_length_array_m_inds2] 
    
-   #print(baseline_length_array_m_sorted_orig1[0:10])
-   #print(baseline_length_array_m_sorted_orig2[0:10])
+   print(baseline_length_array_m_sorted_orig1[0:10])
+   print(baseline_length_array_m_sorted_orig2[0:10])
    
-   #print(VV_m_array_sorted_orig1[0:10])
-   #print(VV_m_array_sorted_orig2[0:10])  
+   print(VV_m_array_sorted_orig1[0:10])
+   print(VV_m_array_sorted_orig2[0:10])  
    
 
 
