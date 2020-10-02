@@ -8917,7 +8917,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                pointing_dec_SP = "-26.70331940"
                #point_jack.source
                #flux,dra,ddec,bmaj,bmin,bpa,iflux,ipa,vflux
-               #     1.0000    3600.0000    -1.2966806    0.0000    0.0000    0.0000    0.0000    0.0000
+               #     1.0000    3600.0000    -4668.05016    0.0000    0.0000    0.0000    0.0000    0.0000
                cmd = "uvgen source=$MIRCAT/point_jack.source ant='%s' baseunit=-3.33564 corr='32,1,0,0.029' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec_SP, harange_string, out_vis_name)
                print(cmd)
                os.system(cmd)
@@ -11715,6 +11715,14 @@ def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
    print(cmd)
    os.system(cmd)
 
+def compare_uvfits(uvfitsname1,uvfitsname2):
+   print(uvfitsname1)
+   print(uvfitsname2)
+
+uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
+uvfitsname2 = "ben_test_band01.uvfits"
+compare_uvfits(uvfitsname1,uvfitsname2)
+sys.exit()
 
 #SIMS
 
