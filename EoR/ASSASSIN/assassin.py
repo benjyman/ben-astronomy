@@ -8914,6 +8914,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             if 'single_point' in signal_type_list:
                model_vis_name_base += '_SP'
                out_vis_name = model_vis_name_base + '.vis'
+               
+               cmd = "rm -rf %s" % out_vis_name
+               print(cmd)
+               os.system(cmd)
+               
                pointing_dec_SP = "-26.70331940"
                array_ant_locations_filename_255 = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant'
                #point_jack.source
