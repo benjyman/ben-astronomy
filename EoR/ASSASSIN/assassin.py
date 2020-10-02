@@ -11718,6 +11718,36 @@ def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
 def compare_uvfits(uvfitsname1,uvfitsname2):
    print(uvfitsname1)
    print(uvfitsname2)
+   hdulist1 = fits.open(uvfitsname1)
+   #hdulist1.info()
+   #info_string1 = [(x,x.data.shape,x.data.dtype.names) for x in hdulist1]
+   #print info_string1
+   uvtable1 = hdulist1[0].data
+   uvtable_header1 = hdulist1[0].header
+   visibilities1 = uvtable1['DATA']
+   n_vis1 = visibilities1.shape[0]
+
+   UU_s_array1 = uvtable1['UU']
+   UU_m_array1 = UU_s_array1 * c   
+   VV_s_array1 = uvtable1['VV']
+   VV_m_array1 = VV_s_array1 * c
+   print(n_vis1)
+
+   hdulist2 = fits.open(uvfitsname2)
+   #hdulist2.info()
+   #info_string2 = [(x,x.data.shape,x.data.dtype.names) for x in hdulist2]
+   #print info_string2
+   uvtable2 = hdulist2[0].data
+   uvtable_header2 = hdulist2[0].header
+   visibilities2 = uvtable2['DATA']
+   n_vis2 = visibilities2.shape[0]
+
+   UU_s_array2 = uvtable2['UU']
+   UU_m_array2 = UU_s_array2 * c   
+   VV_s_array2 = uvtable2['VV']
+   VV_m_array2 = VV_s_array2 * c
+   print(n_vis2)
+   
 
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
