@@ -8914,8 +8914,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             if 'single_point' in signal_type_list:
                model_vis_name_base += '_SP'
                out_vis_name = model_vis_name_base + '.vis'
-               pointing_dec_27 = "-27.0"
-               cmd = "uvgen source=$MIRCAT/point.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec_27, harange_string, out_vis_name)
+               pointing_dec_SP = "-26.70331940"
+               #point_jack.source
+               #flux,dra,ddec,bmaj,bmin,bpa,iflux,ipa,vflux
+               #     1.0000    3600.0000    -1.2966806    0.0000    0.0000    0.0000    0.0000    0.0000
+               cmd = "uvgen source=$MIRCAT/point_jack.source ant='%s' baseunit=-3.33564 corr='32,1,0,0.029' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename,miriad_uvgen_time_string,freq_GHz,float(lst),pointing_dec_SP, harange_string, out_vis_name)
                print(cmd)
                os.system(cmd)
                
