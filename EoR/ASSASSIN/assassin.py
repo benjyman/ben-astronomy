@@ -11818,6 +11818,8 @@ internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.
 frequency_MHz_array_mnm = np.arange(50,268)
 plot_internal_noise_coupling(internal_noise_matrix_filename,frequency_MHz_array_mnm)
 
+sys.exit()
+
 #SIMS
 
 #calculate the global 21cm signal:
