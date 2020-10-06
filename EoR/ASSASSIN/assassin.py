@@ -8927,7 +8927,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                #day_frac_plus_one_SP = float(lst)/24. + 1
                #miriad_uvgen_time_string_SP = '00JUN%1.3f' % day_frac_plus_one_SP
                lst="6"
-               cmd = "uvgen source=$MIRCAT/point_jack.source ant='%s' baseunit=-3.33564 corr='32,1,0,0.029' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename_255,miriad_uvgen_time_string_SP,freq_GHz,float(lst),pointing_dec_SP, harange_string, out_vis_name)
+               cmd = "uvgen source=$MIRCAT/point_jack.source ant='%s' baseunit=-3.33564 corr='32,1,0,0.029' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename_255,miriad_uvgen_time_string_SP,freq_GHz,float(lst),pointing_dec, harange_string, out_vis_name)
                print(cmd)
                os.system(cmd)
                
