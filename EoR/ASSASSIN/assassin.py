@@ -8922,7 +8922,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                os.system(cmd)
                
                pointing_dec_SP = "-26.70331940"
-               array_ant_locations_filename_255 = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant'
+               array_ant_locations_filename_255 = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
                #point_jack.source
                #flux,dra,ddec,bmaj,bmin,bpa,iflux,ipa,vflux
                #     1.0000    3600.0000    -4668.05016    0.0000    0.0000    0.0000    0.0000    0.0000
