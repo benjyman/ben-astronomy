@@ -11812,6 +11812,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
 def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename):
    print(frequency_MHz_array)
    print(mnm_odd_filename)
+   mnm_odd_array = np.load(mnm_odd_filename)
+   mnm_odd_array_real = mnm_odd_array.real
 
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
