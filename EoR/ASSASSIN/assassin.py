@@ -11999,7 +11999,8 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
 uvfitsname3 = "chan_94_20200303T135201.uvfits"
-compare_uvfits(uvfitsname1,uvfitsname3)
+uvfitsname4 = "eda_model_LST_030_X_70_MHz_DG_gsm.uvfits"
+compare_uvfits(uvfitsname1,uvfitsname4)
 
 sys.exit()
 
