@@ -11977,8 +11977,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 
 #EDA2
-#plot_antenna_array(array_layout_filename=array_ant_locations_filename)
-#sys.exit()
+array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant'
+plot_antenna_array(array_layout_filename=array_ant_locations_filename)
+sys.exit()
 #plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename,freq_MHz=50.)
 #sys.exit()
 
