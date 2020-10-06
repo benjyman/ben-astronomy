@@ -11809,6 +11809,10 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)   
    
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename):
+   print(" ")
+
+
 
 #SIMS
 
