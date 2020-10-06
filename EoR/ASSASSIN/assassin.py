@@ -144,7 +144,9 @@ centre_chan_index = 16
 fine_chan_width_Hz = 28935 #Hz
                      
 if array_ant_locations == 'eda2':
-   array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
+   #array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
+   #miriad want north, east, up
+   array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant'
    array_label = 'eda_model'
 elif array_ant_locations == 'eda2_sub48':
    array_ant_locations_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/EDA2_sub_array_48.txt'
@@ -10913,7 +10915,7 @@ def plot_baseline_length_counts(array_layout_filename,freq_MHz,lambda_threshold=
    
    
 def plot_antenna_array(array_layout_filename,ylim=18):
-   # txt file needs to be miriad format (E W U)
+   print("txt file needs to be miriad format (North, East, Up)")
    antenna_layout_basename = array_layout_filename.split('/')[-1].split('.')[0]
    antenna_name_list = range(1,257)
 
@@ -10922,8 +10924,8 @@ def plot_antenna_array(array_layout_filename,ylim=18):
    with open(array_layout_filename,'r') as f:
       lines = f.readlines()
    for line in lines:
-      antenna_position_x = float(line.strip().split()[0])
-      antenna_position_y = float(line.strip().split()[1])
+      antenna_position_x = float(line.strip().split()[1])
+      antenna_position_y = float(line.strip().split()[0])
       antenna_position_x_list.append(antenna_position_x)
       antenna_position_y_list.append(antenna_position_y)   
    
@@ -11977,7 +11979,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 
 #EDA2
-array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant'
+array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
 plot_antenna_array(array_layout_filename=array_layout_filename)
 sys.exit()
 #plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename,freq_MHz=50.)
