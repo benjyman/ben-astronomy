@@ -11998,7 +11998,8 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
 uvfitsname2 = "ben_test_band01.uvfits"
-compare_uvfits(uvfitsname1,uvfitsname2)
+uvfitsname3 = "chan_94_20200303T135201.uvfits"
+compare_uvfits(uvfitsname1,uvfitsname3)
 
 sys.exit()
 
