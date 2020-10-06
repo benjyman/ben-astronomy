@@ -11725,6 +11725,8 @@ def make_image_movie_from_ds9(EDA2_chan_list,n_obs_list,out_movie_name):
 def compare_uvfits(uvfitsname1,uvfitsname2):
    print(uvfitsname1)
    print(uvfitsname2)
+   uvfitsname1_base = uvfitsname1.split('.uvfits')[0]
+   uvfitsname2_base = uvfitsname2.split('.uvfits')[0]
    hdulist1 = fits.open(uvfitsname1)
    #hdulist1.info()
    #info_string1 = [(x,x.data.shape,x.data.dtype.names) for x in hdulist1]
@@ -11772,14 +11774,37 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
    VV_m_array_sorted_orig2 = VV_m_array2[baseline_length_array_m_inds2] 
    
-   print(baseline_length_array_m_sorted_orig1[0:10])
-   print(baseline_length_array_m_sorted_orig2[0:10])
+   #print(baseline_length_array_m_sorted_orig1[0:10])
+   #print(baseline_length_array_m_sorted_orig2[0:10])
    
-   print(VV_m_array_sorted_orig1[0:10])
-   print(UU_m_array_sorted_orig2[0:10])  
+   #print(VV_m_array_sorted_orig1[0:10])
+   #print(UU_m_array_sorted_orig2[0:10])  
    
+   #make a uv plot:
+   plt.clf()
+   plt.scatter(UU_m_array_sorted_orig1,VV_m_array_sorted_orig1,s=1,marker='.')
+   map_title="UV footprint" 
+   plt.xlabel("UU (m)")
+   plt.ylabel("VV (m)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "UV_plot_%s.png" % (uvfitsname1_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)    
 
-
+   plt.clf()
+   plt.scatter(UU_m_array_sorted_orig2,VV_m_array_sorted_orig2,s=1,marker='.')
+   map_title="UV footprint" 
+   plt.xlabel("UU (m)")
+   plt.ylabel("VV (m)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "UV_plot_%s.png" % (uvfitsname2_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)   
+   
 
 #SIMS
 
