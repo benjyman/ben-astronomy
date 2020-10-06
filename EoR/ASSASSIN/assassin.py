@@ -11818,7 +11818,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename):
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(internal_noise_matrix_filename,frequency_MHz_array_mnm)
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename)
 
 sys.exit()
 
