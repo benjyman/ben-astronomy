@@ -11817,17 +11817,31 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
 
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
-   #with 
-   #antenna_positions = 
+   with open(antenna_positions_filename) as f:
+      lines = f.readlines()
+      lines = f.readlines()
+   for line in lines:
+      antenna_position_x = float(line.strip().split()[1])
+      antenna_position_y = float(line.strip().split()[0])
+      antenna_position_x_list.append(antenna_position_x)
+      antenna_position_y_list.append(antenna_position_y)   
    
+   antenna_position_x_m = np.asarray(antenna_position_x_list)
+   antenna_position_y_m = np.asarray(antenna_position_y_list)
    
+   #sort by descending E coord just to compare uv coverage with previous sims
+   antenna_position_x_m_descending_inds = antenna_position_x_m.argsort()[::-1]
+   antenna_position_x_m_sorted = antenna_position_x_m[antenna_position_x_m_descending_inds]
+   antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_descending_inds]
+   print(antenna_position_x_m_sorted)
+   #uu_m_array = 
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
-antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/Allocated_cluster.txt"
+antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
 
-#sys.exit()
+sys.exit()
 
 #SIMS
 
@@ -11999,9 +12013,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #EDA2
 #array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
-array_layout_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
-plot_antenna_array(array_layout_filename=array_layout_filename)
-sys.exit()
+#array_layout_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
+#plot_antenna_array(array_layout_filename=array_layout_filename)
+#sys.exit()
 #plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename,freq_MHz=50.)
 #sys.exit()
 
