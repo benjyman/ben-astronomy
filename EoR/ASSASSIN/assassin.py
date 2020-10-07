@@ -11737,7 +11737,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    #print info_string1
    uvtable1 = hdulist1[0].data
    uvtable_header1 = hdulist1[0].header
-   visibilities1 = uvtable1['DATA']
+   visibilities1 = uvtable1['DATA'][:,0,0,0,0,0]
    n_vis1 = visibilities1.shape[0]
 
    UU_s_array1 = uvtable1['UU']
@@ -11757,7 +11757,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    #print info_string2
    uvtable2 = hdulist2[0].data
    uvtable_header2 = hdulist2[0].header
-   visibilities2 = uvtable2['DATA'][:,0,0,0,0,0]
+   visibilities2 = uvtable2['DATA']
    n_vis2 = visibilities2.shape[0]
 
    UU_s_array2 = uvtable2['UU']
