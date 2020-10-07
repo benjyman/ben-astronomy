@@ -11809,21 +11809,23 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)   
    
-def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_numbering_filename):
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
    print(frequency_MHz_array)
    print(mnm_odd_filename)
    mnm_odd_array = np.load(mnm_odd_filename)
    mnm_odd_array_real = mnm_odd_array.real
 
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
-   
+   #For zenith, u,v is just the diff of the E and the diff of the N
+   with 
+   antenna_positions = 
    
    
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
-antenna_numbering_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/Allocated_cluster.txt"
+antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/Allocated_cluster.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_numbering_filename)
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
 
 sys.exit()
 
@@ -11997,8 +11999,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 
 #EDA2
 #array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
-#plot_antenna_array(array_layout_filename=array_layout_filename)
-#sys.exit()
+array_layout_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
+plot_antenna_array(array_layout_filename=array_layout_filename)
+sys.exit()
 #plot_baseline_length_counts(array_layout_filename = array_ant_locations_filename,freq_MHz=50.)
 #sys.exit()
 
