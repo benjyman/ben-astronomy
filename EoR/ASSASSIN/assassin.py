@@ -11827,14 +11827,13 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
       antenna_position_x_list.append(antenna_position_x)
       antenna_position_y_list.append(antenna_position_y)   
    
-   print(antenna_position_x_list)
    antenna_position_x_m = np.asarray(antenna_position_x_list)
    antenna_position_y_m = np.asarray(antenna_position_y_list)
    
    #sort by descending E coord just to compare uv coverage with previous sims
-   antenna_position_x_m_descending_inds = antenna_position_x_m.argsort()[::-1]
-   antenna_position_x_m_sorted = antenna_position_x_m[antenna_position_x_m_descending_inds]
-   antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_descending_inds]
+   antenna_position_x_m_ascending_inds = antenna_position_x_m.argsort()
+   antenna_position_x_m_sorted = antenna_position_x_m[antenna_position_x_m_ascending_inds][::-1]
+   antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_ascending_inds][::-1]
    print(antenna_position_x_m_sorted)
    #uu_m_array = 
 
