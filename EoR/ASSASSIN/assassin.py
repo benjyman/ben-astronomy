@@ -11809,16 +11809,21 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)   
    
-def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename):
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_numbering_filename):
    print(frequency_MHz_array)
    print(mnm_odd_filename)
    mnm_odd_array = np.load(mnm_odd_filename)
    mnm_odd_array_real = mnm_odd_array.real
 
+   #for one freq, plot the real and abs values of the internal noise as a function of baseline length
+   
+   
+   
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
+antenna_numbering_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/Allocated_cluster.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename)
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_numbering_filename)
 
 sys.exit()
 
