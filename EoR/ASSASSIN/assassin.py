@@ -11920,7 +11920,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
       plt.savefig(plot_filename)
       print("save %s" % plot_filename)   
    
-internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
+internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
 plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
