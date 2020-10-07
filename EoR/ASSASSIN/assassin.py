@@ -11825,6 +11825,19 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)    
    
+   #imag
+   plt.clf()
+   plt.plot(baseline_length_array_m_sorted_orig1,visibilities1_one_timestep_sorted.imag)
+   map_title="Image vis vs baseline length" 
+   plt.xlabel("Baseline length (m)")
+   plt.ylabel("Visibility amplitude real (Jy)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "image_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   
    
 def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
    #plot the first freq for now (50 MHz?)
