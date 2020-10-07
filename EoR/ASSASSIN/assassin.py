@@ -11810,6 +11810,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print("saved %s" % fig_name)   
    
 def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
+   #plot the first freq for now (50 MHz?)
+   freq_index = 0
    print(frequency_MHz_array)
    print(mnm_odd_filename)
    mnm_odd_array = np.load(mnm_odd_filename)
