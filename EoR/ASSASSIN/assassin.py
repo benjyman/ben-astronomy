@@ -11839,14 +11839,39 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    print(n_ant)
    
    #calculate u and v for each baseline
-   uu_list = []
-   vv_list = []
+   uu_list_sorted = []
+   vv_list_sorted = []
    
    for ant_1_index in range(0,n_ant):
       for ant_2_index in range(0,n_ant):
          if (ant_2_index >= ant_1_index):
             uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
             vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
+            uu_list_sorted.append(uu)
+            vv_list_sorted.append(vv)
+
+   uu_array_sorted = np.asarray(uu_list_sorted)
+   vv_array_sorted = np.asarray(vv_list_sorted)
+   
+   plt.clf()
+   plot_filename = "uv_plot_sorted_test_eda2_daniel.png"
+   plt.scatter(uu_array_sorted,vv_array_sorted,s=1,marker='.')
+   plt.gcf()
+   plt.savefig(plot_filename)
+   print("save %s" % plot_filename)
+   
+   #okay looks exactly as expected!
+   
+   #now do the same thing without the sorting so that you can allocate the correct correlation to each baseline  
+   #calculate u and v for each baseline
+   uu_list = []
+   vv_list = []
+   
+   for ant_1_index in range(0,n_ant):
+      for ant_2_index in range(0,n_ant):
+         if (ant_2_index >= ant_1_index):
+            uu = antenna_position_x_m[ant_1_index] - antenna_position_x_m[ant_2_index]
+            vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
             uu_list.append(uu)
             vv_list.append(vv)
 
@@ -11854,11 +11879,13 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    vv_array = np.asarray(vv_list)
    
    plt.clf()
-   plot_filename = "uv_plot_test_eda2_daniel.png"
+   plot_filename = "uv_plot_unsorted_eda2_daniel.png"
    plt.scatter(uu_array,vv_array,s=1,marker='.')
    plt.gcf()
    plt.savefig(plot_filename)
    print("save %s" % plot_filename)
+
+   
    
    
    
