@@ -11869,7 +11869,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    
    for ant_1_index in range(0,n_ant):
       for ant_2_index in range(0,n_ant):
-         if (ant_2_index >= ant_1_index):
+         if (ant_2_index > ant_1_index):
             uu = antenna_position_x_m[ant_1_index] - antenna_position_x_m[ant_2_index]
             vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
             uu_list.append(uu)
