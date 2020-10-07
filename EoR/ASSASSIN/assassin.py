@@ -11903,7 +11903,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    
    plt.clf()
    plot_filename = "correlation_real_vs_baseline_length_eda2_daniel.png"
-   plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<2.],correlation_array_sorted[baseline_length_array_m_sorted<2.].real)
+   plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<35],correlation_array_sorted[baseline_length_array_m_sorted<35].real)
    plt.gcf()
    plt.savefig(plot_filename)
    print("save %s" % plot_filename)
