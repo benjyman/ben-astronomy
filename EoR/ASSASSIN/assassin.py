@@ -11844,10 +11844,11 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    
    for ant_1_index in range(0,n_ant):
       for ant_2_index in range(0,n_ant):
-         uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
-         vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
-         uu_list.append(uu)
-         vv_list.append(vv)
+         if (ant_2_index >= ant_1_index):
+            uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
+            vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
+            uu_list.append(uu)
+            vv_list.append(vv)
 
    uu_array = np.asarray(uu_list)
    vv_array = np.asarray(vv_list)
