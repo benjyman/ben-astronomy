@@ -11841,7 +11841,25 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    #calculate u and v for each baseline
    uu_list = []
    vv_list = []
-    
+   
+   for ant_1_index in range(0,n_ant):
+      for ant_2_index in range(0,n_ant):
+         uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
+         vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
+         uu_list.append(uu)
+         vv_list.append(vv)
+
+   uu_array = np.asarray(uu_list)
+   vv_array = np.asarray(vv_list)
+   
+   plt.clf()
+   plot_filename = "uv_plot_test_eda2_daniel.png"
+   plt.scatter(uu_array,vv_array)
+   plt.gcf()
+   plt.savefig(plot_filename)
+   print("save %s" % plot_filename)
+   
+   
    
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
