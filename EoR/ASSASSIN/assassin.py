@@ -11827,7 +11827,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
       antenna_position_x_list.append(antenna_position_x)
       antenna_position_y_list.append(antenna_position_y)   
    
-   print(antenna_position_x_m)
+   print(antenna_position_x_list)
    antenna_position_x_m = np.asarray(antenna_position_x_list)
    antenna_position_y_m = np.asarray(antenna_position_y_list)
    
