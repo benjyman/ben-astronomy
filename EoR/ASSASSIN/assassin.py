@@ -11836,29 +11836,29 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_ascending_inds][::-1]
    
    n_ant = antenna_position_x_m_sorted.shape[0]
-   print(n_ant)
+   print("n_ant %s" % n_ant)
    
    #calculate u and v for each baseline
-   uu_list_sorted = []
-   vv_list_sorted = []
-   
-   for ant_1_index in range(0,n_ant):
-      for ant_2_index in range(0,n_ant):
-         if (ant_2_index >= ant_1_index):
-            uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
-            vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
-            uu_list_sorted.append(uu)
-            vv_list_sorted.append(vv)
+   #uu_list_sorted = []
+   #vv_list_sorted = []
+   #
+   #for ant_1_index in range(0,n_ant):
+   #   for ant_2_index in range(0,n_ant):
+   #      if (ant_2_index >= ant_1_index):
+   #         uu = antenna_position_x_m_sorted[ant_1_index] - antenna_position_x_m_sorted[ant_2_index]
+   #         vv = antenna_position_y_m_sorted[ant_1_index] - antenna_position_y_m_sorted[ant_2_index]
+   #         uu_list_sorted.append(uu)
+   #         vv_list_sorted.append(vv)
 
-   uu_array_sorted = np.asarray(uu_list_sorted)
-   vv_array_sorted = np.asarray(vv_list_sorted)
+   #uu_array_sorted = np.asarray(uu_list_sorted)
+   #vv_array_sorted = np.asarray(vv_list_sorted)
    
-   plt.clf()
-   plot_filename = "uv_plot_sorted_test_eda2_daniel.png"
-   plt.scatter(uu_array_sorted,vv_array_sorted,s=1,marker='.')
-   plt.gcf()
-   plt.savefig(plot_filename)
-   print("save %s" % plot_filename)
+   #plt.clf()
+   #plot_filename = "uv_plot_sorted_test_eda2_daniel.png"
+   #plt.scatter(uu_array_sorted,vv_array_sorted,s=1,marker='.')
+   #plt.gcf()
+   #plt.savefig(plot_filename)
+   #print("save %s" % plot_filename)
    
    #okay looks exactly as expected!
    
@@ -11885,6 +11885,8 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    plt.savefig(plot_filename)
    print("save %s" % plot_filename)
 
+   n_baselines = uu_array.shape[0]
+   print("n_baselines %s" % n_baselines)
    
    
    
