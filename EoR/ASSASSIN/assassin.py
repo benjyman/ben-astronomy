@@ -11834,8 +11834,14 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    antenna_position_x_m_ascending_inds = antenna_position_x_m.argsort()
    antenna_position_x_m_sorted = antenna_position_x_m[antenna_position_x_m_ascending_inds][::-1]
    antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_ascending_inds][::-1]
-   print(antenna_position_x_m_sorted)
-   #uu_m_array = 
+   
+   print(antenna_position_x_m_sorted.shape)
+   print(antenna_position_y_m_sorted.shape)
+   
+   #calculate u and v for each baseline
+   uu_list = []
+   vv_list = []
+    
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
