@@ -11817,6 +11817,8 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
 
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
+   antenna_position_x_list = []
+   antenna_position_y_list = []
    with open(antenna_positions_filename) as f:
       lines = f.readlines()
       lines = f.readlines()
