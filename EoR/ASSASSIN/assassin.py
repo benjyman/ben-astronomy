@@ -11813,7 +11813,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    print(frequency_MHz_array)
    print(mnm_odd_filename)
    mnm_odd_array = np.load(mnm_odd_filename)
-   mnm_odd_array_real = mnm_odd_array.real
+   #mnm_odd_array_real = mnm_odd_array.real
 
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
@@ -11866,17 +11866,23 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    #calculate u and v for each baseline
    uu_list = []
    vv_list = []
+   correlation_list = []
    
    for ant_1_index in range(0,n_ant):
       for ant_2_index in range(0,n_ant):
+         #only uniques baselines and dont include autos
          if (ant_2_index > ant_1_index):
             uu = antenna_position_x_m[ant_1_index] - antenna_position_x_m[ant_2_index]
             vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
             uu_list.append(uu)
             vv_list.append(vv)
+            correlation = mnm_odd_array[freq_index,ant_1_index,ant_2_index]
+            correlation_list.append(correlation)
+            
 
    uu_array = np.asarray(uu_list)
    vv_array = np.asarray(vv_list)
+   correlation_array = np.asarray(correlation_list) 
    
    plt.clf()
    plot_filename = "uv_plot_unsorted_eda2_daniel.png"
@@ -11888,9 +11894,17 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    n_baselines = uu_array.shape[0]
    print("n_baselines %s" % n_baselines)
    
+   baseline_length_array_m = np.sqrt(uu_array**2 + vv_array**2)
+   baseline_length_array_m_inds = baseline_length_array_m.argsort()
+   baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
+   correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
    
-   
-   
+   plt.clf()
+   plot_filename = "correlation_real_vs_baseline_length_eda2_daniel.png"
+   plt.plot(baseline_length_array_m_sorted,correlation_array_sorted)
+   plt.gcf()
+   plt.savefig(plot_filename)
+   print("save %s" % plot_filename)
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
