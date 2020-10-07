@@ -11817,17 +11817,17 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
 
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
-   with 
-   antenna_positions = 
+   #with 
+   #antenna_positions = 
    
    
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/Allocated_cluster.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
 
-sys.exit()
+#sys.exit()
 
 #SIMS
 
