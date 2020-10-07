@@ -11749,6 +11749,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
 
    UU_m_array1_one_timestep = UU_m_array1[0:32385]
    VV_m_array1_one_timestep = VV_m_array1[0:32385]
+   visibilities1_one_timestep = visibilities1[0:32385]
    
    hdulist2 = fits.open(uvfitsname2)
    #hdulist2.info()
@@ -11771,13 +11772,14 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    baseline_length_array_m_sorted_orig1 = baseline_length_array_m1[baseline_length_array_m_inds1]
    UU_m_array_sorted_orig1 = UU_m_array1_one_timestep[baseline_length_array_m_inds1]
    VV_m_array_sorted_orig1 = VV_m_array1_one_timestep[baseline_length_array_m_inds1]
+   visibilities1_one_timestep_sorted = visibilities1_one_timestep[baseline_length_array_m_inds1]
    
    baseline_length_array_m2 = np.sqrt(UU_m_array2**2 + VV_m_array2**2)
    baseline_length_array_m_inds2 = baseline_length_array_m2.argsort()
    baseline_length_array_m_sorted_orig2 = baseline_length_array_m2[baseline_length_array_m_inds2]
    UU_m_array_sorted_orig2 = UU_m_array2[baseline_length_array_m_inds2]
    VV_m_array_sorted_orig2 = VV_m_array2[baseline_length_array_m_inds2] 
-   
+   visibilities2_sorted = visibilities2[baseline_length_array_m_inds2]
    #print(baseline_length_array_m_sorted_orig1[0:10])
    #print(baseline_length_array_m_sorted_orig2[0:10])
    
@@ -11808,6 +11810,21 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)   
+   
+   #now plot the visibility values as a function of baseline length
+   #real
+   plt.clf()
+   plt.plot(baseline_length_array_m_sorted_orig1,visibilities1_one_timestep_sorted.real)
+   map_title="Real vis vs baseline length" 
+   plt.xlabel("Baseline length (m)")
+   plt.ylabel("Visibility amplitude real (Jy)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "real_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)    
+   
    
 def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
    #plot the first freq for now (50 MHz?)
