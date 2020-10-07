@@ -11901,12 +11901,14 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
    correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
    
-   plt.clf()
-   plot_filename = "correlation_real_vs_baseline_length_eda2_daniel.png"
-   plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<35],correlation_array_sorted[baseline_length_array_m_sorted<35].real)
-   plt.gcf()
-   plt.savefig(plot_filename)
-   print("save %s" % plot_filename)
+   length_list = [35,10,5,2]
+   for length in length_list:
+      plt.clf()
+      plot_filename = "correlation_real_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
+      plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],correlation_array_sorted[baseline_length_array_m_sorted<length].real)
+      plt.gcf()
+      plt.savefig(plot_filename)
+      print("save %s" % plot_filename)
 
 internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_odd_eda2.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
