@@ -11814,13 +11814,13 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    #now plot the visibility values as a function of baseline length
    #real
    plt.clf()
-   plt.plot(baseline_length_array_m_sorted_orig1[baseline_length_array_m_sorted_orig1<2],visibilities1_one_timestep_sorted[baseline_length_array_m_sorted_orig1<2].real)
+   plt.plot(baseline_length_array_m_sorted_orig1,visibilities1_one_timestep_sorted.real)
    map_title="Real vis vs baseline length" 
    plt.xlabel("Baseline length (m)")
    plt.ylabel("Visibility amplitude real (Jy)")
    #plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "real_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
+   fig_name= "real_vis_vs_baseline_length_%s.png" % (uvfitsname1_base)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)    
@@ -11833,7 +11833,33 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    plt.ylabel("Visibility amplitude real (Jy)")
    #plt.legend(loc=1)
    #plt.ylim([0, 20])
-   fig_name= "image_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
+   fig_name= "imag_vis_vs_baseline_length_%s.png" % (uvfitsname1_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+
+   #real
+   plt.clf()
+   plt.plot(baseline_length_array_m_sorted_orig2,visibilities2_sorted.real)
+   map_title="Real vis vs baseline length" 
+   plt.xlabel("Baseline length (m)")
+   plt.ylabel("Visibility amplitude real (Jy)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "real_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)    
+   
+   #imag
+   plt.clf()
+   plt.plot(baseline_length_array_m_sorted_orig2,visibilities2_sorted.imag)
+   map_title="Imag vis vs baseline length" 
+   plt.xlabel("Baseline length (m)")
+   plt.ylabel("Visibility amplitude real (Jy)")
+   #plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "imag_vis_vs_baseline_length_%s.png" % (uvfitsname2_base)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    print("saved %s" % fig_name)
