@@ -12008,7 +12008,10 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
    for centre_chan in centre_chans_number_list:
       for band_num in range(1,25):
         freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
-        name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
+        print("Freq %0.3f MHz" % freq_MHz)
+        #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
+        #dont put freq as stuffs up naming on pawsey for array job
+        name_base = "woden_map_centre_chan_%03d_band_%02d_freq_hpx" % (centre_chan,band_num)
         gsm_filename = "%s_gsm.fits" % name_base
         gsm_uniform_filename = "%s_gsm_uniform.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
