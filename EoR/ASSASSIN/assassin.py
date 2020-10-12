@@ -12008,20 +12008,20 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
         name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         gsm_map = gsm.generate(freq_MHz)
-        hp.write_map("%s_gsm.fits" % name_base,gsm_map,coord='G',nest=False)
+        hp.write_map("%s_gsm.fits" % name_base,gsm_map,coord='G',nest=False,overwrite=True)
         print("saved %s_gsm.fits" % name_base)
         #print(gsm_map)
         #uniform sky 180 at 180:
         #see top of file for defs
         uniform_sky_temp = T_180*(freq_MHz/180.0)**beta
         gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
-        hp.write_map("%s_gsm_uniform.fits" % name_base,gsm_map_uniform,coord='G',nest=False)
+        hp.write_map("%s_gsm_uniform.fits" % name_base,gsm_map_uniform,coord='G',nest=False,overwrite=True)
         print("saved %s_gsm_uniform.fits" % name_base)
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
         global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
-        hp.write_map("%s_EDGES_uniform.fits" % name_base,global_EDGES_uniform_map,coord='G',nest=False)
+        hp.write_map("%s_EDGES_uniform.fits" % name_base,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
         print("saved %s_EDGES_uniform.fits" % name_base)
         #print(global_EDGES_uniform_map)
             
