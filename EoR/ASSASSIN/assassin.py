@@ -1941,7 +1941,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                results = model.fit()
                ##print results.summary()
                parameters = results.params
-               print parameters
+               print(parameters)
             
                t_sky_jy = parameters[0]
                t_sky_error_jy = results.bse[0]
