@@ -12043,6 +12043,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
       for centre_chan in centre_chans_number_list:
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
+         sourcelist_name = "woden_map_centre_chan_%03d_band_$SLURM_ARRAY_TASK_ID_freq_hpx_%s_soucelist.txt" % (centre_chan,type)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12060,7 +12061,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --ra0=58.13223745343605 --dec0=-26.70 \\ \n")
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\ \n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\ \n")
-            outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/hpx_fits/woden_$SLURM_ARRAY_TASK_ID.txt \\ \n")
+            outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\ \n" % sourcelist_name)
             outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/1132846440_metafits_ppds.fits \\ \n")
             outfile.write("   --output_uvfits_prepend=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/uniform_sky_test \\ \n")
             outfile.write("   --sky_crop_components \\ \n")
