@@ -2590,7 +2590,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       results = model.fit()
       ##print results.summary()
       parameters = results.params
-      print parameters
+      #print parameters
    
       t_sky_jy = parameters[0]
       t_sky_error_jy = results.bse[0]
