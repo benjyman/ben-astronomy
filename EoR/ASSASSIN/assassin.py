@@ -12039,7 +12039,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
           
 def write_woden_sims_sbatch_file(centre_chans_number_list):
    for centre_chan in centre_chans_number_list:
-      name_base = "woden_eda2_sbatch_chan_%03d" % (centre_chan,band_num)
+      name_base = "woden_eda2_sbatch_chan_%03d" % (centre_chan)
       sbatch_filename = "%s.sh" % name_base
       with open('%s' % sbatch_filename,'w') as outfile:
          outfile.write("#!/bin/bash --login\n #SBATCH --nodes=1\n #SBATCH --partition=gpuq\n #SBATCH --gres=gpu:1\n")
