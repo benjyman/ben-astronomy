@@ -11,6 +11,8 @@
 pawsey = True
 if pawsey:
    import math
+   import os,sys
+   import numpy as np
 else:
    import matplotlib
    matplotlib.use('Agg')
