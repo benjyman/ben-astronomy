@@ -9,7 +9,9 @@
 # The data is in 1 deg steps.
 #
 pawsey = True
-if not pawsey:
+if pawsey:
+   import math
+else:
    import matplotlib
    matplotlib.use('Agg')
    import os,sys
