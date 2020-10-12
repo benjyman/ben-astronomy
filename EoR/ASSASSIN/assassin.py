@@ -12074,7 +12074,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
         
 #woden sims from 50 to 200 MHz
 centre_chans_number_list = [52,76,100,124,148]
-write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
 write_woden_sims_sbatch_file(centre_chans_number_list)
 
 sys.exit()
