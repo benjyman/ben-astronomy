@@ -12067,7 +12067,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --EDA2_sim \\n")
             outfile.write("   --array_layout=/astro/mwaeor/jline/test_WODEN/EDA2_sims/AAVS1_loc_uvgen_255.ant \\n")
             outfile.write("   --band_nums=$SLURM_ARRAY_TASK_ID \\n")
-            outfile.write("   --chunking_size=5000 \"
+            outfile.write("   --chunking_size=5000 \\n")
             
          print("wrote %s" % sbatch_filename)          
         
