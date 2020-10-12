@@ -12064,11 +12064,11 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\ \n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\ \n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\ \n" % sourcelist_name)
-            outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\ \n" % centre_chan)
+            outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\ \n" % centre_chan)
             outfile.write("   --output_uvfits_prepend=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s_chan_%03d_woden_test \\ \n" % (type,centre_chan))
             outfile.write("   --sky_crop_components \\ \n")
             outfile.write("   --EDA2_sim \\ \n")
-            outfile.write("   --array_layout=/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\ \n")
+            outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\ \n")
             outfile.write("   --band_nums=$SLURM_ARRAY_TASK_ID \\ \n")
             outfile.write("   --chunking_size=5000 \\ \n")
             
