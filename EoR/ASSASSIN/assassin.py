@@ -11993,7 +11993,7 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
    #fig.savefig('%s_woden_map.png' % name_base, bbox_inches='tight')
    #plt.close()
    source_ind = 0
-   with open('%s_sourcelist.xt' % name_base,'w') as outfile:
+   with open('%s_sourcelist.txt' % name_base,'w') as outfile:
        for ind,flux in enumerate(fluxes):
            if source_ind == 0:
                outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(fluxes))
@@ -12037,13 +12037,14 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         #print(global_EDGES_uniform_map)
             
           
-def write_woden_sims_sbatch_file(centre_chan_number_list):
-   print("for centre chans:") 
-   print(centre_chan_number_list)
+def write_woden_sims_sbatch_file(centre_chans_number_list):
+   for centre_chan in centre_chans_number_list:
+   
 
 #woden sims from 50 to 200 MHz
 centre_chans_number_list = [52,76,100,124,148]
-write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+write_woden_sims_sbatch_file(centre_chans_number_list)
 
 sys.exit()
 
