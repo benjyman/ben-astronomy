@@ -12002,7 +12002,7 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
        outfile.write('ENDSOURCE')
 
 def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
-    for centre_chan in centre_chans_number_list
+    for centre_chan in centre_chans_number_list:
     gsm = GlobalSkyModel()
     for centre_chan in centre_chans_number_list:
        for band_num in range(0,24):
