@@ -8,58 +8,52 @@
 # The 'origin' will be on the top left corner. Going from top to bottom is increasing in phi and going left to right is increasing in theta. 
 # The data is in 1 deg steps.
 #
-pawsey = True
-if pawsey:
-   import math
-   import os,sys
-   import numpy as np
-else:
-   import matplotlib
-   matplotlib.use('Agg')
-   import os,sys
-   import numpy as np
-   import math
-   import matplotlib.pyplot as plt
-   from astropy.time import Time
-   from astropy.time import TimeDelta
-   import astropy.units as u
-   from PIL import Image
-   from PIL import ImageFont
-   from PIL import ImageDraw 
-   import healpy as hp
-   from pygsm import GSMObserver
-   from pygsm import GlobalSkyModel
-   from pygsm import GlobalSkyModel2016
-   from datetime import datetime, date
-   
-   from reproject import reproject_from_healpix
-   import pyfits
-   from astropy.wcs import WCS
-   from astropy.io import fits
-   from scipy.interpolate import interp1d
-   from scipy.ndimage import map_coordinates
-   from scipy import signal
-   import numpy.polynomial.polynomial as poly
-   from pyuvdata import UVData
-   
-   import random
-   from astropy import units as u
-   from astropy.coordinates import SkyCoord
-   import statsmodels.api as sm
-   import statsmodels.formula.api as smf
-   import pandas as pd
-   from sklearn.linear_model import LinearRegression
-   import seaborn as sns
-   from scipy.optimize import curve_fit
-   
-   from sklearn.preprocessing import normalize
-   #avoid astropy time error
-   from astropy.utils.iers import conf
-   conf.auto_max_age = None
-   from astropy.utils import iers
-   iers.conf.auto_download = False  
-   #from astroplan import download_IERS_A
-   #download_IERS_A()
+import matplotlib
+matplotlib.use('Agg')
+import os,sys
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+from astropy.time import Time
+from astropy.time import TimeDelta
+import astropy.units as u
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw 
+import healpy as hp
+from pygsm import GSMObserver
+from pygsm import GlobalSkyModel
+from pygsm import GlobalSkyModel2016
+from datetime import datetime, date
+
+from reproject import reproject_from_healpix
+import pyfits
+from astropy.wcs import WCS
+from astropy.io import fits
+from scipy.interpolate import interp1d
+from scipy.ndimage import map_coordinates
+from scipy import signal
+import numpy.polynomial.polynomial as poly
+from pyuvdata import UVData
+
+import random
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+import seaborn as sns
+from scipy.optimize import curve_fit
+
+from sklearn.preprocessing import normalize
+#avoid astropy time error
+from astropy.utils.iers import conf
+conf.auto_max_age = None
+from astropy.utils import iers
+iers.conf.auto_download = False  
+#from astroplan import download_IERS_A
+#download_IERS_A()
 
 #color defs for color blindness contrast
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
