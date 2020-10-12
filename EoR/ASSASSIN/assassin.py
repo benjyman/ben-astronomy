@@ -12002,6 +12002,8 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
        outfile.write('ENDSOURCE')
 
 def write_woden_skymodels(centre_chans_number_list,nside):
+    for centre_chan in centre_chans_number_list
+    gsm = GlobalSkyModel()
     for centre_chan in centre_chans_number_list:
        for band in range(0,24):
           name_base = "gsm_model_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx"
@@ -12011,8 +12013,10 @@ def write_woden_skymodels(centre_chans_number_list,nside):
 def write_woden_sims_sbatch_file(centre_chan_number_list):
    print("for centre chans:") 
    print(centre_chan_number_list)
-   
-   
+
+#woden sims from 50 to 200 MHz
+centre_chans_number_list = [52,76,100,124,148]
+write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
   
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
