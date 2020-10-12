@@ -11979,7 +11979,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
 def write_woden_sourcelists(hpx_fits_filename,nside):
    name_base = hpx_fits_filename.split(".fits")[0]          
    data = hp.read_map(hpx_fits_filename,nest=False)
-   pix_inds = arange(hp.nside2npix(nside))
+   pix_inds = np.arange(hp.nside2npix(nside))
    l, b = hp.pix2ang(nside,pix_inds,lonlat=True)
    gal_coords = SkyCoord(l*u.deg, b*u.deg, frame='galactic')
    ra = gal_coords.icrs.ra.value
