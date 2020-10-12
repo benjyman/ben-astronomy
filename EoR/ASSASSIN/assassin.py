@@ -12011,7 +12011,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         print("Freq %0.3f MHz" % freq_MHz)
         #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         #dont put freq as stuffs up naming on pawsey for array job
-        name_base = "woden_map_centre_chan_%03d_band_%02d_freq_hpx" % (centre_chan,band_num)
+        name_base = "woden_map_centre_chan_%03d_band_%02d_hpx" % (centre_chan,band_num)
         gsm_filename = "%s_gsm.fits" % name_base
         gsm_uniform_filename = "%s_gsm_uniform.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
@@ -12043,7 +12043,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
       for centre_chan in centre_chans_number_list:
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_centre_chan_%03d_band_$SLURM_ARRAY_TASK_ID_freq_hpx_%s_soucelist.txt" % (centre_chan,type)
+         sourcelist_name = "woden_map_centre_chan_%03d_band_$SLURM_ARRAY_TASK_ID_hpx_%s_soucelist.txt" % (centre_chan,type)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12074,7 +12074,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
         
 #woden sims from 50 to 200 MHz
 centre_chans_number_list = [52,76,100,124,148]
-#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
 write_woden_sims_sbatch_file(centre_chans_number_list)
 
 sys.exit()
