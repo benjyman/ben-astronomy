@@ -12005,7 +12005,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
    gsm = GlobalSkyModel()
    for centre_chan in centre_chans_number_list:
       for band_num in range(1,25):
-        freq_MHz = 1.28 * (float(centre_chan) + (band_num - 13)) + (fine_chan_khz/1000.)
+        freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
         name_base = "gsm_model_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         print(name_base)
         gsm_map = gsm.generate(freq_MHz)
