@@ -12049,7 +12049,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=1,2,3,10,11,12\n\n")
+            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=2,3\n\n")
    
             outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
             outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
