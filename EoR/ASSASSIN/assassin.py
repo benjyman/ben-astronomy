@@ -12004,7 +12004,7 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
 def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
    gsm = GlobalSkyModel()
    for centre_chan in centre_chans_number_list:
-      for band_num in range(0,24):
+      for band_num in range(1,25):
         freq_MHz = 1.28 * (float(centre_chan) + (band_num - 13)) + (fine_chan_khz/1000.)
         name_base = "gsm_model_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         print(name_base)
@@ -12029,7 +12029,8 @@ def write_woden_sims_sbatch_file(centre_chan_number_list):
 #woden sims from 50 to 200 MHz
 centre_chans_number_list = [52,76,100,124,148]
 write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
-  
+
+sys.exit()
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
