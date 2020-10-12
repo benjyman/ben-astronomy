@@ -12016,7 +12016,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
             uniform_sky_temp = T_180*(freq_MHz/180.0)**beta
             gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
             print(gsm_map_uniform)
-            freq_MHz_array = [freq_MHz]
+            freq_MHz_array = np.asarray([freq_MHz])
             s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
             s_21_array_EDGES_value = s_21_array_EDGES[0]
             global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
