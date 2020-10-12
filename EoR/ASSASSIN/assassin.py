@@ -11984,14 +11984,16 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
    gal_coords = SkyCoord(l*u.deg, b*u.deg, frame='galactic')
    ra = gal_coords.icrs.ra.value
    dec = gal_coords.icrs.dec.value
+   #need to change this for brightness temp not MJy/steradian
    fluxes = data*hp.nside2pixarea(nside,degrees=False)*1e+6
-   fig = plt.figure(figsize=(10,10))
-   hp.mollview(log10(data), sub=(2,1,1), fig=fig,title='Galactic')
-   hp.mollview(log10(fluxes), sub=(2,1,2), fig=fig,title='Equatorial')
-   fig.savefig('%s_woden_map.png' % name_base, bbox_inches='tight')
-   plt.close()
+   
+   #fig = plt.figure(figsize=(10,10))
+   #hp.mollview(log10(data), sub=(2,1,1), fig=fig,title='Galactic')
+   #hp.mollview(log10(fluxes), sub=(2,1,2), fig=fig,title='Equatorial')
+   #fig.savefig('%s_woden_map.png' % name_base, bbox_inches='tight')
+   #plt.close()
    source_ind = 0
-   with open('%s_woden.xt' % name_base,'w') as outfile:
+   with open('%s_sourcelist.xt' % name_base,'w') as outfile:
        for ind,flux in enumerate(fluxes):
            if source_ind == 0:
                outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(fluxes))
@@ -12007,22 +12009,28 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
       for band_num in range(1,25):
         freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
         name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
+        gsm_filename = "%s_gsm.fits" % name_base
+        gsm_uniform_filename = "%s_gsm_uniform.fits" % name_base
+        EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
         gsm_map = gsm.generate(freq_MHz)
-        hp.write_map("%s_gsm.fits" % name_base,gsm_map,coord='G',nest=False,overwrite=True)
-        print("saved %s_gsm.fits" % name_base)
+        hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
+        print("saved %s" % gsm_filename)
+        write_woden_sourcelists(gsm_filename,nside) 
         #print(gsm_map)
         #uniform sky 180 at 180:
         #see top of file for defs
         uniform_sky_temp = T_180*(freq_MHz/180.0)**beta
         gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
-        hp.write_map("%s_gsm_uniform.fits" % name_base,gsm_map_uniform,coord='G',nest=False,overwrite=True)
-        print("saved %s_gsm_uniform.fits" % name_base)
+        hp.write_map(gsm_uniform_filename,gsm_map_uniform,coord='G',nest=False,overwrite=True)
+        print("saved %s" % gsm_uniform_filename)
+        write_woden_sourcelists(gsm_uniform_filename,nside) 
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
         global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
-        hp.write_map("%s_EDGES_uniform.fits" % name_base,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
-        print("saved %s_EDGES_uniform.fits" % name_base)
+        hp.write_map(EDGES_uniform_filename,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
+        print("saved %s" % EDGES_uniform_filename)
+        write_woden_sourcelists(EDGES_uniform_filename,nside) 
         #print(global_EDGES_uniform_map)
             
           
