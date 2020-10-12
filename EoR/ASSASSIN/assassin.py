@@ -12037,12 +12037,12 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         #print(global_EDGES_uniform_map)
             
           
-def write_woden_sims_sbatch_file(centre_chans_number_list,band_num=1,fine_chan_width_khz=10):
+def write_woden_sims_sbatch_file(centre_chans_number_list):
    type_list = ["gsm","gsm_uniform","EDGES_uniform"]
    for type in type_list:
       for centre_chan in centre_chans_number_list:
-         freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_width_khz/1000.)
-         print("Freq %0.3f MHz" % freq_MHz)
+         centre_freq_MHz = 1.28 * float(centre_chan) 
+         print("Centre freq %0.3f MHz" % centre_freq_MHz)
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
          sourcelist_name = "woden_map_centre_chan_%03d_band_$SLURM_ARRAY_TASK_ID_hpx_%s_soucelist.txt" % (centre_chan,type)
