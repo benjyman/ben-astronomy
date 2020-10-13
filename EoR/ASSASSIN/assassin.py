@@ -12045,7 +12045,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          print("Centre freq %0.3f MHz" % centre_freq_MHz)
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_centre_chan_%03d_band_$SLURM_ARRAY_TASK_ID_hpx_%s_soucelist.txt" % (centre_chan,type)
+         sourcelist_name = "woden_map_centre_chan_%03d_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_soucelist.txt" % (centre_chan,type)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12069,7 +12069,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --sky_crop_components \\\n")
             outfile.write("   --EDA2_sim \\\n")
             outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
-            outfile.write("   --band_nums=$SLURM_ARRAY_TASK_ID \\\n")
+            outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
             outfile.write("   --chunking_size=5000\n")
             
          print("wrote %s" % sbatch_filename)          
