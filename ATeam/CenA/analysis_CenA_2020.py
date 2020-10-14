@@ -383,8 +383,13 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 def calculate_outflow_properties():
    r_s_m = 2. * G * M_bh_cena / c**2
    r_s_pc = r_s_m / pc_m
-   print("r_s_pc is 0.9f" % r_s_pc)
-
+   print("r_s_pc is %0.9f" % r_s_pc)
+   print("5 * r_s_pc is %0.9f pc" % (r_s_pc*5.) )
+   print("100 * r_s_pc is %0.9f pc" % (r_s_pc*100) )
+   print("1e9 * r_s_pc is %0.9f pc" % (r_s_pc*1e9) )
+   print("1e10 * r_s_pc = r_vir is %0.9f pc" % (r_s_pc*1e10) )
+   
+   
 calculate_outflow_properties()
 sys.exit()
 
