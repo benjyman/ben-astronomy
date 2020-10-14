@@ -3032,7 +3032,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
               
    return(diffuse_global_value)
 
-def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True):
+def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True):
    freq_MHz = freq_MHz_list[freq_MHz_index]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
@@ -3376,7 +3376,12 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
-      uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+      if woden:
+         if 'global_EDGES' in signal_type_list:
+            type = "EDGES_uniform"
+         uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d" % (lst_deg,type,centre_chan,band)
+      else:
+         uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
@@ -4357,7 +4362,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
 
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True,woden=True):
    #for plot_expected_rms_noise_eda2 below
    int_time = 4.*60. #0.28 * 5.
    bw_Hz = 1000000 #27. * fine_chan_width_Hz
@@ -4474,7 +4479,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             else:
                t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=calculate_uniform_response)
          else:
-            t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
+            t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response,woden=woden)
          #t_sky_measured_array[freq_MHz_index] = t_sky_measured
          #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
          t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -12049,6 +12054,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
           
 def write_woden_sims_sbatch_file(centre_chans_number_list):
    type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
+   LST_deg = 58.13223745343605    #from template metafits RA=LST
    for type in type_list:
       for centre_chan in centre_chans_number_list:
          centre_freq_MHz = 1.28 * float(centre_chan) 
@@ -12056,6 +12062,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
          sourcelist_name = "woden_map_centre_chan_%03d_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (centre_chan,type)
+         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/woden_LST_%0.3f_%s_chan_%03d" % (LST_deg,type,centre_chan)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12070,12 +12077,12 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             
             outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
             outfile.write("time python /astro/mwaeor/jline/software/WODEN_EDA2/build/run_woden.py \\\n")
-            outfile.write("   --ra0=58.13223745343605 --dec0=-26.70 \\\n")
+            outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
             outfile.write("   --num_freq_channels=1 --num_time_steps=2 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
             outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
-            outfile.write("   --output_uvfits_prepend=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s_chan_%03d_woden_test \\\n" % (type,centre_chan))
+            outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
             outfile.write("   --sky_crop_components \\\n")
             outfile.write("   --EDA2_sim \\\n")
             outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
@@ -12085,11 +12092,10 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          print("wrote %s" % sbatch_filename)          
         
 #woden sims from 50 to 200 MHz
-centre_chans_number_list = [52,76,100,124,148]
+#centre_chans_number_list = [52,76,100,124,148]
 #write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
-write_woden_sims_sbatch_file(centre_chans_number_list)
-
-sys.exit()
+#write_woden_sims_sbatch_file(centre_chans_number_list)
+#sys.exit()
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
@@ -12289,13 +12295,12 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #lst_hrs_list=['2']
 #do it here: /md0/EoR/ASSASSIN/solve_for_tsky_weighted/jack_tests/single_point
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
-uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
-uvfitsname2 = "ben_test_band01.uvfits"
-uvfitsname3 = "chan_94_20200303T135201.uvfits"
-uvfitsname4 = "eda_model_LST_030_X_70_MHz_DG_gsm.uvfits"
-compare_uvfits(uvfitsname1,uvfitsname2)
-
-sys.exit()
+#uvfitsname1 = "eda_model_LST_000_X_70.000_MHz_SP.uvfits"
+#uvfitsname2 = "ben_test_band01.uvfits"
+#uvfitsname3 = "chan_94_20200303T135201.uvfits"
+#uvfitsname4 = "eda_model_LST_030_X_70_MHz_DG_gsm.uvfits"
+#compare_uvfits(uvfitsname1,uvfitsname2)
+#sys.exit()
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
 #pol_list = ['Y']
@@ -12402,10 +12407,20 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
+#WODEN sims signal extraction
+woden=True
+wsclean=False
+fast=False
+no_modelling=False
+calculate_uniform_response=True
+woden_chan_list=[52] #= [52,76,100,124,148]
+freq_MHz_list = 1.28 * (np.asarray(woden_chan_list) + (np.arange(1,24)-13) + 0.01)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
+sys.exit()
 
 #up to here with plot_only = False
 #chan_num = 90 - 64 #90 = 70MHz
