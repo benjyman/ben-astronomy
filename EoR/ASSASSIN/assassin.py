@@ -11976,7 +11976,8 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
       plt.savefig(plot_filename)
       print("save %s" % plot_filename)   
           
-def write_woden_sourcelists(hpx_fits_filename,nside):
+def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside):
+   wavelength = 300./freq_MHz
    name_base = hpx_fits_filename.split(".fits")[0]          
    data = hp.read_map(hpx_fits_filename,nest=False)
    pix_inds = np.arange(hp.nside2npix(nside))
@@ -11985,8 +11986,11 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
    ra = gal_coords.icrs.ra.value
    dec = gal_coords.icrs.dec.value
    #need to change this for brightness temp not MJy/steradian
-   fluxes = data*hp.nside2pixarea(nside,degrees=False)*1e+6
-   
+   #fluxes = data*hp.nside2pixarea(nside,degrees=False)*1e+6
+   pix_area_sr = hp.nside2pixarea(nside,degrees=False)
+   scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
+   print("wavelength is %03.f, scale map by %s to get to Jy/pix" % (wavelength,scale))
+   data_jy_per_pix = data * scale
    #fig = plt.figure(figsize=(10,10))
    #hp.mollview(log10(data), sub=(2,1,1), fig=fig,title='Galactic')
    #hp.mollview(log10(fluxes), sub=(2,1,2), fig=fig,title='Equatorial')
@@ -11994,11 +11998,11 @@ def write_woden_sourcelists(hpx_fits_filename,nside):
    #plt.close()
    source_ind = 0
    with open('%s_sourcelist.txt' % name_base,'w') as outfile:
-       for ind,flux in enumerate(fluxes):
+       for ind,data_val in enumerate(data_jy_per_pix):
            if source_ind == 0:
-               outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(fluxes))
+               outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(data_jy_per_pix))
            outfile.write('COMPONENT POINT %.7f %.6f\n' %(ra[ind]/15.0,dec[ind]))
-           outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' %flux)
+           outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' % data_val)
            outfile.write('ENDCOMPONENT\n')
            source_ind += 1
        outfile.write('ENDSOURCE')
@@ -12018,7 +12022,7 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         gsm_map = gsm.generate(freq_MHz)
         hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
         print("saved %s" % gsm_filename)
-        write_woden_sourcelists(gsm_filename,nside) 
+        write_woden_sourcelists(gsm_filename,freq_MHz,nside) 
         #print(gsm_map)
         #uniform sky 180 at 180:
         #see top of file for defs
@@ -12026,14 +12030,14 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
         hp.write_map(gsm_uniform_filename,gsm_map_uniform,coord='G',nest=False,overwrite=True)
         print("saved %s" % gsm_uniform_filename)
-        write_woden_sourcelists(gsm_uniform_filename,nside) 
+        write_woden_sourcelists(gsm_uniform_filename,freq_MHz,nside) 
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
         global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
         hp.write_map(EDGES_uniform_filename,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
         print("saved %s" % EDGES_uniform_filename)
-        write_woden_sourcelists(EDGES_uniform_filename,nside) 
+        write_woden_sourcelists(EDGES_uniform_filename,freq_MHz,nside) 
         #print(global_EDGES_uniform_map)
             
           
@@ -12049,7 +12053,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=2,3\n\n")
+            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=1-24\n\n")
    
             outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
             outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
