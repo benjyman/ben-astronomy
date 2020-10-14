@@ -11989,7 +11989,7 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside):
    #fluxes = data*hp.nside2pixarea(nside,degrees=False)*1e+6
    pix_area_sr = hp.nside2pixarea(nside,degrees=False)
    scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
-   print("wavelength is %03.f, scale map by %s to get to Jy/pix" % (wavelength,scale))
+   print("wavelength is %0.3f m, scale map by %s to get to Jy/pix" % (wavelength,scale))
    data_jy_per_pix = data * scale
    #fig = plt.figure(figsize=(10,10))
    #hp.mollview(log10(data), sub=(2,1,1), fig=fig,title='Galactic')
