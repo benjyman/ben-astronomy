@@ -6,6 +6,12 @@ from astropy.io import fits
 import numpy as np
 import scipy.ndimage as ndimage
 
+G = 6.674e-11
+M_solar = 1.98847e30 
+c = 299792458.
+M_bh_cena = 1e8 * M_solar
+pc_m = 3.0857e16 
+
 def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    #get this from image using masking etc eventually, for now just use kvis
    measured_new_flux_density_core = 1053.0
@@ -373,7 +379,15 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
    #cmd = "linmos in=%s out=%s" % (linmos_image_list_string,output_im_name)
    #print(cmd)
    #os.system(cmd)
-   
+
+def calculate_outflow_properties():
+   r_s_m = 2. * G * M_bh_cena / c**2
+   r_s_pc = r_s_m / pc_m
+   print("r_s_pc is 0.9f" % r_s_pc)
+
+calculate_outflow_properties()
+sys.exit()
+
 #spectral index ASKAP MWA:
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','image_cenauc13_image_tt0.fits',185,1400,'CenA_uc13_185_1400_MHz',0.3)
