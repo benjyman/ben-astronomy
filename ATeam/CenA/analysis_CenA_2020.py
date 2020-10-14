@@ -389,6 +389,7 @@ def calculate_outflow_properties():
    print("1e9 * r_s_pc is %0.9f pc" % (r_s_pc*1e9) )
    print("1e10 * r_s_pc = r_vir is %0.9f pc" % (r_s_pc*1e10) )
    
+   #now calculate inflow properties (e.g. 3.1 of G17, usinng soft xray from krol or our own measurements?)
    
 calculate_outflow_properties()
 sys.exit()
