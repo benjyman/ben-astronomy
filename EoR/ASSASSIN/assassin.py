@@ -12019,10 +12019,11 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         gsm_filename = "%s_gsm.fits" % name_base
         gsm_uniform_filename = "%s_gsm_uniform.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
+        unity_uniform_filename = "%s_unity_uniform.fits" % name_base
         gsm_map = gsm.generate(freq_MHz)
         hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
         print("saved %s" % gsm_filename)
-        write_woden_sourcelists(gsm_filename,freq_MHz,nside) 
+        ##################write_woden_sourcelists(gsm_filename,freq_MHz,nside) 
         #print(gsm_map)
         #uniform sky 180 at 180:
         #see top of file for defs
@@ -12030,19 +12031,24 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
         gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
         hp.write_map(gsm_uniform_filename,gsm_map_uniform,coord='G',nest=False,overwrite=True)
         print("saved %s" % gsm_uniform_filename)
-        write_woden_sourcelists(gsm_uniform_filename,freq_MHz,nside) 
+        ##################write_woden_sourcelists(gsm_uniform_filename,freq_MHz,nside) 
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
         global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
         hp.write_map(EDGES_uniform_filename,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
         print("saved %s" % EDGES_uniform_filename)
-        write_woden_sourcelists(EDGES_uniform_filename,freq_MHz,nside) 
+        ###################write_woden_sourcelists(EDGES_uniform_filename,freq_MHz,nside) 
         #print(global_EDGES_uniform_map)
+        unity_uniform_sky_temp = 1.
+        unity_map_uniform = (gsm_map * 0.0) + unity_uniform_sky_temp
+        hp.write_map(unity_uniform_filename,unity_map_uniform,coord='G',nest=False,overwrite=True)
+        print("saved %s" % unity_uniform_filename)
+        write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
             
           
 def write_woden_sims_sbatch_file(centre_chans_number_list):
-   type_list = ["gsm","gsm_uniform","EDGES_uniform"]
+   type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
    for type in type_list:
       for centre_chan in centre_chans_number_list:
          centre_freq_MHz = 1.28 * float(centre_chan) 
@@ -12079,8 +12085,8 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          print("wrote %s" % sbatch_filename)          
         
 #woden sims from 50 to 200 MHz
-centre_chans_number_list = [52,76,100,124,148]
-write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+#centre_chans_number_list = [52,76,100,124,148]
+#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
 write_woden_sims_sbatch_file(centre_chans_number_list)
 
 sys.exit()
