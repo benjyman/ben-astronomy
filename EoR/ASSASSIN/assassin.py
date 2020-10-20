@@ -196,14 +196,14 @@ pol_list = ['X']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise'] #fig9, 10b?
-signal_type_list=['single_point'] #tests with Jack and WODEN
+#signal_type_list=['single_point'] #tests with Jack and WODEN
 #signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise','global_EDGES'] #fig8b
 #signal_type_list=['global_EDGES','noise'] #fig6b
-#signal_type_list=['global_EDGES'] #fig5
+signal_type_list=['global_EDGES'] #fig5
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -3377,10 +3377,15 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
-      if woden:
+      if woden: 
+         centre_chan = np.floor((freq_MHz - 50.) / 24.) * 24. + 63
+         print(freq_MHz)
+         print(centre_chan)
+         band = ((freq_MHz - 50.) % 24.) * 24. + 1
+         print(band)
          if 'global_EDGES' in signal_type_list:
             type = "EDGES_uniform"
-         uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d" % (lst_deg,type,centre_chan,band)
+         uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d.uvfits" % (lst_deg,type,centre_chan,band)
       else:
          uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    
@@ -12070,7 +12075,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_chan_%03d" % (LST_deg,type,centre_chan)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
-            outfile.write("#SBATCH --time=00:10:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
+            outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
             outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=1-24\n\n")
    
             outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
@@ -12105,10 +12110,10 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
 #woden sims from 50 to 200 MHz
 #centre_chans_number_list = [52,76,100,124,148]
 #new centre chans list for 1 MHz wide chans
-centre_chans_number_list = [63,87,111,135,159,183]
+#centre_chans_number_list = [63,87,111,135,159,183]
 #write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
-write_woden_sims_sbatch_file(centre_chans_number_list)
-sys.exit()
+#write_woden_sims_sbatch_file(centre_chans_number_list)
+#sys.exit()
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
@@ -12430,8 +12435,10 @@ wsclean=False
 fast=False
 no_modelling=False
 calculate_uniform_response=True
-woden_chan_list=[52] #= [52,76,100,124,148]
-freq_MHz_list = 1.28 * (np.asarray(woden_chan_list) + (np.arange(1,24)-13) + 0.01)
+#woden: centre_chans_number_list = [63,87,111,135,159,183]
+woden_chan_list=[63] #= [52,76,100,124,148]
+freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
+print(freq_MHz_list)
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
 sys.exit()
 
