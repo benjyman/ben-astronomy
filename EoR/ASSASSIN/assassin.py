@@ -12062,7 +12062,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
    LST_deg = 60.0
    for type in type_list:
       for centre_chan in centre_chans_number_list:
-         centre_freq_MHz = 1.28 * float(centre_chan) 
+         centre_freq_MHz = float(centre_chan) #1.28 * float(centre_chan) 
          print("Centre freq %0.3f MHz" % centre_freq_MHz)
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
@@ -12082,7 +12082,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             
             outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
             outfile.write("mkdir -p data\n")
-            outfile.write("time python /astro/mwaeor/jline/software/WODEN_EDA2/build/run_woden.py \\\n")
+            outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
             outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
@@ -12106,7 +12106,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
 #centre_chans_number_list = [52,76,100,124,148]
 #new centre chans list for 1 MHz wide chans
 centre_chans_number_list = [63,87,111,135,159,183]
-write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
 write_woden_sims_sbatch_file(centre_chans_number_list)
 sys.exit()
 
