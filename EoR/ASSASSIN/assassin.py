@@ -3035,6 +3035,9 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True):
    freq_MHz = freq_MHz_list[freq_MHz_index]
+   if woden:
+      centre_chan = np.floor((freq_MHz - 50.) / 24.) * 24. + 63
+      band = ((freq_MHz - 50.) % 24.) * 24. + 1
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
@@ -3071,6 +3074,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    if 'global_EDGES' in signal_type_list:
        signal_type_postfix += '_ED' 
        concat_output_name_base += '_ED'
+       if woden:
+          type = "EDGES_uniform"
    if 'gain_errors' in signal_type_list:
        signal_type_postfix += '_GE'
        concat_output_name_base += '_GE'
@@ -3378,13 +3383,6 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
       if woden: 
-         centre_chan = np.floor((freq_MHz - 50.) / 24.) * 24. + 63
-         print(freq_MHz)
-         print(centre_chan)
-         band = ((freq_MHz - 50.) % 24.) * 24. + 1
-         print(band)
-         if 'global_EDGES' in signal_type_list:
-            type = "EDGES_uniform"
          uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d.uvfits" % (lst_deg,type,centre_chan,band)
       else:
          uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
@@ -3426,7 +3424,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    else:
       for lst_hrs in lst_hrs_list:
          lst_deg = (float(lst_hrs)/24.)*360.
-         uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+         if woden:
+            uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d.uvfits" % (lst_deg,type,centre_chan,band)
+         else:
+            uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
          uvfits_filename_list.append(uvfits_filename)
    
    #1. Get the u,v and visibilities for each fine chan 
@@ -12418,7 +12419,7 @@ model_type_list = ['OLS_fixed_intercept']
 freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
 freq_MHz_array = np.asarray(freq_MHz_list)
 
-lst_hrs_list=['2']
+lst_hrs_list=['4']
 #poly_order_list=[5,6,7]
 poly_order=5
 
