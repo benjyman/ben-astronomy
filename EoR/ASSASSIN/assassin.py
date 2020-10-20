@@ -12087,7 +12087,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
             outfile.write("   --lowest_channel_freq=50e+6 \\\n")
-            outfile.write("   --coarse_band_width=10e+6 \\\n")
+            outfile.write("   --coarse_band_width=1e+6 \\\n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
             #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
             outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
