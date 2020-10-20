@@ -199,11 +199,11 @@ pol_list = ['X']
 #signal_type_list=['single_point'] #tests with Jack and WODEN
 #signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse_global','diffuse_angular']
-#signal_type_list=['diffuse']
+signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise','global_EDGES'] #fig8b
 #signal_type_list=['global_EDGES','noise'] #fig6b
-signal_type_list=['global_EDGES'] #fig5
+#signal_type_list=['global_EDGES'] #fig5
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -234,7 +234,7 @@ min_imaging_uvdist_wavelength = 0.5
 max_imaging_uvdist_wavelength = 35.0
 zero_spacing_leakage_threshold = 0.5
 
-outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
+#outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
 
 
 #from Wayth et al Table 2, third column divided by 256 (not last col which is dipole in isolation)
@@ -2132,28 +2132,31 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #in here put bit to read X from miriad_sim_uvfits
    if not fast:
       if EDA2_data:
-         X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol.npy" % (EDA2_chan,freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         if include_angular_info:
+            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
          real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
          baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
       else:
-         #X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         #X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         #X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         #Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         #real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         #baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         if include_angular_info:
+            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          #Bad temporary hack just to get figure done for paper:
-         X_short_parallel_array_filename = "X_short_parallel_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
-         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+         #X_short_parallel_array_filename = "X_short_parallel_array_%s_MHz_%s_pol.npy" % (int(freq_MHz_fine_chan),pol)
+         #X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%s_MHz_%s_pol.npy" % (int(freq_MHz_fine_chan),pol)
+         #X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%s_MHz_%s_pol.npy" % (int(freq_MHz_fine_chan),pol)
+         #if include_angular_info:
+         #   Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+         #real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+         #baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
    else:
-      X_short_parallel_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+      X_short_parallel_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)  
          
@@ -2273,6 +2276,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
          
+         X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
+         
          if include_angular_info:
             Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
       
@@ -2280,9 +2285,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
             #need to convert between Jy and K
          
             Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
-         
-            X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
-            
+
             #need to update full response to include fine chans
             full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
       
@@ -2299,7 +2302,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          #need to update update full response to include fine chans
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,label='Expected uniform diffuse response Jy',color=color_dark_blue,marker='s',s=3)
-         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
+         if include_angular_info:
+            plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
          ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
@@ -2318,7 +2322,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #also include Y and the sum of X plus Y
          real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
          X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
-         full_response_Jy_K = full_response_Jy * jy_to_K
+         if include_angular_info:
+            full_response_Jy_K = full_response_Jy * jy_to_K
          
          plt.clf()
          #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
@@ -2327,7 +2332,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          
          #need to update update full response to include fine chans
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,label='Expected uniform diffuse response',color=color_dark_blue,marker='s',s=3)
-         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
+         if include_angular_info:
+            plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
          ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
          map_title="Response to uniform sky vs baseline length data" 
          plt.xlabel("Baseline length (wavelengths)")
@@ -3037,7 +3043,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    freq_MHz = freq_MHz_list[freq_MHz_index]
    if woden:
       centre_chan = np.floor((freq_MHz - 50.) / 24.) * 24. + 63
-      band = ((freq_MHz - 50.) % 24.) * 24. + 1
+      band_frac = ((freq_MHz - 50.) / 24.) - np.floor((freq_MHz - 50.) / 24.)
+      band = band_frac * 24. + 1
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
@@ -3047,6 +3054,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    if 'diffuse' in signal_type_list:
        signal_type_postfix += '_D_%s' % sky_model
        concat_output_name_base += '_D_%s' % sky_model
+       if woden:
+          type = "gsm"
    if 'global_unity' in signal_type_list:
        signal_type_postfix += '_GU'
        concat_output_name_base += '_GU'
@@ -3566,7 +3575,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             if EDA2_data:
                baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             else:
-               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+               baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut)
             print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
          
@@ -3973,29 +3982,29 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                   
                #print X_short_parallel_array
                #save X_short_parallel_array
-               X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                np.save(X_short_parallel_array_filename,X_short_parallel_array)
             
                print("saved %s" % X_short_parallel_array_filename)
             
-               X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
                print("saved %s" % X_short_parallel_array_filename_pure_inline)
                
-               X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+               X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
                print("saved %s" % X_short_parallel_array_filename_pure_parallel)
                
                #update for fine chans
                if include_angular_info:
-                  Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+                  Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                   np.save(Y_short_parallel_angular_array_filename,Y_short_parallel_angular_array)
                   print("saved %s" % Y_short_parallel_angular_array_filename)
              
             if EDA2_data:   
                real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
             else:
-               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%s_MHz_%s_pol%s.npy" % (int(freq_MHz_fine_chan),pol,signal_type_postfix)
+               real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
             np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted[0:n_baselines_included])
             print("saved %s" % real_vis_data_sorted_array_filename)
             
@@ -4756,8 +4765,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
-      plt.ylim([0, 4000])
+   #else:
+      #plt.ylim([0, 4000])
       #commented out for fig5
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
@@ -4866,8 +4875,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
-      plt.ylim([0, 4000])
+   #else:
+      #plt.ylim([0, 4000])
    fig_name= "t_sky_measured_lst_%s%s_per_chan_av.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -4920,8 +4929,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
-      plt.ylim([0, 4000])
+   #else:
+      #plt.ylim([0, 4000])
    fig_name= "t_sky_measured_lst_%s%s_flagged.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -5018,8 +5027,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
-      plt.ylim([0, 4000])
+   #else:
+      #plt.ylim([0, 4000])
    fig_name= "t_sky_measured_lst_%s%s_per_chan_av_flagged.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -12440,6 +12449,10 @@ calculate_uniform_response=True
 woden_chan_list=[63] #= [52,76,100,124,148]
 freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 print(freq_MHz_list)
+#simulate to get the theoretical beam weighted global signal 
+outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+#sys.exit()
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
 sys.exit()
 
