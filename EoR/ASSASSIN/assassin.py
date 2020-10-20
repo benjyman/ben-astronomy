@@ -247,6 +247,7 @@ p = np.poly1d(z)
 Aeff_for_freq_MHz_list = p(freq_MHz_list)
 
 def get_eda2_lst(eda_time_string="20151202T171727"):
+   ###Change this to use ephem instead of astropy
    #Hack to get LST! use old time (2015) astropy.utils.iers.iers.IERSRangeError: (some) times are outside of range covered by IERS table.
    #eda_time_string = "20191202T171727"
    year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
@@ -12016,7 +12017,9 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
    gsm = GlobalSkyModel()
    for centre_chan in centre_chans_number_list:
       for band_num in range(1,25):
-        freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
+        #freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
+        #for 1 MHz wide coarse chans
+        freq_MHz = float(centre_chan) + (band_num-1) - 13
         print("Freq %0.3f MHz" % freq_MHz)
         #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         #dont put freq as stuffs up naming on pawsey for array job
@@ -12053,8 +12056,10 @@ def write_woden_skymodels(centre_chans_number_list,nside,fine_chan_khz=10):
             
           
 def write_woden_sims_sbatch_file(centre_chans_number_list):
+   #Jack changed it so you don't need a metafits and you can do 1 MHz-space coarse chans
    type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
-   LST_deg = 58.13223745343605    #from template metafits RA=LST
+   #LST_deg = 58.13223745343605    #from template metafits RA=LST
+   LST_deg = 60.0
    for type in type_list:
       for centre_chan in centre_chans_number_list:
          centre_freq_MHz = 1.28 * float(centre_chan) 
@@ -12062,40 +12067,48 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
          sbatch_filename = "%s.sh" % name_base
          sourcelist_name = "woden_map_centre_chan_%03d_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (centre_chan,type)
-         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/woden_LST_%0.3f_%s_chan_%03d" % (LST_deg,type,centre_chan)
+         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_chan_%03d" % (LST_deg,type,centre_chan)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
-            outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
+            outfile.write("#SBATCH --time=00:10:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
             outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=1-24\n\n")
    
             outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
             outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
             outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
    
-            outfile.write("source /astro/mwaeor/jline/software/WODEN_EDA2/build/init_WODEN.sh\n")
+            outfile.write("source /astro/mwaeor/jline/software/WODEN/build/init_WODEN.sh\n")
             outfile.write("export LD_LIBRARY_PATH=$ERFA_LIB:/pawsey/mwa/software/python3/json-c/0.14-20200419/lib64:$LD_LIBRARY_PATH\n\n")
             
             outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
+            outfile.write("mkdir -p data\n")
             outfile.write("time python /astro/mwaeor/jline/software/WODEN_EDA2/build/run_woden.py \\\n")
             outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
-            outfile.write("   --num_freq_channels=1 --num_time_steps=2 \\\n")
+            outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
+            outfile.write("   --lowest_channel_freq=50e+6 \\\n")
+            outfile.write("   --coarse_band_width=10e+6 \\\n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
-            outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
+            #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
             outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
             outfile.write("   --sky_crop_components \\\n")
-            outfile.write("   --EDA2_sim \\\n")
+            #outfile.write("   --EDA2_sim \\\n")
+            outfile.write("   --primary_beam=EDA2 \\\n")
             outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
             outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
-            outfile.write("   --chunking_size=5000\n")
+            outfile.write("   --date=2015-11-29T15:33:43 \\\n")
+            outfile.write("   --chunking_size=2500\n")
             
          print("wrote %s" % sbatch_filename)          
-        
+
+#make sourcelist and sbatch files on namorrodor:      
 #woden sims from 50 to 200 MHz
 #centre_chans_number_list = [52,76,100,124,148]
-#write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
-#write_woden_sims_sbatch_file(centre_chans_number_list)
-#sys.exit()
+#new centre chans list for 1 MHz wide chans
+centre_chans_number_list = [63,87,111,135,159,183]
+write_woden_skymodels(centre_chans_number_list,nside=NSIDE)
+write_woden_sims_sbatch_file(centre_chans_number_list)
+sys.exit()
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
