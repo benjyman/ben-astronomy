@@ -2126,8 +2126,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       ##
       diffuse_global_value = diffuse_global_value_array[0]
    else:
-      diffuse_global_value = diffuse_global_value_array[0]
-      #diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
+      #test
+      #diffuse_global_value = diffuse_global_value_array[0]
+      diffuse_global_value = diffuse_global_value_array[freq_MHz_index]
    
    #in here put bit to read X from miriad_sim_uvfits
    if not fast:
@@ -2585,8 +2586,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #get rid of nans
    #real_vis_data_sorted_array_flagged = real_vis_data_sorted_array_flagged[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
    #X_short_parallel_array_flagged = X_short_parallel_array_nonans[np.argwhere(np.logical_not(np.isnan(real_vis_data_sorted_array_flagged)))]
+   #only do for eda2 data ATM:
    
    if (X_short_parallel_array_nonans.shape[0]>0):
+    if EDA2_data:
       model = sm.OLS(real_vis_data_sorted_array_flagged, X_short_parallel_array_nonans,missing='drop')
       results = model.fit()
       ##print results.summary()
@@ -2657,13 +2660,16 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name) 
+    
+    else:
+      t_sky_K_flagged = np.nan
+      t_sky_error_K_flagged = np.nan  
       
-      
-      
+     
    else:
       t_sky_jy = np.nan
       t_sky_error_jy = np.nan
-      t_sky_K_flagged_K = np.nan
+      t_sky_K_flagged = np.nan
       t_sky_error_K_flagged = np.nan
     
 
@@ -2846,6 +2852,8 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   
                   gsm_map = ov.generate(centre_freq)
    
+                  
+                  
                #Need to update this to do each fine chan
                gsm_map_angular = gsm_map - diffuse_global_value
                gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
@@ -3550,7 +3558,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
 
             
-         #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+         #eda2 data have autos (where uu=vv=0), dont use these
          baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
          VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
          real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
@@ -3725,6 +3733,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          print('final LST is: ')
          print(time_final.sidereal_time('apparent'))
          
+         print('final time is: ')
+         print(time_final)
+         
          #close enough......
          
          time_string = time_final.utc.iso
@@ -3734,7 +3745,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          minute = int(time_string.split(' ')[1].split(':')[1])
          minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
          
-         date_obs = datetime(year, month, day, hour, minute, second)
+         #date_obs = datetime(year, month, day, hour, minute, second)
+         print("WARNING: using hard-coded time of date_obs = datetime(2015, 11, 29, 15, 33, 43) to match woden sims for testing angular subtraction" )
+         date_obs = datetime(2015, 11, 29, 15, 33, 43)
          ov.date = date_obs
          
          
@@ -3797,6 +3810,24 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          if include_angular_info:
             #Need to update this to do each fine chan
             gsm_map_angular = ov.generate(freq_MHz) - diffuse_global_value
+            
+            #d = ov.view(logged=True)
+            #fig_name="testing_1999-12-31.png"
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name,dpi=500)
+            #print("saved %s" % fig_name)
+            
+            #2015-11-29T15:33:43
+            #date_obs = datetime(2015, 11, 29, 15, 33, 43)
+            #ov.date = date_obs
+            #ov.generate(freq_MHz)
+            #d = ov.view(logged=True)
+            #fig_name="testing_2015-11-29.png"
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name,dpi=500)
+            #print("saved %s" % fig_name)
+            #sys.exit()
+                  
             gsm_map_angular = rotate_map(gsm_map_angular, rot_theta_sky, rot_phi_beam)
             #gsm_map_angular = ov.generate(freq_MHz) - np.mean(ov.generate(freq_MHz))   #this is probly wrong
             ###gsm_map_angular_abs_max = np.max(np.abs(gsm_map_angular))
@@ -5086,10 +5117,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label1='recovered'
       
       #for fig9b change this to unflagged
-      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
-      #t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-      #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      #t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+      #for sims use unflagged (need to update model_from_saved_data to use subtr_Y data properly for flagged ATM does nothing!):
+      t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       
       freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
       
@@ -5135,9 +5167,12 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          print("rms_of_residuals is %0.3f K" % rms_of_residuals)
          
          max_abs_residuals = np.max(np.abs(residual_of_log_fit))
-         y_max = 1.5 * max_abs_residuals
-         y_min = 1.5 * -max_abs_residuals
-      
+         #
+         #y_max = 1.5 * max_abs_residuals
+         #y_min = 1.5 * -max_abs_residuals
+         y_max = 4. * max_abs_residuals
+         y_min = 4. * -max_abs_residuals
+         
          ##temporary just for paper fig12a:
          #y_max = 100
          #y_min = -100
@@ -5146,21 +5181,24 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #print(residual_of_log_fit)
          
          #fig7b:
-         plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index + 1])
+         plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
          #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
          #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
          #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
-         plt.text(50, 0.15, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
-        
+         if model_type_index==0:
+            plt.text(50, 1.25, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
+         else:
+            plt.text(50, 1.5, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
          
          
          #comment out for fig9b
          if not EDA2_data:
-            expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-            plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
-            #for referee comments on fig7b:
-            plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
-            #print(expected_noise)
+            if model_type_index==0:
+               expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+               plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
+               #for referee comments on fig7b:
+               plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
+               #print(expected_noise)
              
    
    
@@ -5178,8 +5216,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)
       plt.close()         
-    
-      
        
       plt.clf()
       plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
@@ -8130,6 +8166,13 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
       
       print("lst %s deg" % lst_deg)
       for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+        
+         #get rid of unwanted tmp files in /tmp
+         cmd = "rm -rf /tmp/tmp*"
+         print(cmd)
+         os.system(cmd)
+         
+      
          print(freq_MHz)
          #and datetime of observation (eventually do this for many dates)
          year=2000
@@ -12397,8 +12440,8 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-model_type_list = ['OLS_fixed_intercept']
+model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+#model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -12447,13 +12490,15 @@ no_modelling=False
 calculate_uniform_response=True
 #woden: centre_chans_number_list = [63,87,111,135,159,183]
 woden_chan_list=[63] #= [52,76,100,124,148]
-freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
-print(freq_MHz_list)
+#freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
+#just use the orig freq list from 50 to 199 MHz
+#print(freq_MHz_list[0:-6])
+print(freq_MHz_list[0:-6])
 #simulate to get the theoretical beam weighted global signal 
 outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list[0:-6],pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 #sys.exit()
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list[0:-6],pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
 sys.exit()
 
 #up to here with plot_only = False
