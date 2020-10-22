@@ -12241,13 +12241,17 @@ def write_woden_skymodels(centre_chans_number_list,nside,time_string,dipole_heig
    print("saved %s" % global_foreground_value_array_filename)
    
           
-def write_woden_sims_sbatch_file(centre_chans_number_list):
+def write_woden_sims_sbatch_file(centre_chans_number_list,time_string):
+   year,month,day,hour,min,sec = time_string.split('_')
+   time_formatted = '%d-%02d-%02dT%02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec))
+   #2015-11-29T15:33:43
    #Jack changed it so you don't need a metafits and you can do 1 MHz-space coarse chans
    type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
    #LST_deg = 58.13223745343605    #from template metafits RA=LST
    LST_deg = 60.0
    for type in type_list:
       for centre_chan in centre_chans_number_list:
+         lowest_channel_freq = float(centre_chan) - 13
          centre_freq_MHz = float(centre_chan) #1.28 * float(centre_chan) 
          print("Centre freq %0.3f MHz" % centre_freq_MHz)
          name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
@@ -12272,7 +12276,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
-            outfile.write("   --lowest_channel_freq=50e+6 \\\n")
+            outfile.write("   --lowest_channel_freq=%3de+6 \\\n" % lowest_channel_freq)
             outfile.write("   --coarse_band_width=1e+6 \\\n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
             #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
@@ -12282,7 +12286,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --primary_beam=EDA2 \\\n")
             outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
             outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
-            outfile.write("   --date=2015-11-29T15:33:43 \\\n")
+            outfile.write("   --date=%s \\\n" % time_formatted)
             outfile.write("   --chunking_size=2500\n")
             
          print("wrote %s" % sbatch_filename)          
@@ -12613,11 +12617,12 @@ calculate_uniform_response=True
 woden_chan_list = [63,87,111,135,159,183]
 #make sourcelist and sbatch files on namorrodor:      
 #new centre chans list for 1 MHz wide chans
-#UTC time
-year,month,day,hour,min,sec = 2020,03,03,15,00,00
+#UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
+#year,month,day,hour,min,sec = 2020,03,03,15,00,00
+year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
 write_woden_skymodels(woden_chan_list,NSIDE,time_string,dipole_height_m,pol_list[0])
-#write_woden_sims_sbatch_file(woden_chan_list)
+#write_woden_sims_sbatch_file(woden_chan_list,time_string)
 sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
