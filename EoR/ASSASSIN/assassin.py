@@ -89,6 +89,7 @@ mwa_latitude_astropy = '-26.7d'
 mwa_longitude_astropy = '116.67d'
 
 eda2_loc = EarthLocation(lat=-26.70*u.deg, lon=116.67*u.deg, height=0*u.m)
+utcoffset = 8*u.hour  # Western Australian Standard Time
    
 #for uvgen systemp values, sky temp at 180 MHz, beta is spectral index (Frank's 180 at 180), efficiency eta
 T_180 = 180.0
@@ -12063,7 +12064,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
       plt.savefig(plot_filename)
       print("save %s" % plot_filename)   
           
-def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time,dipole_height_m,pol):
+def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
 
    #try to get altaz working
    #source_name = '3C353'
@@ -12073,7 +12074,10 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time,dipole_height_
    #sys.exit()
    
    wavelength = 300./freq_MHz
-   name_base = hpx_fits_filename.split(".fits")[0]          
+   name_base = hpx_fits_filename.split(".fits")[0] + "_pol_%s" % (pol)   
+   
+   source_list_name = '%s_sourcelist.txt' % name_base
+
    data = hp.read_map(hpx_fits_filename,nest=False)
    pix_inds = np.arange(hp.nside2npix(nside))
    l, b = hp.pix2ang(nside,pix_inds,lonlat=True)
@@ -12092,27 +12096,73 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time,dipole_height_
    #fig.savefig('%s_woden_map.png' % name_base, bbox_inches='tight')
    #plt.close()
    
-   #beam stuff:
-   altaz = gal_coords.transform_to(AltAz(obstime=time,location=eda2_loc))
-   theta_array = 90. - altaz.alt.value
-   phi_array = 90. - altaz.az.value
-   beam_data_array = calc_beam_values(theta_array,phi_array,pol,dipole_height_m,wavelength)
-
-   source_ind = 0
-   with open('%s_beam_sourcelist.txt' % name_base,'w') as outfile:
-       for ind,beam_val in enumerate(beam_data_array):
-           if source_ind == 0:
-               outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(beam_data_array))
-           outfile.write('COMPONENT POINT %.7f %.6f\n' %(ra[ind]/15.0,dec[ind]))
-           outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' % beam_val)
-           outfile.write('ENDCOMPONENT\n')
-           source_ind += 1
-       outfile.write('ENDSOURCE')
+   if time_string!='':
+      year,month,day,hour,min,sec = time_string.split('_')
+      time = Time('%d-%02d-%02d %02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec)))
    
-   sys.exit()
+      angular_source_list_name = '%s_%s_angular_sourcelist.txt' % (name_base,time_string)
+      beam_source_list_name = '%s_%s_beam_sourcelist.txt' % (name_base,time_string)
+      global_foreground_source_list_name = '%s_%s_global_foreground_sourcelist.txt' % (name_base,time_string)
+   
+      #beam stuff:
+      altaz = gal_coords.transform_to(AltAz(obstime=time,location=eda2_loc))
+      theta_array = 90. - altaz.alt.value
+      phi_array = 90. - altaz.az.value
+      beam_data_array = calc_beam_values(theta_array,phi_array,pol,dipole_height_m,wavelength)
+
+      #work out global foreground signal and angular structure sourcelist 
+      sky_with_beam = beam_data_array * data
+      sum_of_beam_weights = np.nansum(beam_data_array)
+      global_foreground_signal_value_K = np.nansum(sky_with_beam) /  sum_of_beam_weights  
+      print("beam_weighted_av_sky at %0.3f MHz is %0.4E K" % (freq_MHz,global_foreground_signal_value_K))
+      
+      global_foreground_data_K = (data * 0.) + global_foreground_signal_value_K
+      global_foreground_data_jy_per_pix = global_foreground_data_K * scale
+      
+      data_angular_only_K = data - global_foreground_signal_value_K
+      data_angular_only_jy_per_pix = data_angular_only_K * scale
+   
+      source_ind = 0
+      with open(global_foreground_source_list_name,'w') as outfile:
+          for ind,val in enumerate(global_foreground_data_jy_per_pix):
+              if source_ind == 0:
+                  outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(global_foreground_data_jy_per_pix))
+              outfile.write('COMPONENT POINT %.7f %.6f\n' %(ra[ind]/15.0,dec[ind]))
+              outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' % val)
+              outfile.write('ENDCOMPONENT\n')
+              source_ind += 1
+          outfile.write('ENDSOURCE')
+      print("wrote %s" % global_foreground_source_list_name)
+       
+      source_ind = 0
+      with open(angular_source_list_name,'w') as outfile:
+          for ind,val in enumerate(data_angular_only_jy_per_pix):
+              if source_ind == 0:
+                  outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(data_angular_only_jy_per_pix))
+              outfile.write('COMPONENT POINT %.7f %.6f\n' %(ra[ind]/15.0,dec[ind]))
+              outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' % val)
+              outfile.write('ENDCOMPONENT\n')
+              source_ind += 1
+          outfile.write('ENDSOURCE')
+      print("wrote %s" % angular_source_list_name)
           
+      source_ind = 0
+      with open(beam_source_list_name,'w') as outfile:
+          for ind,beam_val in enumerate(beam_data_array):
+              if source_ind == 0:
+                  outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(beam_data_array))
+              outfile.write('COMPONENT POINT %.7f %.6f\n' %(ra[ind]/15.0,dec[ind]))
+              outfile.write('LINEAR 150e+6 %.10f 0 0 0 0.0\n' % beam_val)
+              outfile.write('ENDCOMPONENT\n')
+              source_ind += 1
+          outfile.write('ENDSOURCE')
+      print("wrote %s" % beam_source_list_name)
+   
+   else:
+      global_foreground_signal_value_K = np.nan
+                
    source_ind = 0
-   with open('%s_sourcelist.txt' % name_base,'w') as outfile:
+   with open(source_list_name,'w') as outfile:
        for ind,data_val in enumerate(data_jy_per_pix):
            if source_ind == 0:
                outfile.write('SOURCE pygsm P %d G 0 S 0 0\n' %len(data_jy_per_pix))
@@ -12121,6 +12171,9 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time,dipole_height_
            outfile.write('ENDCOMPONENT\n')
            source_ind += 1
        outfile.write('ENDSOURCE')
+   print("wrote %s" % source_list_name)   
+       
+   return(global_foreground_signal_value_K)
 
 def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    #theta = ZA, phi angle anticlockwise from East looking down on array
@@ -12148,8 +12201,9 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    
    return short_dipole_parallel_beam_map
 
-def write_woden_skymodels(centre_chans_number_list,nside,time,dipole_height_m,pol,fine_chan_khz=10):
+def write_woden_skymodels(centre_chans_number_list,nside,time_string,dipole_height_m,pol,fine_chan_khz=10):
    gsm = GlobalSkyModel()
+   global_foreground_value_list = []
    for centre_chan in centre_chans_number_list:
       for band_num in range(1,25):
         #freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
@@ -12160,21 +12214,14 @@ def write_woden_skymodels(centre_chans_number_list,nside,time,dipole_height_m,po
         #dont put freq as stuffs up naming on pawsey for array job
         name_base = "woden_map_centre_chan_%03d_band_%s_hpx" % (centre_chan,str(band_num))
         gsm_filename = "%s_gsm.fits" % name_base
-        gsm_uniform_filename = "%s_gsm_uniform.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
         unity_uniform_filename = "%s_unity_uniform.fits" % name_base
         gsm_map = gsm.generate(freq_MHz)
         hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
         print("saved %s" % gsm_filename)
-        write_woden_sourcelists(gsm_filename,freq_MHz,nside,time,dipole_height_m,pol) 
-        #print(gsm_map)
-        #uniform sky 180 at 180:
-        #see top of file for defs
-        uniform_sky_temp = T_180*(freq_MHz/180.0)**beta
-        gsm_map_uniform = (gsm_map * 0.0) + uniform_sky_temp
-        hp.write_map(gsm_uniform_filename,gsm_map_uniform,coord='G',nest=False,overwrite=True)
-        print("saved %s" % gsm_uniform_filename)
-        write_woden_sourcelists(gsm_uniform_filename,freq_MHz,nside) 
+        global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
+        global_foreground_value_list.append(global_foreground_value)
+        
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
@@ -12188,7 +12235,11 @@ def write_woden_skymodels(centre_chans_number_list,nside,time,dipole_height_m,po
         hp.write_map(unity_uniform_filename,unity_map_uniform,coord='G',nest=False,overwrite=True)
         print("saved %s" % unity_uniform_filename)
         write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
-        
+   global_foreground_value_array = np.asarray(global_foreground_value_list)        
+   global_foreground_value_array_filename = "%s_%s_global_foreground.npy" % (name_base,time_string)
+   np.save(global_foreground_value_array_filename,global_foreground_value_array)
+   print("saved %s" % global_foreground_value_array_filename)
+   
           
 def write_woden_sims_sbatch_file(centre_chans_number_list):
    #Jack changed it so you don't need a metafits and you can do 1 MHz-space coarse chans
@@ -12235,25 +12286,6 @@ def write_woden_sims_sbatch_file(centre_chans_number_list):
             outfile.write("   --chunking_size=2500\n")
             
          print("wrote %s" % sbatch_filename)          
-
-def predict_global_signal(freq_MHz_list,nside,pol,dipole_height_m,lst):
-   global_signal_list = []
-   for freq_MHz in freq_MHz_list:
-      wavelength = 300. / freq_MHz
-      #make a hpx beam for the freq
-      hpx_beam = make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m)
-      #now generate gsm map
-      gsm = GlobalSkyModel()
-      gsm_map = gsm.generate(freq_MHz)
-      sky_with_beam = gsm_map * hpx_beam
-      sum_of_beam_weights = np.nansum(hpx_beam)
-      #print(sum_of_beam_weights)
-      beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
-      print("beam_weighted_av_sky at %0.3f MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
-      global_signal_list.append(beam_weighted_av_sky)  
-   global_signal_array = np.asarray(global_signal_list)
-   #save as npy
-   global_signal_array_filename = "global_signal_array_lst_%s_pol_%s.npy"      
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
@@ -12581,9 +12613,10 @@ calculate_uniform_response=True
 woden_chan_list = [63,87,111,135,159,183]
 #make sourcelist and sbatch files on namorrodor:      
 #new centre chans list for 1 MHz wide chans
-utcoffset = 8*u.hour  # Western Australian Standard Time
-time = Time('2020-03-03 23:00:00') - utcoffset
-write_woden_skymodels(woden_chan_list,NSIDE,time,dipole_height_m,pol_list[0])
+#UTC time
+year,month,day,hour,min,sec = 2020,03,03,15,00,00
+time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
+write_woden_skymodels(woden_chan_list,NSIDE,time_string,dipole_height_m,pol_list[0])
 #write_woden_sims_sbatch_file(woden_chan_list)
 sys.exit()
 
@@ -12594,9 +12627,7 @@ freq_MHz_list = freq_MHz_list[0:-6]
 print(freq_MHz_list)
 ###simulate to get the theoretical beam weighted global signal 
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
-#insetead of using siimulate (which uses reproected miriad images) do it properly with hpx:
-#predict_global_signal(freq_MHz_list,nside=NSIDE,pol=pol_list[0],dipole_height_m=dipole_height_m)
-#sys.exit()
+
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
 sys.exit()
 
