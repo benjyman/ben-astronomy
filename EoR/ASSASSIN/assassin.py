@@ -12241,6 +12241,7 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    return short_dipole_parallel_beam_map
 
 def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fine_chan_khz=10):
+   start_freq_MHz = float(freq_MHz_list[0])
    gsm = GlobalSkyModel()
    global_foreground_value_list = []
    for band_num,freq_MHz in enumerate(freq_MHz_list):
@@ -12248,7 +12249,7 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fi
         print("Freq %0.3f MHz" % freq_MHz)
         #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         #dont put freq as stuffs up naming on pawsey for array job
-        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (freq_MHz,band_num)
+        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)
         gsm_filename = "%s_gsm.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
         unity_uniform_filename = "%s_unity_uniform.fits" % name_base
@@ -12280,6 +12281,7 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fi
           
 def write_woden_sims_sbatch_file(freq_MHz_list,time_string):
    n_bands = len(freq_MHz_list)
+   lowest_channel_freq = freq_MHz_list[0]
    year,month,day,hour,min,sec = time_string.split('_')
    time_formatted = '%d-%02d-%02dT%02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec))
    #2015-11-29T15:33:43
@@ -12289,11 +12291,10 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string):
    #LST_deg = 58.13223745343605    #from template metafits RA=LST
    LST_deg = 60.0
    for type in type_list:
-         lowest_channel_freq = 50.
          name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (freq_MHz_list[0],type)
-         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,freq_MHz_list[0])
+         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (lowest_channel_freq,type)
+         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12658,7 +12659,7 @@ calculate_uniform_response=True
 freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
+write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
 write_woden_sims_sbatch_file(freq_MHz_list,time_string)
 sys.exit()
 
