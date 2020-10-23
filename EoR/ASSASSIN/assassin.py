@@ -367,7 +367,10 @@ def make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
    
    return short_dipole_parallel_beam_map
 
-def calc_beam_values(theta_array,phi_array,pol,dipole_height_m,wavelength):
+def calc_beam_values(theta_array_deg,phi_array_deg,pol,dipole_height_m,wavelength):
+   #need angles in radians!!
+   theta_array = theta_array_deg/180. * np.pi
+   phi_array = phi_array_deg/180. * np.pi
    ##This is for YY dipole: !
    if (pol=='Y'):
       theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
@@ -12122,6 +12125,41 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipo
       data_angular_only_K = data - global_foreground_signal_value_K
       data_angular_only_jy_per_pix = data_angular_only_K * scale
    
+            
+      #make some maps as a test:
+      if np.isclose(freq_MHz,50.0):
+          plt.clf()
+          map_title="GSM from MWA at %s %0.3f MHz" % (time_string,freq_MHz)
+          ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+          ##hp.orthview(map=sky_with_beam,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+          hp.mollview(map=data,coord='G',title=map_title,min=0, max=7000)
+          fig_name="check_gsm_%s_hrs_LST_%0.3f_MHz_%s_pol.png" % (time_string,freq_MHz,pol)
+          figmap = plt.gcf()
+          figmap.savefig(fig_name,dpi=500)
+          print("saved %s" % fig_name)
+
+          plt.clf()
+          map_title="beam from MWA at %s %0.3f MHz" % (time_string,freq_MHz)
+          ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+          ##hp.orthview(map=sky_with_beam,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+          hp.mollview(map=beam_data_array,coord='G',title=map_title,min=0, max=1)
+          fig_name="check_beam_%s_hrs_LST_%0.3f_MHz_%s_pol.png" % (time_string,freq_MHz,pol)
+          figmap = plt.gcf()
+          figmap.savefig(fig_name,dpi=500)
+          print("saved %s" % fig_name)  
+        
+          
+          plt.clf()
+          map_title="sky with beam from MWA at %s %0.3f MHz" % (time_string,freq_MHz)
+          ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+          ##hp.orthview(map=sky_with_beam,half_sky=False,title=map_title,rot=(0,0,0),min=0, max=7000)
+          hp.mollview(map=sky_with_beam,coord='G',title=map_title,min=0, max=7000)
+          fig_name="check_sky_with_beam_%s_hrs_LST_%0.3f_MHz_%s_pol.png" % (time_string,freq_MHz,pol)
+          figmap = plt.gcf()
+          figmap.savefig(fig_name,dpi=500)
+          print("saved %s" % fig_name)  
+          
+          
       source_ind = 0
       with open(global_foreground_source_list_name,'w') as outfile:
           for ind,val in enumerate(global_foreground_data_jy_per_pix):
@@ -12157,6 +12195,7 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipo
               source_ind += 1
           outfile.write('ENDSOURCE')
       print("wrote %s" % beam_source_list_name)
+
    
    else:
       global_foreground_signal_value_K = np.nan
@@ -12201,18 +12240,15 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    
    return short_dipole_parallel_beam_map
 
-def write_woden_skymodels(centre_chans_number_list,nside,time_string,dipole_height_m,pol,fine_chan_khz=10):
+def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fine_chan_khz=10):
    gsm = GlobalSkyModel()
    global_foreground_value_list = []
-   for centre_chan in centre_chans_number_list:
-      for band_num in range(1,25):
-        #freq_MHz = 1.28 * (float(centre_chan) + ((band_num-1) - 13)) + (fine_chan_khz/1000.)
-        #for 1 MHz wide coarse chans
-        freq_MHz = float(centre_chan) + (band_num-1) - 13
+   for band_num,freq_MHz in enumerate(freq_MHz_list):
+        freq_MHz = float(freq_MHz)
         print("Freq %0.3f MHz" % freq_MHz)
         #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         #dont put freq as stuffs up naming on pawsey for array job
-        name_base = "woden_map_centre_chan_%03d_band_%s_hpx" % (centre_chan,str(band_num))
+        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (freq_MHz,band_num)
         gsm_filename = "%s_gsm.fits" % name_base
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
         unity_uniform_filename = "%s_unity_uniform.fits" % name_base
@@ -12235,33 +12271,33 @@ def write_woden_skymodels(centre_chans_number_list,nside,time_string,dipole_heig
         hp.write_map(unity_uniform_filename,unity_map_uniform,coord='G',nest=False,overwrite=True)
         print("saved %s" % unity_uniform_filename)
         write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
+        
    global_foreground_value_array = np.asarray(global_foreground_value_list)        
    global_foreground_value_array_filename = "%s_%s_global_foreground.npy" % (name_base,time_string)
    np.save(global_foreground_value_array_filename,global_foreground_value_array)
    print("saved %s" % global_foreground_value_array_filename)
    
           
-def write_woden_sims_sbatch_file(centre_chans_number_list,time_string):
+def write_woden_sims_sbatch_file(freq_MHz_list,time_string):
+   n_bands = len(freq_MHz_list)
    year,month,day,hour,min,sec = time_string.split('_')
    time_formatted = '%d-%02d-%02dT%02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec))
    #2015-11-29T15:33:43
    #Jack changed it so you don't need a metafits and you can do 1 MHz-space coarse chans
-   type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
+   #type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
+   type_list = ["gsm"]
    #LST_deg = 58.13223745343605    #from template metafits RA=LST
    LST_deg = 60.0
    for type in type_list:
-      for centre_chan in centre_chans_number_list:
-         lowest_channel_freq = float(centre_chan) - 13
-         centre_freq_MHz = float(centre_chan) #1.28 * float(centre_chan) 
-         print("Centre freq %0.3f MHz" % centre_freq_MHz)
-         name_base = "woden_eda2_sbatch_%s_chan_%03d" % (type,centre_chan)
+         lowest_channel_freq = 50.
+         name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_centre_chan_%03d_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (centre_chan,type)
-         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_chan_%03d" % (LST_deg,type,centre_chan)
+         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (freq_MHz_list[0],type)
+         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,freq_MHz_list[0])
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=1-24\n\n")
+            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % n_bands)
    
             outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
             outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
@@ -12276,7 +12312,7 @@ def write_woden_sims_sbatch_file(centre_chans_number_list,time_string):
             outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
             outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
             outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
-            outfile.write("   --lowest_channel_freq=%3de+6 \\\n" % lowest_channel_freq)
+            outfile.write("   --lowest_channel_freq=%0.0fe+6 \\\n" % lowest_channel_freq)
             outfile.write("   --coarse_band_width=1e+6 \\\n")
             outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
             #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
@@ -12612,23 +12648,23 @@ fast=False
 no_modelling=False
 calculate_uniform_response=True
 #woden sims from 50 to 193 MHz
+#dont need this any more
 #woden: centre_chans_number_list = [63,87,111,135,159,183]
-#woden_chan_list=[63] #= [52,76,100,124,148]
-woden_chan_list = [63,87,111,135,159,183]
+
 #make sourcelist and sbatch files on namorrodor:      
 #new centre chans list for 1 MHz wide chans
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
+freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-write_woden_skymodels(woden_chan_list,NSIDE,time_string,dipole_height_m,pol_list[0])
-#write_woden_sims_sbatch_file(woden_chan_list,time_string)
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
+write_woden_sims_sbatch_file(freq_MHz_list,time_string)
 sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
 outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
-freq_MHz_list = freq_MHz_list[0:-6]
 print(freq_MHz_list)
 ###simulate to get the theoretical beam weighted global signal 
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
