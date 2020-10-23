@@ -3076,10 +3076,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True):
    freq_MHz = freq_MHz_list[freq_MHz_index]
-   if woden:
-      centre_chan = np.floor((freq_MHz - 50.) / 24.) * 24. + 63
-      band_frac = ((freq_MHz - 50.) / 24.) - np.floor((freq_MHz - 50.) / 24.)
-      band = band_frac * 24. + 1
+   start_freq = freq_MHz_list[0]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
@@ -3427,7 +3424,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
       if woden: 
-         uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d.uvfits" % (lst_deg,type,centre_chan,band)
+         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
       else:
          uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    
@@ -3469,7 +3466,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       for lst_hrs in lst_hrs_list:
          lst_deg = (float(lst_hrs)/24.)*360.
          if woden:
-            uvfits_filename = "woden_LST_%0.3f_%s_chan_%03d_band%02d.uvfits" % (lst_deg,type,centre_chan,band)
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
          else:
             uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
          uvfits_filename_list.append(uvfits_filename)
@@ -12279,7 +12276,7 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fi
    print("saved %s" % global_foreground_value_array_filename)
    
           
-def write_woden_sims_sbatch_file(freq_MHz_list,time_string):
+def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol):
    n_bands = len(freq_MHz_list)
    lowest_channel_freq = freq_MHz_list[0]
    year,month,day,hour,min,sec = time_string.split('_')
@@ -12293,7 +12290,7 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string):
    for type in type_list:
          name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (lowest_channel_freq,type)
+         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
          output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
@@ -12659,9 +12656,9 @@ calculate_uniform_response=True
 freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
-write_woden_sims_sbatch_file(freq_MHz_list,time_string)
-sys.exit()
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
+#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list[0])
+#sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
