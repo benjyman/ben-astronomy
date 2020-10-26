@@ -5,12 +5,18 @@ import os,sys
 from astropy.io import fits
 import numpy as np
 import scipy.ndimage as ndimage
+import math
 
 G = 6.674e-11
 M_solar = 1.98847e30 
 c = 299792458.
-M_bh_cena = 1e8 * M_solar
+M_bh_cena = 1.0e8 * M_solar
 pc_m = 3.0857e16 
+yr_sec = 3.1557600e7
+mp = 1.6726219e-27
+kb = 1.38064852e-23
+eV_J = 1.602176634e-19
+
 
 def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    #get this from image using masking etc eventually, for now just use kvis
@@ -389,7 +395,87 @@ def calculate_outflow_properties():
    print("1e9 * r_s_pc is %0.9f pc" % (r_s_pc*1e9) )
    print("1e10 * r_s_pc = r_vir is %0.9f pc" % (r_s_pc*1e10) )
    
-   #now calculate inflow properties (e.g. 3.1 of G17, usinng soft xray from krol or our own measurements?)
+   #israel et al 2017 inner 500 pc outflow
+   vel_km_s = 60.
+   vel_m_s = vel_km_s * 1000.
+   mass_out_kg = 1.2e7 * M_solar
+   projected_length_pc = 174.
+   line_of_sight_theta_deg = 24.
+   line_of_sight_theta_rad = line_of_sight_theta_deg/180. * math.pi
+   actual_length_pc = projected_length_pc / math.sin(line_of_sight_theta_rad)
+   actual_velocity_m_s = vel_m_s / math.cos(line_of_sight_theta_rad)
+   outflow_time_s = (actual_length_pc * pc_m) / actual_velocity_m_s
+   outflow_time_Myr = outflow_time_s / (1e6 * yr_sec) #(1e6 * 365. * 24 * 60. * 60.)
+   mass_outflow_rate_kg_s = mass_out_kg / outflow_time_s
+   mass_outflow_rate_solarmass_yr = mass_outflow_rate_kg_s / M_solar * yr_sec
+   
+   print("Israel et al 2017 inner 500pc ouflow time is %0.5f Myr" % outflow_time_Myr)
+   print("mass outflow rate %0.5f solar mass/yr " % mass_outflow_rate_solarmass_yr)
+   
+   
+   #krol et al 2020 kpc cold outflow
+   line_of_sight_theta_deg = 45.
+   vel_km_s = 800.
+   #WEST:
+   
+   vel_m_s = vel_km_s * 1000.
+   volume_kpc3 = 0.43
+   density_n_cm3 = 0.5
+   mass_out_kg = 5.5e6 * M_solar
+   pressure_dyn_cm2 = 1.6e-10
+   internal_energy_erg = 3e54
+   projected_length_pc = 2.7 * 1e3
+   
+   
+   line_of_sight_theta_rad = line_of_sight_theta_deg/180. * math.pi
+   actual_length_pc = projected_length_pc / math.sin(line_of_sight_theta_rad)
+   print(actual_length_pc)
+   actual_velocity_m_s = vel_m_s / math.cos(line_of_sight_theta_rad)
+   print(actual_velocity_m_s)
+   outflow_time_s = (actual_length_pc * pc_m) / actual_velocity_m_s
+   print(outflow_time_s)
+   outflow_time_Myr = outflow_time_s / (1e6 * yr_sec) #(1e6 * 365. * 24 * 60. * 60.)
+   mass_outflow_rate_kg_s = mass_out_kg / outflow_time_s
+   mass_outflow_rate_solarmass_yr = mass_outflow_rate_kg_s / M_solar * yr_sec
+
+   print("Krol et al 2017 2.7 kpc West ouflow time is %0.5f Myr" % outflow_time_Myr)
+   print("Krol et al 2017 2.7 kpc West mass outflow rate %0.5f solar mass/yr " % mass_outflow_rate_solarmass_yr)
+
+   #EAST:
+   vel_m_s = vel_km_s * 1000.
+   volume_kpc3 = 0.23
+   density_n_cm3 = 0.3
+   mass_out_kg = 1.6e6 * M_solar
+   pressure_dyn_cm2 = 1.2e-10
+   internal_energy_erg = 1e54
+   projected_length_pc = 2.7 * 1e3
+   line_of_sight_theta_rad = line_of_sight_theta_deg/180. * math.pi
+   actual_length_pc = projected_length_pc / math.sin(line_of_sight_theta_rad)
+   actual_velocity_m_s = vel_m_s / math.cos(line_of_sight_theta_rad)
+   outflow_time_s = (actual_length_pc * pc_m) / actual_velocity_m_s
+   outflow_time_Myr = outflow_time_s / (1e6 * yr_sec) #(1e6 * 365. * 24 * 60. * 60.)
+   mass_outflow_rate_kg_s = mass_out_kg / outflow_time_s
+   mass_outflow_rate_solarmass_yr = mass_outflow_rate_kg_s / M_solar * yr_sec
+
+   print("Krol et al 2017 2.7 kpc East ouflow time is %0.5f Myr" % outflow_time_Myr)
+   print("Krol et al 2017 2.7 kpc East mass outflow rate %0.5f solar mass/yr " % mass_outflow_rate_solarmass_yr)
+
+   #from G17 unified (3.1):
+   #adiabatic index
+   gamma = 5./3.
+   mu = 0.62 #is the average atomic weight for a fully ionized plasma with 25% He in mass
+   Tx_ev = 0.5 * 1000.
+   #Tx_J = eV_J * Tx_ev
+   #adiabatic sound speed
+   cs_ms = (gamma * kb * Tx_ev / (mu * mp))**(0.5)
+   
+   constant = ((gamma * kb) / (mu * mp))**(0.5)
+   print(constant)
+   #cs_ms = 1.5e4 * (Tx_ev)**(0.5)
+   #cs_kms = cs_ms / 1000.
+   #print(cs_kms)
+   #print("cs is %0.5f km per sec" % cs_kms)
+   
    
 calculate_outflow_properties()
 sys.exit()
