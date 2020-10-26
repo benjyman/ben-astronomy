@@ -2089,6 +2089,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    wavelength = 300./float(freq_MHz_fine_chan)  
    #wavelength = 300./float(centre_freq)  
    
+   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
+   print("jy_to_K %.4E Jy" % jy_to_K)
+   
    if edge_chan:
       return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan) 
    
@@ -2187,7 +2190,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       X_short_parallel_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)  
-         
+      if include_angular_info:
+         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
+                  
    X_short_parallel_array = np.load(X_short_parallel_array_filename)
    print("loaded %s" % X_short_parallel_array_filename)
    
@@ -2199,32 +2204,35 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    if fast:
       X_short_parallel_array = np.concatenate(X_short_parallel_array)
+      X_short_parallel_array = X_short_parallel_array * jy_to_K
       real_vis_data_sorted_array = np.concatenate(real_vis_data_sorted_array)
 
    if EDA2_data==True:
       real_or_simulated_string = "EDA2"
    else:
       real_or_simulated_string = "simulated"
-         
+
+   if include_angular_info:
+      Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
+      print("loaded %s" % Y_short_parallel_angular_array_filename)
+   
+      #plot a histogram of Y values
+      plt.clf()
+      n, bins, patches = plt.hist(Y_short_parallel_angular_array)
+      map_title="Histogram of Y values (angular response)" 
+      fig_name= "hist_Y_angular_%0.3f_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+               
    if not fast:
       X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
       print("loaded %s" % X_short_parallel_array_filename_pure_parallel) 
       X_short_parallel_array_pure_inline = np.load(X_short_parallel_array_filename_pure_inline).real
       print("loaded %s" % X_short_parallel_array_filename_pure_inline)    
    
-      if include_angular_info:
-         Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
-         print("loaded %s" % Y_short_parallel_angular_array_filename)
-      
-         #plot a histogram of Y values
-         plt.clf()
-         n, bins, patches = plt.hist(Y_short_parallel_angular_array)
-         map_title="Histogram of Y values (angular response)" 
-         fig_name= "hist_Y_angular_%0.3f_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         plt.close()
-         print("saved %s" % fig_name)  
+  
    
 
       ##plot X_vs_uvdist for vis and X
@@ -2281,9 +2289,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
          ##
-         
-         
-         
+      
+      
+      
          ## plot X and real vis vs baseline length for fig4a, paper 1
          
          plt.clf()
@@ -2301,82 +2309,80 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name) #,dpi=1000 for paper fig4a
          print("saved %s" % fig_name) 
          
-         
-         jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-         
-         X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
-         
-         if include_angular_info:
-            Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
       
-            #full response
-            #need to convert between Jy and K
-         
-            Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
-
-            #need to update full response to include fine chans
-            full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
+      X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
       
-      
+      if include_angular_info:
+         Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
    
-         
-         #also include Y and the sum of X plus Y
-         plt.clf()
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-         #fist attempt:
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
-         
-         #need to update update full response to include fine chans
-         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,label='Expected uniform diffuse response Jy',color=color_dark_blue,marker='s',s=3)
-         if include_angular_info:
-            plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
-         ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-         map_title="Response to uniform sky vs baseline length data" 
-         plt.xlabel("Baseline length (wavelengths)")
-         plt.ylabel("Visibility amplitude")
-         plt.legend(loc=1)
-         #plt.ylim([0, 20])
-         fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name) 
-         
-         
-         
-         #fig13 paper1
-         #Repeat in K
-         #also include Y and the sum of X plus Y
-         real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
-         X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
-         if include_angular_info:
-            full_response_Jy_K = full_response_Jy * jy_to_K
-         
-         plt.clf()
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-         plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_K,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
-         #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
-         
-         #need to update update full response to include fine chans
-         plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,label='Expected uniform diffuse response',color=color_dark_blue,marker='s',s=3)
-         if include_angular_info:
-            plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
-         ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-         map_title="Response to uniform sky vs baseline length data" 
-         plt.xlabel("Baseline length (wavelengths)")
-         plt.ylabel("Visibility amplitude (K)")
-         plt.legend(loc=1)
-         #plt.ylim([0, 20])
-         fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-         figmap = plt.gcf()
-         # fig13:
-         #figmap.savefig(fig_name,dpi=1000)
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name) 
-         
-         
-         
+         #full response
+         #need to convert between Jy and K
+      
+         Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
+
+         #need to update full response to include fine chans
+         full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
+   
+   
+   
+      
+      #also include Y and the sum of X plus Y
+      plt.clf()
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+      #fist attempt:
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+      
+      #need to update update full response to include fine chans
+      plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,label='Expected uniform diffuse response Jy',color=color_dark_blue,marker='s',s=3)
+      if include_angular_info:
+         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
+      ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+      map_title="Response to uniform sky vs baseline length data" 
+      plt.xlabel("Baseline length (wavelengths)")
+      plt.ylabel("Visibility amplitude")
+      plt.legend(loc=1)
+      #plt.ylim([0, 20])
+      fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      
+      
+      
+      #fig13 paper1
+      #Repeat in K
+      #also include Y and the sum of X plus Y
+      real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
+      X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
+      if include_angular_info:
+         full_response_Jy_K = full_response_Jy * jy_to_K
+      
+      plt.clf()
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_K,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
+      #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+      
+      #need to update update full response to include fine chans
+      plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,label='Expected uniform diffuse response',color=color_dark_blue,marker='s',s=3)
+      if include_angular_info:
+         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
+      ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+      map_title="Response to uniform sky vs baseline length data" 
+      plt.xlabel("Baseline length (wavelengths)")
+      plt.ylabel("Visibility amplitude (K)")
+      plt.legend(loc=1)
+      #plt.ylim([0, 20])
+      fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+      figmap = plt.gcf()
+      # fig13:
+      #figmap.savefig(fig_name,dpi=1000)
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      
+      
+      
    ##Assign vis and X values a group according to the Y_angular response
    ##Dont need this anymore, is for mixedlm which didnt work.
    #Y_angular_group_array = X_short_parallel_array * 0
@@ -2542,8 +2548,6 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       
       
    
-   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
-   print("jy_to_K %.4E Jy" % jy_to_K)
    t_sky_K = jy_to_K * t_sky_jy
    t_sky_error_K = jy_to_K * t_sky_error_jy
    print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
@@ -3150,269 +3154,277 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    #open one uvfits file to get n_timesteps
    lst_hrs = lst_hrs_list[0]
    lst_deg = (float(lst_hrs)/24.)*360.
-   if EDA2_data:
-      if fast:
-         print('doing fast')   
+   if fast:
+      print('doing fast')  
+      if EDA2_data:
          obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
          #print(obs_time_list)
-         
          #open one to get the number of fine chans
          uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
-         
-         #read the cal uvfits, extract real vis uu and vv
-         print("%s" % uvfits_filename)
-         hdulist = fits.open(uvfits_filename)
-         hdulist.info()
-         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         #print info_string
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         #print(uvtable_header)
-         hdulist.close()
+      elif woden: 
+         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         obs_time_list = ['1']
+      else:
+         uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+         obs_time_list = ['1']
+      #read the cal uvfits, extract real vis uu and vv
+      print("%s" % uvfits_filename)
+      hdulist = fits.open(uvfits_filename)
+      hdulist.info()
+      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #print info_string
+      uvtable = hdulist[0].data
+      uvtable_header = hdulist[0].header
+      #print(uvtable_header)
+      hdulist.close()
 
-         visibilities_single = uvtable['DATA']
-         visibilities_shape = visibilities_single.shape
-         print("visibilities_shape")
-         print(visibilities_shape)
-         
-         #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
-         #n_timesteps = n_vis/n_baselines
-         #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
-         
-         #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
-         if wsclean:
-            n_fine_chans = visibilities_single.shape[4]
-         else:
-            n_fine_chans = visibilities_single.shape[3]
-                  
+      visibilities_single = uvtable['DATA']
+      visibilities_shape = visibilities_single.shape
+      print("visibilities_shape")
+      print(visibilities_shape)
+      
+      #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
+      #n_timesteps = n_vis/n_baselines
+      #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
+      
+      #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
+      if wsclean:
+         n_fine_chans = visibilities_single.shape[4]
+      else:
+         n_fine_chans = visibilities_single.shape[3]
+               
+      if EDA2_data:
+         #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
+         #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
+         fine_chan_index_array = range(n_fine_chans)
+         #print(fine_chan_index_array)
+      else:
+         fine_chan_index_array = np.asarray([0])
+      centre_freq = float(freq_MHz)
+      fine_chan_width_MHz = fine_chan_width_Hz/1000000.         
+      
+      
+      #now do for each fine chan:
+      for fine_chan_index in fine_chan_index_array:
+         fine_chan_index = int(fine_chan_index)
+         baseline_length_array_lambda_sorted_cut_list = []
+
          if EDA2_data:
-            #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
-            #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
-            fine_chan_index_array = range(n_fine_chans)
-            #print(fine_chan_index_array)
+            #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+            freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+            #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+            #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
          else:
-            fine_chan_index_array = np.asarray([0])
-         centre_freq = float(freq_MHz)
-         fine_chan_width_MHz = fine_chan_width_Hz/1000000.         
+            freq_MHz_fine_chan = freq_MHz
+         wavelength = 300./float(freq_MHz_fine_chan)
          
+         print("fine_chan index,MHz,wavelength")
+         print(fine_chan_index)
+         print(freq_MHz_fine_chan)
+         print(wavelength)
          
-         #now do for each fine chan:
-         for fine_chan_index in fine_chan_index_array:
-            fine_chan_index = int(fine_chan_index)
-            baseline_length_array_lambda_sorted_cut_list = []
-
+         unity_vis_data_sorted_list = []
+         baseline_length_array_lambda_sorted_cut_list = []
+         real_vis_data_sorted_list = []
+         for obs_time_fast in obs_time_list:
             if EDA2_data:
-               #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
-               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-               #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-               #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
-            else:
-               freq_MHz_fine_chan = freq_MHz
-            wavelength = 300./float(freq_MHz_fine_chan)
-            
-            print("fine_chan index,MHz,wavelength")
-            print(fine_chan_index)
-            print(freq_MHz_fine_chan)
-            print(wavelength)
-
-            unity_vis_data_sorted_list = []
-            baseline_length_array_lambda_sorted_cut_list = []
-            real_vis_data_sorted_list = []
-            for obs_time_fast in obs_time_list:
                uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
                unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
-               
-               #read the cal uvfits, extract real vis uu and vv
-               print("%s" % uvfits_filename)
-               hdulist = fits.open(uvfits_filename)
-               hdulist.info()
-               info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-               #print info_string
-               uvtable = hdulist[0].data
-               uvtable_header = hdulist[0].header
-               #print(uvtable_header)
-               hdulist.close()
+            elif woden:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
+               unity_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
+               angular_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
+            #read the cal uvfits, extract real vis uu and vv
+            print("%s" % uvfits_filename)
+            hdulist = fits.open(uvfits_filename)
+            hdulist.info()
+            info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+            #print info_string
+            uvtable = hdulist[0].data
+            uvtable_header = hdulist[0].header
+            #print(uvtable_header)
+            hdulist.close()
    
-               visibilities_single = uvtable['DATA']
-               visibilities_shape = visibilities_single.shape
-               print("visibilities_shape")
-               print(visibilities_shape)
-    
-               if wsclean:
-                  real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
-                  imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,1]
-                  weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,2]
-               else:
-                  real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
-                  imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
-                  weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
+            visibilities_single = uvtable['DATA']
+            visibilities_shape = visibilities_single.shape
+            print("visibilities_shape")
+            print(visibilities_shape)
       
-               UU_s_array = uvtable['UU']
-               UU_m_array = UU_s_array * c   
-               VV_s_array = uvtable['VV']
-               VV_m_array = VV_s_array * c
+       
+            if wsclean:
+               real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
+               imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,1]
+               weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,2]
+            else:
+               real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+               imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
+               weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
       
-               #print(VV_s_array[0:100])
-               #print(UU_s_array[0:100])
+            UU_s_array = uvtable['UU']
+            UU_m_array = UU_s_array * c   
+            VV_s_array = uvtable['VV']
+            VV_m_array = VV_s_array * c
+      
+            #print(VV_s_array[0:100])
+            #print(UU_s_array[0:100])
 
-               #Need to sort by baseline length (then only use short baselines)
-               baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
-               
-               baseline_length_array_m_inds = baseline_length_array_m.argsort()
-               baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
-               
-               #use only baselines shorter than threshold
-               
+            #Need to sort by baseline length (then only use short baselines)
+            baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
             
-               UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
-               VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
-               real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
-               imag_vis_data_sorted_orig = imag_vis_data[baseline_length_array_m_inds]
-               weights_vis_data_sorted_orig = weights_vis_data[baseline_length_array_m_inds]
-               
+            baseline_length_array_m_inds = baseline_length_array_m.argsort()
+            baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
+            
+            #use only baselines shorter than threshold
+            
+         
+            UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+            VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+            real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+            imag_vis_data_sorted_orig = imag_vis_data[baseline_length_array_m_inds]
+            weights_vis_data_sorted_orig = weights_vis_data[baseline_length_array_m_inds]
+            
 
-               #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-               baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
-               VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-               imag_vis_data_sorted = imag_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-               weights_vis_data_sorted = weights_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-               
-               #leave this here!!
-               UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               
-               #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-               #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
-                
-               baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
-               
-               
-               baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
-               
-
-               n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-               print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
-               
-               baseline_length_array_lambda_sorted_cut_list.append(baseline_length_array_lambda_sorted_cut)
-               real_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+            #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+            baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+            VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+            imag_vis_data_sorted = imag_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+            weights_vis_data_sorted = weights_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+            
+            #leave this here!!
+            UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            
+            #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+            #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
+             
+            baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
             
             
-               
+            baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+            
 
-                  
-               #######################################################################################################
-               #now repeat for unity sky to get X_short_parallel!
-               print("%s" % unity_uvfits_filename)
-               #TEST!
-               #unity_uvfits_filename = '/md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_unity/eda_model_LST_030_X_50_MHz_GU.uvfits'
-               hdulist = fits.open(unity_uvfits_filename)
-               hdulist.info()
-               info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-               #print info_string
-               uvtable = hdulist[0].data
-               uvtable_header = hdulist[0].header
-               #print(uvtable_header)
-               hdulist.close()
-      
-               visibilities_single = uvtable['DATA']
-               visibilities_shape = visibilities_single.shape
-               print("visibilities_shape")
-               print(visibilities_shape)
+            n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            
+            baseline_length_array_lambda_sorted_cut_list.append(baseline_length_array_lambda_sorted_cut)
+            real_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+
                
-               UU_s_array = uvtable['UU']
-               UU_m_array = UU_s_array * c   
-               VV_s_array = uvtable['VV']
-               VV_m_array = VV_s_array * c
+            #######################################################################################################
+            #now repeat for unity sky to get X_short_parallel!
+            print("%s" % unity_uvfits_filename)
+            #TEST!
+            #unity_uvfits_filename = '/md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_unity/eda_model_LST_030_X_50_MHz_GU.uvfits'
+            hdulist = fits.open(unity_uvfits_filename)
+            hdulist.info()
+            info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+            #print info_string
+            uvtable = hdulist[0].data
+            uvtable_header = hdulist[0].header
+            #print(uvtable_header)
+            hdulist.close()
+      
+            visibilities_single = uvtable['DATA']
+            visibilities_shape = visibilities_single.shape
+            print("visibilities_shape")
+            print(visibilities_shape)
+            
+            UU_s_array = uvtable['UU']
+            UU_m_array = UU_s_array * c   
+            VV_s_array = uvtable['VV']
+            VV_m_array = VV_s_array * c
       
 
-               #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
-               #yes but this should not affect the unity uvfits
-               ####fine_chan_index_array = fine_chan_index_array[::-1]
+            #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
+            #yes but this should not affect the unity uvfits
+            ####fine_chan_index_array = fine_chan_index_array[::-1]
+         
+
+            #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+            #TEST!
+            real_vis_data = visibilities_single[:,0,0,0,0,0]
+            
+            #print(real_vis_data)
+            #sys.exit()  
+                         
+            #Need to sort by baseline length (then only use short baselines)
+            baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
+            
+            baseline_length_array_m_inds = baseline_length_array_m.argsort()
+            baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
+            
+            #use only baselines shorter than threshold
+            
+         
+            UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+            VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+            real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+
             
 
-               #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
-               #TEST!
-               real_vis_data = visibilities_single[:,0,0,0,0,0]
-               
-               #print(real_vis_data)
-               #sys.exit()  
-                            
-               #Need to sort by baseline length (then only use short baselines)
-               baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
-               
-               baseline_length_array_m_inds = baseline_length_array_m.argsort()
-               baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
-               
-               #use only baselines shorter than threshold
-               
+            #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+            baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+            VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+
             
-               UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
-               VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
-               real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+            #leave this here!!
+            UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            
+            #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+            #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
+             
+            baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
+            
+            
+            baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+            
 
-               
+            n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            
+      
 
-               #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
-               baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
-               VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
-
-               
-               #leave this here!!
-               UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
-               
-               #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
-               #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
-                
-               baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
-               
-               
-               baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
-               
-
-               n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-               print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
-               
-        
-
-               real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+            real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
  
 
-               unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+            unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
 
             
-            #uvfits_real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix,obs_time_fast)
-            #uvfits_real_vis_data_sorted = np.load(uvfits_real_vis_data_sorted_array_filename)
-            #print("loaded %s" % uvfits_real_vis_data_sorted_array_filename)
-            
-            
-            #baseline_length_array_lambda_sorted_cut_filename_unity = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_unity_%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix,obs_time_fast)
-            #np.save(baseline_length_array_lambda_sorted_cut_filename_unity,baseline_length_array_lambda_sorted_cut)
-            #print("saved %s" % baseline_length_array_lambda_sorted_cut_filename_unity)
-            
-            unity_vis_data_sorted_array = np.asarray(unity_vis_data_sorted_list)
-            baseline_length_array_lambda_sorted_cut_array = np.asarray(baseline_length_array_lambda_sorted_cut_list)
-            real_vis_data_sorted_array = np.asarray(real_vis_data_sorted_list)
-            
-            
-            
-            unity_vis_data_sorted_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(unity_vis_data_sorted_array_filename,unity_vis_data_sorted_array)
-            print("saved %s" % unity_vis_data_sorted_array_filename)         
+         #uvfits_real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix,obs_time_fast)
+         #uvfits_real_vis_data_sorted = np.load(uvfits_real_vis_data_sorted_array_filename)
+         #print("loaded %s" % uvfits_real_vis_data_sorted_array_filename)
+         
+         
+         #baseline_length_array_lambda_sorted_cut_filename_unity = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_unity_%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix,obs_time_fast)
+         #np.save(baseline_length_array_lambda_sorted_cut_filename_unity,baseline_length_array_lambda_sorted_cut)
+         #print("saved %s" % baseline_length_array_lambda_sorted_cut_filename_unity)
+         
+         unity_vis_data_sorted_array = np.asarray(unity_vis_data_sorted_list)
+         baseline_length_array_lambda_sorted_cut_array = np.asarray(baseline_length_array_lambda_sorted_cut_list)
+         real_vis_data_sorted_array = np.asarray(real_vis_data_sorted_list)
+         
+         
+         
+         unity_vis_data_sorted_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
+         np.save(unity_vis_data_sorted_array_filename,unity_vis_data_sorted_array)
+         print("saved %s" % unity_vis_data_sorted_array_filename)         
 
-            baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut_array)
-            print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
+         baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut_array)
+         print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
    
-            real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-            np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted_array)
-            print("saved %s" % real_vis_data_sorted_array_filename)
-           
+         real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+         np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted_array)
+         print("saved %s" % real_vis_data_sorted_array_filename)
+        
       else:
          pass
       if n_obs_concat==1:
          if wsclean==True:
             uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         elif woden:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index)
          else:
             uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
@@ -3433,6 +3445,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    visibilities = uvtable['DATA']
    n_vis = visibilities.shape[0]
    
+
    #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
    n_timesteps = n_vis/n_baselines
    #print "n_vis is %s, n_baselines is %s, so n_timesteps %s " % (n_vis,n_baselines,n_timesteps)
@@ -12283,15 +12296,19 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol):
    time_formatted = '%d-%02d-%02dT%02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec))
    #2015-11-29T15:33:43
    #Jack changed it so you don't need a metafits and you can do 1 MHz-space coarse chans
-   #type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform"]
-   type_list = ["gsm"]
+   type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform","angular"]
+   #type_list = ["gsm"]
    #LST_deg = 58.13223745343605    #from template metafits RA=LST
    LST_deg = 60.0
    for type in type_list:
-         name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)
+         name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)  
          sbatch_filename = "%s.sh" % name_base
-         sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
-         output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
+         if type =="angular":
+            sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_pol_%s_%s_angular_sourcelist.txt" % (lowest_channel_freq,pol,time_string)
+            output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_start_freq_%0.3f_angular" % (LST_deg,lowest_channel_freq)
+         else:
+            sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
+            output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
          with open('%s' % sbatch_filename,'w') as outfile:
             outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
             outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
@@ -12642,7 +12659,7 @@ include_angular_info = True
 #WODEN sims signal extraction
 woden=True
 wsclean=False
-fast=False
+fast=True
 no_modelling=False
 calculate_uniform_response=True
 #woden sims from 50 to 193 MHz
@@ -12653,7 +12670,7 @@ calculate_uniform_response=True
 #new centre chans list for 1 MHz wide chans
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
-freq_MHz_list = freq_MHz_list[0:100]
+freq_MHz_list = freq_MHz_list[0:10]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
 #write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
