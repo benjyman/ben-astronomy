@@ -2191,7 +2191,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)  
       if include_angular_info:
-         Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
+         Y_short_parallel_angular_array_filename = "angular_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
                   
    X_short_parallel_array = np.load(X_short_parallel_array_filename)
    print("loaded %s" % X_short_parallel_array_filename)
@@ -2215,7 +2215,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    if include_angular_info:
       Y_short_parallel_angular_array = np.load(Y_short_parallel_angular_array_filename).real
       print("loaded %s" % Y_short_parallel_angular_array_filename)
-   
+      
+      if fast:
+         Y_short_parallel_angular_array = np.concatenate(Y_short_parallel_angular_array)
+         Y_short_parallel_angular_array = Y_short_parallel_angular_array
+         
+         
       #plot a histogram of Y values
       plt.clf()
       n, bins, patches = plt.hist(Y_short_parallel_angular_array)
@@ -2483,7 +2488,10 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_error_jy = results.bse[1]
       elif model_type=='OLS_fixed_int_subtr_Y':
          #subtract Y from the data before fitting (should get rid of the angular variations)
-         real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
+         if fast and woden:
+            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
+         else:
+            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
          model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
          results = model.fit()
          ##print results.summary()
@@ -3224,6 +3232,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          print(wavelength)
          
          unity_vis_data_sorted_list = []
+         angular_vis_data_sorted_list = []
          baseline_length_array_lambda_sorted_cut_list = []
          real_vis_data_sorted_list = []
          for obs_time_fast in obs_time_list:
@@ -3233,7 +3242,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             elif woden:
                uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
                unity_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
-               angular_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
+               angular_uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_angular_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
             #read the cal uvfits, extract real vis uu and vv
             print("%s" % uvfits_filename)
             hdulist = fits.open(uvfits_filename)
@@ -3390,6 +3399,90 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
             unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
 
+#######
+            #######################################################################################################
+            #now repeat for angular sky to get Y_short_parallel!
+            print("%s" % angular_uvfits_filename)
+            #TEST!
+            #unity_uvfits_filename = '/md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_unity/eda_model_LST_030_X_50_MHz_GU.uvfits'
+            hdulist = fits.open(angular_uvfits_filename)
+            hdulist.info()
+            info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+            #print info_string
+            uvtable = hdulist[0].data
+            uvtable_header = hdulist[0].header
+            #print(uvtable_header)
+            hdulist.close()
+      
+            visibilities_single = uvtable['DATA']
+            visibilities_shape = visibilities_single.shape
+            print("visibilities_shape")
+            print(visibilities_shape)
+            
+            UU_s_array = uvtable['UU']
+            UU_m_array = UU_s_array * c   
+            VV_s_array = uvtable['VV']
+            VV_m_array = VV_s_array * c
+      
+
+            #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
+            #yes but this should not affect the unity uvfits
+            ####fine_chan_index_array = fine_chan_index_array[::-1]
+         
+
+            #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+            #TEST!
+            real_vis_data = visibilities_single[:,0,0,0,0,0]
+            
+            #print(real_vis_data)
+            #sys.exit()  
+                         
+            #Need to sort by baseline length (then only use short baselines)
+            baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
+            
+            baseline_length_array_m_inds = baseline_length_array_m.argsort()
+            baseline_length_array_m_sorted_orig = baseline_length_array_m[baseline_length_array_m_inds]
+            
+            #use only baselines shorter than threshold
+            
+         
+            UU_m_array_sorted_orig = UU_m_array[baseline_length_array_m_inds]
+            VV_m_array_sorted_orig = VV_m_array[baseline_length_array_m_inds]
+            real_vis_data_sorted_orig = real_vis_data[baseline_length_array_m_inds]
+
+            
+
+            #eda2 data may have bad baselines where uu=vv=0 (or are these the autos?), dont use these
+            baseline_length_array_m_sorted = baseline_length_array_m_sorted_orig[UU_m_array_sorted_orig>0]
+            VV_m_array_sorted = VV_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+
+            
+            #leave this here!!
+            UU_m_array_sorted = UU_m_array_sorted_orig[UU_m_array_sorted_orig>0]
+            
+            #EDA2 data may also have visibilities where the cal solutions are zero, jump to here
+            #write out ALL calibrated vis as uvfits, then check n_vis and n_timesteps for each calibrated uvfits
+             
+            baseline_length_array_lambda_sorted = baseline_length_array_m_sorted / wavelength
+            
+            
+            baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
+            
+
+            n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            
+      
+
+            real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
+ 
+
+            angular_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+
+
+
+#######
             
          #uvfits_real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix,obs_time_fast)
          #uvfits_real_vis_data_sorted = np.load(uvfits_real_vis_data_sorted_array_filename)
@@ -3401,6 +3494,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #print("saved %s" % baseline_length_array_lambda_sorted_cut_filename_unity)
          
          unity_vis_data_sorted_array = np.asarray(unity_vis_data_sorted_list)
+         angular_vis_data_sorted_array = np.asarray(angular_vis_data_sorted_list)
          baseline_length_array_lambda_sorted_cut_array = np.asarray(baseline_length_array_lambda_sorted_cut_list)
          real_vis_data_sorted_array = np.asarray(real_vis_data_sorted_list)
          
@@ -3410,6 +3504,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          np.save(unity_vis_data_sorted_array_filename,unity_vis_data_sorted_array)
          print("saved %s" % unity_vis_data_sorted_array_filename)         
 
+         angular_vis_data_sorted_array_filename = "angular_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
+         np.save(angular_vis_data_sorted_array_filename,angular_vis_data_sorted_array)
+         print("saved %s" % angular_vis_data_sorted_array_filename)  
+         
          baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(baseline_length_array_lambda_sorted_cut_filename,baseline_length_array_lambda_sorted_cut_array)
          print("saved %s" % baseline_length_array_lambda_sorted_cut_filename)
@@ -5139,9 +5237,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             label1='measured sky temp.'
          else:
             #fig9
-            #label1='ignore angular response'
+            label1='ignore angular response'
             #fig7:
-            label1='residual from log fit'
+            #label1='residual from log fit'
          y_offset=1
          #colour='tab:blue'
          colour=color_dark_blue
@@ -5207,8 +5305,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #
          #y_max = 1.5 * max_abs_residuals
          #y_min = 1.5 * -max_abs_residuals
-         y_max = 4. * max_abs_residuals
-         y_min = 4. * -max_abs_residuals
+         if model_type!='OLS_fixed_int_subtr_Y':
+            y_max = 1.5 * max_abs_residuals
+            y_min = 1.5 * -max_abs_residuals
          
          ##temporary just for paper fig12a:
          #y_max = 100
@@ -5223,19 +5322,20 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
          #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
          if model_type_index==0:
-            plt.text(50, 1.25, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
+            plt.text(50, 3, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
          else:
-            plt.text(50, 1.5, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
+            plt.text(50, 2.5, "rms=%0.5f K" % rms_of_residuals,{'color': colour})
          
          
          #comment out for fig9b
          if not EDA2_data:
-            if model_type_index==0:
-               expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
-               plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
-               #for referee comments on fig7b:
-               plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
-               #print(expected_noise)
+            if not woden:
+               if model_type_index==0:
+                  expected_noise = plot_expected_rms_noise_eda2(freq_MHz_list=freq_array_cut,t_sky_theoretical_array=t_sky_theoretical_array_cut,n_baselines_used_array=n_baselines_used_array_cut,int_time=int_time,bandwidth_Hz=bw_Hz)
+                  plt.plot(freq_array_cut,expected_noise,label="expected rms noise",color='red',linestyle='--')
+                  #for referee comments on fig7b:
+                  plt.plot(freq_array_cut,t_sky_measured_error_array_cut,label="OLS fit error",color='green',linestyle='-.')
+                  #print(expected_noise)
              
    
    
@@ -12652,7 +12752,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -12660,7 +12760,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=True
 #woden sims from 50 to 193 MHz
 #dont need this any more
@@ -12670,7 +12770,7 @@ calculate_uniform_response=True
 #new centre chans list for 1 MHz wide chans
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
-freq_MHz_list = freq_MHz_list[0:10]
+freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
 #write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
