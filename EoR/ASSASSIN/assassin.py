@@ -185,7 +185,7 @@ lst_list = lst_list_array.astype(str)
 
 #lst_list = ['0.120']
 #lst_list = ['12']
-#pol_list = ['X','Y']
+pol_list = ['X','Y']
 sky_model = 'gsm'
 #sky_model = 'gsm2016'
 #sky_model = 'gmoss'
@@ -193,9 +193,6 @@ sky_model = 'gsm'
 if sky_model=='gsm':
    NSIDE=512 #(to match pygsm)
       
-      
-pol_list = ['X']
-#pol_list = ['Y']
 #can be any of these, except if can only have 'diffuse' if not diffuse_global or diffuse_angular
 #signal_type_list=['global','global_EDGES','diffuse','noise','gain_errors','diffuse_global','diffuse_angular']
 #signal_type_list=['diffuse','noise'] #fig9, 10b?
@@ -12187,7 +12184,7 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipo
    #sys.exit()
    
    wavelength = 300./freq_MHz
-   name_base = hpx_fits_filename.split(".fits")[0] + "_pol_%s" % (pol)   
+   name_base = hpx_fits_filename.split(".fits")[0] 
    
    source_list_name = '%s_sourcelist.txt' % name_base
 
@@ -12213,9 +12210,9 @@ def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipo
       year,month,day,hour,min,sec = time_string.split('_')
       time = Time('%d-%02d-%02d %02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec)))
    
-      angular_source_list_name = '%s_%s_angular_sourcelist.txt' % (name_base,time_string)
-      beam_source_list_name = '%s_%s_beam_sourcelist.txt' % (name_base,time_string)
-      global_foreground_source_list_name = '%s_%s_global_foreground_sourcelist.txt' % (name_base,time_string)
+      angular_source_list_name = '%s_%s_pol_%s_angular_sourcelist.txt' % (name_base,time_string,pol)
+      beam_source_list_name = '%s_%s_pol_%s_beam_sourcelist.txt' % (name_base,time_string,pol)
+      global_foreground_source_list_name = '%s_%s_pol_%s_global_foreground_sourcelist.txt' % (name_base,time_string,pol)
    
       #beam stuff:
       altaz = gal_coords.transform_to(AltAz(obstime=time,location=eda2_loc))
@@ -12350,25 +12347,37 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    
    return short_dipole_parallel_beam_map
 
-def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fine_chan_khz=10):
+def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol_list,fine_chan_khz=10):
    start_freq_MHz = float(freq_MHz_list[0])
    gsm = GlobalSkyModel()
-   global_foreground_value_list = []
+   for pol in pol_list:
+        global_foreground_value_list = []
+        for band_num,freq_MHz in enumerate(freq_MHz_list):
+           freq_MHz = float(freq_MHz)
+           print("Freq %0.3f MHz" % freq_MHz)
+           #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
+           #dont put freq as stuffs up naming on pawsey for array job
+           name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)
+           gsm_filename = "%s_gsm.fits" % name_base
+           gsm_map = gsm.generate(freq_MHz)
+           hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
+           print("saved %s" % gsm_filename)
+           global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
+           global_foreground_value_list.append(global_foreground_value)
+
+        global_foreground_value_array = np.asarray(global_foreground_value_list)        
+        global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
+        np.save(global_foreground_value_array_filename,global_foreground_value_array)
+        
+   print("saved %s" % global_foreground_value_array_filename)          
    for band_num,freq_MHz in enumerate(freq_MHz_list):
         freq_MHz = float(freq_MHz)
         print("Freq %0.3f MHz" % freq_MHz)
         #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
         #dont put freq as stuffs up naming on pawsey for array job
-        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)
-        gsm_filename = "%s_gsm.fits" % name_base
+        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)        
         EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
         unity_uniform_filename = "%s_unity_uniform.fits" % name_base
-        gsm_map = gsm.generate(freq_MHz)
-        hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
-        print("saved %s" % gsm_filename)
-        global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
-        global_foreground_value_list.append(global_foreground_value)
-        
         freq_MHz_array = np.asarray([freq_MHz])
         s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
         s_21_array_EDGES_value = s_21_array_EDGES[0]
@@ -12383,13 +12392,10 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol,fi
         print("saved %s" % unity_uniform_filename)
         write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
         
-   global_foreground_value_array = np.asarray(global_foreground_value_list)        
-   global_foreground_value_array_filename = "%s_%s_global_foreground.npy" % (name_base,time_string)
-   np.save(global_foreground_value_array_filename,global_foreground_value_array)
-   print("saved %s" % global_foreground_value_array_filename)
+
    
           
-def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol):
+def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
    n_bands = len(freq_MHz_list)
    lowest_channel_freq = freq_MHz_list[0]
    year,month,day,hour,min,sec = time_string.split('_')
@@ -12403,44 +12409,88 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol):
    for type in type_list:
          name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)  
          sbatch_filename = "%s.sh" % name_base
-         if type =="angular":
-            sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_pol_%s_%s_angular_sourcelist.txt" % (lowest_channel_freq,pol,time_string)
-            output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_start_freq_%0.3f_angular" % (LST_deg,lowest_channel_freq)
-         else:
+         if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform":
             sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
             output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
-         with open('%s' % sbatch_filename,'w') as outfile:
-            outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
-            outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-            outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % n_bands)
-   
-            outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
-            outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
-            outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
-   
-            outfile.write("source /astro/mwaeor/jline/software/WODEN/build/init_WODEN.sh\n")
-            outfile.write("export LD_LIBRARY_PATH=$ERFA_LIB:/pawsey/mwa/software/python3/json-c/0.14-20200419/lib64:$LD_LIBRARY_PATH\n\n")
-            
-            outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
-            outfile.write("mkdir -p data\n")
-            outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
-            outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
-            outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
-            outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
-            outfile.write("   --lowest_channel_freq=%0.0fe+6 \\\n" % lowest_channel_freq)
-            outfile.write("   --coarse_band_width=1e+6 \\\n")
-            outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
-            #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
-            outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
-            outfile.write("   --sky_crop_components \\\n")
-            #outfile.write("   --EDA2_sim \\\n")
-            outfile.write("   --primary_beam=EDA2 \\\n")
-            outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
-            outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
-            outfile.write("   --date=%s \\\n" % time_formatted)
-            outfile.write("   --chunking_size=2500\n")
-            
-         print("wrote %s" % sbatch_filename)          
+            with open('%s' % sbatch_filename,'w') as outfile:
+               outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
+               outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
+               outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % n_bands)
+      
+               outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
+               outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
+               outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
+      
+               outfile.write("source /astro/mwaeor/jline/software/WODEN/build/init_WODEN.sh\n")
+               outfile.write("export LD_LIBRARY_PATH=$ERFA_LIB:/pawsey/mwa/software/python3/json-c/0.14-20200419/lib64:$LD_LIBRARY_PATH\n\n")
+               
+               outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
+               outfile.write("mkdir -p data\n")
+               outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
+               outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
+               outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
+               outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
+               outfile.write("   --lowest_channel_freq=%0.0fe+6 \\\n" % lowest_channel_freq)
+               outfile.write("   --coarse_band_width=1e+6 \\\n")
+               outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
+               #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
+               outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
+               outfile.write("   --sky_crop_components \\\n")
+               #outfile.write("   --EDA2_sim \\\n")
+               outfile.write("   --primary_beam=EDA2 \\\n")
+               outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
+               outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
+               outfile.write("   --date=%s \\\n" % time_formatted)
+               outfile.write("   --chunking_size=2500\n")
+               
+            print("wrote %s" % sbatch_filename)
+         
+         for pol in pol_list:
+            sbatch_filename = "%s_pol_%s.sh" % (name_base,pol)
+            if type =="angular":
+               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_pol_%s_%s_pol_%s_angular_sourcelist.txt" % (lowest_channel_freq,pol,time_string,pol)
+               output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,lowest_channel_freq,pol)
+            elif type =="gsm_uniform":
+               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_pol_%s_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,pol,time_string,pol)
+               output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_unifoprm_start_freq_%0.3f_pol_%s" % (LST_deg,lowest_channel_freq,pol)            
+            else:
+               continue
+            with open('%s' % sbatch_filename,'w') as outfile:
+               outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
+               outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
+               outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % n_bands)
+         
+               outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
+               outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
+               outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
+         
+               outfile.write("source /astro/mwaeor/jline/software/WODEN/build/init_WODEN.sh\n")
+               outfile.write("export LD_LIBRARY_PATH=$ERFA_LIB:/pawsey/mwa/software/python3/json-c/0.14-20200419/lib64:$LD_LIBRARY_PATH\n\n")
+               
+               outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
+               outfile.write("mkdir -p data\n")
+               outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
+               outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
+               outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
+               outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
+               outfile.write("   --lowest_channel_freq=%0.0fe+6 \\\n" % lowest_channel_freq)
+               outfile.write("   --coarse_band_width=1e+6 \\\n")
+               outfile.write("   --cat_filename=/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/%s \\\n" % sourcelist_name)
+               #outfile.write("   --metafits_filename=/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/WODEN/centre_chan_%03d_metafits_ppds.fits \\\n" % centre_chan)
+               outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
+               outfile.write("   --sky_crop_components \\\n")
+               #outfile.write("   --EDA2_sim \\\n")
+               outfile.write("   --primary_beam=EDA2 \\\n")
+               outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
+               outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
+               outfile.write("   --date=%s \\\n" % time_formatted)
+               outfile.write("   --chunking_size=2500\n")
+                  
+            print("wrote %s" % sbatch_filename)       
+         
+         
+         
+          
 
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
@@ -12773,8 +12823,8 @@ calculate_uniform_response=True
 freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list[0])
-#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list[0])
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
 #sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
