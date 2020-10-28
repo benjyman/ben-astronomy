@@ -12409,7 +12409,7 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
    for type in type_list:
          name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)  
          sbatch_filename = "%s.sh" % name_base
-         if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform":
+         if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform"):
             sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
             output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
             with open('%s' % sbatch_filename,'w') as outfile:
@@ -12823,7 +12823,7 @@ calculate_uniform_response=True
 freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
 #write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
 #sys.exit()
 
