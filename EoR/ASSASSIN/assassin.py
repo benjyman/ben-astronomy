@@ -12410,7 +12410,7 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
          name_base = "woden_eda2_sbatch_%s_lst_%0.3f" % (type,LST_deg)  
          sbatch_filename = "%s.sh" % name_base
          if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform"):
-            sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,type,pol)
+            sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (lowest_channel_freq,type)
             output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,lowest_channel_freq)
             with open('%s' % sbatch_filename,'w') as outfile:
                outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
@@ -12448,11 +12448,11 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
          for pol in pol_list:
             sbatch_filename = "%s_pol_%s.sh" % (name_base,pol)
             if type =="angular":
-               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_pol_%s_%s_pol_%s_angular_sourcelist.txt" % (lowest_channel_freq,pol,time_string,pol)
+               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_%s_pol_%s_angular_sourcelist.txt" % (lowest_channel_freq,time_string,pol)
                output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,lowest_channel_freq,pol)
             elif type =="gsm_uniform":
-               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_pol_%s_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,pol,time_string,pol)
-               output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_unifoprm_start_freq_%0.3f_pol_%s" % (LST_deg,lowest_channel_freq,pol)            
+               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (lowest_channel_freq,time_string,pol)
+               output_uvfits_prepend = "/astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN/data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,lowest_channel_freq,pol)            
             else:
                continue
             with open('%s' % sbatch_filename,'w') as outfile:
@@ -12802,7 +12802,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
 
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -12810,7 +12810,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=True
 #woden sims from 50 to 193 MHz
 #dont need this any more
@@ -12820,10 +12820,10 @@ calculate_uniform_response=True
 #new centre chans list for 1 MHz wide chans
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
-freq_MHz_list = freq_MHz_list[0:100]
+freq_MHz_list = freq_MHz_list[0:5]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
 #write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
 #sys.exit()
 
