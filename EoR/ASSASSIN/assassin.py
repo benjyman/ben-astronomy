@@ -4662,8 +4662,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    t_sky_array_length = int(len(freq_MHz_list) * n_fine_chans_used)
    
+   freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+      
+      
    if not no_modelling:
-      freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
       for pol_index,pol in enumerate(pol_list):
          t_sky_measured_array = np.full(t_sky_array_length,np.nan)
          t_sky_measured_error_array = np.full(t_sky_array_length,np.nan)
@@ -4675,11 +4677,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
             t_sky_measured_array_filename_flagged = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
             t_sky_measured_error_array_filename_flagged = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
-            if pol_index==0:
-               freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+
       
             #this replaces all the matrix stuff you do in model_tsky_from_saved_data
-            
+            freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
             for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
                if EDA2_data==True:
                   EDA2_chan = EDA2_chan_list[freq_MHz_index]
@@ -4720,8 +4721,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                      t_sky_measured_error_array[freq_MHz_index_fine] = t_sky_measured_error
                      t_sky_measured_array_flagged[freq_MHz_index_fine] = t_sky_measured_flagged
                      t_sky_measured_error_array_flagged[freq_MHz_index_fine] = t_sky_measured_error_flagged
-                     if pol_index==0:
-                        freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
+                      
+                     freq_MHz_fine_array[freq_MHz_index_fine] = freq_MHz_fine
+                        
             
                   
                else:
@@ -4802,6 +4804,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #unflagged
    plt.clf()
    fig, ax1 = plt.subplots()
+   freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
+       
    for pol_index,pol in enumerate(pol_list):
       n_baselines_used_array_filename = "n_baselines_included_lst_%s_pol_%s%s.npy" % (lst_string,pol,signal_type_postfix)  
       if EDA2_data==True:
@@ -4846,9 +4850,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             
          t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
          t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
-         if pol_index==0:
-            freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
-       
          
          t_sky_measured_array = np.load(t_sky_measured_array_filename)
          t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
@@ -4954,7 +4955,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
-      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
@@ -5045,7 +5046,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
-      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
     
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
@@ -5105,7 +5106,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label3='recovered weighted'
       t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
       t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
-      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+      freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
     
       t_sky_measured_array = np.load(t_sky_measured_array_filename)
       t_sky_measured_array = t_sky_measured_array[0:length_freq_MHz_fine_chan_to_plot]
@@ -5244,7 +5245,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
          t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
          
-         freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+         freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
          
        
          t_sky_measured_array = np.load(t_sky_measured_array_filename)
@@ -5383,7 +5384,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                
             t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
             t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
-            freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s_%s.npy" % (lst_string,signal_type_postfix,model_type)
+            freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
             
           
             t_sky_measured_array = np.load(t_sky_measured_array_filename)
@@ -12803,7 +12804,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 #woden sims from 50 to 193 MHz
 #dont need this any more
