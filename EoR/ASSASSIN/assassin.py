@@ -5297,7 +5297,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
             #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
             y_offset = 2.5 + plotting_index * 0.5
-            plt.text(50, y_offset, "rms=%0.5f K" % rms_of_residuals,{'color': colour})
+            plt.text(50, y_offset, "rms=%0.5f K" % rms_of_residuals,{'color': color_list[plotting_index-1]})
            
             
             #comment out for fig9b
