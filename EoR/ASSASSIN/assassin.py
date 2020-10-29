@@ -5296,11 +5296,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
             #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
             #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
-            if model_type_index==0:
-               plt.text(50, 3, "rms=%0.3f K" % rms_of_residuals,{'color': colour})
-            else:
-               plt.text(50, 2.5, "rms=%0.5f K" % rms_of_residuals,{'color': colour})
-            
+            y_offset = 2.5 + plotting_index * 0.5
+            plt.text(50, y_offset, "rms=%0.5f K" % rms_of_residuals,{'color': colour})
+           
             
             #comment out for fig9b
             if not EDA2_data:
@@ -12790,7 +12788,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 #woden sims from 50 to 193 MHz
 #dont need this any more
