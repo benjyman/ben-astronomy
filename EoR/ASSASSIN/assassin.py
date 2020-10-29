@@ -3084,6 +3084,13 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
    return(diffuse_global_value)
 
 def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True):
+   if pol=='X':
+      pol_index = 0
+   elif pol=='Y':
+      pol_index = 1
+   else:
+      print('pol %s not recognised' % pol)
+      sys.exit()
    freq_MHz = freq_MHz_list[freq_MHz_index]
    start_freq = freq_MHz_list[0]
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
@@ -3239,7 +3246,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             elif woden:
                uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
                unity_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
-               angular_uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_angular_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
+               angular_uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (lst_deg,start_freq,pol,freq_MHz_index) 
             #read the cal uvfits, extract real vis uu and vv
             print("%s" % uvfits_filename)
             hdulist = fits.open(uvfits_filename)
@@ -3250,21 +3257,21 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             uvtable_header = hdulist[0].header
             #print(uvtable_header)
             hdulist.close()
-   
+     
             visibilities_single = uvtable['DATA']
             visibilities_shape = visibilities_single.shape
             print("visibilities_shape")
             print(visibilities_shape)
       
-       
+            
             if wsclean:
-               real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
-               imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,1]
-               weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,2]
+               real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,0]
+               imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,1]
+               weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,2]
             else:
-               real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
-               imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
-               weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
+               real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
+               imag_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,1]
+               weights_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,2]
       
             UU_s_array = uvtable['UU']
             UU_m_array = UU_s_array * c   
@@ -3348,7 +3355,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
-            real_vis_data = visibilities_single[:,0,0,0,0,0]
+            real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
             
             #print(real_vis_data)
             #sys.exit()  
@@ -3429,7 +3436,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
-            real_vis_data = visibilities_single[:,0,0,0,0,0]
+            real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
             
             #print(real_vis_data)
             #sys.exit()  
@@ -3633,13 +3640,13 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          
          if wsclean:
-            real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,0]
-            imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,1]
-            weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,0,2]
+            real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,0]
+            imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,1]
+            weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,2]
          else:
-            real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
-            imag_vis_data = visibilities_single[:,0,0,fine_chan_index,0,1]
-            weights_vis_data = visibilities_single[:,0,0,fine_chan_index,0,2]
+            real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
+            imag_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,1]
+            weights_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,2]
          
          
          
@@ -3851,35 +3858,41 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          time_initial = Time(astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
          
          #calculate the local sidereal time for the MWA at date_obs_initial
-         lst_initial = time_initial.sidereal_time('apparent')
+         #lst_initial = time_initial.sidereal_time('apparent')
          
-         lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
+         #lst_initial_days = (lst_initial.value / 24.) * (23.9344696 /24.)
          
-         #want lst == lst_hrs, so add time so that this is true
-         delta_time = TimeDelta(lst_initial_days, format='jd') 
+         ##want lst == lst_hrs, so add time so that this is true
+         #delta_time = TimeDelta(lst_initial_days, format='jd') 
          
-         desired_lst_days = float(lst_hrs) / 24.
+         #desired_lst_days = float(lst_hrs) / 24.
          
-         time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
+         #time_final = time_initial - delta_time + TimeDelta(desired_lst_days, format='jd') 
          
-         print('final LST is: ')
-         print(time_final.sidereal_time('apparent'))
-         
-         print('final time is: ')
-         print(time_final)
+         #print('final LST is: ')
+         #print(time_final.sidereal_time('apparent'))
+         #
+         #print('final time is: ')
+         #print(time_final)
          
          #close enough......
          
-         time_string = time_final.utc.iso
+         #time_string = time_final.utc.iso
          #time_string = "%02d_%02d_%02d" % (hour,minute,second)
          
-         hour = int(time_string.split(' ')[1].split(':')[0])
-         minute = int(time_string.split(' ')[1].split(':')[1])
-         minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
+         #hour = int(time_string.split(' ')[1].split(':')[0])
+         #minute = int(time_string.split(' ')[1].split(':')[1])
+         #minute = int(np.floor(float(time_string.split(' ')[1].split(':')[2])))
          
          #date_obs = datetime(year, month, day, hour, minute, second)
          print("WARNING: using hard-coded time of date_obs = datetime(2015, 11, 29, 15, 33, 43) to match woden sims for testing angular subtraction" )
-         date_obs = datetime(2015, 11, 29, 15, 33, 43)
+         year = 2015
+         month = 11
+         day = 29
+         hour = 15
+         min = 33
+         sec = 43
+         date_obs = datetime(year, month, day, hour, min, sec)
          ov.date = date_obs
          
          
@@ -3888,9 +3901,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #get the diffuse global diffuse value used in the simulation (from gsm)
          if EDA2_data==True:
             EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
-            sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
+            #sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
+            sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_band_%d_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,freq_MHz_index,year,month,day,hour,min,sec,pol)
          else:
             sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
+            sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_band_%d_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,freq_MHz_index,year,month,day,hour,min,sec,pol)
          #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
          freq_MHz_index = int(freq_MHz - 50)
          diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
@@ -4044,7 +4059,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
          #print(sum_of_beam_weights)
          beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
-         print("beam_weighted_av_sky at %0.3f MHz is %0.4E" % (freq_MHz,beam_weighted_av_sky))
+         print("beam_weighted_av_sky at %0.3f MHz is %0.4E for %s pol" % (freq_MHz,beam_weighted_av_sky,pol))
          
          
          ##########
