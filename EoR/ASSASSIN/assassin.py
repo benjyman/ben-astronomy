@@ -4799,7 +4799,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #Get the theoretical diffuse value from the chan folders instead (in case you have run each chan separately for solve_from_uvfits) 
    linestyle_list = ['dashdot','-','dotted','--']
-   color_list=[color_dark_blue,color_orange_red,color_green,color_light_blue]
+   color_list=[color_dark_blue,color_orange_red,color_green,color_orange]
    plotting_index = 0
    #unflagged
    plt.clf()
@@ -5196,7 +5196,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    
    #no error bar plot what we want
    linestyle_list = ['dashdot','-','dotted','--']
-   color_list=[color_dark_blue,color_orange_red,color_green,color_light_blue]
+   color_list=[color_dark_blue,color_orange_red,color_green,color_orange]
    plotting_index = 0
    #unflagged
    plt.clf()
