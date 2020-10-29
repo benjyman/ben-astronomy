@@ -4859,20 +4859,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
          n_baselines_used_array = np.load(n_baselines_used_array_filename)
          
-         print(freq_MHz_fine_array.shape)
-         print(t_sky_measured_array.shape)
-         print(t_sky_measured_error_array.shape)
-         
-         
-         #print(t_sky_measured_array)
-         #print(t_sky_measured_array.shape)
-         #print(t_sky_measured_error_array)
-         #print(t_sky_measured_error_array.shape)
-         #print(freq_MHz_fine_array)
-         #print(freq_MHz_fine_array.shape)
-         # 
-         #print(t_sky_theoretical_array)
-         #print(freq_MHz_list)
          #fig5 and fig6a, paper 1 
          ax1.set_xlabel("Frequency (MHz)")
          ax1.set_ylabel("Sky temperature (K)", color='black')
