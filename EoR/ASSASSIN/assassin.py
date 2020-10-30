@@ -4798,8 +4798,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   print("saved %s" % fig_name) 
    
    #Get the theoretical diffuse value from the chan folders instead (in case you have run each chan separately for solve_from_uvfits) 
-   linestyle_list = ['dashdot','-','dotted','--']
-   color_list=[color_dark_blue,color_orange_red,color_green,color_orange]
+   linestyle_list = ['dashdot','-','dotted','--','solid','dotted']
+   color_list=[color_dark_blue,color_orange_red,color_green,color_orange,color_yellow,color_pink]
    plotting_index = 0
    #unflagged
    plt.clf()
@@ -4868,9 +4868,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          #plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,color=color_list[model_type_index],linestyle=model_type_linestyle_list[model_type_index+1],alpha=0.7)
       if len(freq_MHz_list)==1:
          ax1.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
+         plotting_index += 1
          #ax1.legend(loc=1)
       else:
-         ax1.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_green,linestyle=':')
+         ax1.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,color=color_list[plotting_index],linestyle=linestyle_list[plotting_index])
+         plotting_index += 1
          #ax1.legend(loc=1)
          #fig5
          #ax2 = ax1.twinx()
@@ -5201,6 +5203,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #unflagged
    plt.clf()
    fig, ax1 = plt.subplots()
+   #also take the average of the X and Y pol residuals
    for pol_index,pol in enumerate(pol_list):
       plot_log = False
       for model_type_index,model_type in enumerate(model_type_list):
@@ -5270,7 +5273,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             
             #log_residual = log_signal_array_short_baselines - log_ffit
             residual_of_log_fit = ffit_linear - sky_array
-            
+            if pol_index==0 and model_type=='OLS_fixed_intercept': 
+               both_pol_residual_sum_array = np.zeros(len(freq_array_cut))
+            if pol_index==0 and model_type=='OLS_fixed_int_subtr_Y':
+               both_pol_residual_sum_array_subtr_Y = np.zeros(len(freq_array_cut))
+            if model_type=='OLS_fixed_intercept':
+               both_pol_residual_sum_array += residual_of_log_fit
+            if model_type=='OLS_fixed_int_subtr_Y':
+               both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
             rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
             print("rms_of_residuals is %0.3f K" % rms_of_residuals)
             
@@ -5310,7 +5320,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                      #print(expected_noise)
                 
       
-      
+   both_pol_residual_av_array = both_pol_residual_sum_array / float(len(pol_list))
+   both_pol_residual_av_array_subtr_Y = both_pol_residual_sum_array_subtr_Y / float(len(pol_list))
+   rms_of_residuals_combined = np.sqrt(np.mean(both_pol_residual_av_array**2))
+   rms_of_residuals_combined_subtr_Y = np.sqrt(np.mean(both_pol_residual_av_array_subtr_Y**2))
    if plot_log == True:
       #fig9b paper1 (#and 7b)
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -5325,7 +5338,26 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)
       plt.close()         
-       
+
+      plt.clf()
+      fig, ax1 = plt.subplots()
+      plt.plot(freq_array_cut,both_pol_residual_av_array,color=color_dark_blue,label='comb. pol. ignore ang.')
+      plt.plot(freq_array_cut,both_pol_residual_av_array_subtr_Y,color=color_orange,label='comb. pol. subtr. ang.')
+      plt.text(50, 2.5, "rms=%0.5f K" % rms_of_residuals_combined,color=color_dark_blue)
+      plt.text(50, 2, "rms=%0.5f K" % rms_of_residuals_combined_subtr_Y,color=color_orange)
+      map_title="Residual for combined pols "
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("Frequency (MHz)")
+      #if len(model_type_list)>1:
+      #   plt.legend(loc=1)
+      plt.legend(loc=1)
+      plt.ylim([y_min, y_max])
+      fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars_combined_pol.png" % (poly_order,lst_string,signal_type_postfix)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      plt.close()  
+            
       #plt.clf()
       #plt.errorbar(freq_array_cut,residual_of_log_fit,yerr=t_sky_measured_error_array[t_sky_measured_array>0.],label='residual of log fit')
       ##if include_angular_info:
