@@ -12607,8 +12607,9 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
       #go through the UU_m array and find where the uu matches with the uv_correlation matrix, and add the noise in
       print(UU_m_array[0:10])
       print(uv_correlation_array[:,0][0:10])
+      #do a better check than this using - isclose()
       sys.exit()
-      no_match_found = 0
+      #now no need for this loop, just add the arrays and write a new uvfits file
       for UU_m_index,UU_m in enumerate(UU_m_array):
          print("baseline %s" % UU_m_index)
          match = False
