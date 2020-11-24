@@ -12426,7 +12426,8 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol_li
    
           
 def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
-   array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255.ant"
+   #array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255.ant"
+   array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_255.txt"
    n_bands = len(freq_MHz_list)
    lowest_channel_freq = freq_MHz_list[0]
    year,month,day,hour,min,sec = time_string.split('_')
@@ -12591,6 +12592,7 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
    VV_s_array = uvtable['VV']
    VV_m_array = VV_s_array * c
    
+   
    #now get the values from the noise coupling array created using plot_internal_noise_coupling
    uv_correlation_array = np.load(uv_correlation_array_filename)
    
@@ -12603,6 +12605,9 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
       new_imag_vis_data_array = np.zeros(imag_vis_data.shape)
    
       #go through the UU_m array and find where the uu matches with the uv_correlation matrix, and add the noise in
+      print(UU_m_array[0:10])
+      print(uv_correlation_array[:,0][0:10])
+      sys.exit()
       no_match_found = 0
       for UU_m_index,UU_m in enumerate(UU_m_array):
          print("baseline %s" % UU_m_index)
