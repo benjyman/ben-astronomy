@@ -12070,23 +12070,23 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print("saved %s" % fig_name)
    
    
-def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
-   new_mnm_odd_filename = mnm_odd_filename.split(".npy")[0].split("/")[-1] + "_255.npy"
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_positions_filename):
    n_freqs = len(frequency_MHz_array) 
    #plot the first freq for now (50 MHz?)
    freq_index = 0
-   mnm_odd_array = np.load(mnm_odd_filename)
-   #mnm_odd_array_real = mnm_odd_array.real
+   mnm_even_array = np.load(mnm_even_filename)
+   #mnm_even_array_real = mnm_even_array.real
    
-   #deleting Daniels antenna 237 (zero indexed) as it has no match in WODEN sims
-   #need to rerun woden sims with different 255 antennas (i.e. deleting ant x;7.000, y:3.00 (AAVS1_loc_uvgen_match_daniel_255_NEU.ant))
-   #print(mnm_odd_array.shape)
-   new_mnm_odd_array = np.copy(mnm_odd_array)
-   new_mnm_odd_array = np.delete(new_mnm_odd_array, 237, 1)
-   new_mnm_odd_array = np.delete(new_mnm_odd_array, 237, 2)
-   #print(new_mnm_odd_array.shape)
-   np.save(new_mnm_odd_filename,new_mnm_odd_array)
-   print("saved %s" % new_mnm_odd_filename)
+   ##deleting Daniels antenna 237 (zero indexed) as it has no match in WODEN sims
+   ##need to rerun woden sims with different 255 antennas (i.e. deleting ant x;7.000, y:3.00 (AAVS1_loc_uvgen_match_daniel_255_NEU.ant))
+   ##print(mnm_even_array.shape)
+   #new_mnm_even_filename = mnm_even_filename.split(".npy")[0].split("/")[-1] + "_255.npy"
+   #new_mnm_even_array = np.copy(mnm_even_array)
+   #new_mnm_even_array = np.delete(new_mnm_even_array, 237, 1)
+   #new_mnm_even_array = np.delete(new_mnm_even_array, 237, 2)
+   #print(new_mnm_even_array.shape)
+   #np.save(new_mnm_even_filename,new_mnm_even_array)
+   #print("saved %s" % new_mnm_even_filename)
    
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
@@ -12149,7 +12149,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
             vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
             uu_list.append(uu)
             vv_list.append(vv)
-            correlation = mnm_odd_array[freq_index,ant_1_index,ant_2_index]
+            correlation = mnm_even_array[freq_index,ant_1_index,ant_2_index]
             correlation_list.append(correlation)
             
 
@@ -12426,6 +12426,7 @@ def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol_li
    
           
 def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
+   array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255.ant"
    n_bands = len(freq_MHz_list)
    lowest_channel_freq = freq_MHz_list[0]
    year,month,day,hour,min,sec = time_string.split('_')
@@ -12468,7 +12469,7 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
                outfile.write("   --sky_crop_components \\\n")
                #outfile.write("   --EDA2_sim \\\n")
                outfile.write("   --primary_beam=EDA2 \\\n")
-               outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
+               outfile.write("   --array_layout=%s \\\n" % array_layout)
                outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
                outfile.write("   --date=%s \\\n" % time_formatted)
                outfile.write("   --chunking_size=2500\n")
@@ -12511,7 +12512,7 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
                outfile.write("   --sky_crop_components \\\n")
                #outfile.write("   --EDA2_sim \\\n")
                outfile.write("   --primary_beam=EDA2 \\\n")
-               outfile.write("   --array_layout=/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255.ant \\\n")
+               outfile.write("   --array_layout=%s \\\n" % array_layout)
                outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
                outfile.write("   --date=%s \\\n" % time_formatted)
                outfile.write("   --chunking_size=2500\n")
@@ -12609,11 +12610,11 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
          VV_m = VV_m_array[UU_m_index]
          for uv_correlation_UU_index,uv_correlation_UU in enumerate(uv_correlation_array[:,0]):
             uv_correlation_VV = uv_correlation_array[uv_correlation_UU_index,1]
-            a = np.asarray([1,2,3,4])
-            b = np.asarray([1,2,3,5])
-            close = np.isclose(a,b)
-            print(close)
-            sys.exit()
+            #a = np.asarray([1,2,3,4])
+            #b = np.asarray([1,2,3,5])
+            #close = np.isclose(a,b)
+            #print(close)
+            #sys.exit()
             if (np.isclose(UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(VV_m,uv_correlation_VV,atol=float(tolerance_m))):
                match = True
                new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
@@ -12622,7 +12623,13 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
             if (np.isclose(-UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(-VV_m,uv_correlation_VV,atol=float(tolerance_m))):
                match = True
                new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
-            
+            if (np.isclose(UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(-VV_m,uv_correlation_VV,atol=float(tolerance_m))):
+               match = True
+               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
+            if (np.isclose(-UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(VV_m,uv_correlation_VV,atol=float(tolerance_m))):
+               match = True
+               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
+                         
          if match is False:
             print("NO MATCH FOUND for UU,VV: %0.3f,%0.3f" % (UU_m,VV_m))
             no_match_found += 1
@@ -12640,8 +12647,10 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #NO MATCH FOUND for antenna_list_1 ant number 237, x:-0.300, y:-0.254
 
 #modified plot_internal_noise_coupling to write a new internal_noise_matrix_filename, without Daniels antenna 237 (zero indexed)
+#run this just once to get new mnm_even_255 with daniels ant 237 removed
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
+##Then run this for correct uv_correlation file
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
 #frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
@@ -12650,9 +12659,10 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 
 
 #uvfits_filename = "/md0/EoR/ASSASSIN/WODEN/data/global_edges/woden_LST_60.000_EDGES_uniform_chan_063_band01.uvfits"  
-#uv_correlation_array_filename = "uv_correlation.npy"
-#add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename)
-#sys.exit()
+uvfits_filename = "/md0/EoR/ASSASSIN/noise_coupling/woden_LST_60.000_EDGES_uniform_start_freq_50.000_band00.uvfits"  
+uv_correlation_array_filename = "uv_correlation.npy"
+add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename)
+sys.exit()
 
 
 
@@ -12984,8 +12994,8 @@ freq_MHz_list = freq_MHz_list[0:100]
 year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
 #write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
-#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-#sys.exit()
+write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
+sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
