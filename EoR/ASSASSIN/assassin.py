@@ -12071,13 +12071,23 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    
    
 def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_positions_filename):
+   new_mnm_odd_filename = mnm_odd_filename.split(".npy")[0].split("/")[-1] + "_255.npy"
+   n_freqs = len(frequency_MHz_array) 
    #plot the first freq for now (50 MHz?)
    freq_index = 0
-   print(frequency_MHz_array)
-   print(mnm_odd_filename)
    mnm_odd_array = np.load(mnm_odd_filename)
    #mnm_odd_array_real = mnm_odd_array.real
-
+   
+   #deleting Daniels antenna 237 (zero indexed) as it has no match in WODEN sims
+   #need to rerun woden sims with different 255 antennas (i.e. deleting ant x;7.000, y:3.00 (AAVS1_loc_uvgen_match_daniel_255_NEU.ant))
+   #print(mnm_odd_array.shape)
+   new_mnm_odd_array = np.copy(mnm_odd_array)
+   new_mnm_odd_array = np.delete(new_mnm_odd_array, 237, 1)
+   new_mnm_odd_array = np.delete(new_mnm_odd_array, 237, 2)
+   #print(new_mnm_odd_array.shape)
+   np.save(new_mnm_odd_filename,new_mnm_odd_array)
+   print("saved %s" % new_mnm_odd_filename)
+   
    #for one freq, plot the real and abs values of the internal noise as a function of baseline length
    #For zenith, u,v is just the diff of the E and the diff of the N
    antenna_position_x_list = []
@@ -12146,6 +12156,17 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_odd_filename,antenna_po
    uu_array = np.asarray(uu_list)
    vv_array = np.asarray(vv_list)
    correlation_array = np.asarray(correlation_list) 
+   
+   #also make a file with the u,v and the correlation
+   uv_correlation_array_filename = "uv_correlation.npy"
+   #populate uv_correlation_array
+   n_baselines = len(uu_array)
+   uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
+   uv_correlation_array[:,0] = uu_array
+   uv_correlation_array[:,1] = vv_array
+   uv_correlation_array[:,2+freq_index] = correlation_array
+   np.save(uv_correlation_array_filename,uv_correlation_array)
+   print("saved %s" % uv_correlation_array_filename)
    
    plt.clf()
    plot_filename = "uv_plot_unsorted_eda2_daniel.png"
@@ -12497,15 +12518,145 @@ def write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list):
                   
             print("wrote %s" % sbatch_filename)       
          
-         
-         
-          
+def find_missing_antennas(antenna_positions_filename_1,antenna_positions_filename_2,tolerance_m):
+   mapped_antenna_positions_filename = "ant_list_1_mapped_to_ant_list_2.txt"
+   antenna_position_x_list_1 = []
+   antenna_position_y_list_1 = []
+   antenna_position_x_list_2 = []
+   antenna_position_y_list_2 = []
+   map_ant_1_to_ant_2_x_list = []
+   map_ant_1_to_ant_2_y_list = []
+   map_ant_1_to_ant_2_map_index_list = []
+   with open(antenna_positions_filename_1) as f:
+      lines = f.readlines()
+   for line in lines:
+      antenna_position_x = float(line.strip().split()[1])
+      antenna_position_y = float(line.strip().split()[0])
+      antenna_position_x_list_1.append(antenna_position_x)
+      antenna_position_y_list_1.append(antenna_position_y)   
+   with open(antenna_positions_filename_2) as f:
+      lines = f.readlines()
+   for line in lines:
+      antenna_position_x = float(line.strip().split()[1])
+      antenna_position_y = float(line.strip().split()[0])
+      antenna_position_x_list_2.append(antenna_position_x)
+      antenna_position_y_list_2.append(antenna_position_y)  
+      
+   antenna_position_x_m_1 = np.asarray(antenna_position_x_list_1)
+   antenna_position_y_m_1 = np.asarray(antenna_position_y_list_1)
+   antenna_position_x_m_2 = np.asarray(antenna_position_x_list_2)
+   antenna_position_y_m_2 = np.asarray(antenna_position_y_list_2)  
+   
+   #go through each line of first ant file and find the corresponding antenna in second ant file
+   for x_1_index,x_1 in enumerate(antenna_position_x_m_1):
+      match = False
+      y_1 = antenna_position_y_m_1[x_1_index]
+      for x_2_index,x_2 in enumerate(antenna_position_x_m_2):
+         y_2 = antenna_position_y_m_2[x_2_index]
+         if (np.isclose(x_1,x_2,atol=float(tolerance_m)) and np.isclose(y_1,y_2,atol=float(tolerance_m))):
+            match = True
+            map_ant_1_to_ant_2_x_list.append(x_1) 
+            map_ant_1_to_ant_2_y_list.append(y_1)    
+            map_ant_1_to_ant_2_map_index_list.append(x_2_index)
+            #print("antenna_list_1 ant number %s, x:%0.3f, y:%0.3f matches antenna_list_2 ant number %s, x:%0.3f, y:%0.3f" % (x_1_index,x_1,y_1,x_2_index,x_2,y_2))
+      if match is False:
+         print("NO MATCH FOUND for antenna_list_1 ant number %s (zero indexed), x:%0.3f, y:%0.3f" % (x_1_index,x_1,y_1))
+            
+def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename):
+   #testing for 50 MHz:
+   freq_index = 0
+   tolerance_m = 0.1
+   pol_list = ['X','Y']
+   uvfits_name_base = uvfits_filename.split(".uvfits")[0].split("/")[-1]
+   new_uvfits_name = uvfits_name_base + "_nc.uvfits"
+   
+   print("adding noise coupling to %s" % uvfits_filename)
+   hdulist = fits.open(uvfits_filename)
+   hdulist.info()
+   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+   #print info_string
+   uvtable = hdulist[0].data
+   uvtable_header = hdulist[0].header
+   #print(uvtable_header)
+   hdulist.close()
+   
+   visibilities_single = uvtable['DATA']
+   visibilities_shape = visibilities_single.shape
+   print("visibilities_shape")
+   print(visibilities_shape)
+   
+   UU_s_array = uvtable['UU']
+   UU_m_array = UU_s_array * c   
+   VV_s_array = uvtable['VV']
+   VV_m_array = VV_s_array * c
+   
+   #now get the values from the noise coupling array created using plot_internal_noise_coupling
+   uv_correlation_array = np.load(uv_correlation_array_filename)
+   
+   for pol_index,pol in enumerate(pol_list):
+      #always WODEN not wsclean
+      real_vis_data = visibilities_single[:,0,0,0,pol_index,0]
+      imag_vis_data = visibilities_single[:,0,0,0,pol_index,1]
+      
+      new_real_vis_data_array = np.zeros(real_vis_data.shape)
+      new_imag_vis_data_array = np.zeros(imag_vis_data.shape)
+   
+      #go through the UU_m array and find where the uu matches with the uv_correlation matrix, and add the noise in
+      no_match_found = 0
+      for UU_m_index,UU_m in enumerate(UU_m_array):
+         print("baseline %s" % UU_m_index)
+         match = False
+         VV_m = VV_m_array[UU_m_index]
+         for uv_correlation_UU_index,uv_correlation_UU in enumerate(uv_correlation_array[:,0]):
+            uv_correlation_VV = uv_correlation_array[uv_correlation_UU_index,1]
+            a = np.asarray([1,2,3,4])
+            b = np.asarray([1,2,3,5])
+            close = np.isclose(a,b)
+            print(close)
+            sys.exit()
+            if (np.isclose(UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(VV_m,uv_correlation_VV,atol=float(tolerance_m))):
+               match = True
+               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
+               new_imag_vis_data_array[UU_m_index] = imag_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].imag
+            #also check the conjugate vales, since the sign of the u and v depends on the ordering
+            if (np.isclose(-UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(-VV_m,uv_correlation_VV,atol=float(tolerance_m))):
+               match = True
+               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
+            
+         if match is False:
+            print("NO MATCH FOUND for UU,VV: %0.3f,%0.3f" % (UU_m,VV_m))
+            no_match_found += 1
+   print("matches not found for %s visibilities" % no_match_found)   
+       
+       
+#antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
+#antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
+#antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255_NEU.ant"
+#antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
+#antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
+#tol_m = 0.1
+#find_missing_antennas(antenna_positions_filename_1,antenna_positions_filename_2,tol_m)
+#sys.exit()
+#NO MATCH FOUND for antenna_list_1 ant number 237, x:-0.300, y:-0.254
 
+#modified plot_internal_noise_coupling to write a new internal_noise_matrix_filename, without Daniels antenna 237 (zero indexed)
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
+#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255.npy"
+#antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
 #frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
 #plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
 #sys.exit()
+
+
+#uvfits_filename = "/md0/EoR/ASSASSIN/WODEN/data/global_edges/woden_LST_60.000_EDGES_uniform_chan_063_band01.uvfits"  
+#uv_correlation_array_filename = "uv_correlation.npy"
+#add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename)
+#sys.exit()
+
+
+
+
 
 #SIMS
 
