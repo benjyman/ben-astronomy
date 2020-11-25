@@ -199,11 +199,11 @@ if sky_model=='gsm':
 #signal_type_list=['single_point'] #tests with Jack and WODEN
 #signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse_global','diffuse_angular']
-signal_type_list=['diffuse']
+#signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise','global_EDGES'] #fig8b
 #signal_type_list=['global_EDGES','noise'] #fig6b
-#signal_type_list=['global_EDGES'] #fig5
+signal_type_list=['global_EDGES'] #fig5
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -3086,7 +3086,7 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
               
    return(diffuse_global_value)
 
-def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True):
+def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,include_angular_info=False,EDA2_data=False, EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,calculate_uniform_response=True,woden=True,noise_coupling=True):
    if pol=='X':
       pol_index = 0
    elif pol=='Y':
@@ -3176,8 +3176,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #print(obs_time_list)
          #open one to get the number of fine chans
          uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
-      elif woden: 
-         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+      elif woden:
+         if noise_coupling:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         else:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
          obs_time_list = ['1']
       else:
          uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
@@ -3185,8 +3188,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       #read the cal uvfits, extract real vis uu and vv
       print("%s" % uvfits_filename)
       hdulist = fits.open(uvfits_filename)
-      hdulist.info()
-      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #hdulist.info()
+      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
       #print info_string
       uvtable = hdulist[0].data
       uvtable_header = hdulist[0].header
@@ -3247,7 +3250,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
                unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
             elif woden:
-               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
+               if noise_coupling:
+                  uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+               else:
+                  uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
                unity_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
                angular_uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (lst_deg,start_freq,pol,freq_MHz_index) 
             #read the cal uvfits, extract real vis uu and vv
@@ -3527,7 +3533,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          if wsclean==True:
             uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          elif woden:
-            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index)
+            if noise_coupling:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+            else:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index)
          else:
             uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
@@ -3538,8 +3547,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
-      if woden: 
-         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+      if woden:
+         if noise_coupling:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         else: 
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
       else:
          uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    
@@ -3580,7 +3592,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       for lst_hrs in lst_hrs_list:
          lst_deg = (float(lst_hrs)/24.)*360.
          if woden:
-            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
+            if noise_coupling:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+            else:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
          else:
             uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
          uvfits_filename_list.append(uvfits_filename)
@@ -4555,7 +4570,7 @@ def joint_model_fit_t_sky_measured(lst_hrs_list,freq_MHz_list,pol_list,signal_ty
    print("saved %s" % fig_name)
 
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True,woden=True):
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,plot_only=False,include_angular_info=False,model_type_list=['OLS_fixed_intercept'],EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,no_modelling=False,calculate_uniform_response=True,woden=True,noise_coupling=True):
    #for plot_expected_rms_noise_eda2 below
    int_time = 4.*60. #0.28 * 5.
    bw_Hz = 1000000 #27. * fine_chan_width_Hz
@@ -4650,7 +4665,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                else:
                   t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=calculate_uniform_response)
             else:
-               t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response,woden=woden)
+               t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
             #t_sky_measured_array[freq_MHz_index] = t_sky_measured
             #t_sky_measured_error_array[freq_MHz_index] = t_sky_measured_error
             t_sky_theoretical_array[freq_MHz_index] = t_sky_theoretical
@@ -12563,85 +12578,120 @@ def find_missing_antennas(antenna_positions_filename_1,antenna_positions_filenam
             #print("antenna_list_1 ant number %s, x:%0.3f, y:%0.3f matches antenna_list_2 ant number %s, x:%0.3f, y:%0.3f" % (x_1_index,x_1,y_1,x_2_index,x_2,y_2))
       if match is False:
          print("NO MATCH FOUND for antenna_list_1 ant number %s (zero indexed), x:%0.3f, y:%0.3f" % (x_1_index,x_1,y_1))
-            
-def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename):
+
+def decode_baseline(baseline_code):
+   blcode = int(baseline_code)
+   if baseline_code > 65536:
+       baseline_code -= 65536
+       a2 = int(baseline_code % 2048)
+       a1 = int((baseline_code - a2) / 2048)
+   else:
+       a2 = int(baseline_code % 256)
+       a1 = int((baseline_code - a2) / 256)
+   return a1,a2
+           
+def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename_x,uv_correlation_array_filename_y):
    #testing for 50 MHz:
    freq_index = 0
-   tolerance_m = 0.1
-   pol_list = ['X','Y']
+   # get the values from the noise coupling array created using plot_internal_noise_coupling
+   uv_correlation_array_x = np.load(uv_correlation_array_filename_x)
+   uv_correlation_array_y = np.load(uv_correlation_array_filename_y)
+
    uvfits_name_base = uvfits_filename.split(".uvfits")[0].split("/")[-1]
    new_uvfits_name = uvfits_name_base + "_nc.uvfits"
    
+   #from Jack:
+   #with fits.open('woden_LST_60.000_EDGES_uniform_chan_063_band01.uvfits') as hdulist:
+   #    data = hdulist[0].data.data
+   #    print(data.shape)
+   #    noise = np.random.normal(0,1,data.shape[0])
+   #
+   #    print("real XX before",data[0,0,0,0,0,0])
+   #    print("real YY before",data[0,0,0,0,0,1])
+   # 
+   #    data[:,0,0,0,0,0] += noise
+   #    data[:,0,0,0,0,1] += noise
+   # 
+   #    hdulist.writeto("test.uvfits",overwrite=True)
+   #
+   # 
+   # with fits.open('test.uvfits') as hdulist:
+   #     data = hdulist[0].data.data
+   # 
+   #     print("real XX after",data[0,0,0,0,0,0])
+   #     print("real YY after",data[0,0,0,0,0,1])
+   
    print("adding noise coupling to %s" % uvfits_filename)
-   hdulist = fits.open(uvfits_filename)
-   hdulist.info()
-   info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-   #print info_string
-   uvtable = hdulist[0].data
-   uvtable_header = hdulist[0].header
-   #print(uvtable_header)
-   hdulist.close()
+   with fits.open(uvfits_filename) as hdulist:
+      #hdulist.info()
+      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #print info_string
+      uvtable = hdulist[0].data
+      visibilities_single = uvtable['DATA']
+      visibilities_shape = visibilities_single.shape
+      print("visibilities_shape")
+      print(visibilities_shape)
    
-   visibilities_single = uvtable['DATA']
-   visibilities_shape = visibilities_single.shape
-   print("visibilities_shape")
-   print(visibilities_shape)
+      UU_s_array = uvtable['UU']
+      UU_m_array = UU_s_array * c   
+      VV_s_array = uvtable['VV']
+      VV_m_array = VV_s_array * c
    
-   UU_s_array = uvtable['UU']
-   UU_m_array = UU_s_array * c   
-   VV_s_array = uvtable['VV']
-   VV_m_array = VV_s_array * c
+      #baselines = uvtable['BASELINE']
+      #for baseline_index in range(250,260):
+      #   ant1,ant2 = decode_baseline(baselines[baseline_index])
+      #   print(ant1)
+      #   print(ant2)
+      #sys.exit()
    
-   
-   #now get the values from the noise coupling array created using plot_internal_noise_coupling
-   uv_correlation_array = np.load(uv_correlation_array_filename)
-   
-   for pol_index,pol in enumerate(pol_list):
-      #always WODEN not wsclean
-      real_vis_data = visibilities_single[:,0,0,0,pol_index,0]
-      imag_vis_data = visibilities_single[:,0,0,0,pol_index,1]
-      
-      new_real_vis_data_array = np.zeros(real_vis_data.shape)
-      new_imag_vis_data_array = np.zeros(imag_vis_data.shape)
-   
-      #go through the UU_m array and find where the uu matches with the uv_correlation matrix, and add the noise in
-      print(UU_m_array[0:10])
-      print(uv_correlation_array[:,0][0:10])
+      #uv_ratio = UU_m_array / uv_correlation_array_x[:,0]
       #do a better check than this using - isclose()
-      sys.exit()
-      #now no need for this loop, just add the arrays and write a new uvfits file
-      for UU_m_index,UU_m in enumerate(UU_m_array):
-         print("baseline %s" % UU_m_index)
-         match = False
-         VV_m = VV_m_array[UU_m_index]
-         for uv_correlation_UU_index,uv_correlation_UU in enumerate(uv_correlation_array[:,0]):
-            uv_correlation_VV = uv_correlation_array[uv_correlation_UU_index,1]
-            #a = np.asarray([1,2,3,4])
-            #b = np.asarray([1,2,3,5])
-            #close = np.isclose(a,b)
-            #print(close)
-            #sys.exit()
-            if (np.isclose(UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(VV_m,uv_correlation_VV,atol=float(tolerance_m))):
-               match = True
-               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
-               new_imag_vis_data_array[UU_m_index] = imag_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].imag
-            #also check the conjugate vales, since the sign of the u and v depends on the ordering
-            if (np.isclose(-UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(-VV_m,uv_correlation_VV,atol=float(tolerance_m))):
-               match = True
-               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
-            if (np.isclose(UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(-VV_m,uv_correlation_VV,atol=float(tolerance_m))):
-               match = True
-               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
-            if (np.isclose(-UU_m,uv_correlation_UU,atol=float(tolerance_m)) and np.isclose(VV_m,uv_correlation_VV,atol=float(tolerance_m))):
-               match = True
-               new_real_vis_data_array[UU_m_index] = real_vis_data[UU_m_index] + uv_correlation_array[uv_correlation_UU_index,2+freq_index].real
-                         
-         if match is False:
-            print("NO MATCH FOUND for UU,VV: %0.3f,%0.3f" % (UU_m,VV_m))
-            no_match_found += 1
-   print("matches not found for %s visibilities" % no_match_found)   
+      #plot uv diff and ratio to check - ordering is right!
+      #uv_diff = UU_m_array - uv_correlation_array[:,0]
+      
+      #plt.clf()
+      #plt.plot(uv_ratio)
+      #plt.ylabel("ratio woden uv to Daniel uv")
+      #plt.xlabel("index")
+      #plt.ylim((-2,2))
+      #fig_name="uv_ratio_check.png"
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name)
+   
+      #plt.clf()
+      #plt.plot(uv_diff)
+      #plt.ylabel("diff woden uv to Daniel uv (m)")
+      #plt.xlabel("index")
+      #plt.ylim((-1,1))
+      #fig_name="uv_diff_check.png"
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name)
+   
+      data = hdulist[0].data.data
+      
+      ####X pol
+      pol_index = 0
+ 
+      internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
+      internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
+      #always WODEN not wsclean
+      data[:,0,0,0,pol_index,0] += internal_noise_real
+      data[:,0,0,0,pol_index,1] += internal_noise_imag
        
-       
+      ####Y pol
+      pol_index = 1
+      internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
+      internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
+      data[:,0,0,0,pol_index,0] += internal_noise_real
+      data[:,0,0,0,pol_index,1] += internal_noise_imag
+ 
+      #now write out new uvfits file:
+      hdulist.writeto(new_uvfits_name,overwrite=True)
+      print("saved %s" % (new_uvfits_name))
+
+
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255_NEU.ant"
@@ -12663,12 +12713,24 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
 #sys.exit()
 
+#year,month,day,hour,min,sec = 2015,11,29,15,40,29
+#time_string = '%d%02d%02dT%02d%02d%02d' % (year,month,day,hour,min,sec)
+#lst_for_woden_hrs = get_eda2_lst(eda_time_string=time_string)
+#lst_for_woden_deg = lst_for_woden_hrs*15.
+#diff_with_60_hrs = (60. / 15.) - lst_for_woden_hrs
+#print(lst_for_woden_deg)
+#print(diff_with_60_hrs)
+#diff_with_60_min = diff_with_60_hrs * 60.
+#print(diff_with_60_min)
+#diff_with_60_sec = diff_with_60_min * 60.
+#print(diff_with_60_sec)
+#sys.exit()
 
 #uvfits_filename = "/md0/EoR/ASSASSIN/WODEN/data/global_edges/woden_LST_60.000_EDGES_uniform_chan_063_band01.uvfits"  
-uvfits_filename = "/md0/EoR/ASSASSIN/noise_coupling/woden_LST_60.000_EDGES_uniform_start_freq_50.000_band00.uvfits"  
-uv_correlation_array_filename = "uv_correlation.npy"
-add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename)
-sys.exit()
+#uvfits_filename = "/md0/EoR/ASSASSIN/noise_coupling/woden_LST_60.000_EDGES_uniform_start_freq_50.000_band00.uvfits"  
+#uv_correlation_array_filename_x = "uv_correlation.npy"
+#add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename_x,uv_correlation_array_filename_x)
+#sys.exit()
 
 
 
@@ -12978,16 +13040,17 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
-include_angular_info = True
+include_angular_info = False
 
 #WODEN sims signal extraction
 woden=True
 wsclean=False
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
+noise_coupling=True
 #woden sims from 50 to 193 MHz
 #dont need this any more
 #woden: centre_chans_number_list = [63,87,111,135,159,183]
@@ -12997,11 +13060,12 @@ calculate_uniform_response=False
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
 freq_MHz_list = freq_MHz_list[0:100]
-year,month,day,hour,min,sec = 2015,11,29,15,33,43
+year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
+#year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
 #write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
-write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-sys.exit()
+#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
+#sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
@@ -13010,7 +13074,7 @@ print(freq_MHz_list)
 ###simulate to get the theoretical beam weighted global signal 
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 sys.exit()
 
 #up to here with plot_only = False
