@@ -246,6 +246,9 @@ if __name__ == "__main__":
             
     args = parser.parse_args()
     
+    if args.band: band = int(args.band)
+    
+    
     if (args.daniel):
        print('band %s daniel' % band)       
     else:
