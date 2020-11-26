@@ -704,10 +704,23 @@ def calculate_outflow_properties():
    radius_shock_neff_2_kpc = (radius_shock_neff_2_m / pc_m) / 1000.
    #print("radius_shock_neff_2_kpc is %E kpc" % radius_shock_neff_2_kpc)
    
+
+def image_comparison_feain():
+   feain_peak_core_mJy = 1441.68
+   feain_rm_1_deg = 17.
+   dynamic_range_1_deg =    feain_peak_core_mJy / feain_rm_1_deg
    
+   print(dynamic_range_1_deg)
    
-calculate_outflow_properties()
+   mwa_dynamic_range = 50000.
+   improvement_factor = mwa_dynamic_range / dynamic_range_1_deg
+   print(improvement_factor)
+   
+image_comparison_feain()
 sys.exit()
+
+#calculate_outflow_properties()
+#sys.exit()
 
 
 #mask_level=0.1
