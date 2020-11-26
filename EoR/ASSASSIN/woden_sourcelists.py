@@ -2,6 +2,10 @@
 '''Make hpx sky maps and woden skymodels from them for ASSASSIN sims
 '''
 
+from pygsm import GlobalSkyModel
+
+
+
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
 
    #try to get altaz working
