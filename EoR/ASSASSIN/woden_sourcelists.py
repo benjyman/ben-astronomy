@@ -179,26 +179,35 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    
    return short_dipole_parallel_beam_map
 
-def write_woden_skymodels(freq_MHz,nside=512,time_string='',dipole_height_m=0.3,pol_list=['X','Y'],fine_chan_khz=10):
-   start_freq_MHz = float(freq_MHz)
+def write_woden_skymodels(band,daniel=False,nside=512,time_string='',dipole_height_m=0.3,pol_list=['X','Y'],fine_chan_khz=10):
+   start_freq_MHz = 50.0
+   if (daniel):
+       freq_MHz = 50. + (float(band) * 1.28)
+       print('band %s daniel is %0.3f MHz' % (band,freq_MHz))       
+   else:
+       freq_MHz = 50. + (float(band))
+       print('band %s is %0.3f MHz' % (band,freq_MHz))  
    gsm = GlobalSkyModel()
    for pol in pol_list:
-           freq_MHz = float(freq_MHz)
-           print("Freq %0.3f MHz" % freq_MHz)
-           #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
-           #dont put freq as stuffs up naming on pawsey for array job
-           name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)
-           gsm_filename = "%s_gsm.fits" % name_base
-           gsm_map = gsm.generate(freq_MHz)
-           hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
-           print("saved %s" % gsm_filename)
-           global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
-           global_foreground_value_list.append(global_foreground_value)
+      freq_MHz = float(freq_MHz)
+      print("Freq %0.3f MHz" % freq_MHz)
+      #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
+      #dont put freq as stuffs up naming on pawsey for array job
+      if daniel:
+         name_base = "woden_map_daniel_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band)
+      else:
+         name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band)
+      gsm_filename = "%s_gsm.fits" % name_base
+      gsm_map = gsm.generate(freq_MHz)
+      hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
+      print("saved %s" % gsm_filename)
+      global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
+      global_foreground_value_list.append(global_foreground_value)
 
-           name_base = "woden_map_start_freq_%0.3f_hpx" % (start_freq_MHz)     
-           global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
-           np.save(global_foreground_value_array_filename,global_foreground_value)
-           print("saved %s" % global_foreground_value_array_filename)          
+      name_base = "woden_map_start_freq_%0.3f_hpx" % (start_freq_MHz)     
+      global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
+      np.save(global_foreground_value_array_filename,global_foreground_value)
+      print("saved %s" % global_foreground_value_array_filename)          
    
    for band_num,freq_MHz in enumerate(freq_MHz_list):
         freq_MHz = float(freq_MHz)
@@ -249,14 +258,7 @@ if __name__ == "__main__":
     if args.band:
        band = int(args.band)
     
-    if (args.daniel):
-       freq_MHz = 50. + (float(band) * 1.28)
-       print('band %s daniel is %0.3f MHz' % (band,freq_MHz))       
-    else:
-       freq_MHz = 50. + (float(band))
-       print('band %s is %0.3f MHz' % (band,freq_MHz))  
-    
-    write_woden_skymodels(freq_MHz=freq_MHz)   
+    write_woden_skymodels(band=band,daniel=args.daniel)   
     
        
             
