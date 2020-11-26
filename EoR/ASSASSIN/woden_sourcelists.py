@@ -254,7 +254,7 @@ if __name__ == "__main__":
        print('band %s daniel is %0.3f MHz' % (band,freq_MHz))       
     else:
        freq_MHz = 50. + (float(band))
-       print('band %s is ' % band) 
+       print('band %s is %0.3f MHz' % (band,freq_MHz))  
        
     
        
