@@ -191,10 +191,9 @@ def write_woden_skymodels(freq_MHz,nside=512,time_string='',dipole_height_m=0.3,
            global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
            global_foreground_value_list.append(global_foreground_value)
 
-        name_base = "woden_map_start_freq_%0.3f_hpx" % (start_freq_MHz)
-        global_foreground_value_array = np.asarray(global_foreground_value_list)        
-        global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
-        np.save(global_foreground_value_array_filename,global_foreground_value_array)
+           name_base = "woden_map_start_freq_%0.3f_hpx" % (start_freq_MHz)     
+           global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
+           np.save(global_foreground_value_array_filename,global_foreground_value)
         
         print("saved %s" % global_foreground_value_array_filename)          
    
