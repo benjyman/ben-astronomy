@@ -2,7 +2,7 @@
 '''Make hpx sky maps and woden skymodels from them for ASSASSIN sims
 '''
 
-from pygsm import GlobalSkyModel
+from PyGDSM import GlobalSkyModel
 
 
 
