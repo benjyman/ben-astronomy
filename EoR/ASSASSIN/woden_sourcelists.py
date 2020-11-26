@@ -4,6 +4,7 @@
 
 from PyGDSM.pygdsm.pygsm import GlobalSkyModel
 import PyGDSM.pygdsm.pygsm
+inport healpy as hp
 
 
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
