@@ -250,10 +250,12 @@ if __name__ == "__main__":
        band = int(args.band)
     
     if (args.daniel):
-       print('band %s daniel' % band)       
+       freq_MHz = 50. + (float(band) * 1.28)
+       print('band %s daniel is %0.3f MHz' % (band,freq_MHz))       
     else:
-       print('band %s' % band) 
+       freq_MHz = 50. + (float(band))
+       print('band %s is ' % band) 
        
-       
+    
        
             
