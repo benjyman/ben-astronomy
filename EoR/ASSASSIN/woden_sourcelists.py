@@ -175,12 +175,10 @@ def get_beam_value(theta,phi,dipole_height_m,wavelength,pol):
    
    return short_dipole_parallel_beam_map
 
-def write_woden_skymodels(freq_MHz_list,nside,time_string,dipole_height_m,pol_list,fine_chan_khz=10):
-   start_freq_MHz = float(freq_MHz_list[0])
+def write_woden_skymodels(freq_MHz,nside=512,time_string='',dipole_height_m=0.3,pol_list=['X','Y'],fine_chan_khz=10):
+   start_freq_MHz = float(freq_MHz)
    gsm = GlobalSkyModel()
    for pol in pol_list:
-        global_foreground_value_list = []
-        for band_num,freq_MHz in enumerate(freq_MHz_list):
            freq_MHz = float(freq_MHz)
            print("Freq %0.3f MHz" % freq_MHz)
            #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
@@ -255,7 +253,8 @@ if __name__ == "__main__":
     else:
        freq_MHz = 50. + (float(band))
        print('band %s is %0.3f MHz' % (band,freq_MHz))  
-       
+    
+    write_woden_skymodels(freq_MHz=freq_MHz)   
     
        
             
