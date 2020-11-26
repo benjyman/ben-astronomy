@@ -6,6 +6,7 @@ from PyGDSM.pygdsm.pygsm import GlobalSkyModel
 import PyGDSM.pygdsm.pygsm
 import healpy as hp
 import numpy as np
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
 
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
