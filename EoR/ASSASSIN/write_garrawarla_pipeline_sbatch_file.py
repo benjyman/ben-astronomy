@@ -134,5 +134,8 @@ if __name__ == "__main__":
     
     if args.nbands:
        nbands = int(args.nbands)
+    #this is for LST 60.0 deg, will do rest of lsts later
+    year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
+    time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
     
-    write_woden_sims_sbatch_file(nbands=nbands,daniel=args.daniel,time_string='')  
+    write_woden_sims_sbatch_file(nbands=nbands,daniel=args.daniel,time_string=time_string)  
