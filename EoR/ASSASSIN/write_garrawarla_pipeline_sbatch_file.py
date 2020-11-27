@@ -5,13 +5,11 @@
 def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X','Y']):
    start_freq_MHz = 50.0
    if (daniel):
-       freq_MHz = 50. + (float(band) * 1.28)
        coarse_band_width = '1.28e+6'
-       print('band %s daniel is %0.3f MHz' % (band,freq_MHz))       
+       print('coarse_band_width %s daniel is %0.3f MHz' % (coarse_band_width))       
    else:
-       freq_MHz = 50. + (float(band))
        coarse_band_width = '1.00e+6'
-       print('band %s is %0.3f MHz' % (band,freq_MHz)) 
+       print('band %s is %0.3f MHz' % (coarse_band_width)) 
    #array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255.ant"
    array_layout = "/astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_255.txt"
    year,month,day,hour,min,sec = time_string.split('_')
