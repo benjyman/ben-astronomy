@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 '''Make hpx sky maps and woden skymodels from them for ASSASSIN sims
 '''
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from PyGDSM.pygdsm.pygsm import GlobalSkyModel
 import PyGDSM.pygdsm.pygsm
 import healpy as hp
