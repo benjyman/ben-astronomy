@@ -134,7 +134,7 @@ if __name__ == "__main__":
             
     args = parser.parse_args()
     
-    if args.band:
-       band = int(args.band)
+    if args.nbands:
+       nbands = int(args.nbands)
     
     write_woden_sims_sbatch_file(nbands=nbands,daniel=args.daniel,time_string='')  
