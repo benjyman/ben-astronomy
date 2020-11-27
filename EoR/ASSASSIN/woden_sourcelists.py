@@ -12,6 +12,25 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 c = 299792458.
 k = 1.38065e-23
 
+def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.3,w_EDGES = 20.7):
+   
+   #B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   #S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+   
+   S_21_EDGES = global_sig_EDGES_func(nu_array,A_EDGES)
+   
+   plt.clf()
+   map_title="S_21 vs freq"
+   plt.plot(nu_array,S_21_EDGES)
+   plt.ylabel("Tb (K)")
+   plt.xlabel("Frequency (MHz)")
+   fig_name="s_21_EDGES_vs_freq.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   return S_21_EDGES
+
+
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
 
    #try to get altaz working
