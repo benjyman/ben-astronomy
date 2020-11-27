@@ -18,7 +18,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
    #type_list = ["gsm"]
    #LST_deg = 58.13223745343605    #from template metafits RA=LST
    LST_deg = 60.0
-   name_base = "assassin_sims_sbatch_%s_lst_%0.3f" % (LST_deg)  
+   name_base = "assassin_sims_sbatch_lst_%0.3f" % (LST_deg)  
    sbatch_filename = "%s.sh" % name_base
 
    with open('%s' % sbatch_filename,'w') as outfile:
