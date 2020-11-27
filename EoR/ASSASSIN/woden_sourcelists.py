@@ -12,6 +12,15 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 c = 299792458.
 k = 1.38065e-23
 
+def global_sig_EDGES_func(nu_array,A_EDGES):
+   tau_EDGES = 6.5
+   nu_nought_EDGES = 78.3
+   w_EDGES = 20.7
+   
+   B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
+   S_21_EDGES = - A_EDGES * ((1-np.exp(-tau_EDGES*np.exp(B_EDGES)))/(1-np.exp(-tau_EDGES)))
+   return S_21_EDGES
+   
 def plot_S21_EDGES(nu_array,A_EDGES = 0.52,tau_EDGES = 6.5,nu_nought_EDGES = 78.3,w_EDGES = 20.7):
    
    #B_EDGES = (4 * (nu_array - nu_nought_EDGES)**2 ) / (w_EDGES**2) * np.log(-(1/tau_EDGES)*np.log((1 + np.exp(-tau_EDGES))/2.))
