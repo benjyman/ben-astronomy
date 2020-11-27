@@ -214,27 +214,23 @@ def write_woden_skymodels(band,daniel=False,nside=512,time_string='',dipole_heig
       np.save(global_foreground_value_array_filename,global_foreground_value)
       print("saved %s" % global_foreground_value_array_filename)          
    
-   for band_num,freq_MHz in enumerate(freq_MHz_list):
-        freq_MHz = float(freq_MHz)
-        print("Freq %0.3f MHz" % freq_MHz)
-        #name_base = "woden_map_centre_chan_%03d_band_%02d_freq_%0.3f_MHz_hpx" % (centre_chan,band_num,freq_MHz)
-        #dont put freq as stuffs up naming on pawsey for array job
-        name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band_num)        
-        EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
-        unity_uniform_filename = "%s_unity_uniform.fits" % name_base
-        freq_MHz_array = np.asarray([freq_MHz])
-        s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
-        s_21_array_EDGES_value = s_21_array_EDGES[0]
-        global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
-        hp.write_map(EDGES_uniform_filename,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
-        print("saved %s" % EDGES_uniform_filename)
-        write_woden_sourcelists(EDGES_uniform_filename,freq_MHz,nside) 
-        #print(global_EDGES_uniform_map)
-        unity_uniform_sky_temp = 1.
-        unity_map_uniform = (gsm_map * 0.0) + unity_uniform_sky_temp
-        hp.write_map(unity_uniform_filename,unity_map_uniform,coord='G',nest=False,overwrite=True)
-        print("saved %s" % unity_uniform_filename)
-        write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
+
+      name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band)        
+      EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
+      unity_uniform_filename = "%s_unity_uniform.fits" % name_base
+      freq_MHz_array = np.asarray([freq_MHz])
+      s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
+      s_21_array_EDGES_value = s_21_array_EDGES[0]
+      global_EDGES_uniform_map = (gsm_map * 0.0) + s_21_array_EDGES_value
+      hp.write_map(EDGES_uniform_filename,global_EDGES_uniform_map,coord='G',nest=False,overwrite=True)
+      print("saved %s" % EDGES_uniform_filename)
+      write_woden_sourcelists(EDGES_uniform_filename,freq_MHz,nside) 
+      #print(global_EDGES_uniform_map)
+      unity_uniform_sky_temp = 1.
+      unity_map_uniform = (gsm_map * 0.0) + unity_uniform_sky_temp
+      hp.write_map(unity_uniform_filename,unity_map_uniform,coord='G',nest=False,overwrite=True)
+      print("saved %s" % unity_uniform_filename)
+      write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
 
 if __name__ == "__main__":
     import argparse
