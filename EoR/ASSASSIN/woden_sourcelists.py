@@ -262,6 +262,7 @@ def write_woden_skymodels(band,daniel=False,nside=512,time_string='',dipole_heig
       print("saved %s" % unity_uniform_filename)
       write_woden_sourcelists(unity_uniform_filename,freq_MHz,nside) 
 
+           
 if __name__ == "__main__":
     import argparse
     
@@ -289,7 +290,8 @@ if __name__ == "__main__":
     if args.band:
        band = int(args.band)
     
-    write_woden_skymodels(band=band,daniel=args.daniel)   
+    
+    write_woden_skymodels(band=band,daniel=args.daniel,time_string='') 
     
        
             
