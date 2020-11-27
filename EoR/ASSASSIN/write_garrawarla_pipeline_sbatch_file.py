@@ -110,7 +110,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
                   
             print("wrote %s" % sbatch_filename) 
  
- if __name__ == "__main__":
+if __name__ == "__main__":
     import argparse
     
     class SmartFormatter(argparse.HelpFormatter):
