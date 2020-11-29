@@ -26,7 +26,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
       outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
       outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % nbands)
       #for WODEN
-      outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
+      outfile.write("module use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
       outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
       outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
       #for woden_sourcelists.py
@@ -45,6 +45,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
       outfile.write("time python /astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/woden_sourcelists.py --daniel --band=${SLURM_ARRAY_TASK_ID} \n")  
       outfile.write("cd ..\n")
       outfile.write("mkdir -p data\n")
+      outfile.write("module swap gcc gcc/5.5.0\n")
       for type in type_list:
          if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform"):
             sourcelist_name = "source_lists/woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (start_freq_MHz,type)
