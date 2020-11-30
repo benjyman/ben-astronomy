@@ -4696,6 +4696,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
             #this replaces all the matrix stuff you do in model_tsky_from_saved_data
             freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
+            print(freq_MHz_list)
             for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
                print('############ freq_MHz_index %d' % freq_MHz_index)
                if EDA2_data==True:
