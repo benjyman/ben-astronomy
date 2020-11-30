@@ -284,14 +284,20 @@ if __name__ == "__main__":
     parser.add_argument('--daniel', default=False, action='store_true',
         help='Frequencies correspond to Daniels sims. Band 0 is at 50 MHz and frequency goes up in increments of 1.28 MHz')
             
-            
+    parser.add_argument('--time_string', default='0',
+        help='time of sim obs --time_string=06_02_1983_07_00_00')
+               
     args = parser.parse_args()
     
     if args.band:
        band = int(args.band)
+    if args.time_string:
+       time_string = args.timestring
+    else:
+       time_string = ''
     
     
-    write_woden_skymodels(band=band,daniel=args.daniel,time_string='') 
+    write_woden_skymodels(band=band,daniel=args.daniel,time_string=time_string) 
     
        
             
