@@ -49,7 +49,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
       outfile.write("module swap gcc gcc/5.5.0\n")
       for type in type_list:
          if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform"):
-            sourcelist_name = "source_lists/woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (start_freq_MHz,type)
+            sourcelist_name = "source_lists/woden_map_daniel_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_%s_sourcelist.txt" % (start_freq_MHz,type)
             output_uvfits_prepend = "data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,start_freq_MHz)
             outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
             outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
@@ -70,10 +70,10 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
          else:      
             for pol in pol_list:
                if type =="angular":
-                  sourcelist_name = "source_lists/woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_%s_pol_%s_angular_sourcelist.txt" % (start_freq_MHz,time_string,pol)
+                  sourcelist_name = "source_lists/woden_map_daniel_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_%s_pol_%s_angular_sourcelist.txt" % (start_freq_MHz,time_string,pol)
                   output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,start_freq_MHz,pol)
                if type =="gsm_uniform":
-                  sourcelist_name = "source_lists/woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
+                  sourcelist_name = "source_lists/woden_map_daniel_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
                   output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,start_freq_MHz,pol)            
                outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
                outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
