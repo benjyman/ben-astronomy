@@ -12,20 +12,20 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
       for type in type_list:
          if (type=="gsm" or type=="EDGES_uniform" or type=="unity_uniform"):
             uvfits_prepend = "data/woden_LST_%0.3f_%s_start_freq_%0.3f" % (LST_deg,type,start_freq_MHz)
-            input_uvfits_name = "%s_band%02d.uvfits" % band
-            output_uvfits_name = "%s_band%02d_nc.uvfits" % band
+            input_uvfits_name = "%s_band%02d.uvfits" % (uvfits_prepend,band)
+            output_uvfits_name = "%s_band%02d_nc.uvfits" % (uvfits_prepend,band)
             print(output_uvfits_name)
          else:      
             for pol in pol_list:   
                if type =="angular":
                   uvfits_prepend = "data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,start_freq_MHz,pol)
-                  input_uvfits_name = "%s_band%02d.uvfits" % band
-                  output_uvfits_name = "%s_band%02d_nc.uvfits" % band
+                  input_uvfits_name = "%s_band%02d.uvfits" % (uvfits_prepend,band)
+                  output_uvfits_name = "%s_band%02d_nc.uvfits" % (uvfits_prepend,band)
                   print(output_uvfits_name)
                if type =="gsm_uniform":
                   uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s_global_foreground" % (LST_deg,start_freq_MHz,pol)            
-                  input_uvfits_name = "%s_band%02d.uvfits" % band
-                  output_uvfits_name = "%s_band%02d_nc.uvfits" % band  
+                  input_uvfits_name = "%s_band%02d.uvfits" % (uvfits_prepend,band)
+                  output_uvfits_name = "%s_band%02d_nc.uvfits" % (uvfits_prepend,band)  
                   print(output_uvfits_name)
             
       #testing for 50 MHz:
