@@ -76,7 +76,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
                   sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
                   output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,start_freq_MHz,pol)            
                else:
-                  continue
+                  pass
                
                outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
                outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
