@@ -11,12 +11,37 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
-from assassin import calc_beam_values
+
 
 c = 299792458.
 k = 1.38065e-23
 eda2_loc = EarthLocation(lat=-26.70*u.deg, lon=116.67*u.deg, height=0*u.m)
 
+def calc_beam_values(theta_array_deg,phi_array_deg,pol,dipole_height_m,wavelength):
+   #need angles in radians!!
+   theta_array = theta_array_deg/180. * np.pi
+   phi_array = phi_array_deg/180. * np.pi
+   ##This is for YY dipole: !
+   if (pol=='Y'):
+      theta_parallel_array=np.arccos(np.sin(theta_array)*np.cos(phi_array))
+   else:
+   #This is for XX dipole!
+      theta_parallel_array=np.arccos(np.sin(theta_array)*np.sin(phi_array))
+      
+   d_in_lambda = (2. * dipole_height_m)/wavelength
+   gp_effect_array = 2.*np.sin(np.pi*d_in_lambda*np.cos(theta_array))
+   voltage_parallel_array=np.sin(theta_parallel_array) * gp_effect_array
+   short_dipole_parallel_beam_map = voltage_parallel_array**2    
+   
+   #set to zero below horizon
+   short_dipole_parallel_beam_map[theta_array > np.pi/2.]=0.
+   
+   #normalise to one at max
+   beam_max = np.max(short_dipole_parallel_beam_map)
+   short_dipole_parallel_beam_map = short_dipole_parallel_beam_map / beam_max
+   
+   return short_dipole_parallel_beam_map
+   
 def global_sig_EDGES_func(nu_array,A_EDGES):
    tau_EDGES = 6.5
    nu_nought_EDGES = 78.3
