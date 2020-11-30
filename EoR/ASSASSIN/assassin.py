@@ -4696,9 +4696,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       
             #this replaces all the matrix stuff you do in model_tsky_from_saved_data
             freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
-            print(freq_MHz_list)
             for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
-               print('############ freq_MHz_index %d' % freq_MHz_index)
                if EDA2_data==True:
                   EDA2_chan = EDA2_chan_list[freq_MHz_index]
                   if len(n_obs_concat_list) > 0:
@@ -13044,7 +13042,7 @@ poly_order=5
  
 plot_only = True
 baseline_length_thresh_lambda = 0.5
-include_angular_info = False
+include_angular_info = True
 
 #WODEN sims signal extraction
 woden=True
