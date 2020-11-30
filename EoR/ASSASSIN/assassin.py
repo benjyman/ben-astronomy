@@ -13060,7 +13060,7 @@ noise_coupling=True
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
 freq_MHz_list = np.arange(0,218)*1.28 + 50.
-freq_MHz_list = freq_MHz_list[0:100]
+freq_MHz_list = freq_MHz_list[0:5]
 print(freq_MHz_list)
 year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
 #year,month,day,hour,min,sec = 2015,11,29,15,33,43
