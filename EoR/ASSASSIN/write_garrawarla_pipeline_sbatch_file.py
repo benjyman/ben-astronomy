@@ -67,28 +67,28 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
             outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
             outfile.write("   --date=%s \\\n" % time_formatted)
             outfile.write("   --chunking_size=2500\n\n")
-               
-         for pol in pol_list:
-            if type =="angular":
-               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_%s_pol_%s_angular_sourcelist.txt" % (start_freq_MHz,time_string,pol)
-               output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,start_freq_MHz,pol)
-            if type =="gsm_uniform":
-               sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
-               output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,start_freq_MHz,pol)            
-            outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
-            outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
-            outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
-            outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
-            outfile.write("   --lowest_channel_freq=%0.3fe+6 \\\n" % start_freq_MHz)
-            outfile.write("   --coarse_band_width=%s \\\n" % coarse_band_width)
-            outfile.write("   --cat_filename=%s \\\n" % sourcelist_name)
-            outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
-            outfile.write("   --sky_crop_components \\\n")
-            outfile.write("   --primary_beam=EDA2 \\\n")
-            outfile.write("   --array_layout=%s \\\n" % array_layout)
-            outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
-            outfile.write("   --date=%s \\\n" % time_formatted)
-            outfile.write("   --chunking_size=2500\n")
+         else:      
+            for pol in pol_list:
+               if type =="angular":
+                  sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_%s_pol_%s_angular_sourcelist.txt" % (start_freq_MHz,time_string,pol)
+                  output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular" % (LST_deg,start_freq_MHz,pol)
+               if type =="gsm_uniform":
+                  sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
+                  output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,start_freq_MHz,pol)            
+               outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
+               outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
+               outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
+               outfile.write("   --freq_res=10e+3 --time_res=0.28 \\\n")
+               outfile.write("   --lowest_channel_freq=%0.3fe+6 \\\n" % start_freq_MHz)
+               outfile.write("   --coarse_band_width=%s \\\n" % coarse_band_width)
+               outfile.write("   --cat_filename=%s \\\n" % sourcelist_name)
+               outfile.write("   --output_uvfits_prepend=%s \\\n" % output_uvfits_prepend)
+               outfile.write("   --sky_crop_components \\\n")
+               outfile.write("   --primary_beam=EDA2 \\\n")
+               outfile.write("   --array_layout=%s \\\n" % array_layout)
+               outfile.write("   --band_nums=${SLURM_ARRAY_TASK_ID} \\\n")
+               outfile.write("   --date=%s \\\n" % time_formatted)
+               outfile.write("   --chunking_size=2500\n")
                   
    print("wrote %s" % sbatch_filename) 
  
