@@ -12699,19 +12699,19 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
 #tol_m = 0.1
 #find_missing_antennas(antenna_positions_filename_1,antenna_positions_filename_2,tol_m)
-#sys.exit()
+#sys.exit() 
 #NO MATCH FOUND for antenna_list_1 ant number 237, x:-0.300, y:-0.254
 
 #modified plot_internal_noise_coupling to write a new internal_noise_matrix_filename, without Daniels antenna 237 (zero indexed)
 #run this just once to get new mnm_even_255 with daniels ant 237 removed
-#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2.npy"
+#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255.npy"
-#antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
-#frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
-#sys.exit()
+internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
+antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
+frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+sys.exit()
 
 #year,month,day,hour,min,sec = 2015,11,29,15,40,29
 #time_string = '%d%02d%02dT%02d%02d%02d' % (year,month,day,hour,min,sec)
