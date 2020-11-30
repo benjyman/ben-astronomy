@@ -14,6 +14,7 @@ from astropy.time import Time
 
 c = 299792458.
 k = 1.38065e-23
+eda2_loc = EarthLocation(lat=-26.70*u.deg, lon=116.67*u.deg, height=0*u.m)
 
 def global_sig_EDGES_func(nu_array,A_EDGES):
    tau_EDGES = 6.5
