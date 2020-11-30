@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 '''Add internal noise to eda2 sims
 '''
-
+import numpy as np
+from astropy.io import fits
 
 def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filename_x='uv_correlation_eda2_255_daniel_x.npy',uv_correlation_array_filename_y='uv_correlation_eda2_255_daniel_y.npy'):
    start_freq_MHz = 50.0
