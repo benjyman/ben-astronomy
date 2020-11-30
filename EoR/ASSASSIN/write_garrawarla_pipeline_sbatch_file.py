@@ -75,19 +75,6 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
                if type =="gsm_uniform":
                   sourcelist_name = "woden_map_start_freq_%0.3f_band_${SLURM_ARRAY_TASK_ID}_hpx_gsm_uniform_%s_pol_%s_sourcelist.txt" % (start_freq_MHz,time_string,pol)
                   output_uvfits_prepend = "data/woden_LST_%0.3f_gsm_uniform_start_freq_%0.3f_pol_%s" % (LST_deg,start_freq_MHz,pol)            
-               
-               outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
-               outfile.write("#SBATCH --time=00:20:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-               outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%0.0f\n\n" % nbands)
-            
-               outfile.write("module swap gcc gcc/5.5.0\nmodule use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
-               outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
-               outfile.write("module load cuda/10.2\nmodule load pal/0.9.8\nmodule load python/3.8.2\nmodule load astropy/4.0.1.post1\n\n")
-            
-               outfile.write("source /astro/mwaeor/jline/software/WODEN/build/init_WODEN.sh\n")
-               outfile.write("export LD_LIBRARY_PATH=$ERFA_LIB:/pawsey/mwa/software/python3/json-c/0.14-20200419/lib64:$LD_LIBRARY_PATH\n\n")
-               
-               outfile.write("cd /astro/mwaeor/bmckinley/EoR/ASSASSIN/WODEN\n")
                outfile.write("time python /astro/mwaeor/jline/software/WODEN/build/run_woden.py \\\n")
                outfile.write("   --ra0=%0.5f --dec0=-26.70 \\\n" % LST_deg)
                outfile.write("   --num_freq_channels=1 --num_time_steps=1 \\\n")
