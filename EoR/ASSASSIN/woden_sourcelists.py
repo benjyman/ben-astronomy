@@ -266,14 +266,11 @@ def write_woden_skymodels(band,daniel=False,nside=512,time_string='',dipole_heig
       hp.write_map(gsm_filename,gsm_map,coord='G',nest=False,overwrite=True)
       print("saved %s" % gsm_filename)
       global_foreground_value = write_woden_sourcelists(gsm_filename,freq_MHz,nside,time_string,dipole_height_m,pol) 
-
-      name_base = "woden_map_start_freq_%0.3f_hpx" % (start_freq_MHz)     
+ 
       global_foreground_value_array_filename = "%s_%s_pol_%s_global_foreground.npy" % (name_base,time_string,pol)
       np.save(global_foreground_value_array_filename,global_foreground_value)
       print("saved %s" % global_foreground_value_array_filename)          
-   
-
-      name_base = "woden_map_start_freq_%0.3f_band_%s_hpx" % (start_freq_MHz,band)        
+          
       EDGES_uniform_filename = "%s_EDGES_uniform.fits" % name_base
       unity_uniform_filename = "%s_unity_uniform.fits" % name_base
       freq_MHz_array = np.asarray([freq_MHz])
