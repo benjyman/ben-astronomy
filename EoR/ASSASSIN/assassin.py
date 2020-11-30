@@ -13065,7 +13065,7 @@ print(freq_MHz_list)
 year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
 #year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
 #write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
 #sys.exit()
 
