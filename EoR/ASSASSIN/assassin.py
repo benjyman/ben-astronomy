@@ -12707,11 +12707,11 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
-antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
-frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
-sys.exit()
+#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
+#antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
+#frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
+#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+#sys.exit()
 
 #year,month,day,hour,min,sec = 2015,11,29,15,40,29
 #time_string = '%d%02d%02dT%02d%02d%02d' % (year,month,day,hour,min,sec)
