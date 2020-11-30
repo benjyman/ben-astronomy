@@ -10,6 +10,7 @@ import healpy as hp
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.time import Time
 
 c = 299792458.
 k = 1.38065e-23
