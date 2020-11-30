@@ -292,7 +292,7 @@ if __name__ == "__main__":
     if args.band:
        band = int(args.band)
     if args.time_string:
-       time_string = args.timestring
+       time_string = args.time_string
     else:
        time_string = ''
     
