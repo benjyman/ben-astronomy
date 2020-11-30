@@ -90,7 +90,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
                outfile.write("   --date=%s \\\n" % time_formatted)
                outfile.write("   --chunking_size=2500\n")
               
-      outfile.write("time python /astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/add_noise_coupling_to_sim_uvfits.py --daniel --band=${SLURM_ARRAY_TASK_ID} --time_string=%s \n" % time_string)  
+      outfile.write("time python /astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/add_noise_coupling_to_sim_uvfits.py --daniel --band=${SLURM_ARRAY_TASK_ID} \n")  
                
    
                   
