@@ -32,44 +32,44 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
                   input_uvfits_name = "%s_band%02d.uvfits" % (uvfits_prepend,band)
                   output_uvfits_name = "%s_band%02d_nc.uvfits" % (uvfits_prepend,band)
    
-         print("adding noise coupling to %s" % input_uvfits_name)
-         
-         with fits.open(input_uvfits_name) as hdulist:
-            #hdulist.info()
-            #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-            #print info_string
-            uvtable = hdulist[0].data
-            visibilities_single = uvtable['DATA']
-            visibilities_shape = visibilities_single.shape
-            print("visibilities_shape")
-            print(visibilities_shape)
-         
-            UU_s_array = uvtable['UU']
-            UU_m_array = UU_s_array * c   
-            VV_s_array = uvtable['VV']
-            VV_m_array = VV_s_array * c
-         
-            data = hdulist[0].data.data
+            print("adding noise coupling to %s" % input_uvfits_name)
             
-            ####X pol
-            pol_index = 0
-       
-            internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
-            internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
-            #always WODEN not wsclean
-            data[:,0,0,0,pol_index,0] += internal_noise_real
-            data[:,0,0,0,pol_index,1] += internal_noise_imag
-             
-            ####Y pol
-            pol_index = 1
-            internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
-            internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
-            data[:,0,0,0,pol_index,0] += internal_noise_real
-            data[:,0,0,0,pol_index,1] += internal_noise_imag
-       
-            #now write out new uvfits file:
-            hdulist.writeto(output_uvfits_name,overwrite=True)
-            print("saved %s" % (output_uvfits_name))
+            with fits.open(input_uvfits_name) as hdulist:
+               #hdulist.info()
+               #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+               #print info_string
+               uvtable = hdulist[0].data
+               visibilities_single = uvtable['DATA']
+               visibilities_shape = visibilities_single.shape
+               print("visibilities_shape")
+               print(visibilities_shape)
+            
+               UU_s_array = uvtable['UU']
+               UU_m_array = UU_s_array * c   
+               VV_s_array = uvtable['VV']
+               VV_m_array = VV_s_array * c
+            
+               data = hdulist[0].data.data
+               
+               ####X pol
+               pol_index = 0
+          
+               internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
+               internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
+               #always WODEN not wsclean
+               data[:,0,0,0,pol_index,0] += internal_noise_real
+               data[:,0,0,0,pol_index,1] += internal_noise_imag
+                
+               ####Y pol
+               pol_index = 1
+               internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
+               internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
+               data[:,0,0,0,pol_index,0] += internal_noise_real
+               data[:,0,0,0,pol_index,1] += internal_noise_imag
+          
+               #now write out new uvfits file:
+               hdulist.writeto(output_uvfits_name,overwrite=True)
+               print("saved %s" % (output_uvfits_name))
    else:
       print("can only do with daniel freqs (1.28 MHz spacing)")   
       
