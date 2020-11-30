@@ -43,7 +43,7 @@ def write_woden_sims_sbatch_file(nbands,daniel=False,time_string='',pol_list=['X
       
       outfile.write("mkdir -p source_lists\n")
       outfile.write("cd source_lists\n")
-      outfile.write("time python /astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/woden_sourcelists.py --daniel --band=${SLURM_ARRAY_TASK_ID} \n")  
+      outfile.write("time python /astro/mwaeor/bmckinley/code/ben-astronomy/EoR/ASSASSIN/woden_sourcelists.py --daniel --band=${SLURM_ARRAY_TASK_ID} --time_string=%s \n" % time_string)  
       outfile.write("cd ..\n")
       outfile.write("mkdir -p data\n")
       outfile.write("module swap gcc gcc/5.5.0\n")
