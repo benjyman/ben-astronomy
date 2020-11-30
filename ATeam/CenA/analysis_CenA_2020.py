@@ -716,11 +716,11 @@ def image_comparison_feain():
    improvement_factor = mwa_dynamic_range / dynamic_range_1_deg
    print(improvement_factor)
    
-image_comparison_feain()
-sys.exit()
-
-#calculate_outflow_properties()
+#image_comparison_feain()
 #sys.exit()
+
+calculate_outflow_properties()
+sys.exit()
 
 
 #mask_level=0.1
