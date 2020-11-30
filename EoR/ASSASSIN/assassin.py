@@ -13060,14 +13060,14 @@ noise_coupling=True
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
 freq_MHz_list = np.arange(0,218)*1.28 + 50.
-freq_MHz_list = freq_MHz_list[0:5]
+freq_MHz_list = freq_MHz_list[0:100]
 print(freq_MHz_list)
 year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
 #year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
 #write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-#sys.exit()
+sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
