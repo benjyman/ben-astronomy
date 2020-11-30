@@ -13059,6 +13059,7 @@ noise_coupling=True
 #new centre chans list for 1 MHz wide chans
 #UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
 #year,month,day,hour,min,sec = 2020,03,03,15,00,00
+freq_MHz_list = range(0,218)*1.28 + 50.
 freq_MHz_list = freq_MHz_list[0:100]
 print(freq_MHz_list)
 year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
