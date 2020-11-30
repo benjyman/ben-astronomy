@@ -13040,7 +13040,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -13065,9 +13065,9 @@ print(freq_MHz_list)
 year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
 #year,month,day,hour,min,sec = 2015,11,29,15,33,43
 time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
 #write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-sys.exit()
+#sys.exit()
 
 #freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
 #just use the orig freq list from 50 to 199 MHz
