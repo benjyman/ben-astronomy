@@ -3,7 +3,7 @@
 '''
 
 
-def add_noise_coupling_to_sim_uvfits(band,daniel=True,time_string='',uv_correlation_array_filename_x='uv_correlation_eda2_255_daniel_x.npy',uv_correlation_array_filename_y='uv_correlation_eda2_255_daniel_y.npy'):
+def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filename_x='uv_correlation_eda2_255_daniel_x.npy',uv_correlation_array_filename_y='uv_correlation_eda2_255_daniel_y.npy'):
    if daniel:
       type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform","angular"]
       pol_list = ['X','Y']
@@ -149,21 +149,15 @@ if __name__ == "__main__":
             
     parser.add_argument('--daniel', default=False, action='store_true',
         help='Frequencies correspond to Daniels sims. Band 0 is at 50 MHz and frequency goes up in increments of 1.28 MHz')
-            
-    parser.add_argument('--time_string', default='0',
-        help='time of sim obs --time_string=06_02_1983_07_00_00')
                
     args = parser.parse_args()
     
     if args.band:
        band = int(args.band)
-    if args.time_string:
-       time_string = args.time_string
-    else:
-       time_string = ''
+
     
     
-    add_noise_coupling_to_sim_uvfits(band=band,daniel=args.daniel,time_string=time_string) 
+    add_noise_coupling_to_sim_uvfits(band=band,daniel=args.daniel) 
     
     
     
