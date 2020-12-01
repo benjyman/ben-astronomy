@@ -55,6 +55,7 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
                pol_index = 0
           
                internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
+               print(internal_noise_real.shape)
                print(internal_noise_real[0:20])
                internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
                #always WODEN not wsclean
