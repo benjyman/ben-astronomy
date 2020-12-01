@@ -2573,11 +2573,18 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
+   fitted_values_K = results.fittedvalues * jy_to_K
+   
+   y_pos_K = np.max(fitted_values_K)
+   x_pos = 1.2 * np.min(X_short_parallel_array)
     
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    
+   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans * jy_to_K
+   
+   #in Jy
    plt.clf()
    if model_type=='OLS_with_intercept':
       plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -2609,6 +2616,39 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    figmap.savefig(fig_name)
    plt.close()
    print("saved %s" % fig_name)  
+   
+   #in K
+   plt.clf()
+   if model_type=='OLS_with_intercept':
+      plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans[:,1], fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_with_int_min_vis':
+      plt.plot(X_bin_centres_array[:,1], real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array[:,1], fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_fixed_int_min_vis':
+      plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=="OLS_fixed_int_subtr_Y":
+      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y_K[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans_K,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   else:
+      plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   
+
+   map_title="Data and fit" 
+   plt.xlabel("Expected global-signal response")
+   plt.ylabel("Real component of visibility (K)")
+   plt.legend(loc=1)
+   plt.text(x_pos, y_pos_K, fit_string_K)
+   #plt.ylim([0, 3.5])
+   fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name) 
    
    
    
@@ -13058,7 +13098,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 noise_coupling=True
 #woden sims from 50 to 193 MHz
