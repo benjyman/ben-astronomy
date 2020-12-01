@@ -47,7 +47,7 @@ import seaborn as sns
 from scipy.optimize import curve_fit
 
 from sklearn.preprocessing import normalize
-#avoid astropy time error
+#avoid astropy time error 
 from astropy.utils.iers import conf
 conf.auto_max_age = None
 from astropy.utils import iers
@@ -199,11 +199,11 @@ if sky_model=='gsm':
 #signal_type_list=['single_point'] #tests with Jack and WODEN
 #signal_type_list=['diffuse_global','noise'] #fig7
 #signal_type_list=['diffuse_global','diffuse_angular']
-#signal_type_list=['diffuse']
+signal_type_list=['diffuse']
 #signal_type_list=['global_unity']
 #signal_type_list=['diffuse_global','noise','global_EDGES'] #fig8b
 #signal_type_list=['global_EDGES','noise'] #fig6b
-signal_type_list=['global_EDGES'] #fig5
+#signal_type_list=['global_EDGES'] #fig5
 #gsm_smooth_poly_order = 5
 #can be 5,6,or 7 for joint fitting
 poly_order = 7
@@ -3981,14 +3981,20 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                print("cant have global and global edges in signal_type_list")
                sys.exit()
             else:
-               global_signal_value = s_21_array[freq_MHz_index]
+               freq_MHz_array = np.asarray([freq_MHz_fine_chan])
+               s_21_array = plot_S21(nu_array=freq_MHz_array)
+               global_signal_value = s_21_array[0]
+               #global_signal_value = s_21_array[freq_MHz_index]
                gsm_map += global_signal_value
          if 'global_EDGES' in signal_type_list:
             if 'global' in signal_type_list:
                print("cant have global and global edges in signal_type_list")
                sys.exit()
             else:
-               global_signal_value = s_21_array_EDGES[freq_MHz_index]
+               freq_MHz_array = np.asarray([freq_MHz_fine_chan])
+               s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_array)
+               global_signal_value = s_21_array_EDGES[0]
+               ##global_signal_value = s_21_array_EDGES[freq_MHz_index]
                gsm_map += global_signal_value
          if 'diffuse' in signal_type_list:
             gsm_map += ov.generate(freq_MHz)
@@ -12800,8 +12806,8 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #SIMS
 
 #calculate the global 21cm signal:
-s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
-s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
+#s_21_array = plot_S21(nu_array=freq_MHz_list,C=C,A=A,delta_nu=delta_nu,nu_c=nu_c)
+#s_21_array_EDGES = plot_S21_EDGES(nu_array=freq_MHz_list)
 
 #assassin:
 #simulate_and_extract_assassin_baselines(n_ants_per_m_of_circumference=2,n_circles=5,max_arm_length_m=1.5,min_arm_length=0.325)
@@ -13101,7 +13107,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
