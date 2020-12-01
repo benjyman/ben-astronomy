@@ -5,6 +5,7 @@ import numpy as np
 from astropy.io import fits
 
 c = 299792458.
+k = 1.38065e-23
 
 def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filename_x='uv_correlation_eda2_255_daniel_x.npy',uv_correlation_array_filename_y='uv_correlation_eda2_255_daniel_y.npy'):
    # get the values from the noise coupling array created using plot_internal_noise_coupling
@@ -55,7 +56,7 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
             
                data = hdulist[0].data.data
                
-               ####X pol
+               ####X pol 
                pol_index = 0
           
                internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
