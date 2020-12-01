@@ -12643,6 +12643,10 @@ def decode_baseline(baseline_code):
 def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename_x,uv_correlation_array_filename_y):
    #testing for 50 MHz:
    freq_index = 0
+   freq_MHz = freq_index * 1.28 + 50.
+   wavelength = 300. / freq_MHz 
+   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)
+   
    # get the values from the noise coupling array created using plot_internal_noise_coupling
    uv_correlation_array_x = np.load(uv_correlation_array_filename_x)
    uv_correlation_array_y = np.load(uv_correlation_array_filename_y)
@@ -12726,16 +12730,23 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
  
       internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
       internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
+      
+      internal_noise_real_jy = internal_noise_real / jy_to_K
+      internal_noise_imag_jy = internal_noise_imag / jy_to_K
       #always WODEN not wsclean
-      data[:,0,0,0,pol_index,0] += internal_noise_real
-      data[:,0,0,0,pol_index,1] += internal_noise_imag
+      data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+      data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
        
       ####Y pol
       pol_index = 1
       internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
       internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
-      data[:,0,0,0,pol_index,0] += internal_noise_real
-      data[:,0,0,0,pol_index,1] += internal_noise_imag
+      
+      internal_noise_real_jy = internal_noise_real / jy_to_K
+      internal_noise_imag_jy = internal_noise_imag / jy_to_K
+      
+      data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+      data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
  
       #now write out new uvfits file:
       hdulist.writeto(new_uvfits_name,overwrite=True)
