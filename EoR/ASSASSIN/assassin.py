@@ -5296,7 +5296,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             if pol_index==0 and model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y = np.zeros(len(freq_array_cut))
             if model_type=='OLS_fixed_intercept':
-               both_pol_residual_sum_array += residual_of_log_fit
+               if len(both_pol_residual_sum_array)==len(residual_of_log_fit):
+                  both_pol_residual_sum_array += residual_of_log_fit
             if model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
             rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
@@ -12127,6 +12128,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
    antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_ascending_inds][::-1]
    
    n_ant = antenna_position_x_m_sorted.shape[0]
+   n_baselines = int((n_ant * (n_ant-1.))/2.)
    print("n_ant %s" % n_ant)
    
    #calculate u and v for each baseline
@@ -12152,7 +12154,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
    #print("save %s" % plot_filename)
    
    #okay looks exactly as expected!
-   
+   uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
    for freq_index in range(0,n_freqs):
       print(freq_index)
       #now do the same thing without the sorting so that you can allocate the correct correlation to each baseline  
@@ -12176,16 +12178,16 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
       uu_array = np.asarray(uu_list)
       vv_array = np.asarray(vv_list)
       correlation_array = np.asarray(correlation_list) 
-   
+      print(correlation_array)
       #also make a file with the u,v and the correlation
-      uv_correlation_array_filename = "uv_correlation.npy"
+      
       #populate uv_correlation_array
       n_baselines = len(uu_array)
-      uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
       uv_correlation_array[:,0] = uu_array
       uv_correlation_array[:,1] = vv_array
       uv_correlation_array[:,2+freq_index] = correlation_array
-      
+   
+   uv_correlation_array_filename = "uv_correlation.npy"  
    np.save(uv_correlation_array_filename,uv_correlation_array)
    print("saved %s" % uv_correlation_array_filename)
       
@@ -12714,11 +12716,11 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_x.npy"
-antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
-frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
-sys.exit()
+#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_x.npy"
+#antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
+#frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
+#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+#sys.exit()
 
 #year,month,day,hour,min,sec = 2015,11,29,15,40,29
 #time_string = '%d%02d%02dT%02d%02d%02d' % (year,month,day,hour,min,sec)
