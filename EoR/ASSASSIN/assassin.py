@@ -12173,18 +12173,19 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
                correlation_list.append(correlation)
                
    
-   uu_array = np.asarray(uu_list)
-   vv_array = np.asarray(vv_list)
-   correlation_array = np.asarray(correlation_list) 
+      uu_array = np.asarray(uu_list)
+      vv_array = np.asarray(vv_list)
+      correlation_array = np.asarray(correlation_list) 
    
-   #also make a file with the u,v and the correlation
-   uv_correlation_array_filename = "uv_correlation.npy"
-   #populate uv_correlation_array
-   n_baselines = len(uu_array)
-   uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
-   uv_correlation_array[:,0] = uu_array
-   uv_correlation_array[:,1] = vv_array
-   uv_correlation_array[:,2+freq_index] = correlation_array
+      #also make a file with the u,v and the correlation
+      uv_correlation_array_filename = "uv_correlation.npy"
+      #populate uv_correlation_array
+      n_baselines = len(uu_array)
+      uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
+      uv_correlation_array[:,0] = uu_array
+      uv_correlation_array[:,1] = vv_array
+      uv_correlation_array[:,2+freq_index] = correlation_array
+      
    np.save(uv_correlation_array_filename,uv_correlation_array)
    print("saved %s" % uv_correlation_array_filename)
       
@@ -12713,7 +12714,7 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
+internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_x.npy"
 antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
 frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
 plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
