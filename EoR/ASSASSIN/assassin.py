@@ -4966,8 +4966,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   else:
-      plt.ylim([-1, 0.5])
+   #else:
+      #plt.ylim([-1, 0.5])
       #commented out for fig5
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
@@ -13107,7 +13107,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -13115,7 +13115,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=True
 #woden sims from 50 to 193 MHz
