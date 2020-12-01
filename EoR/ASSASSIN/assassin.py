@@ -2064,8 +2064,11 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
 
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
+   #print(freq_MHz_list)
+   print(freq_MHz_index)
    start_freq = freq_MHz_list[0]
    freq_MHz = freq_MHz_list[freq_MHz_index]
+   #print(freq_MHz)
    centre_freq = float(freq_MHz)
    fine_chan_width_MHz = fine_chan_width_Hz/1000000.
    
@@ -3921,7 +3924,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
             sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)
          #sky_averaged_diffuse_array_no_beam_lsts_filename = "%s_sky_averaged_diffuse_no_beam.npy" % concat_output_name_base
-         freq_MHz_index = int(freq_MHz - 50)
+         #freq_MHz_index = int(freq_MHz - 50)
          diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
          if EDA2_data==True:
             #just doing one freq at a time right now for EDA2, not sure how this works with fine chans
@@ -4916,8 +4919,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='lower right')
    if EDA2_data:
       plt.ylim([500, 5000])
-   #else:
-      #plt.ylim([0, 4000])
+   else:
+      plt.ylim([-1, 0.5])
       #commented out for fig5
    fig_name= "t_sky_measured_lst_%s%s.png" % (lst_string,signal_type_postfix)
    figmap = plt.gcf()
@@ -5336,9 +5339,11 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                 
       
    both_pol_residual_av_array = both_pol_residual_sum_array / float(len(pol_list))
-   both_pol_residual_av_array_subtr_Y = both_pol_residual_sum_array_subtr_Y / float(len(pol_list))
    rms_of_residuals_combined = np.sqrt(np.mean(both_pol_residual_av_array**2))
-   rms_of_residuals_combined_subtr_Y = np.sqrt(np.mean(both_pol_residual_av_array_subtr_Y**2))
+   if 'OLS_fixed_int_subtr_Y' in model_type_list:
+      both_pol_residual_av_array_subtr_Y = both_pol_residual_sum_array_subtr_Y / float(len(pol_list))
+      rms_of_residuals_combined_subtr_Y = np.sqrt(np.mean(both_pol_residual_av_array_subtr_Y**2))
+   
    if plot_log == True:
       #fig9b paper1 (#and 7b)
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -5358,8 +5363,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       fig, ax1 = plt.subplots()
       #plt.plot(freq_array_cut,both_pol_residual_av_array,color=color_dark_blue,label='comb. pol. ignore ang.')
       #plt.plot(freq_array_cut,both_pol_residual_av_array_subtr_Y,color=color_orange,label='comb. pol. subtr. ang.')
-      plt.text(50, 2.5, "rms=%0.5f K" % rms_of_residuals_combined,color=color_dark_blue)
-      plt.text(50, 2, "rms=%0.5f K" % rms_of_residuals_combined_subtr_Y,color=color_orange)
+      #plt.text(50, 2.5, "rms=%0.5f K" % rms_of_residuals_combined,color=color_dark_blue)
+      #plt.text(50, 2, "rms=%0.5f K" % rms_of_residuals_combined_subtr_Y,color=color_orange)
       map_title="Residual for combined pols "
       plt.ylabel("Residual Tb (K)")
       plt.xlabel("Frequency (MHz)")
@@ -13002,8 +13007,8 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #model_type = 'OLS_with_intercept'
 #model_type = 'mixedlm'
 
-model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
+#model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+model_type_list = ['OLS_fixed_intercept']
 #model_type = 'OLS_fixed_int_subtr_Y'
 
 #model_type = 'OLS_fixed_int_min_vis'
@@ -13040,7 +13045,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -13048,7 +13053,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=True
 #woden sims from 50 to 193 MHz
