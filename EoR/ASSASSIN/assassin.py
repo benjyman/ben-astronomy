@@ -2563,7 +2563,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    t_sky_error_K = jy_to_K * t_sky_error_jy
    print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
    fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-  
+   fit_string_K = "y=%0.1fx" % t_sky_K
+   
    print("diffuse_global_value is %0.4E" % diffuse_global_value) 
    
    ratio_in_out = diffuse_global_value / t_sky_K
@@ -2572,11 +2573,18 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
+   fitted_values_K = results.fittedvalues * jy_to_K
+   
+   y_pos_K = np.max(fitted_values_K)
+   x_pos = 1.2 * np.min(X_short_parallel_array)
     
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    
+   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans * jy_to_K
+   
+   #in Jy
    plt.clf()
    if model_type=='OLS_with_intercept':
       plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
@@ -2608,6 +2616,39 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    figmap.savefig(fig_name)
    plt.close()
    print("saved %s" % fig_name)  
+   
+   #in K
+   plt.clf()
+   if model_type=='OLS_with_intercept':
+      plt.plot(X_short_parallel_array_nonans[:,1], real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans[:,1], fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_with_int_min_vis':
+      plt.plot(X_bin_centres_array[:,1], real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array[:,1], fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=='OLS_fixed_int_min_vis':
+      plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_bin_centres_array, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   elif model_type=="OLS_fixed_int_subtr_Y":
+      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y_K[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans_K,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   else:
+      plt.scatter(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   
+
+   map_title="Data and fit" 
+   plt.xlabel("Expected global-signal response")
+   plt.ylabel("Real component of visibility (K)")
+   plt.legend(loc=1)
+   plt.text(x_pos, y_pos_K, fit_string_K)
+   #plt.ylim([0, 3.5])
+   fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol%s_%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name) 
    
    
    
@@ -5296,7 +5337,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             if pol_index==0 and model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y = np.zeros(len(freq_array_cut))
             if model_type=='OLS_fixed_intercept':
-               both_pol_residual_sum_array += residual_of_log_fit
+               if len(both_pol_residual_sum_array)==len(residual_of_log_fit):
+                  both_pol_residual_sum_array += residual_of_log_fit
             if model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
             rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
@@ -12090,10 +12132,8 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print("saved %s" % fig_name)
    
    
-def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_positions_filename):
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_positions_filename,plot=False):
    n_freqs = len(frequency_MHz_array) 
-   #plot the first freq for now (50 MHz?)
-   freq_index = 0
    mnm_even_array = np.load(mnm_even_filename)
    #mnm_even_array_real = mnm_even_array.real
    
@@ -12129,6 +12169,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
    antenna_position_y_m_sorted = antenna_position_y_m[antenna_position_x_m_ascending_inds][::-1]
    
    n_ant = antenna_position_x_m_sorted.shape[0]
+   n_baselines = int((n_ant * (n_ant-1.))/2.)
    print("n_ant %s" % n_ant)
    
    #calculate u and v for each baseline
@@ -12154,73 +12195,77 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
    #print("save %s" % plot_filename)
    
    #okay looks exactly as expected!
-   
-   #now do the same thing without the sorting so that you can allocate the correct correlation to each baseline  
-   #calculate u and v for each baseline
-   uu_list = []
-   vv_list = []
-   correlation_list = []
-   
-   for ant_1_index in range(0,n_ant):
-      for ant_2_index in range(0,n_ant):
-         #only uniques baselines and dont include autos
-         if (ant_2_index > ant_1_index):
-            uu = antenna_position_x_m[ant_1_index] - antenna_position_x_m[ant_2_index]
-            vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
-            uu_list.append(uu)
-            vv_list.append(vv)
-            correlation = mnm_even_array[freq_index,ant_1_index,ant_2_index]
-            correlation_list.append(correlation)
-            
-
-   uu_array = np.asarray(uu_list)
-   vv_array = np.asarray(vv_list)
-   correlation_array = np.asarray(correlation_list) 
-   
-   #also make a file with the u,v and the correlation
-   uv_correlation_array_filename = "uv_correlation.npy"
-   #populate uv_correlation_array
-   n_baselines = len(uu_array)
    uv_correlation_array = np.zeros((n_baselines,n_freqs+2),dtype=complex)
-   uv_correlation_array[:,0] = uu_array
-   uv_correlation_array[:,1] = vv_array
-   uv_correlation_array[:,2+freq_index] = correlation_array
+   for freq_index in range(0,n_freqs):
+      print(freq_index)
+      #now do the same thing without the sorting so that you can allocate the correct correlation to each baseline  
+      #calculate u and v for each baseline
+      uu_list = []
+      vv_list = []
+      correlation_list = []
+      
+      for ant_1_index in range(0,n_ant):
+         for ant_2_index in range(0,n_ant):
+            #only uniques baselines and dont include autos
+            if (ant_2_index > ant_1_index):
+               uu = antenna_position_x_m[ant_1_index] - antenna_position_x_m[ant_2_index]
+               vv = antenna_position_y_m[ant_1_index] - antenna_position_y_m[ant_2_index]
+               uu_list.append(uu)
+               vv_list.append(vv)
+               correlation = mnm_even_array[freq_index,ant_1_index,ant_2_index]
+               correlation_list.append(correlation)
+               
+   
+      uu_array = np.asarray(uu_list)
+      vv_array = np.asarray(vv_list)
+      correlation_array = np.asarray(correlation_list) 
+      print(correlation_array)
+      #also make a file with the u,v and the correlation
+      
+      #populate uv_correlation_array
+      n_baselines = len(uu_array)
+      uv_correlation_array[:,0] = uu_array
+      uv_correlation_array[:,1] = vv_array
+      uv_correlation_array[:,2+freq_index] = correlation_array
+   
+   uv_correlation_array_filename = "uv_correlation.npy"  
    np.save(uv_correlation_array_filename,uv_correlation_array)
    print("saved %s" % uv_correlation_array_filename)
-   
-   plt.clf()
-   plot_filename = "uv_plot_unsorted_eda2_daniel.png"
-   plt.scatter(uu_array,vv_array,s=1,marker='.')
-   plt.gcf()
-   plt.savefig(plot_filename)
-   print("save %s" % plot_filename)
-
-   n_baselines = uu_array.shape[0]
-   print("n_baselines %s" % n_baselines)
-   
-   baseline_length_array_m = np.sqrt(uu_array**2 + vv_array**2)
-   baseline_length_array_m_inds = baseline_length_array_m.argsort()
-   baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
-   correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
-   
-   length_list = [35,10,5,2]
-   #real
-   for length in length_list:
+      
+   if plot:
       plt.clf()
-      plot_filename = "correlation_real_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
-      plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],correlation_array_sorted[baseline_length_array_m_sorted<length].real)
+      plot_filename = "uv_plot_unsorted_eda2_daniel.png"
+      plt.scatter(uu_array,vv_array,s=1,marker='.')
       plt.gcf()
       plt.savefig(plot_filename)
       print("save %s" % plot_filename)
-
-   #abs
-   for length in length_list:
-      plt.clf()
-      plot_filename = "correlation_abs_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
-      plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],abs(correlation_array_sorted[baseline_length_array_m_sorted<length]))
-      plt.gcf()
-      plt.savefig(plot_filename)
-      print("save %s" % plot_filename)   
+      
+      n_baselines = uu_array.shape[0]
+      print("n_baselines %s" % n_baselines)
+      
+      baseline_length_array_m = np.sqrt(uu_array**2 + vv_array**2)
+      baseline_length_array_m_inds = baseline_length_array_m.argsort()
+      baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
+      correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
+      
+      length_list = [35,10,5,2]
+      #real
+      for length in length_list:
+         plt.clf()
+         plot_filename = "correlation_real_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
+         plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],correlation_array_sorted[baseline_length_array_m_sorted<length].real)
+         plt.gcf()
+         plt.savefig(plot_filename)
+         print("save %s" % plot_filename)
+      
+      #abs
+      for length in length_list:
+         plt.clf()
+         plot_filename = "correlation_abs_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
+         plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],abs(correlation_array_sorted[baseline_length_array_m_sorted<length]))
+         plt.gcf()
+         plt.savefig(plot_filename)
+         print("save %s" % plot_filename)   
           
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
 
@@ -12598,6 +12643,10 @@ def decode_baseline(baseline_code):
 def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename_x,uv_correlation_array_filename_y):
    #testing for 50 MHz:
    freq_index = 0
+   freq_MHz = freq_index * 1.28 + 50.
+   wavelength = 300. / freq_MHz 
+   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)
+   
    # get the values from the noise coupling array created using plot_internal_noise_coupling
    uv_correlation_array_x = np.load(uv_correlation_array_filename_x)
    uv_correlation_array_y = np.load(uv_correlation_array_filename_y)
@@ -12681,16 +12730,23 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
  
       internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
       internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
+      
+      internal_noise_real_jy = internal_noise_real / jy_to_K
+      internal_noise_imag_jy = internal_noise_imag / jy_to_K
       #always WODEN not wsclean
-      data[:,0,0,0,pol_index,0] += internal_noise_real
-      data[:,0,0,0,pol_index,1] += internal_noise_imag
+      data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+      data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
        
       ####Y pol
       pol_index = 1
       internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
       internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
-      data[:,0,0,0,pol_index,0] += internal_noise_real
-      data[:,0,0,0,pol_index,1] += internal_noise_imag
+      
+      internal_noise_real_jy = internal_noise_real / jy_to_K
+      internal_noise_imag_jy = internal_noise_imag / jy_to_K
+      
+      data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+      data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
  
       #now write out new uvfits file:
       hdulist.writeto(new_uvfits_name,overwrite=True)
@@ -12712,7 +12768,7 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
+#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_x.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
 #frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
 #plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
@@ -13053,7 +13109,7 @@ include_angular_info = True
 woden=True
 wsclean=False
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 noise_coupling=True
 #woden sims from 50 to 193 MHz
