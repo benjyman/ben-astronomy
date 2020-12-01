@@ -5,6 +5,7 @@ import numpy as np
 from astropy.io import fits
 
 c = 299792458.
+k = 1.38065e-23
 
 def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filename_x='uv_correlation_eda2_255_daniel_x.npy',uv_correlation_array_filename_y='uv_correlation_eda2_255_daniel_y.npy'):
    # get the values from the noise coupling array created using plot_internal_noise_coupling
@@ -12,6 +13,10 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
    uv_correlation_array_y = np.load(uv_correlation_array_filename_y)
    freq_index = int(band)
    start_freq_MHz = 50.0
+   freq_MHz = freq_index * 1.28 + start_freq_MHz
+   wavelength = 300. / freq_MHz 
+   jy_to_K = (wavelength**2) / (2. * k * 1.0e26)
+   print("jy_to_K %E" % jy_to_K)
    if daniel:
       type_list = ["gsm","gsm_uniform","EDGES_uniform","unity_uniform","angular"]
       pol_list = ['X','Y']
@@ -51,23 +56,30 @@ def add_noise_coupling_to_sim_uvfits(band,daniel=True,uv_correlation_array_filen
             
                data = hdulist[0].data.data
                
-               ####X pol
+               ####X pol 
                pol_index = 0
           
                internal_noise_real = uv_correlation_array_x[:,2+freq_index].real
-               print(uv_correlation_array_x.shape)
                print(internal_noise_real[0:20])
                internal_noise_imag = uv_correlation_array_x[:,2+freq_index].imag
+               
+               internal_noise_real_jy = internal_noise_real / jy_to_K
+               internal_noise_imag_jy = internal_noise_imag / jy_to_K
+               print(internal_noise_real_jy[0:20])
                #always WODEN not wsclean
-               data[:,0,0,0,pol_index,0] += internal_noise_real
-               data[:,0,0,0,pol_index,1] += internal_noise_imag
+               data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+               data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
                 
                ####Y pol
                pol_index = 1
                internal_noise_real = uv_correlation_array_y[:,2+freq_index].real
                internal_noise_imag = uv_correlation_array_y[:,2+freq_index].imag
-               data[:,0,0,0,pol_index,0] += internal_noise_real
-               data[:,0,0,0,pol_index,1] += internal_noise_imag
+               
+               internal_noise_real_jy = internal_noise_real / jy_to_K
+               internal_noise_imag_jy = internal_noise_imag / jy_to_K
+               
+               data[:,0,0,0,pol_index,0] += internal_noise_real_jy
+               data[:,0,0,0,pol_index,1] += internal_noise_imag_jy
           
                #now write out new uvfits file:
                hdulist.writeto(output_uvfits_name,overwrite=True)
