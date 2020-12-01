@@ -12090,7 +12090,7 @@ def compare_uvfits(uvfitsname1,uvfitsname2):
    print("saved %s" % fig_name)
    
    
-def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_positions_filename):
+def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_positions_filename,plot=False):
    n_freqs = len(frequency_MHz_array) 
    mnm_even_array = np.load(mnm_even_filename)
    #mnm_even_array_real = mnm_even_array.real
@@ -12154,7 +12154,7 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
    #okay looks exactly as expected!
    
    for freq_index in range(0,n_freqs):
-   
+      print(freq_index)
       #now do the same thing without the sorting so that you can allocate the correct correlation to each baseline  
       #calculate u and v for each baseline
       uu_list = []
@@ -12188,39 +12188,40 @@ def plot_internal_noise_coupling(frequency_MHz_array,mnm_even_filename,antenna_p
       np.save(uv_correlation_array_filename,uv_correlation_array)
       print("saved %s" % uv_correlation_array_filename)
       
-      plt.clf()
-      plot_filename = "uv_plot_unsorted_eda2_daniel.png"
-      plt.scatter(uu_array,vv_array,s=1,marker='.')
-      plt.gcf()
-      plt.savefig(plot_filename)
-      print("save %s" % plot_filename)
-   
-      n_baselines = uu_array.shape[0]
-      print("n_baselines %s" % n_baselines)
-      
-      baseline_length_array_m = np.sqrt(uu_array**2 + vv_array**2)
-      baseline_length_array_m_inds = baseline_length_array_m.argsort()
-      baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
-      correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
-      
-      length_list = [35,10,5,2]
-      #real
-      for length in length_list:
+      if plot:
          plt.clf()
-         plot_filename = "correlation_real_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
-         plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],correlation_array_sorted[baseline_length_array_m_sorted<length].real)
+         plot_filename = "uv_plot_unsorted_eda2_daniel.png"
+         plt.scatter(uu_array,vv_array,s=1,marker='.')
          plt.gcf()
          plt.savefig(plot_filename)
          print("save %s" % plot_filename)
-   
-      #abs
-      for length in length_list:
-         plt.clf()
-         plot_filename = "correlation_abs_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
-         plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],abs(correlation_array_sorted[baseline_length_array_m_sorted<length]))
-         plt.gcf()
-         plt.savefig(plot_filename)
-         print("save %s" % plot_filename)   
+      
+         n_baselines = uu_array.shape[0]
+         print("n_baselines %s" % n_baselines)
+         
+         baseline_length_array_m = np.sqrt(uu_array**2 + vv_array**2)
+         baseline_length_array_m_inds = baseline_length_array_m.argsort()
+         baseline_length_array_m_sorted = baseline_length_array_m[baseline_length_array_m_inds]
+         correlation_array_sorted = correlation_array[baseline_length_array_m_inds]
+         
+         length_list = [35,10,5,2]
+         #real
+         for length in length_list:
+            plt.clf()
+            plot_filename = "correlation_real_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
+            plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],correlation_array_sorted[baseline_length_array_m_sorted<length].real)
+            plt.gcf()
+            plt.savefig(plot_filename)
+            print("save %s" % plot_filename)
+      
+         #abs
+         for length in length_list:
+            plt.clf()
+            plot_filename = "correlation_abs_vs_baseline_length_eda2_daniel_cutoff_%s.png" % length
+            plt.plot(baseline_length_array_m_sorted[baseline_length_array_m_sorted<length],abs(correlation_array_sorted[baseline_length_array_m_sorted<length]))
+            plt.gcf()
+            plt.savefig(plot_filename)
+            print("save %s" % plot_filename)   
           
 def write_woden_sourcelists(hpx_fits_filename,freq_MHz,nside,time_string='',dipole_height_m=0.3,pol='X'):
 
@@ -12712,11 +12713,11 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_y.npy"
 #antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU.txt"
 ##Then run this for correct uv_correlation file
-#internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
-#antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
-#frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
-#plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
-#sys.exit()
+internal_noise_matrix_filename = "/md0/EoR/ASSASSIN/noise_coupling/mnm_even_eda2_255_y.npy"
+antenna_positions_filename = "/md0/code/git/ben-astronomy/EoR/ASSASSIN/eda2_antenna_order_daniel_NEU_255.txt"
+frequency_MHz_array_mnm = (np.arange(0,218) * 1.28 ) + 50
+plot_internal_noise_coupling(frequency_MHz_array_mnm,internal_noise_matrix_filename,antenna_positions_filename)
+sys.exit()
 
 #year,month,day,hour,min,sec = 2015,11,29,15,40,29
 #time_string = '%d%02d%02dT%02d%02d%02d' % (year,month,day,hour,min,sec)
