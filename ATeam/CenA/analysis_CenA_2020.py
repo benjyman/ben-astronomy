@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 #code to analyse CenA data including flux-scale setting and measurements for paper
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 import os,sys
 from astropy.io import fits
 import numpy as np
 import scipy.ndimage as ndimage
 import math
+from skimage import exposure 
+from skimage import color
 
 G = 6.674e-11
 M_solar = 1.98847e30 
@@ -818,13 +823,85 @@ def image_comparison_feain():
    improvement_factor = mwa_dynamic_range / dynamic_range_1_deg
    print(improvement_factor)
 
-def multicolor_dynamic_range_image(image_name):
+#A little function to imbue or tint grayscale images, from: http://research.endlessfernweh.com/multi-color-images/
+def colorize(image, hue, saturation=1,v=1):
+    ### Add color of the given hue to an RGB greyscale image.
+    hsv = color.rgb2hsv(image)
+    hsv[:, :, 2] *= v
+    hsv[:, :, 1] = saturation
+    hsv[:, :, 0] = hue
+    return color.hsv2rgb(hsv)
+    
+def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_val_2,min_val_3,max_val_3):
+   #see: http://research.endlessfernweh.com/multi-color-images/
    print(image_name)
+   with fits.open(image_name) as hdulist_1:
+      image_data = hdulist_1[0].data
+    
+   print(image_data.max()) 
+   
+   rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(min_val_1,max_val_1))
+   rescaled_image_2 = exposure.rescale_intensity(image_data,in_range=(min_val_2,max_val_2))
+   rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(min_val_3,max_val_3))
+
+   rescaled_image_1_inv = rescaled_image_1.max() - rescaled_image_1
+   rescaled_image_2_inv = rescaled_image_2.max() - rescaled_image_2
+   rescaled_image_3_inv = rescaled_image_3.max() - rescaled_image_3
+   
+   simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
+   simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
+   
+   plt.clf()
+   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
+   fig_name="rescaled_simple_rgb.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
+
+   rescaled_image_1_inv_RGB=color.gray2rgb(rescaled_image_1_inv)
+   rescaled_image_2_inv_RGB=color.gray2rgb(rescaled_image_2_inv)
+   rescaled_image_3_inv_RGB=color.gray2rgb(rescaled_image_3_inv)
+   
+   rescaled_image_1_inv_brick=colorize(rescaled_image_1_inv_RGB,hue=0.,saturation=0.9,v=1.)
+   rescaled_image_2_inv_dandelion=colorize(rescaled_image_2_inv_RGB,hue=60./360,saturation=0.47,v=1.)
+   rescaled_image_3_inv_steel=colorize(rescaled_image_3_inv_RGB,hue=227./360,saturation=0.66,v=1.)
+
+   #plt.clf()
+   #ax1=plt.subplot(131); ax1.set_title('Brick')
+   #plt.imshow(rescaled_image_1_inv_brick,origin='lower',interpolation='nearest')
+   #ax2=plt.subplot(132); ax2.set_title('Dandelion')
+   #plt.imshow(rescaled_image_2_inv_dandelion,origin='lower',interpolation='nearest')
+   #ax3=plt.subplot(133); ax3.set_title('Steel')
+   #plt.imshow(rescaled_image_3_inv_steel,origin='lower',interpolation='nearest')
+   #fig_name="rescaled_red_yellow_blue.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name,dpi=1000)
+   #print("saved %s" % fig_name)
+
+   ### Combine the colorized frames by taking the mean of the R images, mean of G, and mean of B
+   image_RYB=np.nanmean([rescaled_image_1_inv_brick,rescaled_image_2_inv_dandelion,rescaled_image_3_inv_steel],axis=0)
+    
+   ### Make a list of the maximum data values in each of the R,G,B frames
+   RYB_maxints=tuple(np.nanmax(image_RYB[:,:,i]) for i in [0,1,2])
+   
+   ### Now re-scale each frame to the overall maximum so that the final RGB set has range [0,1]
+   for i in [0,1,2]: 
+       image_RYB[:,:,i]=exposure.rescale_intensity(image_RYB[:,:,i], 
+                           out_range=(0, image_RYB[:,:,i].max()/np.nanmax(RYB_maxints) ));
+   
+   plt.clf()
+   plt.imshow(image_RYB,origin='lower',interpolation='nearest')
+   fig_name="rescaled_RYB.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
 
 image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-multicolor_dynamic_range_image(image_name)
+multicolor_dynamic_range_image(image_name,0,1,0,10,0,100)
 
 
+   
 #image_comparison_feain()
 #sys.exit()
 
