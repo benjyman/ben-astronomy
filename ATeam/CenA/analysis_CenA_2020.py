@@ -10,7 +10,7 @@ import math
 G = 6.674e-11
 M_solar = 1.98847e30 
 c = 299792458.
-M_bh_cena = 1.0e8 * M_solar
+M_bh_cena = 5.5e7 * M_solar
 pc_m = 3.0857e16 
 yr_sec = 3.1557600e7
 mp = 1.6726219e-27    #kg
@@ -18,7 +18,8 @@ kb = 1.38064852e-23
 eV_J = 1.602176634e-19
 erg_J = 1.0e-7
 dyn_cm2_Pa = 0.1
-
+thompson_scat_cross_sec_e_m2 = 6.6524587158e-29
+kappa = thompson_scat_cross_sec_e_m2 / mp
 
 def get_scaling_factor_from_core(image_name,freq_MHz,alpha):
    #get this from image using masking etc eventually, for now just use kvis
@@ -653,7 +654,7 @@ def calculate_outflow_properties():
    #constant_eqn_23 = (sigma_steradians/(4.*np.pi)) * (density_g_cm3/1.0e-25)* 40.
    #print("constant_23 MWA south and israel CND density = %0.5f" % constant_eqn_23)
    
-   
+    
    
    #stuff from Tombesi 2014 (table 1)
    CenA_v_out_c = 0.005
@@ -705,6 +706,107 @@ def calculate_outflow_properties():
    #print("radius_shock_neff_2_kpc is %E kpc" % radius_shock_neff_2_kpc)
    
 
+   #Reproduce Neff 2015b calcs and modify for our outflow:
+   print('NEFF15B')
+   H_beta_power_erg_s = 1e37  #morganti1991,neff2015b
+   total_line_power_erg_s = 100 *  H_beta_power_erg_s #sutherland1993, neff2015b
+   print("cloud total line power %E erg per s" % total_line_power_erg_s)
+   wind_radius_at_filaments_kpc = 6.0
+   wind_area_at_filaments_kpsq = math.pi*wind_radius_at_filaments_kpc**2
+   effective_cloud_area_kpsq = 0.2**2
+   
+   fraction_of_power_to_clouds = effective_cloud_area_kpsq / wind_area_at_filaments_kpsq 
+   print('fraction_of_power_to_clouds %E' % fraction_of_power_to_clouds)
+   neff_total_wind_power_erg_s = 1.e42
+   neff_wind_power_to_north_erg_s = neff_total_wind_power_erg_s / 2.
+   power_to_clouds_erg_s = neff_wind_power_to_north_erg_s * fraction_of_power_to_clouds
+   print('power_to_clouds_erg_s %E erg per s' % power_to_clouds_erg_s)
+
+   #Reproduce Kraft09 calcs and modify for our outflow:
+   print('Kraft09')
+   knot_pressure_dyn_cm2 = 2.0e-11
+   knot_pressure_N_m2 = knot_pressure_dyn_cm2 * 0.1
+   knot_radius_kpc = 1.0
+   knot_cross_section_area_m2 =  math.pi * (knot_radius_kpc * pc_m * 1000.)**2
+   jet_power_erg_s = 6.0e42
+   jet_power_J_s = jet_power_erg_s * erg_J
+   velocity_km_sec = (2.0 * jet_power_J_s) / (knot_pressure_N_m2 * knot_cross_section_area_m2) / 1000.
+   print("velocity_km_sec %E" % velocity_km_sec)
+   velocity_c = (velocity_km_sec * 1000.0) / c
+   print("velocity_c %E c" % velocity_c)
+
+   #turning this on it head: the ram pressure from the outflow must be more than the
+   #pressure of an individual knot - 
+   mckinley_ram_pressure_N_m2 = (2 * power_out_macro_W) / (V_OUT_km_s * 1000. * knot_cross_section_area_m2)
+   mckinley_ram_pressure_dyn_cm2 = mckinley_ram_pressure_N_m2 / 0.1
+   print('mckinley_ram_pressure_dyn_cm2 %E ' % mckinley_ram_pressure_dyn_cm2)
+   pressure_ratio = mckinley_ram_pressure_dyn_cm2 / knot_pressure_dyn_cm2
+   print('typical kraft cloud knot pressure knot_pressure_dyn_cm2 %E' % knot_pressure_dyn_cm2)
+   print('ratio to knot pressure is %E ' % pressure_ratio)
+   
+   #thermal energy of the knots is:, wind provides this in x Myr, if AGN boosted y Myr:
+   kraft_thermal_energy_all_knots_erg = 2.6e55
+   kraft_thermal_energy_all_knots_J = kraft_thermal_energy_all_knots_erg * erg_J
+   av_lifetime_of_knots_Myr = (3.7 + 2.6 + 2.4 + 3.1 + 0.6) / 5.
+   av_lifetime_of_knots_sec = av_lifetime_of_knots_Myr * 1.0e6 * yr_sec
+   print('av_lifetime_of_knots_Myr %E' % av_lifetime_of_knots_Myr)
+   
+   angle_deg = 35.
+   angle_rad = angle_deg / 180. * math.pi
+   wind_cone_radius_at_knots_kp = math.sin(angle_rad) * 15
+   wind_area_kp2 = math.pi * wind_cone_radius_at_knots_kp**2
+   knot_area_kp2 = math.pi * knot_radius_kpc**2
+   power_fraction_intercepting_knots = knot_area_kp2 / wind_area_kp2
+   print('power_fraction_intercepting_knots %E ' % power_fraction_intercepting_knots) 
+   intercepted_power_W = power_out_macro_W * power_fraction_intercepting_knots 
+   intercepted_power_erg_s = intercepted_power_W / erg_J
+   print('intercepted_power_erg_s %E ' % intercepted_power_erg_s) 
+   time_to_deposit_cloud_energy_s = kraft_thermal_energy_all_knots_J / (intercepted_power_W)
+   time_to_deposit_cloud_energy_Myr = time_to_deposit_cloud_energy_s / yr_sec / 1.0e6
+   print('time_to_deposit_cloud_energy_Myr %E ' % time_to_deposit_cloud_energy_Myr)
+
+   #energy to inflate the NML is 3 e 56 erg, so at least this much energy has gone in - so the jet must contribute to the heating of the 
+   #NML and the clouds in a bursty fashion as suggested for the smaller clouds of the filaments
+   
+   #work out the total energy of the bubble - compare to the Kraft total energy of the NML and then timescales etc
+   #for our bubble with radius 75 kpc, but it is a cone with solid angle 
+   
+   surface_area_spherical_bubble_m2 = 4 * math.pi * (r_th * 1000. * pc_m)**2
+   fraction_of_sphere_one_for_solid_angle = sigma / (4 * math.pi)
+   print('fraction_of_sphere_one_for_solid_angle %E ' % fraction_of_sphere_one_for_solid_angle)
+   surface_area_m2 = surface_area_spherical_bubble_m2 * fraction_of_sphere_one_for_solid_angle
+   print('surface_area_m2 %E ' % surface_area_m2)
+   pressure_ram_outflow_N_m2 =  (2 * (power_out_macro_W / 2.)) / (V_OUT_km_s * 1000. * surface_area_m2)
+   pressure_ram_outflow_dyn_cm2 = pressure_ram_outflow_N_m2 / 0.1
+   print('pressure_ram_outflow_dyn_cm2 %E' % pressure_ram_outflow_dyn_cm2)
+   #total_energy_of_bubble = 4. * thermal_pressure_ism_neff_Pa * 
+
+   volume_m3 = ((r_th * 1000. * pc_m)**3 * sigma) / 3
+   print('volume_m3 %E ' % volume_m3)
+   total_energy_one_side_J = 4. * pressure_ram_outflow_N_m2 * volume_m3
+   total_energy_one_side_erg = total_energy_one_side_J / erg_J
+   print('total_energy_one_side_erg %E' % total_energy_one_side_erg)
+   total_energy_both_sides = total_energy_one_side_erg * 2.
+   print('total_energy_both_sides %E' % total_energy_both_sides)
+   time_to_deliver_energy_s = total_energy_both_sides / power_out_macro_W
+   time_to_deliver_energy_Myr = time_to_deliver_energy_s / yr_sec / 1.e6
+   print('time_to_deliver_energy_Myr %E' % time_to_deliver_energy_Myr)
+   
+   tingay1998_los_angle_deg = 68.
+   tingay1998_los_angle_rad = tingay1998_los_angle_deg / 180 * math.pi
+   eilek2014_age_Myr =  600. / math.cos(tingay1998_los_angle_rad)
+   print('eilek2014_age_Myr %E' % eilek2014_age_Myr)
+   
+   print('Eddington Ratio stuff')
+   bol_luminosity_erg_s = 2.0e43   #neff but cosisten with 2.4e43 from beckmann 2011
+   bol_luminosity_W = bol_luminosity_erg_s * erg_J
+   efficiency = 0.03
+   eddington_acc_rate_Msol_yr = (4. * np.pi * G * M_bh_cena * yr_sec) / (kappa * c * efficiency * M_solar)
+   print('eddington_acc_rate_Msol_yr %E' % eddington_acc_rate_Msol_yr)
+   
+   
+   
+   
 def image_comparison_feain():
    feain_peak_core_mJy = 1441.68
    feain_rm_1_deg = 17.
@@ -715,12 +817,19 @@ def image_comparison_feain():
    mwa_dynamic_range = 50000.
    improvement_factor = mwa_dynamic_range / dynamic_range_1_deg
    print(improvement_factor)
-   
+
+def multicolor_dynamic_range_image(image_name):
+   print(image_name)
+
+image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+multicolor_dynamic_range_image(image_name)
+
+
 #image_comparison_feain()
 #sys.exit()
 
-calculate_outflow_properties()
-sys.exit()
+#calculate_outflow_properties()
+#sys.exit()
 
 
 #mask_level=0.1
