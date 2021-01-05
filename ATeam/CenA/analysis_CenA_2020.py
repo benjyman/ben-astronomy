@@ -837,12 +837,13 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    print(image_name)
    with fits.open(image_name) as hdulist_1:
       image_data = hdulist_1[0].data
-    
-   print(image_data.max()) 
+
+   data_max = image_data.max()
+   data_min = image_data.min()
    
-   rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(min_val_1,max_val_1))
-   rescaled_image_2 = exposure.rescale_intensity(image_data,in_range=(min_val_2,max_val_2))
-   rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(min_val_3,max_val_3))
+   rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(data_min,data_max))
+   rescaled_image_2 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_2))
+   rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_3))
 
    rescaled_image_1_inv = rescaled_image_1.max() - rescaled_image_1
    rescaled_image_2_inv = rescaled_image_2.max() - rescaled_image_2
@@ -851,17 +852,17 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
    simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
    
-   plt.clf()
-   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
-   plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
-   fig_name="rescaled_simple_rgb.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name,dpi=1000)
-   print("saved %s" % fig_name)
+   #plt.clf()
+   #ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   #plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
+   #fig_name="rescaled_simple_rgb.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name,dpi=1000)
+   #print("saved %s" % fig_name)
 
-   rescaled_image_1_inv_RGB=color.gray2rgb(rescaled_image_1_inv)
-   rescaled_image_2_inv_RGB=color.gray2rgb(rescaled_image_2_inv)
-   rescaled_image_3_inv_RGB=color.gray2rgb(rescaled_image_3_inv)
+   rescaled_image_1_inv_RGB=color.gray2rgb(rescaled_image_1)
+   rescaled_image_2_inv_RGB=color.gray2rgb(rescaled_image_2)
+   rescaled_image_3_inv_RGB=color.gray2rgb(rescaled_image_3)
    
    rescaled_image_1_inv_brick=colorize(rescaled_image_1_inv_RGB,hue=0.,saturation=0.9,v=1.)
    rescaled_image_2_inv_dandelion=colorize(rescaled_image_2_inv_RGB,hue=60./360,saturation=0.47,v=1.)
@@ -887,8 +888,13 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    
    ### Now re-scale each frame to the overall maximum so that the final RGB set has range [0,1]
    for i in [0,1,2]: 
-       image_RYB[:,:,i]=exposure.rescale_intensity(image_RYB[:,:,i], 
+       image_RYB[:,:,i] -= image_RYB[:,:,i].min()
+       image_RYB[:,:,i] = exposure.rescale_intensity(image_RYB[:,:,i], 
                            out_range=(0, image_RYB[:,:,i].max()/np.nanmax(RYB_maxints) ));
+       print(image_RYB.max())
+       print(image_RYB.min())
+  
+
    
    plt.clf()
    plt.imshow(image_RYB,origin='lower',interpolation='nearest')
@@ -897,8 +903,28 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    figmap.savefig(fig_name,dpi=1000)
    print("saved %s" % fig_name)
 
+   #invert the RGB #and mask large values to max 1
+   print(image_RYB[:,:,0])
+   #mask = image_RYB[:,:,0]<0.2
+   #print(mask)
+   for i in [0,1,2]: 
+       image_RYB[:,:,i] = image_RYB[:,:,i].max() - image_RYB[:,:,i]
+       print(image_RYB[:,:,i].max())
+       print(image_RYB[:,:,i].min())
+
+       
+   #set the red channel to the mean of the other two channels
+   #image_RYB[:,:,0] = (image_RYB[:,:,1] + image_RYB[:,:,2]) / 2
+   
+   plt.clf()
+   plt.imshow(image_RYB,origin='lower',interpolation='nearest')
+   fig_name="rescaled_RYB_inv_mask.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
+
 image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-multicolor_dynamic_range_image(image_name,0,1,0,10,0,100)
+multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.4)
 
 
    
