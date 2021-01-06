@@ -840,8 +840,10 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
 
    data_max = image_data.max()
    data_min = image_data.min()
+   print(data_max)
+   print(data_min)
    
-   rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(data_min,data_max))
+   rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_1))
    rescaled_image_2 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_2))
    rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_3))
 
@@ -849,24 +851,35 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    rescaled_image_2_inv = rescaled_image_2.max() - rescaled_image_2
    rescaled_image_3_inv = rescaled_image_3.max() - rescaled_image_3
    
-   simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
-   simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
+   simpleRGB_inv=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
+   simpleRGB_inv[:,:,0],simpleRGB_inv[:,:,1],simpleRGB_inv[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
    
-   #plt.clf()
-   #ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
-   #plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
-   #fig_name="rescaled_simple_rgb.png"
-   #figmap = plt.gcf()
-   #figmap.savefig(fig_name,dpi=1000)
-   #print("saved %s" % fig_name)
+   plt.clf()
+   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   plt.imshow(simpleRGB_inv,origin='lower',interpolation='nearest')
+   fig_name="rescaled_simple_rgb_inv.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
 
-   rescaled_image_1_inv_RGB=color.gray2rgb(rescaled_image_1)
-   rescaled_image_2_inv_RGB=color.gray2rgb(rescaled_image_2)
-   rescaled_image_3_inv_RGB=color.gray2rgb(rescaled_image_3)
+   simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
+   simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1,rescaled_image_2,rescaled_image_3
    
-   rescaled_image_1_inv_brick=colorize(rescaled_image_1_inv_RGB,hue=0.,saturation=0.9,v=1.)
-   rescaled_image_2_inv_dandelion=colorize(rescaled_image_2_inv_RGB,hue=60./360,saturation=0.47,v=1.)
-   rescaled_image_3_inv_steel=colorize(rescaled_image_3_inv_RGB,hue=227./360,saturation=0.66,v=1.)
+   plt.clf()
+   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
+   fig_name="rescaled_simple_rgb.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
+   
+   rescaled_image_1_RGB=color.gray2rgb(rescaled_image_1)
+   rescaled_image_2_RGB=color.gray2rgb(rescaled_image_2)
+   rescaled_image_3_RGB=color.gray2rgb(rescaled_image_3)
+   
+   rescaled_image_1_inv_brick=colorize(rescaled_image_1_RGB,hue=0.,saturation=0.9,v=1.)
+   rescaled_image_2_inv_dandelion=colorize(rescaled_image_2_RGB,hue=60./360,saturation=0.47,v=1.)
+   rescaled_image_3_inv_steel=colorize(rescaled_image_3_RGB,hue=227./360,saturation=0.66,v=1.)
 
    #plt.clf()
    #ax1=plt.subplot(131); ax1.set_title('Brick')
@@ -891,8 +904,8 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
        image_RYB[:,:,i] -= image_RYB[:,:,i].min()
        image_RYB[:,:,i] = exposure.rescale_intensity(image_RYB[:,:,i], 
                            out_range=(0, image_RYB[:,:,i].max()/np.nanmax(RYB_maxints) ));
-       print(image_RYB.max())
-       print(image_RYB.min())
+       print(image_RYB[:,:,i].max())
+       print(image_RYB[:,:,i].min())
   
 
    
