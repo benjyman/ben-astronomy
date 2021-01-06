@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #check pulse pulse period ratios
 import matplotlib
 matplotlib.use('Agg')
