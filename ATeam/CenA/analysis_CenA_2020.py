@@ -65,6 +65,43 @@ def regrid_optical(template_imagename,input_imagename,smooth=0):
    #The below works for just the NML
    #...or make a very high res radio image just for the WCS and regrid with that!
    #wsclean -name CenA_optical_template -size 4500 4500 -scale 0.0003135 -pol xx -interval 1 3 -channel-range 1 3 1121321488.ms 
+   #..make a wider field one (3 deg) (it gonna be big)
+   
+   #wsclean -name CenA_optical_template_3deg -size 10000 10000 -scale 0.0003135 -pol xx -interval 1 3 -channel-range 1 3 1121321488.ms 
+   
+   #mucking around with headers
+   ##replace the header of Ben_Radio_features.fits with the original header for CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits
+   #hdulist = fits.open("%s" % ('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits'))
+   #image_header_orig = hdulist[0].header
+   #hdulist.close()
+   #
+   #hdulist = fits.open('Ben_Radio_features.fits')
+   #image_header = hdulist[0].header
+   #image_data = hdulist[0].data
+   #
+   #updated_image_name = 'Ben_Radio_features_header_update.fits'
+   #fits.writeto(updated_image_name,image_data,clobber=True)
+   #fits.update(updated_image_name,image_data,header=image_header_orig)
+   #print("wrote image %s" %  updated_image_name) 
+   #
+   #sys.exit()
+   #hdulist = fits.open("%s" % ('3_Separate_HII_regions_from_Ha_edhead.fits'))
+   #image_header_orig = hdulist[0].header
+   #hdulist.close()
+   #
+   #hdulist = fits.open('final_optical_1_Ben.fits')
+   #image_header = hdulist[0].header
+   #image_data = hdulist[0].data
+   #
+   #updated_image_name = 'final_optical_1_Ben_header_update.fits'
+   #fits.writeto(updated_image_name,image_data,clobber=True)
+   #fits.update(updated_image_name,image_data,header=image_header_orig)
+   #print("wrote image %s" %  updated_image_name) 
+   #
+   #sys.exit()
+   
+     
+   
    imported_template_imagename = template_imagename.split('.fits')[0]+'.image'
    imported_input_imagename = input_imagename.split('.fits')[0]+'.image'
    regridded_imagename = input_imagename.split('.fits')[0]+'_regridded.image'
@@ -549,6 +586,10 @@ def calculate_outflow_properties():
    print("######const_eqn_26 is %E" % const_eqn_26)
    #r_th = const_eqn_26 * T_x_7p4**(3./2.)
    #print("r_th is %E kpc" % r_th)
+   arc_radius = np.sqrt((width/2)**2 + radius**2)
+   circumference = 2. * np.pi * arc_radius
+   length_of_arc_kpc = (opening_angle_deg / 360.) * circumference
+   print("length of southern radio arc is %E kpc" % length_of_arc_kpc)
    
    
    #Reversing this so we have r_th measured from radio:
@@ -809,8 +850,14 @@ def calculate_outflow_properties():
    eddington_acc_rate_Msol_yr = (4. * np.pi * G * M_bh_cena * yr_sec) / (kappa * c * efficiency * M_solar)
    print('eddington_acc_rate_Msol_yr %E' % eddington_acc_rate_Msol_yr)
    
-   
-   
+   #Turner and Shabala
+   print("turner and shabala calcs")
+   jet_prod_eff = 0.10
+   M_bh_dot_kg_s = M_dot_in_micro * M_solar / yr_sec
+   P_jet_W = jet_prod_eff * M_bh_dot_kg_s * c**2 
+   print("P_jet_W %E W" % P_jet_W)
+   P_jet_erg_s = P_jet_W / erg_J
+   print("P_jet_erg_s %E erg per sec" % P_jet_erg_s)
    
 def image_comparison_feain():
    feain_peak_core_mJy = 1441.68
@@ -936,16 +983,16 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    figmap.savefig(fig_name,dpi=1000)
    print("saved %s" % fig_name)
 
-image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.4)
+#image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+#multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.4)
 
 
    
 #image_comparison_feain()
 #sys.exit()
 
-#calculate_outflow_properties()
-#sys.exit()
+calculate_outflow_properties()
+sys.exit()
 
 
 #mask_level=0.1
@@ -953,9 +1000,7 @@ multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.4)
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','CenA_i.fits',185,1400,'CenA_185_1400_MHz',0.3)
 #spectral_index_map('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','image_cenauc13_image_tt0.fits',185,1400,'CenA_uc13_185_1400_MHz',0.3)
 #spectral_index_map("CenA_2015_2018_joint_145_robust0_image_pb_8_ims_0000_08_weighted.fits","CenA_2015_2018_joint_145_robust0_image_pb_8_ims_0009_08_weighted.fits",171.135,198.755,'CenA_171_198_MHz',mask_level)
-
-
-sys.exit()
+#sys.exit()
 
 #regridding x ray rosat from galacto:
 #regrid_concvol('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits','g000p00r1b120pm.fits',0.5,0.5,0,'CenA_rosat_north_to_mwa')
@@ -984,7 +1029,8 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 #sys.exit()
 
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
-template_imagename = 'CenA_optical_template-image.fits'
+#template_imagename = 'CenA_optical_template-image.fits'
+template_imagename = 'CenA_optical_template_3deg-image.fits'
 #template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
 
 #input_imagename = 'CenA_WCS_edhead.fits'
@@ -1002,13 +1048,19 @@ template_imagename = 'CenA_optical_template-image.fits'
 #mike sidonio:
 #input_name_list = ['CenA_Ha_1050min_median.fits','CenA_lum_1470min_median_grad.fits']
 #input_name_list = ['CenA_Ha_1050min_median_solved.fits','CenA_Lum_1470min_median_grad_solved.fits']
+#input_name_list = ['Ben_Radio_features_header_update.fits']
+#input_name_list = ['final_optical_1_Ben_header_update.fits']
+#input_name_list = ['mos12.0.5-1.0.img.sps.648.imsmo.5.ecorr.nml.fits']
+#input_name_list = ['HIemission_mom0.fits']
 input_name_list = ['CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
 #input_name_list = ['CenA_WCS_Ha.fits']
+#input_imagename = 'Ben_Radio_features.fits'
+#template_imagename,input_imagename)
 for input_name in input_name_list:
    #edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
-   #edit_optical_header(input_name,edhead_name)
+   #edit_optical_header(input_name,edhead_name) 
    regrid_optical(template_imagename,input_name)    #edhead_name,smooth=2)
    #try no edhead for mikes:
    #regrid_optical(template_imagename,input_name)
