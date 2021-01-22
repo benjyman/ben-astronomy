@@ -10111,7 +10111,91 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,phase_sol_filenam
       print("saved %s" % fig_name)  
    
    
+def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False):
+   print("averaging EDA2 obs in time before calibration")
+   #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
+   pol = pol_list[0]
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+       if len(n_obs_concat_list) > 0:
+          if len(EDA2_chan_list)==1:
+             n_obs_concat = n_obs_concat_list[chan_num]
+          else:
+             n_obs_concat = n_obs_concat_list[EDA2_chan_index]
+       else:
+          n_obs_concat = 1
+       #freq_MHz = np.round(400./512.*float(EDA2_chan))
+       freq_MHz = 400./512.*float(EDA2_chan)
+       wavelength = 300./freq_MHz
+       if uv_cutoff!=0:
+          uv_cutoff_m = uv_cutoff * wavelength
+       lst = lst_list[EDA2_chan_index]
+       lst_deg = (float(lst)/24)*360.
+       if len(EDA2_chan_list)==1:
+          obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+       else:
+          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+       first_obstime = obs_time_list[0]
+       
+       #guard against cases where there are no data for that channel
+       if first_obstime==0:
+          continue
+       else:
+          pass
+       
+       av_uvfits_name = "%s/av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
+       av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
+       
+       for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):     
+          ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+          new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+          print("%s" % ms_name)
+          
+          #export the ms as a uvfits
+          #write out the uvfits file
+          casa_cmd_filename = 'export_individual_uvfits.sh'
+          cmd = "rm -rf %s %s" % (new_uvfits_name,casa_cmd_filename)
+          print(cmd)
+          os.system(cmd)
+                
+          cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (ms_name,new_uvfits_name)
+          print(cmd)
+          os.system(cmd)
+        
+          with open(casa_cmd_filename,'w') as f:
+             f.write(cmd)
+               
+          cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+          print(cmd)
+          os.system(cmd)
+          
+          ######
+          
+          #read the uvfits file and add the vis data to a tmp array (initialise the array if this is the first one)
+          with fits.open(new_uvfits_name) as hdulist:
+             data = hdulist[0].data.data
+             #print(sum_array.shape)
+          if EDA2_obs_time_index==0:
+             sum_array = np.zeros(data.shape)
+             first_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+          sum_array += data
+          
+       av_array = sum_array / float(len(obs_time_list))
+       print(av_array)
    
+       #replace data in av uvfits
+       with fits.open(first_uvfits_name) as hdulist:
+          data = hdulist[0].data.data
+          data[:,:,:,:,:,:] = av_array
+          #now write out new uvfits file:
+          hdulist.writeto(av_uvfits_name,overwrite=True)
+          print("saved %s" % (av_uvfits_name))
+       
+       #check
+       with fits.open(av_uvfits_name) as hdulist:
+             data = hdulist[0].data.data
+             print(data)
+       
+       
    
 def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False):
    #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
@@ -10137,7 +10221,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
           obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
        first_obstime = obs_time_list[0]
        
-       #gaurd against cases where there are no data for that channel
+       #guard against cases where there are no data for that channel
        if first_obstime==0:
           continue
        else:
@@ -13040,6 +13124,9 @@ pol_list = ['X']
 
 #Step 2: calibrate
 
+
+
+
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
@@ -13051,6 +13138,11 @@ plot_cal = False
 wsclean = True
 concat=True
 per_chan_cal = True
+
+#New cal Jan 2021 - try to average data in time first before cal
+calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+sys.exit()
+
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
