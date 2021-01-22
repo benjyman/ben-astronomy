@@ -10147,9 +10147,14 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
        for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):     
           ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
           print("%s" % ms_name)
           
+          
+          #DONT DO THIS EXPORTING TO UVFITS IT DOESNT WORK
+          #GOING TO HAVE TO LEARN MS TOOLS PYTHON INTERFACE
+          
+          
+          new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
           #export the ms as a uvfits
           #write out the uvfits file
           casa_cmd_filename = 'export_individual_uvfits.sh'
