@@ -234,7 +234,7 @@ min_imaging_uvdist_wavelength = 0.5
 max_imaging_uvdist_wavelength = 35.0
 zero_spacing_leakage_threshold = 0.5
 
-#outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
+outbase_name = 'lst_%0.2f_hr_int_%0.2f_hr' % (start_lst_hrs,int_time_hrs)
 
 
 #from Wayth et al Table 2, third column divided by 256 (not last col which is dipole in isolation)
@@ -2495,6 +2495,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
          else:
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
+         real_vis_data_sorted_array_subtr_Y_K = real_vis_data_sorted_array_subtr_Y * jy_to_K
          model = sm.OLS(real_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
          results = model.fit()
          ##print results.summary()
@@ -2629,7 +2630,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       plt.plot(X_bin_centres_array, real_vis_data_min_in_X_bin_array,label='%s data min in X bin' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_bin_centres_array, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
    elif model_type=="OLS_fixed_int_subtr_Y":
-      real_vis_data_sorted_array_subtr_Y_nonans = real_vis_data_sorted_array_subtr_Y_K[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+      real_vis_data_sorted_array_subtr_Y_nonans_K = real_vis_data_sorted_array_subtr_Y_K[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_subtr_Y_nonans_K,label='%s data - Y' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, real_vis_data_sorted_array_nonans_K,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
       plt.plot(X_short_parallel_array_nonans, fitted_values_K, 'r--.', label="OLS fit",linestyle='--',marker='None')
@@ -3591,13 +3592,25 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
-      if woden:
-         if noise_coupling:
-            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
-         else: 
-            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+      if EDA2_data:
+         if n_obs_concat==1:
+            if wsclean==True:
+               uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            else:
+               uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+         else:
+            if wsclean==True:
+               uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            else:
+               uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
       else:
-         uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+         if woden:
+            if noise_coupling:
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+            else: 
+               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         else:
+            uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
    
    hdulist = fits.open(uvfits_filename)
    uvtable = hdulist[0].data
@@ -3959,8 +3972,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #get the diffuse global diffuse value used in the simulation (from gsm)
          if EDA2_data==True:
             EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
-            #sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
-            sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)
+            sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)       
+            #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)
          else:
             #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
             sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)
@@ -4711,7 +4724,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             ###THis is the one that works for the SIMS! at 20200422
             if EDA2_data:
                if wsclean:
-                  t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response)
+                  t_sky_theoretical,n_baselines_used = solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
                else:
                   t_sky_theoretical = extract_data_from_eda2_uvfits(freq_MHz_list=freq_MHz_list,freq_MHz_index=freq_MHz_index,lst_hrs_list=lst_hrs_list,pol=pol,EDA2_chan=EDA2_chan,n_obs=n_obs_concat,calculate_uniform_response=calculate_uniform_response)
             else:
@@ -5371,8 +5384,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
             #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
             #plt.text(50, 75, "rms=%2.1f K" % rms_of_residuals,{'color': colour})
-            y_offset = 2.5 + plotting_index * 0.5
-            plt.text(50, y_offset, "rms=%0.5f K" % rms_of_residuals,{'color': color_list[plotting_index]})
+            y_offset = 10. + plotting_index * 1.3
+            plt.text(50, y_offset, "rms=%0.2f K" % rms_of_residuals,{'color': color_list[plotting_index]})
             plotting_index += 1
             
             #comment out for fig9b
@@ -8738,6 +8751,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          if 'global_EDGES' in signal_type_list:
             s_21_value = s_21_array_EDGES[freq_MHz_index]
          else:
+            s_21_array = plot_S21(nu_array=freq_MHz_array)
             s_21_value = s_21_array[freq_MHz_index]
          s_21_hpx_map = gsm_map * 0.0 + s_21_value
          
@@ -12842,7 +12856,7 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
 #lst_hrs_list = ['2.0','2.2','2.4','2.6']
 lst_hrs_list = ['2']
 
-EDA2_data = False
+EDA2_data = True
 
 #EDA2_filenames = ["chan_64_20191202T171525_calibrated.uvfits","chan_77_20191202T171629_calibrated.uvfits","chan_90_20191202T171727_calibrated.uvfits","chan_103_20191202T171830_calibrated.uvfits","chan_116_20191202T171928_calibrated.uvfits","chan_129_20191202T172027_calibrated.uvfits"]
 
@@ -12988,10 +13002,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #need to fix this so you can just run like the other functoins below for multiple eda2 chans
 #for EDA2 chans [64,77,90,103,116,129], freq_MHz_list = [ 50.  60.  70.  80.  91. 101.]
 #sims:
-freq_MHz_list=[70.]
-lst_hrs_list = ['0']
+#freq_MHz_list=[70.]
+#lst_hrs_list = ['0']
 #freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-freq_MHz_array = np.asarray(freq_MHz_list)
+#freq_MHz_array = np.asarray(freq_MHz_list)
 #lst_hrs_list=['2']
 #do it here: /md0/EoR/ASSASSIN/solve_for_tsky_weighted/jack_tests/single_point
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
@@ -13003,10 +13017,10 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #sys.exit()
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
-#pol_list = ['Y']
+pol_list = ['X']
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
-###if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
+####if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
 #for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
 #   if len(freq_MHz_list)==1:
 #      EDA2_chan = EDA2_chan_list[chan_num]
@@ -13022,21 +13036,21 @@ freq_MHz_array = np.asarray(freq_MHz_list)
 #   print(cmd)
 #   os.system(cmd)
 #   os.chdir('./..')
-##sys.exit()
+#sys.exit()
 
 #Step 2: calibrate
 
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-#chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#plot_cal = False
+chan_num = 0
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
+plot_cal = False
 #wsclean = False
-#wsclean = True
-#concat=True
-#per_chan_cal = True
+wsclean = True
+concat=True
+per_chan_cal = True
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
@@ -13097,48 +13111,48 @@ model_type_list = ['OLS_fixed_intercept']
 #EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
-freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-freq_MHz_array = np.asarray(freq_MHz_list)
+#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+#freq_MHz_array = np.asarray(freq_MHz_list)
 
-lst_hrs_list=['4']
+#lst_hrs_list=['4']
 #poly_order_list=[5,6,7]
 poly_order=5
 
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
-#WODEN sims signal extraction
-woden=True
-wsclean=False
-fast=True
-no_modelling=True
+##WODEN sims signal extraction
+woden=False
+wsclean=True
+fast=False
+no_modelling=False
 calculate_uniform_response=False
-noise_coupling=True
-#woden sims from 50 to 193 MHz
-#dont need this any more
-#woden: centre_chans_number_list = [63,87,111,135,159,183]
-
-#make sourcelist and sbatch files on namorrodor:      
-#new centre chans list for 1 MHz wide chans
-#UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
-#year,month,day,hour,min,sec = 2020,03,03,15,00,00
-freq_MHz_list = np.arange(0,218)*1.28 + 50.
-freq_MHz_list = freq_MHz_list[0:100]
-print(freq_MHz_list)
-year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
-#year,month,day,hour,min,sec = 2015,11,29,15,33,43
-time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-#write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
-#write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-#sys.exit()
-
-#freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
-#just use the orig freq list from 50 to 199 MHz
-outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
+noise_coupling=False
+##woden sims from 50 to 193 MHz
+##dont need this any more
+##woden: centre_chans_number_list = [63,87,111,135,159,183]
+#
+##make sourcelist and sbatch files on namorrodor:      
+##new centre chans list for 1 MHz wide chans
+##UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
+##year,month,day,hour,min,sec = 2020,03,03,15,00,00
+#freq_MHz_list = np.arange(0,218)*1.28 + 50.
+#freq_MHz_list = freq_MHz_list[0:100]
+#print(freq_MHz_list)
+#year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
+##year,month,day,hour,min,sec = 2015,11,29,15,33,43
+#time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
+##write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+##write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
+##sys.exit()
+#
+##freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
+###just use the orig freq list from 50 to 199 MHz
+#outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
 #print(freq_MHz_list)
 ###simulate to get the theoretical beam weighted global signal 
 #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
