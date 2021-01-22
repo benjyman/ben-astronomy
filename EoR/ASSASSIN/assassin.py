@@ -10173,6 +10173,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           #read the uvfits file and add the vis data to a tmp array (initialise the array if this is the first one)
           with fits.open(new_uvfits_name) as hdulist:
              data = hdulist[0].data.data
+             print(data.shape)
              #print(sum_array.shape)
           if EDA2_obs_time_index==0:
              sum_array = np.zeros(data.shape)
@@ -10180,7 +10181,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           sum_array += data
           
        av_array = sum_array / float(len(obs_time_list))
-       print(av_array)
+       print("av_array.shape")
+       print(av_array.shape)
    
        #replace data in av uvfits
        with fits.open(first_uvfits_name) as hdulist:
@@ -10191,9 +10193,29 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           print("saved %s" % (av_uvfits_name))
        
        #check
-       with fits.open(av_uvfits_name) as hdulist:
-             data = hdulist[0].data.data
-             print(data)
+       #with fits.open(av_uvfits_name) as hdulist:
+       #      data = hdulist[0].data.data
+       #      print(data)
+       
+       #now import av uvfits back into casa
+       casa_cmd_filename = 'import_av_uvfits.sh'
+       cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
+       print(cmd)
+       os.system(cmd)
+             
+       cmd = "importuvfits(fitsfile='%s',vis='%s')" % (av_uvfits_name,av_ms_name)
+       print(cmd)
+       os.system(cmd)
+       
+       with open(casa_cmd_filename,'w') as f:
+          f.write(cmd)
+            
+       cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+       print(cmd)
+       os.system(cmd)
+       
+       
+       
        
        
    
