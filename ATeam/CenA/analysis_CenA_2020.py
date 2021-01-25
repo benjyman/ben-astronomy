@@ -434,14 +434,18 @@ def regrid_concvol(image_1_name,image_2_name_list,target_bmaj_deg,target_bmin_de
 
 def calculate_outflow_properties():
 #G17 scale defs
+   #M_bh_cena = 10**9 * M_solar
    r_s_m = 2. * G * M_bh_cena / c**2
    r_s_pc = r_s_m / pc_m
-   print("r_s_pc is %0.9f = %0.3f kpc" % (r_s_pc,r_s_pc/1000.0))
-   print("5 * r_s_pc is %0.9f pc = %0.3f kpc" % (r_s_pc*5.,r_s_pc*5./1000.) )
-   print("Micro: 1000 * r_s_pc is %0.9f pc = %0.3f kpc" % (r_s_pc*1000.,r_s_pc*1000./1000.) )
-   print("Meso: 1e6 * r_s_pc is %0.9f pc = %0.3f kpc" % (r_s_pc*1.e6,r_s_pc*1e6/1000.) )
-   print("Macro: 1e9 * r_s_pc is %0.9f pc = %0.3f kpc" % (r_s_pc*1.e9,r_s_pc*1e9/1000.) )
-   print("r_vir 1e10 * r_s_pc = r_vir is %0.9f pc = %0.3f kpc" % (r_s_pc*1.e10,r_s_pc*1.e10/1000.) )
+   print("r_s_pc is %E = %E kpc" % (r_s_pc,r_s_pc/1000.0))
+   print("5 * r_s_pc is %E pc = %E kpc" % (r_s_pc*5.,r_s_pc*5./1000.) )
+   print("Micro: 1000 * r_s_pc is %E pc = %E kpc" % (r_s_pc*1000.,r_s_pc*1000./1000.) )
+   print("Meso: 1e6 * r_s_pc is %E pc = %E kpc" % (r_s_pc*1.e6,r_s_pc*1e6/1000.) )
+   print("Macro: 1e9 * r_s_pc is %E pc = %E kpc" % (r_s_pc*1.e9,r_s_pc*1e9/1000.) )
+   print("r_vir 1e10 * r_s_pc = r_vir is %E pc = %E kpc" % (r_s_pc*1.e10,r_s_pc*1.e10/1000.) )
+   #wind_speed_km_s = 0.04 * c / 10**3
+   #print("wind_speed_km_s %f" % wind_speed_km_s)
+   #sys.exit()
    
    #israel et al 2017 inner 500 pc outflow
    vel_km_s = 60.
@@ -898,28 +902,28 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    rescaled_image_2_inv = rescaled_image_2.max() - rescaled_image_2
    rescaled_image_3_inv = rescaled_image_3.max() - rescaled_image_3
    
-   simpleRGB_inv=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
-   simpleRGB_inv[:,:,0],simpleRGB_inv[:,:,1],simpleRGB_inv[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
-   
-   plt.clf()
-   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
-   plt.imshow(simpleRGB_inv,origin='lower',interpolation='nearest')
-   fig_name="rescaled_simple_rgb_inv.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name,dpi=1000)
-   print("saved %s" % fig_name)
-
-   simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
-   simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1,rescaled_image_2,rescaled_image_3
-   
-   plt.clf()
-   ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
-   plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
-   fig_name="rescaled_simple_rgb.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name,dpi=1000)
-   print("saved %s" % fig_name)
-   
+   #simpleRGB_inv=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
+   #simpleRGB_inv[:,:,0],simpleRGB_inv[:,:,1],simpleRGB_inv[:,:,2]=rescaled_image_1_inv,rescaled_image_2_inv,rescaled_image_3_inv
+   #
+   #plt.clf()
+   #ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   #plt.imshow(simpleRGB_inv,origin='lower',interpolation='nearest')
+   #fig_name="rescaled_simple_rgb_inv.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name,dpi=1000)
+   #print("saved %s" % fig_name)
+   #
+   #simpleRGB=np.zeros((image_data.shape[0],image_data.shape[1],3),dtype=float)
+   #simpleRGB[:,:,0],simpleRGB[:,:,1],simpleRGB[:,:,2]=rescaled_image_1,rescaled_image_2,rescaled_image_3
+   #
+   #plt.clf()
+   #ax1=plt.subplot(111); ax1.set_title('Example (Arbitrary) Re-Scaling')
+   #plt.imshow(simpleRGB,origin='lower',interpolation='nearest')
+   #fig_name="rescaled_simple_rgb.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name,dpi=1000)
+   #print("saved %s" % fig_name)
+   #
    rescaled_image_1_RGB=color.gray2rgb(rescaled_image_1)
    rescaled_image_2_RGB=color.gray2rgb(rescaled_image_2)
    rescaled_image_3_RGB=color.gray2rgb(rescaled_image_3)
@@ -978,14 +982,14 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    
    plt.clf()
    plt.imshow(image_RYB,origin='lower',interpolation='nearest')
-   fig_name="rescaled_RYB_inv_mask.png"
+   fig_name="rescaled_RYB_inv.png"
    figmap = plt.gcf()
    figmap.savefig(fig_name,dpi=1000)
    print("saved %s" % fig_name)
 
-#image_name = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-#multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.4)
-
+#image_name = "../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+#multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.2)
+#sys.exit()
 
    
 #image_comparison_feain()
