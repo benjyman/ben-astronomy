@@ -55,6 +55,9 @@ iers.conf.auto_download = False
 #from astroplan import download_IERS_A
 #download_IERS_A()
 
+import pyrap.tables as pt
+
+
 #color defs for color blindness contrast
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
 color_black = '#000000'
@@ -10144,80 +10147,132 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
        av_uvfits_name = "%s/av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
        av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
+       sum_ms_name = "%s/sum_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
        
        for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):     
           ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          print("%s" % ms_name)
+          #print("%s" % ms_name)
           
           
           #DONT DO THIS EXPORTING TO UVFITS IT DOESNT WORK
           #GOING TO HAVE TO LEARN MS TOOLS PYTHON INTERFACE
           
+          #use python-casacore: https://github.com/casacore/python-casacore
+          #see https://github.com/lofar-astron/LOFAR-Contributions/blob/master/Unmaintained/split_ms_by_time.py
+          #might be similar to astropy tables? https://docs.astropy.org/en/stable/table/
           
-          new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          #export the ms as a uvfits
-          #write out the uvfits file
-          casa_cmd_filename = 'export_individual_uvfits.sh'
-          cmd = "rm -rf %s %s" % (new_uvfits_name,casa_cmd_filename)
-          print(cmd)
-          os.system(cmd)
-                
-          cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (ms_name,new_uvfits_name)
-          print(cmd)
-          os.system(cmd)
-        
-          with open(casa_cmd_filename,'w') as f:
-             f.write(cmd)
-               
-          cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-          print(cmd)
-          os.system(cmd)
+          t = pt.table(ms_name, readonly=True, ack=False)
+          print('Total rows in  %s  = %s' % (ms_name,str(t.nrows())))
+          intTime = t.getcell("INTERVAL", 0)
+          print('Integration time:\t%f sec' % (intTime))
+
+          # open the antenna and spectral window subtables
+          tant = pt.table(t.getkeyword('ANTENNA'), readonly=True, ack=False)
+          tsp = pt.table(t.getkeyword('SPECTRAL_WINDOW'), readonly=True, ack=False)
+          numChannels = len(tsp.getcell('CHAN_FREQ',0))
+          print('Number of channels:\t%d' % (numChannels))
+          print('Reference frequency:\t%5.2f MHz' % (tsp.getcell('REF_FREQUENCY',0)/1.e6))
           
-          ######
-          
-          #read the uvfits file and add the vis data to a tmp array (initialise the array if this is the first one)
-          with fits.open(new_uvfits_name) as hdulist:
-             data = hdulist[0].data.data
-             print(data.shape)
-             #print(sum_array.shape)
-          if EDA2_obs_time_index==0:
-             sum_array = np.zeros(data.shape)
-             first_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          sum_array += data
-          
-       av_array = sum_array / float(len(obs_time_list))
-       print("av_array.shape")
-       print(av_array.shape)
-   
-       #replace data in av uvfits
-       with fits.open(first_uvfits_name) as hdulist:
-          data = hdulist[0].data.data
-          data[:,:,:,:,:,:] = av_array
-          #now write out new uvfits file:
-          hdulist.writeto(av_uvfits_name,overwrite=True)
-          print("saved %s" % (av_uvfits_name))
-       
-       #check
-       #with fits.open(av_uvfits_name) as hdulist:
-       #      data = hdulist[0].data.data
-       #      print(data)
-       
-       #now import av uvfits back into casa
-       casa_cmd_filename = 'import_av_uvfits.sh'
-       cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
-       print(cmd)
-       os.system(cmd)
+          t_autos = t.query('ANTENNA1 = ANTENNA2') #autos
+          t_cross = t.query('ANTENNA1 != ANTENNA2')
+          t_all = t.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
+          print(t_all)
+
+          #if this is the first observation create a copy of the the ms to be the sum ms
+          if(EDA2_obs_time_index==0):
+             cmd = 'rm -rf %s %s' % (av_ms_name,sum_ms_name)
+             print(cmd)
+             os.system(cmd)
              
-       cmd = "importuvfits(fitsfile='%s',vis='%s')" % (av_uvfits_name,av_ms_name)
+             pt.taql('select from %s where ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2 giving %s as plain' % (ms_name,sum_ms_name))
+
+    
+          #update the sum ms by adding the current ms data
+          if(EDA2_obs_time_index!=0):
+             pt.taql('update %s t1, %s t2 set DATA = t2.DATA+t1.DATA ' % (sum_ms_name,ms_name))
+    
+          
+       #e.g Put CORRECTED_DATA from that MS into DATA column of this MS
+       #It requires that both tables have the same number of rows
+       #update this.ms, that.ms t2 set DATA = t2.CORRECTED_DATA!
+       
+       pt.taql('select from %s where ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2 giving %s as plain' % (sum_ms_name,av_ms_name))
+
+       pt.taql('update %s t1 set DATA=t1.DATA/%s ' % (av_ms_name,len(obs_time_list)))
+      
+       cmd = 'rm -rf %s' % (sum_ms_name)
        print(cmd)
        os.system(cmd)
        
-       with open(casa_cmd_filename,'w') as f:
-          f.write(cmd)
-            
-       cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-       print(cmd)
-       os.system(cmd)
+       #check:
+       t_av = pt.table(av_ms_name, readonly=True, ack=False)
+       t_av_data = t_av.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
+       print(t_av_data)
+             
+          #new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+          ##export the ms as a uvfits
+          ##write out the uvfits file
+          #casa_cmd_filename = 'export_individual_uvfits.sh'
+          #cmd = "rm -rf %s %s" % (new_uvfits_name,casa_cmd_filename)
+          #print(cmd)
+          #os.system(cmd)
+          #      
+          #cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (ms_name,new_uvfits_name)
+          #print(cmd)
+          #os.system(cmd)
+        #
+          #with open(casa_cmd_filename,'w') as f:
+          #   f.write(cmd)
+          #     
+          #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+          #print(cmd)
+          #os.system(cmd)
+          #
+          #######
+          #
+          ##read the uvfits file and add the vis data to a tmp array (initialise the array if this is the first one)
+          #with fits.open(new_uvfits_name) as hdulist:
+          #   data = hdulist[0].data.data
+          #   print(data.shape)
+          #   #print(sum_array.shape)
+          #if EDA2_obs_time_index==0:
+          #   sum_array = np.zeros(data.shape)
+          #   first_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+          #sum_array += data
+          
+       #av_array = sum_array / float(len(obs_time_list))
+       #print("av_array.shape")
+       #print(av_array.shape)
+   #
+       ##replace data in av uvfits
+       #with fits.open(first_uvfits_name) as hdulist:
+       #   data = hdulist[0].data.data
+       #   data[:,:,:,:,:,:] = av_array
+       #   #now write out new uvfits file:
+       #   hdulist.writeto(av_uvfits_name,overwrite=True)
+       #   print("saved %s" % (av_uvfits_name))
+       #
+       ##check
+       ##with fits.open(av_uvfits_name) as hdulist:
+       ##      data = hdulist[0].data.data
+       ##      print(data)
+      # 
+       ##now import av uvfits back into casa
+       #casa_cmd_filename = 'import_av_uvfits.sh'
+       #cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
+       #print(cmd)
+       #os.system(cmd)
+       #      
+       #cmd = "importuvfits(fitsfile='%s',vis='%s')" % (av_uvfits_name,av_ms_name)
+       #print(cmd)
+       #os.system(cmd)
+       #
+       #with open(casa_cmd_filename,'w') as f:
+       #   f.write(cmd)
+       #     
+       #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+       #print(cmd)
+       #os.system(cmd)
        
        
        
