@@ -3605,7 +3605,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             if wsclean==True:
-               uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+               #uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
                #use calibrated average data
                uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             else:
@@ -3639,14 +3639,18 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    if EDA2_data:
       if n_obs_concat==1:
          if wsclean==True:
-            uvfits_filename = "%s/chan_%s_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-            ms_filename = "%s/chan_%s_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            #uvfits_filename = "%s/chan_%s_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+            #use calibrated average data
+            uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #ms_filename = "%s/chan_%s_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
          else:
             uvfits_filename = "%s/chan_%s_%s_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          if wsclean==True:
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
-            ms_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+            #uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+            #ms_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+            #use calibrated average data
+            uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
          else:
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)      
