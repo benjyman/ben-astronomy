@@ -10148,6 +10148,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        av_uvfits_name = "%s/av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
        av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
        sum_ms_name = "%s/sum_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
+       calibrated_uvfits_filename_wsclean = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
        
        for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):     
           ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
@@ -10197,7 +10198,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #update this.ms, that.ms t2 set DATA = t2.CORRECTED_DATA!
        
        pt.taql('select from %s where ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2 giving %s as plain' % (sum_ms_name,av_ms_name))
-
+       
        pt.taql('update %s t1 set DATA=t1.DATA/%s ' % (av_ms_name,len(obs_time_list)))
       
        cmd = 'rm -rf %s' % (sum_ms_name)
@@ -10205,74 +10206,252 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        os.system(cmd)
        
        #check:
-       t_av = pt.table(av_ms_name, readonly=True, ack=False)
-       t_av_data = t_av.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
-       print(t_av_data)
+       #t_av = pt.table(av_ms_name, readonly=True, ack=False)
+       #t_av_data = t_av.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
+       #print(t_av_data)
              
-          #new_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          ##export the ms as a uvfits
-          ##write out the uvfits file
-          #casa_cmd_filename = 'export_individual_uvfits.sh'
-          #cmd = "rm -rf %s %s" % (new_uvfits_name,casa_cmd_filename)
-          #print(cmd)
-          #os.system(cmd)
-          #      
-          #cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (ms_name,new_uvfits_name)
-          #print(cmd)
-          #os.system(cmd)
-        #
-          #with open(casa_cmd_filename,'w') as f:
-          #   f.write(cmd)
-          #     
-          #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-          #print(cmd)
-          #os.system(cmd)
-          #
-          #######
-          #
-          ##read the uvfits file and add the vis data to a tmp array (initialise the array if this is the first one)
-          #with fits.open(new_uvfits_name) as hdulist:
-          #   data = hdulist[0].data.data
-          #   print(data.shape)
-          #   #print(sum_array.shape)
-          #if EDA2_obs_time_index==0:
-          #   sum_array = np.zeros(data.shape)
-          #   first_uvfits_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.uvfits" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-          #sum_array += data
+       #we have a averaged ms
+
+       ##########################
+       ##########################
+       for fine_chan_index in range(0,32):
+          centre_freq = float(freq_MHz)
+          fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
           
-       #av_array = sum_array / float(len(obs_time_list))
-       #print("av_array.shape")
-       #print(av_array.shape)
-   #
-       ##replace data in av uvfits
-       #with fits.open(first_uvfits_name) as hdulist:
-       #   data = hdulist[0].data.data
-       #   data[:,:,:,:,:,:] = av_array
-       #   #now write out new uvfits file:
-       #   hdulist.writeto(av_uvfits_name,overwrite=True)
-       #   print("saved %s" % (av_uvfits_name))
-       #
-       ##check
-       ##with fits.open(av_uvfits_name) as hdulist:
-       ##      data = hdulist[0].data.data
-       ##      print(data)
-      # 
-       ##now import av uvfits back into casa
-       #casa_cmd_filename = 'import_av_uvfits.sh'
-       #cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
+          #dont reverse chan order
+          freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+          #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+          
+          wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
+          
+          gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+       
+          reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+          reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+          reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
+
+
+          hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
+          #print(hdu_gsm_fine_chan.header)
+          #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
+          
+          reprojected_gsm_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_gsm_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
+          
+          #write the reprojected gsm maps to fits
+          pyfits.writeto(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,clobber=True)
+          #print new_header
+          pyfits.update(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,header=new_header)
+          print("wrote image %s" %  reprojected_to_wsclean_gsm_fitsname_fine_chan)
+    
+          #model needs to be in Jy/pix
+          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
+       
+          scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)
+          print("scale map by %s to get to Jy/pix" % scale_fine_chan)
+          
+
+          #check the model image for non-finite values and scale to Jy per pix:
+          with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname_fine_chan)) as hdu_list_fine_chan:
+             data_fine_chan = hdu_list_fine_chan[0].data
+          #replace nans with zeros
+          data_new_fine_chan = np.nan_to_num(data_fine_chan)
+          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
+          
+          #write out a new fits file
+          fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
+          pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header)
+          print("saved %s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan))
+          
+          for pol in ['X','Y']:
+             if use_analytic_beam:
+                if pol=='X':
+                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'xx')
+                   #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'xx')
+                else:
+                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'yy')
+                   #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'yy')
+             else:
+                beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
+       
+             cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
+             print(cmd)
+             os.system(cmd)
+             
+             #Need to regrid the beam to the reproject gsm
+             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%0.3f_MHz.im' % (pol,freq_MHz)
+             beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%0.3f_MHz_puthd.fits' % (pol,freq_MHz)
+             beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.im' % (pol,freq_MHz)
+             beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.fits' % (pol,freq_MHz)
+             
+             cmd = "rm -rf %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
+             print(cmd)
+             os.system(cmd)
+             
+             
+             #put in the correct ra in the header (ra = lst for zenith) 
+             #puthd in="$beam/crval1" value=$lst_degs
+             cmd = 'puthd in="%s/crval1" value=%0.4f,"degrees"' % (beam_image_sin_projected_im_name,lst_deg)
+             print(cmd)
+             os.system(cmd) 
+             
+             #write out as a fits file to check header
+             cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "fits in=%s out=%s op=xyin" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+             print(cmd)
+             os.system(cmd)
+             
+             #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
+             cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+             print(cmd)
+             os.system(cmd)  
+             
+             
+             #Now have a gsm and a beam. multiply 'em'
+             apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
+             apparent_sky_im_name_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean-%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             apparent_sky_fits_name_fine_chan = "%s-%04d-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,fine_chan_index,pol,pol)
+             
+             cmd = "rm -rf %s %s" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+             print(cmd)
+             os.system(cmd)
+   
+             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan,apparent_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "fits in=%s out=%s op=xyout" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
+             print(cmd)
+             os.system(cmd) 
+       
+             print("wrote %s" % apparent_sky_fits_name_fine_chan)
+             
+             
+             #check the model image for non-finite values 
+             with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
+                data = hdu_list[0].data
+             #replace nans with zeros
+             data_new = np.nan_to_num(data)
+             
+             #write out a new fits file
+             fits.writeto("%s" % (apparent_sky_fits_name_fine_chan),data_new,clobber=True)
+             pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
+             print("saved %s" % (apparent_sky_fits_name_fine_chan))
+             
+             
+             
+       ###########################
+       ###########################
+       
+       # predict a multi-channel model
+       cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
+       print(cmd)
+       os.system(cmd)
+       
+       ##make  images to check 
+       #cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
        #print(cmd)
        #os.system(cmd)
-       #      
-       #cmd = "importuvfits(fitsfile='%s',vis='%s')" % (av_uvfits_name,av_ms_name)
+       
+       #crikey I think it actually works
+       
+       #hmmm seemed to actually work! We'll see ...
+       if uv_cutoff==0:
+          gain_solutions_name = 'cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+          calibrate_options = ''
+       else:
+          gain_solutions_name = 'cal_%s_%s_calibrate_sols_uvcutoff_%0.3f_m.bin' % (EDA2_chan,EDA2_obs_time,uv_cutoff_m)
+          calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
+       
+       cmd = "rm -rf %s" % (gain_solutions_name)
+       print(cmd)
+       os.system(cmd)
+       
+       #calibrate
+       
+       #replace this with cal using autos / coherence?
+       #########
+       #try without on av data set
+       ##calibrate on all 32 chans to increase SNR (poor results if you don't do this)
+       #cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
        #print(cmd)
        #os.system(cmd)
-       #
-       #with open(casa_cmd_filename,'w') as f:
-       #   f.write(cmd)
-       #     
-       #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+       
+
+       #plot the sols and 
+       #if (os.path.isfile(gain_solutions_name)):
+       #   if plot_cal:
+       #      #Plot the cal solutions
+       #      cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+       #      print(cmd)
+       #      os.system(cmd)
+             
+       #indent this if doing precal steps above   
+
+       #cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
        #print(cmd)
        #os.system(cmd)
+       
+       ###make an image to check (both pols) 32 chans, skip for now, takes ages
+       #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+       #print(cmd)
+       #os.system(cmd) 
+
+       #############
+
+       #calibrate per chan on concat ms
+       if per_chan_cal==True:
+          if uv_cutoff==0:
+             gain_solutions_name = 'cal_%s_%s_calibrate_sols_per_chan.bin' % (EDA2_chan,EDA2_obs_time)
+             calibrate_options = ''
+          else:
+             gain_solutions_name = 'cal_%s_%s_calibrate_sols_uvcutoff_%0.3f_m_per_chan.bin' % (EDA2_chan,EDA2_obs_time,uv_cutoff_m)
+             calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
+
+          #calibrate on each chan and use the corrected data
+          #cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,concat_ms_name_wsclean_cal,gain_solutions_name)
+          cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,av_ms_name_wsclean_cal,gain_solutions_name)
+          print(cmd)
+          os.system(cmd)
+          
+          #apply sols
+          cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name_wsclean_cal,gain_solutions_name)
+          print(cmd)
+          os.system(cmd)
+          
+                   
+       #write out the uvfits file
+       casa_cmd_filename = 'export_individual_uvfits.sh'
+       cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
+       print(cmd)
+       os.system(cmd)
+             
+       cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
+       print(cmd)
+       os.system(cmd)
+       
+       with open(casa_cmd_filename,'w') as f:
+          f.write(cmd)
+            
+       cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+       print(cmd)
+       os.system(cmd)
+       
+       #end indent
+       
+                    
+       #else:
+       #   print("no cal solutions for %s" % (ms_name))
+       #   continue
+   
+
        
        
        
