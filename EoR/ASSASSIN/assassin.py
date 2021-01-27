@@ -3589,7 +3589,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
       else:
          if wsclean==True:
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #use calibrated average data
+            uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
          else:
             #concat_chan_64_20191202T171525_n_obs_13.uvfits
             #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
@@ -3604,6 +3606,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          else:
             if wsclean==True:
                uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+               #use calibrated average data
+               uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
             else:
                uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
       else:
@@ -10177,7 +10181,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           t_autos = t.query('ANTENNA1 = ANTENNA2') #autos
           t_cross = t.query('ANTENNA1 != ANTENNA2')
           t_all = t.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
-          print(t_all)
+          #print(t_all)
 
           #if this is the first observation create a copy of the the ms to be the sum ms
           if(EDA2_obs_time_index==0):
@@ -10210,7 +10214,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #t_av_data = t_av.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
        #print(t_av_data)
              
-       #we have a averaged ms
+       #we have an averaged ms
 
        ##########################
        ##########################
@@ -10231,11 +10235,56 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
           reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
 
-
           hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
-          #print(hdu_gsm_fine_chan.header)
-          #see bottom for accessing table data https://python4astronomers.github.io/astropy/fits.html
+  
+          uncal_ms_image_prefix = "uncal_chan_%s_%s_ms" % (EDA2_chan,EDA2_obs_time)
+          uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
+          wsclean_imsize = '512'
+          wsclean_scale = '900asec'
           
+          print("cal using wsclean predict and calibrate / CASA bandpass")
+          
+          #Cant import the EDA sim uvfits file into ms - too many antennas - what if you make an mwa 32T simulated uvfits file instead!? then import to ms and image at low res (do this in simulate())
+          
+          #make a wsclean image of the uncalibrated ms just to get an image header to reproject to:
+          cmd = "wsclean -name %s -size %s %s -scale %s -pol xx -data-column DATA %s " % (uncal_ms_image_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+          print(cmd)
+          os.system(cmd)
+          
+          
+          
+          ###
+          if os.path.isfile(uncal_ms_image_name) and os.access(uncal_ms_image_name, os.R_OK):
+             hdulist = pyfits.open(uncal_ms_image_name)
+          else:
+             print("Either file %s is missing or is not readable" % uncal_ms_image_name)
+             #continue        
+          
+          data=hdulist[0].data[0,0,:,:]
+          new_header=hdulist[0].header
+          
+          pix_size_deg = float(new_header['CDELT1'])
+          pix_area_deg_sq = pix_size_deg*pix_size_deg
+          pix_area_sr = pix_area_deg_sq / sq_deg_in_1_sr
+          
+          #needs cooordsys keyword
+          #pt_source_header['COORDSYS'] = 'icrs'
+          
+          #print(pt_source_header)
+          
+          del new_header[8]
+          del new_header[8]
+          del new_header['history']
+          new_header['bunit'] ='Jy/Pixel'                                  
+          #print(pt_source_header)
+          
+          target_wcs = WCS(new_header)
+          
+          target_wcs=target_wcs.dropaxis(2)
+          target_wcs=target_wcs.dropaxis(2)
+                     
+
+
           reprojected_gsm_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_gsm_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
           
           #write the reprojected gsm maps to fits
@@ -10417,12 +10466,14 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
 
           #calibrate on each chan and use the corrected data
           #cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,concat_ms_name_wsclean_cal,gain_solutions_name)
-          cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,av_ms_name_wsclean_cal,gain_solutions_name)
+          #for av ms name use data column
+          cmd = "calibrate  -ch 1 -datacolumn DATA %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
           print(cmd)
           os.system(cmd)
           
           #apply sols
-          cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name_wsclean_cal,gain_solutions_name)
+          #cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
+          cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
           print(cmd)
           os.system(cmd)
           
@@ -13401,8 +13452,8 @@ concat=True
 per_chan_cal = True
 
 #New cal Jan 2021 - try to average data in time first before cal
-calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-sys.exit()
+#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
@@ -13474,7 +13525,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
