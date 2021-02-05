@@ -148,6 +148,12 @@ def regrid_optical(template_imagename,input_imagename,smooth=0):
 
       data_smooth = ndimage.gaussian_filter(image_data, sigma=(smooth, smooth), order=0)
    
+      #just for CFHT data or if regridding to itself (smooth only)
+      
+      hdulist = fits.open("%s" % (input_imagename))
+      image_header = hdulist[0].header
+      hdulist.close()
+      
       #write to fits:
       fits.writeto(regridded_fitsname_smooth,data_smooth,clobber=True)
       fits.update(regridded_fitsname_smooth,data_smooth,header=image_header)
@@ -896,7 +902,7 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    
    rescaled_image_1 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_1))
    rescaled_image_2 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_2))
-   rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(data_min,max_val_3))
+   rescaled_image_3 = exposure.rescale_intensity(image_data,in_range=(min_val_3,max_val_3))
 
    rescaled_image_1_inv = rescaled_image_1.max() - rescaled_image_1
    rescaled_image_2_inv = rescaled_image_2.max() - rescaled_image_2
@@ -945,8 +951,11 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    #print("saved %s" % fig_name)
 
    ### Combine the colorized frames by taking the mean of the R images, mean of G, and mean of B
-   image_RYB=np.nanmean([rescaled_image_1_inv_brick,rescaled_image_2_inv_dandelion,rescaled_image_3_inv_steel],axis=0)
+   #image_RYB=np.nanmean([rescaled_image_1_inv_brick,rescaled_image_2_inv_dandelion,rescaled_image_3_inv_steel],axis=0)
     
+   #try a weighted average
+   image_RYB = np.average([rescaled_image_1_inv_brick,rescaled_image_2_inv_dandelion,rescaled_image_3_inv_steel],axis=0, weights=[1,2,8])
+   
    ### Make a list of the maximum data values in each of the R,G,B frames
    RYB_maxints=tuple(np.nanmax(image_RYB[:,:,i]) for i in [0,1,2])
    
@@ -987,16 +996,25 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    figmap.savefig(fig_name,dpi=1000)
    print("saved %s" % fig_name)
 
-#image_name = "../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-#multicolor_dynamic_range_image(image_name,0,202,0,2,0.0,0.2)
-#sys.exit()
+   #convert back to grayscale!
+   back_to_gray = color.rgb2gray(image_RYB)
+   plt.clf()
+   plt.imshow(back_to_gray,origin='lower',interpolation='nearest',cmap='Greys_r')
+   fig_name="rescaled_RYB_inv_gray.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name,dpi=1000)
+   print("saved %s" % fig_name)
+
+image_name = "../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+multicolor_dynamic_range_image(image_name,0,202,0,2.2,-.1,0.4)
+sys.exit()
 
    
 #image_comparison_feain()
 #sys.exit()
 
-calculate_outflow_properties()
-sys.exit()
+#calculate_outflow_properties()
+#sys.exit()
 
 
 #mask_level=0.1
@@ -1056,7 +1074,9 @@ template_imagename = 'CenA_optical_template_3deg-image.fits'
 #input_name_list = ['final_optical_1_Ben_header_update.fits']
 #input_name_list = ['mos12.0.5-1.0.img.sps.648.imsmo.5.ecorr.nml.fits']
 #input_name_list = ['HIemission_mom0.fits']
-input_name_list = ['CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits']
+#input_name_list = ['CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits']
+#input_name_list = ['Ha_cont_subtracted_via_rband_scaling.fits']
+input_name_list = ['CENA_HA.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
 #input_name_list = ['CenA_WCS_Ha.fits']
@@ -1065,9 +1085,12 @@ input_name_list = ['CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.
 for input_name in input_name_list:
    #edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
    #edit_optical_header(input_name,edhead_name) 
-   regrid_optical(template_imagename,input_name)    #edhead_name,smooth=2)
+   #regrid_optical(template_imagename,input_name)    #edhead_name,smooth=2)
    #try no edhead for mikes:
    #regrid_optical(template_imagename,input_name)
+   #CFHT ha subtr smooth
+   regrid_optical(input_name,input_name,smooth=4)  
+   
    
 #benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor
 #kvis ../../../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08.fits *_edhead_regridded.fits ../../x_ray/XMM_2001.fits 
