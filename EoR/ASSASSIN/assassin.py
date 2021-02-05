@@ -2169,11 +2169,11 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #in here put bit to read X from miriad_sim_uvfits
    if not fast:
       if EDA2_data:
-         X_short_parallel_array_filename = "X_short_parallel_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
-         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+         X_short_parallel_array_filename = "X_short_parallel_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
+         X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
          if include_angular_info:
-            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
+            Y_short_parallel_angular_array_filename = "Y_short_parallel_angular_array_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
          real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
          baseline_length_array_lambda_sorted_cut_filename = "baseline_length_array_lambda_sorted_cut_chan_%s_%0.3f_MHz_%s_pol%s.npy" % (EDA2_chan,freq_MHz_fine_chan,pol,signal_type_postfix)
       else:
@@ -2282,8 +2282,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          #thresh 2.0 lambda
          #make sure using new numbering sys for freq e.g. 70.000_MHz not 70_MHz
          ## plot X and real vis vs baseline length
-         #print(baseline_length_array_lambda_sorted_cut.shape)
-         #print(X_short_parallel_array_norm.shape)
+         print(baseline_length_array_lambda_sorted_cut.shape)
+         print(X_short_parallel_array_norm.shape)
          plt.clf()
          plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='EDA-2',color=color_light_blue,marker='.')
          plt.plot(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm_pure_parallel,label='parallel',color=color_orange,linestyle='--')
@@ -3223,7 +3223,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          obs_time_list = EDA2_obs_time_list_each_chan[freq_MHz_index]
          #print(obs_time_list)
          #open one to get the number of fine chans
-         uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
+         #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
+         uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
       elif woden:
          if noise_coupling:
             uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
@@ -3295,8 +3296,12 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          real_vis_data_sorted_list = []
          for obs_time_fast in obs_time_list:
             if EDA2_data:
-               uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
-               unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+               #this is old pre woden miriad stuff - discard
+               #unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               unity_uvfits_filename = "%s/woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,freq_MHz_index) 
+               angular_uvfits_filename = "%s/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,pol,freq_MHz_index) 
             elif woden:
                if noise_coupling:
                   uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
@@ -4903,7 +4908,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          EDA2_chan_list_input = EDA2_chan_list[0:len(freq_MHz_list)]
          for EDA2_chan in EDA2_chan_list_input:
                EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
-               sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)      
+               #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)      
+               sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
                diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
                diffuse_global_value = diffuse_global_value_array[0]   
                t_sky_theoretical_list.append(diffuse_global_value)
@@ -10187,6 +10193,15 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           t_all = t.query('ANTENNA1 != ANTENNA2 OR ANTENNA1 = ANTENNA2').DATA[0]
           #print(t_all)
 
+          #This bit is just to learn about antenna tables so I can do the WODEN sims right on pawsey
+          #ant_table = pt.table(ms_name+"::ANTENNA", readonly=True)
+          #pos = ant_table.getcol("POSITION")
+          #print(pos)
+          #flag_row = ant_table.getcol("FLAG_ROW") 
+          #print(flag_row)
+          #sys.exit()
+          
+
           #if this is the first observation create a copy of the the ms to be the sum ms
           if(EDA2_obs_time_index==0):
              cmd = 'rm -rf %s %s' % (av_ms_name,sum_ms_name)
@@ -10199,8 +10214,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           #update the sum ms by adding the current ms data
           if(EDA2_obs_time_index!=0):
              pt.taql('update %s t1, %s t2 set DATA = t2.DATA+t1.DATA ' % (sum_ms_name,ms_name))
-    
           
+          #otherwise gets stuck?
+          t.unlock()
        #e.g Put CORRECTED_DATA from that MS into DATA column of this MS
        #It requires that both tables have the same number of rows
        #update this.ms, that.ms t2 set DATA = t2.CORRECTED_DATA!
@@ -10287,8 +10303,6 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           target_wcs=target_wcs.dropaxis(2)
           target_wcs=target_wcs.dropaxis(2)
                      
-
-
           reprojected_gsm_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_gsm_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
           
           #write the reprojected gsm maps to fits
@@ -10431,80 +10445,80 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
        #replace this with cal using autos / coherence?
        #########
-       #try without on av data set
-       ##calibrate on all 32 chans to increase SNR (poor results if you don't do this)
-       #cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,ms_name,gain_solutions_name)
-       #print(cmd)
-       #os.system(cmd)
+       #try without on av data set - didn't seem to work
+       #calibrate on all 32 chans to increase SNR (poor results if you don't do this)
+       cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+       print(cmd)
+       os.system(cmd)
        
 
        #plot the sols and 
-       #if (os.path.isfile(gain_solutions_name)):
-       #   if plot_cal:
-       #      #Plot the cal solutions
-       #      cmd = "aocal_plot.py  %s " % (gain_solutions_name)
-       #      print(cmd)
-       #      os.system(cmd)
+       if (os.path.isfile(gain_solutions_name)):
+          if plot_cal:
+             #Plot the cal solutions
+             cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+             print(cmd)
+             os.system(cmd)
              
-       #indent this if doing precal steps above   
+          #indent this if doing precal steps above   
 
-       #cmd = "applysolutions %s %s " % (ms_name,gain_solutions_name)
-       #print(cmd)
-       #os.system(cmd)
+          cmd = "applysolutions %s %s " % (av_ms_name,gain_solutions_name)
+          print(cmd)
+          os.system(cmd)
        
-       ###make an image to check (both pols) 32 chans, skip for now, takes ages
-       #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-       #print(cmd)
-       #os.system(cmd) 
-
-       #############
-
-       #calibrate per chan on concat ms
-       if per_chan_cal==True:
-          if uv_cutoff==0:
-             gain_solutions_name = 'cal_%s_%s_calibrate_sols_per_chan.bin' % (EDA2_chan,EDA2_obs_time)
-             calibrate_options = ''
-          else:
-             gain_solutions_name = 'cal_%s_%s_calibrate_sols_uvcutoff_%0.3f_m_per_chan.bin' % (EDA2_chan,EDA2_obs_time,uv_cutoff_m)
-             calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
-
-          #calibrate on each chan and use the corrected data
-          #cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,concat_ms_name_wsclean_cal,gain_solutions_name)
-          #for av ms name use data column
-          cmd = "calibrate  -ch 1 -datacolumn DATA %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+          ###make an image to check (both pols) 32 chans, skip for now, takes ages
+          #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+          #print(cmd)
+          #os.system(cmd) 
+   
+          #############
+   
+          #calibrate per chan on time av ms
+          if per_chan_cal==True:
+             if uv_cutoff==0:
+                gain_solutions_name = 'cal_%s_%s_calibrate_sols_per_chan.bin' % (EDA2_chan,EDA2_obs_time)
+                calibrate_options = ''
+             else:
+                gain_solutions_name = 'cal_%s_%s_calibrate_sols_uvcutoff_%0.3f_m_per_chan.bin' % (EDA2_chan,EDA2_obs_time,uv_cutoff_m)
+                calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
+   
+             #calibrate on each chan and use the corrected data
+             cmd = "calibrate  -ch 1 -datacolumn CORRECTED_DATA %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+             #for av ms name use data column
+             #cmd = "calibrate  -ch 1 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+             print(cmd)
+             os.system(cmd)
+             
+             #apply sols
+             cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
+             #cmd = "applysolutions  %s %s " % (av_ms_name,gain_solutions_name)
+             print(cmd)
+             os.system(cmd)
+             
+                      
+          #write out the uvfits file
+          casa_cmd_filename = 'export_individual_uvfits.sh'
+          cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
+          print(cmd)
+          os.system(cmd)
+                
+          cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
           print(cmd)
           os.system(cmd)
           
-          #apply sols
-          #cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
-          cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
+          with open(casa_cmd_filename,'w') as f:
+             f.write(cmd)
+               
+          cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
           print(cmd)
           os.system(cmd)
           
-                   
-       #write out the uvfits file
-       casa_cmd_filename = 'export_individual_uvfits.sh'
-       cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
-       print(cmd)
-       os.system(cmd)
-             
-       cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
-       print(cmd)
-       os.system(cmd)
-       
-       with open(casa_cmd_filename,'w') as f:
-          f.write(cmd)
-            
-       cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-       print(cmd)
-       os.system(cmd)
-       
-       #end indent
+          #end indent
        
                     
-       #else:
-       #   print("no cal solutions for %s" % (ms_name))
-       #   continue
+       else:
+          print("no cal solutions for %s" % (ms_name))
+          continue
    
 
        
@@ -13446,9 +13460,9 @@ pol_list = ['X']
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -13456,8 +13470,9 @@ concat=True
 per_chan_cal = True
 
 #New cal Jan 2021 - try to average data in time first before cal
-#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-#sys.exit()
+#2 Feb try withinitial full BW cal
+calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
@@ -13529,14 +13544,14 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
 ##WODEN sims signal extraction
 woden=False
 wsclean=True
-fast=False
+fast=True
 no_modelling=False
 calculate_uniform_response=False
 noise_coupling=False
