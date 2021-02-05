@@ -3452,9 +3452,6 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
             real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
-            
-            print(real_vis_data)
-            sys.exit()  
                          
             #Need to sort by baseline length (then only use short baselines)
             baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
@@ -3499,6 +3496,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
             unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included_data])
   
+            #sys.exit()
   
             #######
             #######################################################################################################
@@ -8815,7 +8813,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
          
-         unity_sky_value = 1. * jy_to_K
+         unity_sky_value = 1. # * jy_to_K
          #What value do you actually need to put in here to get the desired result .... I think it is 1 / Jy_to_k?
          #play until you get a gradient of one in x_y_plot!
          
@@ -8853,7 +8851,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          pyfits.writeto(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,clobber=True)
          pyfits.update(reprojected_unity_sky_fitsname,reprojected_unity_sky_map,header=no_source_header)
          print("wrote image %s" %  reprojected_unity_sky_fitsname)
-                  
+        
+               
          cmd = "rm -rf %s %s" % (reprojected_global_signal_im_name,reprojected_unity_sky_im_name)
          print(cmd)
          os.system(cmd)     
@@ -8865,6 +8864,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          cmd = "fits in=%s out=%s op=xyin" % (reprojected_unity_sky_fitsname,reprojected_unity_sky_im_name)
          print(cmd)
          os.system(cmd)
+         
          
          #uvmodel requires the model to be in Jy/pix
          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
@@ -8884,6 +8884,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          cmd = "maths exp=%s*%s out=%s " % (scale,reprojected_unity_sky_im_name,reprojected_unity_sky_im_Jy_per_pix_name)
          print(cmd)
          os.system(cmd)
+
                    
          #do for all pols:
          for pol in pol_list:
@@ -10453,47 +10454,49 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
              print("saved %s" % (apparent_sky_fits_name_fine_chan))
              
+       for pol in ['X','Y']:      
+             #stuff for FAST 
+             EDA2_obs_time = obs_time_list[0]
+             uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+             uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+             unity_sky_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+             unity_sky_vis_filename = "%s/unity_chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time) 
+                  
+             apparent_unity_sky_im_name = "%s/apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (EDA2_chan,lst_deg,pol,freq_MHz)
+             apparent_unity_sky_im_name_copy = "apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
+             #uv_dist_plot_name = "test_uvdist.png"
              
-       #stuff for FAST 
-       EDA2_obs_time = obs_time_list[0]
-       uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-       uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-       unity_sky_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-       unity_sky_vis_filename = "%s/unity_chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time) 
-            
-       apparent_unity_sky_im_name = "%s/apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (EDA2_chan,lst_deg,pol,freq_MHz)
-       apparent_unity_sky_im_name_copy = "apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
-       #uv_dist_plot_name = "test_uvdist.png"
-       
-       cmd = "cp -r %s %s" % (apparent_unity_sky_im_name,apparent_unity_sky_im_name_copy)
-       print(cmd)
-       os.system(cmd)
-       
-       
-       
-       cmd = "rm -rf %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename)
-       print(cmd)
-       os.system(cmd)
-       
-       
-       cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
-       print(cmd)
-       os.system(cmd)
-
-       
-       cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
-       print(cmd)
-       os.system(cmd)
-       
-
-       
-       #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
-       #print(cmd)
-       #os.system(cmd)  
-       
-       cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
-       print(cmd)
-       os.system(cmd)
+             cmd = "rm -rf %s" % (apparent_unity_sky_im_name_copy)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "cp -r %s %s" % (apparent_unity_sky_im_name,apparent_unity_sky_im_name_copy)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "rm -rf %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename)
+             print(cmd)
+             os.system(cmd)
+             
+             
+             cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
+             print(cmd)
+             os.system(cmd)
+      
+             
+             cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
+             print(cmd)
+             os.system(cmd)
+             
+      
+             
+             #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
+             #print(cmd)
+             #os.system(cmd)  
+             
+             cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
+             print(cmd)
+             os.system(cmd)
        
        
              
