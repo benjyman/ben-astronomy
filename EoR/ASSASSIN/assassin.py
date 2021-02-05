@@ -2202,6 +2202,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    X_short_parallel_array = np.load(X_short_parallel_array_filename)
    print("loaded %s" % X_short_parallel_array_filename)
    
+   
    real_vis_data_sorted_array = np.load(real_vis_data_sorted_array_filename).real
    print("loaded %s" % real_vis_data_sorted_array_filename)
 
@@ -2442,8 +2443,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    #data = {'X_global':X_short_parallel_array,'Y_angular':Y_short_parallel_angular_array,'real_vis':real_vis_data_sorted_array, 'Y_angular_group':Y_angular_group_array,'X_group':X_group_array}
    data = {'X_global':X_short_parallel_array,'real_vis':real_vis_data_sorted_array}
    
- 
-   
+   print(X_short_parallel_array.shape)
+   print(real_vis_data_sorted_array.shape)
+    
    df = pd.DataFrame(data) 
    
    X_short_parallel_array = np.asarray(df['X_global']).real
@@ -3294,14 +3296,16 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          angular_vis_data_sorted_list = []
          baseline_length_array_lambda_sorted_cut_list = []
          real_vis_data_sorted_list = []
-         for obs_time_fast in obs_time_list:
+         for obs_time_fast in [obs_time_list[0]]:
             if EDA2_data:
                #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
                uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-               #this is old pre woden miriad stuff - discard
-               #unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
-               unity_uvfits_filename = "%s/woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,freq_MHz_index) 
-               angular_uvfits_filename = "%s/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,pol,freq_MHz_index) 
+               #this is old pre woden miriad stuff
+               unity_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               angular_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               #this is woden - havent run these yet
+               #unity_uvfits_filename = "%s/woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,freq_MHz_index) 
+               #angular_uvfits_filename = "%s/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,pol,freq_MHz_index) 
             elif woden:
                if noise_coupling:
                   uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
@@ -3309,39 +3313,64 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                   uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
                unity_uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
                angular_uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (lst_deg,start_freq,pol,freq_MHz_index) 
+            
+            #open the unity fits file to get the matching baselines
+            with fits.open(unity_uvfits_filename) as hdulist:
+               uvtable = hdulist[0].data
+               untiy_baseline_array = uvtable['BASELINE']
+               #print(untiy_baseline_array)
+               
+               
             #read the cal uvfits, extract real vis uu and vv
             print("%s" % uvfits_filename)
-            hdulist = fits.open(uvfits_filename)
-            hdulist.info()
-            info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-            #print info_string
-            uvtable = hdulist[0].data
-            uvtable_header = hdulist[0].header
-            #print(uvtable_header)
-            hdulist.close()
-     
-            visibilities_single = uvtable['DATA']
-            visibilities_shape = visibilities_single.shape
-            print("visibilities_shape")
-            print(visibilities_shape)
+            with fits.open(uvfits_filename) as hdulist:
+               #hdulist.info()
+               #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+               #print info_string
+               uvtable = hdulist[0].data
+               uvtable_header = hdulist[0].header
+               #print(uvtable_header)
+               #hdulist.close()
+
+               data_baseline_array = uvtable['BASELINE']
+               #print(data_baseline_array)
+               
+               #find indices of unity file where the baseline value is the same as the data baseline value
+               #To find the indices of the elements in A that are present in B, I can do
+               unity_common_inds = np.in1d(untiy_baseline_array,data_baseline_array)
+               count = np.count_nonzero(unity_common_inds)
+               print('count of unity_common_inds')
+               print(count)
+               
+               #also get the indices of the data file that are common with the unity file (cause data file has autos and sims dont)
+               data_common_inds = np.in1d(data_baseline_array,untiy_baseline_array)
+               count2 = np.count_nonzero(data_common_inds)
+               print('count of unity_common_inds')
+               print(count2)
+
+
+               #only use dat where there is a common index with unity file
+               visibilities_single = uvtable['DATA'][data_common_inds]
+               visibilities_shape = visibilities_single.shape
+               print("visibilities_shape")
+               print(visibilities_shape)
+               
+               if wsclean:
+                  real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,0]
+                  imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,1]
+                  weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,2]
+               else:
+                  real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
+                  imag_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,1]
+                  weights_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,2]
+         
+               UU_s_array = uvtable['UU'][data_common_inds]
+               UU_m_array = UU_s_array * c   
+               VV_s_array = uvtable['VV'][data_common_inds]
+               VV_m_array = VV_s_array * c
       
-            
-            if wsclean:
-               real_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,0]
-               imag_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,1]
-               weights_vis_data = visibilities_single[:,0,0,0,fine_chan_index,pol_index,2]
-            else:
-               real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
-               imag_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,1]
-               weights_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,2]
-      
-            UU_s_array = uvtable['UU']
-            UU_m_array = UU_s_array * c   
-            VV_s_array = uvtable['VV']
-            VV_m_array = VV_s_array * c
-      
-            #print(VV_s_array[0:100])
-            #print(UU_s_array[0:100])
+               #print(VV_s_array[0:100])
+               #print(UU_s_array[0:100])
 
             #Need to sort by baseline length (then only use short baselines)
             baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
@@ -3378,11 +3407,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             baseline_length_array_lambda_sorted_cut = baseline_length_array_lambda_sorted[baseline_length_array_lambda_sorted < baseline_length_thresh_lambda]
             
 
-            n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            n_baselines_included_data = len(baseline_length_array_lambda_sorted_cut)
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included_data,obs_time_fast,fine_chan_index))
             
             baseline_length_array_lambda_sorted_cut_list.append(baseline_length_array_lambda_sorted_cut)
-            real_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+            real_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included_data])
 
                
             #######################################################################################################
@@ -3398,29 +3427,34 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             uvtable_header = hdulist[0].header
             #print(uvtable_header)
             hdulist.close()
-      
-            visibilities_single = uvtable['DATA']
+            
+            #only use the values where the baselines are common
+            
+            
+            visibilities_single = uvtable['DATA'][unity_common_inds]
             visibilities_shape = visibilities_single.shape
             print("visibilities_shape")
             print(visibilities_shape)
             
-            UU_s_array = uvtable['UU']
+            
+            
+            UU_s_array = uvtable['UU'][unity_common_inds]
             UU_m_array = UU_s_array * c   
-            VV_s_array = uvtable['VV']
+            VV_s_array = uvtable['VV'][unity_common_inds]
             VV_m_array = VV_s_array * c
-      
-
+       
+            
             #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
             #yes but this should not affect the unity uvfits
             ####fine_chan_index_array = fine_chan_index_array[::-1]
          
-
+            print(visibilities_single.shape)
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
             real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
             
-            #print(real_vis_data)
-            #sys.exit()  
+            print(real_vis_data)
+            sys.exit()  
                          
             #Need to sort by baseline length (then only use short baselines)
             baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
@@ -3458,13 +3492,14 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
             print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
             
-      
 
             real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
  
-
-            unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
-
+            #hack just to get it working for a check Feb 5 2021
+            #unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included])
+            unity_vis_data_sorted_list.append(real_vis_data_sorted[0:n_baselines_included_data])
+  
+  
             #######
             #######################################################################################################
             #now repeat for angular sky to get Y_short_parallel!
@@ -3566,7 +3601,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          unity_vis_data_sorted_array_filename = "unity_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
          np.save(unity_vis_data_sorted_array_filename,unity_vis_data_sorted_array)
+         print(unity_vis_data_sorted_array.shape)
          print("saved %s" % unity_vis_data_sorted_array_filename)         
+
+         
 
          angular_vis_data_sorted_array_filename = "angular_vis_data_sorted_array_%0.3f_MHz_%s_pol_fast.npy" % (freq_MHz_fine_chan,pol)
          np.save(angular_vis_data_sorted_array_filename,angular_vis_data_sorted_array)
@@ -3578,8 +3616,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    
          real_vis_data_sorted_array_filename = "real_vis_data_sorted_array_%0.3f_MHz_%s_pol%s_fast.npy" % (freq_MHz_fine_chan,pol,signal_type_postfix)
          np.save(real_vis_data_sorted_array_filename,real_vis_data_sorted_array)
+         print(real_vis_data_sorted_array.shape)
          print("saved %s" % real_vis_data_sorted_array_filename)
-        
+
+         
+         
       else:
          pass
       if n_obs_concat==1:
@@ -10413,6 +10454,49 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print("saved %s" % (apparent_sky_fits_name_fine_chan))
              
              
+       #stuff for FAST 
+       EDA2_obs_time = obs_time_list[0]
+       uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+       uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+       unity_sky_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+       unity_sky_vis_filename = "%s/unity_chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time) 
+            
+       apparent_unity_sky_im_name = "%s/apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (EDA2_chan,lst_deg,pol,freq_MHz)
+       apparent_unity_sky_im_name_copy = "apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
+       #uv_dist_plot_name = "test_uvdist.png"
+       
+       cmd = "cp -r %s %s" % (apparent_unity_sky_im_name,apparent_unity_sky_im_name_copy)
+       print(cmd)
+       os.system(cmd)
+       
+       
+       apparent_zero_sky_im_name = "apparent_zero_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
+       
+       cmd = "rm -rf %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename,apparent_zero_sky_im_name)
+       print(cmd)
+       os.system(cmd)
+       
+       
+       cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
+       print(cmd)
+       os.system(cmd)
+
+       
+       cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
+       print(cmd)
+       os.system(cmd)
+       
+
+       
+       #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
+       #print(cmd)
+       #os.system(cmd)  
+       
+       cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
+       print(cmd)
+       os.system(cmd)
+       
+       
              
        ###########################
        ###########################
@@ -10722,7 +10806,7 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   print(cmd)
                   os.system(cmd)
                   
-                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_zero_sky_im_name,unity_sky_vis_filename)
+                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
                   print(cmd)
                   os.system(cmd)
                   
