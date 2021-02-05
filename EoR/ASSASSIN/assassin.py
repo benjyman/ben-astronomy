@@ -10470,9 +10470,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        os.system(cmd)
        
        
-       apparent_zero_sky_im_name = "apparent_zero_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
        
-       cmd = "rm -rf %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename,apparent_zero_sky_im_name)
+       cmd = "rm -rf %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename)
        print(cmd)
        os.system(cmd)
        
@@ -10482,7 +10481,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        os.system(cmd)
 
        
-       cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
+       cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
        print(cmd)
        os.system(cmd)
        
