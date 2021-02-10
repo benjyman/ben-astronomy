@@ -3201,6 +3201,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    
    n_lsts = len(lst_hrs_list)
    
+
+   lst_hrs = lst_hrs_list[0]
+   lst_deg = (float(lst_hrs)/24.)*360.
+   
    #for EDA2
    n_ants = 256
 
@@ -3215,13 +3219,15 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    #eda2 data includes autos?
    if EDA2_data:
       n_baselines = n_ants*(n_ants-1) / 2. + 256
+      #take the centre chan av temp as input
+      sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
+      sky_averaged_temp_cal_input_array = np.load(sky_averaged_temp_cal_input_filename)
+      print("loaded %s " % sky_averaged_temp_cal_input_filename)
+      beam_weighted_av_sky = sky_averaged_temp_cal_input_array
+      print("beam_weighted_av_sky is %E" % beam_weighted_av_sky)
    else:
       n_baselines = n_ants*(n_ants-1) / 2.
    
-   
-   #open one uvfits file to get n_timesteps
-   lst_hrs = lst_hrs_list[0]
-   lst_deg = (float(lst_hrs)/24.)*360.
    if fast:
       print('doing fast')  
       if EDA2_data:
@@ -3230,6 +3236,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          #open one to get the number of fine chans
          #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_list[0])
          uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         
       elif woden:
          if noise_coupling:
             uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
@@ -4193,8 +4200,9 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          
          sum_of_beam_weights = np.nansum(short_dipole_parallel_beam_map)
          #print(sum_of_beam_weights)
-         beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
-         print("beam_weighted_av_sky at %0.3f MHz is %0.4E for %s pol" % (freq_MHz,beam_weighted_av_sky,pol))
+         if not EDA2_data:
+            beam_weighted_av_sky = np.nansum(sky_with_beam) /  sum_of_beam_weights  #(2.*np.pi/float(n_pix)) #
+            print("beam_weighted_av_sky at %0.3f MHz is %0.4E for %s pol" % (freq_MHz,beam_weighted_av_sky,pol))
          
          
          ##########
@@ -4951,7 +4959,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          for EDA2_chan in EDA2_chan_list_input:
                EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
                #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)      
-               sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
+               #sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
+               sky_averaged_diffuse_array_beam_lsts_filename = "t_sky_theoretical_array_lst_%s_pol_%s%s.npy" % (lst_string,pol,signal_type_postfix)
                diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
                diffuse_global_value = diffuse_global_value_array[0]   
                t_sky_theoretical_list.append(diffuse_global_value)
@@ -13629,9 +13638,9 @@ pol_list = ['X']
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-chan_num = 0
-freq_MHz_list = [freq_MHz_array[chan_num]]
-EDA2_chan_list = [EDA2_chan_list[chan_num]]
+#chan_num = 0
+#freq_MHz_list = [freq_MHz_array[chan_num]]
+#EDA2_chan_list = [EDA2_chan_list[chan_num]]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -13640,7 +13649,7 @@ per_chan_cal = True
 
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -13699,8 +13708,8 @@ model_type_list = ['OLS_fixed_intercept']
 #also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
 #if doing individual chans:
 #EDA2 data:
-freq_MHz_list = [freq_MHz_array[0]]
-EDA2_chan_list = [EDA2_chan_list[0]]
+#freq_MHz_list = [freq_MHz_array[0]]
+#EDA2_chan_list = [EDA2_chan_list[0]]
 
 #for sims:
 #freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
@@ -13713,7 +13722,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
