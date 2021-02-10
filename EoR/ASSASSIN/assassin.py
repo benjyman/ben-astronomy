@@ -10428,10 +10428,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           for pol in ['X','Y']:
              if use_analytic_beam:
                 if pol=='X':
-                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'xx')
+                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz_fine_chan,'xx')
                    #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'xx')
                 else:
-                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'yy')
+                   beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz_fine_chan,'yy')
                    #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'yy')
              else:
                 beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
@@ -10441,12 +10441,12 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              os.system(cmd)
              
              #Need to regrid the beam to the reproject gsm
-             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%0.3f_MHz.im' % (pol,freq_MHz)
-             beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%0.3f_MHz_puthd.fits' % (pol,freq_MHz)
-             beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.im' % (pol,freq_MHz)
-             beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.fits' % (pol,freq_MHz)
+             beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%0.3f_MHz.im' % (pol,freq_MHz_fine_chan)
+             beam_image_sin_projected_puthd_fits_name = 'beam_image_sin_projected_%s_%0.3f_MHz_puthd.fits' % (pol,freq_MHz_fine_chan)
+             beam_image_sin_projected_regrid_gsm_im_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.im' % (pol,freq_MHz_fine_chan)
+             beam_image_sin_projected_regrid_gsm_fits_name =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_wsclean_regrid.fits' % (pol,freq_MHz_fine_chan)
              
-             cmd = "rm -rf %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
+             cmd = "rm -rf %s %s %s %s %s %s" % (beam_image_sin_projected_im_name,beam_image_sin_projected_puthd_fits_name,beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan,reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan)
              print(cmd)
              os.system(cmd)
              
@@ -10480,13 +10480,17 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)  
              
-             
+             #write out as a fits file for av sky temp calc
+             cmd = "fits in=%s out=%s op=xyout" % (beam_image_sin_projected_regrid_gsm_im_name,beam_image_sin_projected_regrid_gsm_fits_name)
+             print(cmd)
+             os.system(cmd)
              
              
              #Now have a gsm and a beam. multiply 'em'
              apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
              apparent_sky_im_name_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean-%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
              apparent_sky_fits_name_fine_chan = "%s-%04d-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,fine_chan_index,pol,pol)
+             
              
              cmd = "rm -rf %s %s" % (apparent_sky_im_name_fine_chan,apparent_sky_fits_name_fine_chan)
              print(cmd)
@@ -10502,6 +10506,15 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
              print("wrote %s" % apparent_sky_fits_name_fine_chan)
                 
+             #get the correct input average sky temp value (before removing nans)
+             sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan,pol)
+             with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
+                sky_with_beam = hdu_list[0].data
+                sky_with_beam_K = sky_with_beam / scale_fine_chan
+             with fits.open("%s" % (beam_image_sin_projected_regrid_gsm_fits_name)) as hdu_list:
+                beam_data = hdu_list[0].data
+             beam_weighted_av_sky = np.nansum(sky_with_beam_K) / np.nansum(beam_data)
+                
              #check the model image for non-finite values 
              with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
                 data = hdu_list[0].data
@@ -10513,22 +10526,14 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
              print("saved %s" % (apparent_sky_fits_name_fine_chan))
              
-             #get the correct input average sky temp value
-             sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan,pol)
+
              
-             with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
-                sky_with_beam = hdu_list[0].data
-                
-             with fits.open("%s" % (beam_image_sin_projected_puthd_fits_name)) as hdu_list:
-                beam_data = hdu_list[0].data
-             
-             beam_weighted_av_sky = np.nansum(sky_with_beam) / np.nansum(beam_data)
+             print("beam_weighted_av_sky is %E from %s and %s" % (beam_weighted_av_sky,apparent_sky_fits_name_fine_chan,beam_image_sin_projected_regrid_gsm_fits_name))
              
              beam_weighted_av_sky_array = np.asarray([beam_weighted_av_sky])
 
              np.save(sky_averaged_temp_cal_input_filename,beam_weighted_av_sky_array)
              print("saved %s" % (sky_averaged_temp_cal_input_filename))
-             
              
              ####unity miriad
              #Now have a gsm and a beam. multiply 'em'
