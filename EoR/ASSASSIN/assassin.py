@@ -2068,6 +2068,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
 
          
 def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_type_list,sky_model,array_label,model_type,EDA2_data=False,EDA2_chan='None',n_obs_concat=1,fine_chan_index=0,edge_chan=False,wsclean=False,fast=False):
+   lst_deg = (float(lst_hrs)/24.)*360.
    #print(freq_MHz_list)
    print(freq_MHz_index)
    start_freq = freq_MHz_list[0]
@@ -2149,7 +2150,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    #get the diffuse global diffuse value used in the simulation (from gsm)
    if EDA2_data==True:
-      sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)
+      sky_averaged_diffuse_array_beam_lsts_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan,pol)
+      #sky_averaged_diffuse_array_beam_lsts_filename = "%s%s_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,concat_output_name_base)
       #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)
    else:
       #sky_averaged_diffuse_array_beam_lsts_filename = "%s_sky_averaged_diffuse_beam.npy" % (concat_output_name_base)
@@ -10527,7 +10529,6 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              np.save(sky_averaged_temp_cal_input_filename,beam_weighted_av_sky_array)
              print("saved %s" % (sky_averaged_temp_cal_input_filename))
              
-             sys.exit()
              
              ####unity miriad
              #Now have a gsm and a beam. multiply 'em'
@@ -13634,8 +13635,8 @@ per_chan_cal = True
 
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-sys.exit()
+#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
