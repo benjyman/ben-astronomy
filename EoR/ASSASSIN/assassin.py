@@ -25,6 +25,7 @@ from pygsm import GSMObserver
 from pygsm import GlobalSkyModel
 from pygsm import GlobalSkyModel2016
 from datetime import datetime, date
+import time
 
 from reproject import reproject_from_healpix
 import pyfits
@@ -2211,7 +2212,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    if fast:
       X_short_parallel_array = np.concatenate(X_short_parallel_array)
-      X_short_parallel_array = X_short_parallel_array * jy_to_K
+      #X_short_parallel_array = X_short_parallel_array * jy_to_K
       real_vis_data_sorted_array = np.concatenate(real_vis_data_sorted_array)
 
    if EDA2_data==True:
@@ -8763,14 +8764,11 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          
          
          
-         
-         
          #write the reprojected gsm maps to fits
          pyfits.writeto(reprojected_gsm_fitsname,reprojected_gsm_map,clobber=True)
          pyfits.update(reprojected_gsm_fitsname,reprojected_gsm_map,header=no_source_header)
          print("wrote image %s" %  reprojected_gsm_fitsname)
 
-         
                   
          #Do this GSM map stuff here as it doesn't depend on pol
          cmd = "rm -rf %s" % (reprojected_gsm_im_name)
@@ -8781,8 +8779,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          print(cmd)
          os.system(cmd)
 
-
-                 
+           
          #uvmodel requires the model to be in Jy/pix
          #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
          
@@ -8813,7 +8810,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          
          jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
          
-         unity_sky_value = 1. # * jy_to_K
+         unity_sky_value = 1. * jy_to_K
          #What value do you actually need to put in here to get the desired result .... I think it is 1 / Jy_to_k?
          #play until you get a gradient of one in x_y_plot!
          
@@ -9050,10 +9047,10 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                      
                   if use_analytic_beam:
                      if pol=='X':
-                        beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'xx')
+                        beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz_fine_chan,'xx')
                         #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'xx')
                      else:
-                        beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'yy')
+                        beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz_fine_chan,'yy')
                         #beam_image_sin_projected_fitsname_no_cos_za = "model_%0.3f_MHz_%s_no_cos_za.fits" % (freq_MHz,'yy')
                   else:
                         beam_image_sin_projected_fitsname = "power_pattern_average_%s_%s_MHz_sin_regrid.fits" % (pol,int(freq_MHz))
@@ -9061,6 +9058,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   cmd = "cp %s%s . " % (beam_image_dir,beam_image_sin_projected_fitsname)
                   print(cmd)
                   os.system(cmd)
+                  
+                  time.sleep(1)
                   
                   #if not EDA2_data:
                   #   if use_analytic_beam:
@@ -9072,7 +9071,15 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                   #   print(cmd)
                   #   os.system(cmd)
                   
-                  beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%0.3f_MHz.im' % (pol,freq_MHz)
+                  beam_image_sin_projected_im_name = 'beam_image_sin_projected_%s_%0.3f_MHz.im' % (pol,freq_MHz_fine_chan)
+                  
+                  cmd = "rm -rf %s " % (beam_image_sin_projected_im_name)
+                  print(cmd)
+                  os.system(cmd)
+                  
+                  cmd = "fits in=%s out=%s op=xyin" % (beam_image_sin_projected_fitsname,beam_image_sin_projected_im_name)
+                  print(cmd)
+                  os.system(cmd)
                   
                   beam_image_sin_projected_regrid_gsm_im_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.im' % (pol,freq_MHz_fine_chan)
                   beam_image_sin_projected_regrid_gsm_fits_name_fine_chan =  'beam_image_sin_projected_%s_%0.3f_MHz_gsm_regrid.fits' % (pol,freq_MHz_fine_chan)
@@ -9508,6 +9515,8 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
             print(cmd)
             os.system(cmd)
             
+            
+            
             #add visname to concat list
             if pol=='X':
                #model_sky_vis_list_X.append(model_sky_vis)
@@ -9526,6 +9535,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                model_vis_uvfits_list_Y.append(out_vis_uvfits_name)
                model_vis_uvfits_list_Y_sub.append(out_image_subtr_vis_uvfits_name)
 
+            
             #need to image the datasets here before concatenation, as miriad can't re-import the uv files after pyuvdata has messed with them in concatenation
             if do_image_and_subtr_from_simulated_data:
             
@@ -9581,28 +9591,31 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                
             #delete all the intermediate images and vis that are no longer required
             #sys.exit()
-            if do_cleanup_images_and_vis:
-               cleanup_images_and_vis(array_label,lst,freq_MHz,pol)
+            #if do_cleanup_images_and_vis:
+             #  cleanup_images_and_vis(array_label,lst,freq_MHz,pol)
       
       ###concat vis both pols for each freq
       #Don't need to do this concat anymore....
-      for pol in pol_list:
-         output_concat_vis_pyuvdata_name = "%s_concat_freqs.vis" % model_vis_name_base
-         output_concat_uvfits_pyuvdata_name = "%s_concat_freqs.uvfits" % model_vis_name_base
-         output_concat_vis_pyuvdata_name_sub = "%s_concat_freqs_sub.vis" % model_vis_name_base
-         output_concat_uvfits_pyuvdata_name_sub = "%s_concat_freqs_sub.uvfits" % model_vis_name_base
-         
-         cmd = "rm -rf %s %s %s %s" % (output_concat_vis_pyuvdata_name,output_concat_uvfits_pyuvdata_name,output_concat_vis_pyuvdata_name_sub,output_concat_uvfits_pyuvdata_name_sub)
-         print(cmd)
-         os.system(cmd)
-         if pol=='X':
-             concat_uvfits(model_vis_uvfits_list_X,output_concat_uvfits_pyuvdata_name)
-             if do_image_and_subtr_from_simulated_data:
-                concat_uvfits(model_vis_uvfits_list_X_sub,output_concat_uvfits_pyuvdata_name_sub)
-         else:
-             concat_uvfits(model_vis_uvfits_list_Y,output_concat_uvfits_pyuvdata_name)
-             if do_image_and_subtr_from_simulated_data:
-                concat_uvfits(model_vis_uvfits_list_Y_sub,output_concat_uvfits_pyuvdata_name_sub)
+      #for pol in pol_list:
+      #   output_concat_vis_pyuvdata_name = "%s_concat_freqs.vis" % model_vis_name_base
+      #   output_concat_uvfits_pyuvdata_name = "%s_concat_freqs.uvfits" % model_vis_name_base
+      #   output_concat_vis_pyuvdata_name_sub = "%s_concat_freqs_sub.vis" % model_vis_name_base
+      #   output_concat_uvfits_pyuvdata_name_sub = "%s_concat_freqs_sub.uvfits" % model_vis_name_base
+      #   
+      #   cmd = "rm -rf %s %s %s %s" % (output_concat_vis_pyuvdata_name,output_concat_uvfits_pyuvdata_name,output_concat_vis_pyuvdata_name_sub,output_concat_uvfits_pyuvdata_name_sub)
+      #   print(cmd)
+      #   os.system(cmd)
+      #   
+      #   print(model_vis_uvfits_list_X)
+      #   
+      #   if pol=='X':
+      #       concat_uvfits(model_vis_uvfits_list_X,output_concat_uvfits_pyuvdata_name)
+      #       if do_image_and_subtr_from_simulated_data:
+      #          concat_uvfits(model_vis_uvfits_list_X_sub,output_concat_uvfits_pyuvdata_name_sub)
+      #   else:
+      #       concat_uvfits(model_vis_uvfits_list_Y,output_concat_uvfits_pyuvdata_name)
+      #       if do_image_and_subtr_from_simulated_data:
+      #          concat_uvfits(model_vis_uvfits_list_Y_sub,output_concat_uvfits_pyuvdata_name_sub)
       
       #   model_sky_vis_list_string = ','.join(model_sky_vis_list)
       #   cmd = "uvaver vis=%s out=%s" % (model_sky_vis_list_string,output_concat_model_vis_name)
@@ -9656,20 +9669,20 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
       #  else:
       #      concat_uvfits(model_noise_uvfits_list_Y,noise_output_concat_model_uvfits_name)
       #   
-         if pol=='X':
-            #model_sky_uvfits_list_X_lsts.append(output_concat_model_uvfits_name)
-            #model_global_signal_uvfits_list_X_lsts.append(global_output_concat_model_uvfits_name)
-            #model_noise_uvfits_list_X_lsts.append(noise_output_concat_model_uvfits_name)
-            model_vis_uvfits_list_X_lsts.append(output_concat_uvfits_pyuvdata_name)
-            if do_image_and_subtr_from_simulated_data:
-               model_vis_uvfits_list_X_lsts_sub.append(output_concat_uvfits_pyuvdata_name_sub)
-         else:   
-            #model_sky_uvfits_list_Y_lsts.append(output_concat_model_uvfits_name)
-            #model_global_signal_uvfits_list_Y_lsts.append(global_output_concat_model_uvfits_name)      
-            #model_noise_uvfits_list_Y_lsts.append(noise_output_concat_model_uvfits_name)
-            model_vis_uvfits_list_Y_lsts.append(output_concat_uvfits_pyuvdata_name)
-            if do_image_and_subtr_from_simulated_data:
-               model_vis_uvfits_list_Y_lsts_sub.append(output_concat_uvfits_pyuvdata_name_sub)
+      #   if pol=='X':
+      #      #model_sky_uvfits_list_X_lsts.append(output_concat_model_uvfits_name)
+      ##      #model_global_signal_uvfits_list_X_lsts.append(global_output_concat_model_uvfits_name)
+      #      #model_noise_uvfits_list_X_lsts.append(noise_output_concat_model_uvfits_name)
+      #      model_vis_uvfits_list_X_lsts.append(output_concat_uvfits_pyuvdata_name)
+      #      if do_image_and_subtr_from_simulated_data:
+      #         model_vis_uvfits_list_X_lsts_sub.append(output_concat_uvfits_pyuvdata_name_sub)
+      #   else:   
+      #      #model_sky_uvfits_list_Y_lsts.append(output_concat_model_uvfits_name)
+      #      #model_global_signal_uvfits_list_Y_lsts.append(global_output_concat_model_uvfits_name)      
+      #      #model_noise_uvfits_list_Y_lsts.append(noise_output_concat_model_uvfits_name)
+      #      model_vis_uvfits_list_Y_lsts.append(output_concat_uvfits_pyuvdata_name)
+      #      if do_image_and_subtr_from_simulated_data:
+      #         model_vis_uvfits_list_Y_lsts_sub.append(output_concat_uvfits_pyuvdata_name_sub)
       #     
          ####################################################################################     
       #   model_global_vis_list_string = ','.join(model_global_signal_vis_list)
@@ -9753,19 +9766,19 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
          np.save(sky_averaged_diffuse_array_beam_Y_lsts_filename,sky_averaged_diffuse_array_beam_Y_lsts)
    
    #concat the lsts together  
-   cmd = "rm -rf %s %s %s %s" % (output_concat_vis_pyuvdata_name_lsts_X,output_concat_vis_pyuvdata_name_lsts_Y,output_concat_vis_pyuvdata_name_lsts_X_sub,output_concat_vis_pyuvdata_name_lsts_Y_sub)
-   print(cmd)
-   os.system(cmd)
-      
-   for pol in pol_list:
-      if pol=='X':
-          concat_uvfits(model_vis_uvfits_list_X_lsts,output_concat_uvfits_pyuvdata_name_lsts_X)
-          if do_image_and_subtr_from_simulated_data:
-             concat_uvfits(model_vis_uvfits_list_X_lsts_sub,output_concat_uvfits_pyuvdata_name_lsts_X_sub)
-      else:
-          concat_uvfits(model_vis_uvfits_list_Y_lsts,output_concat_uvfits_pyuvdata_name_lsts_Y)
-          if do_image_and_subtr_from_simulated_data:
-             concat_uvfits(model_vis_uvfits_list_Y_lsts_sub,output_concat_uvfits_pyuvdata_name_lsts_Y_sub)
+   #cmd = "rm -rf %s %s %s %s" % (output_concat_vis_pyuvdata_name_lsts_X,output_concat_vis_pyuvdata_name_lsts_Y,output_concat_vis_pyuvdata_name_lsts_X_sub,output_concat_vis_pyuvdata_name_lsts_Y_sub)
+   #print(cmd)
+   #os.system(cmd)
+   #   
+   #for pol in pol_list:
+   #   if pol=='X':
+   #       concat_uvfits(model_vis_uvfits_list_X_lsts,output_concat_uvfits_pyuvdata_name_lsts_X)
+   #       if do_image_and_subtr_from_simulated_data:
+   #          concat_uvfits(model_vis_uvfits_list_X_lsts_sub,output_concat_uvfits_pyuvdata_name_lsts_X_sub)
+   #   else:
+   #       concat_uvfits(model_vis_uvfits_list_Y_lsts,output_concat_uvfits_pyuvdata_name_lsts_Y)
+   #       if do_image_and_subtr_from_simulated_data:
+   #          concat_uvfits(model_vis_uvfits_list_Y_lsts_sub,output_concat_uvfits_pyuvdata_name_lsts_Y_sub)
        
    #remove the intermediate uvfits and concat freq uvfits
    for lst in lst_list:
@@ -10290,14 +10303,25 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
+          #(these get made in simulate() but could easily pull that code out and put it here so you don't need to run both TODO )
           gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+          unity_hpx_fits_name_fine_chan = "%s/unity_sky_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,centre_freq)
+          
        
           reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
           reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
           reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
           reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
 
+          #going to make unity sky ones too (so dont need to run simulate)
+          reprojected_to_wsclean_unity_prefix_fine_chan = "%s/unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_unity_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
+          reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
+          reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
+
+          
           hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
+          hdu_unity_fine_chan = fits.open(unity_hpx_fits_name_fine_chan)[1]
   
           uncal_ms_image_prefix = "uncal_chan_%s_%s_ms" % (EDA2_chan,EDA2_obs_time)
           uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
@@ -10346,13 +10370,25 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           target_wcs=target_wcs.dropaxis(2)
                      
           reprojected_gsm_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_gsm_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
+          reprojected_unity_map_fine_chan,footprint_fine_chan = reproject_from_healpix(hdu_unity_fine_chan, target_wcs,shape_out=(template_imsize,template_imsize), order='bilinear',field=0)
+          
+          
+          #hdu_gsm_fine_chan.close()
+          #unity_gsm_fine_chan.close()
           
           #write the reprojected gsm maps to fits
           pyfits.writeto(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,clobber=True)
           #print new_header
           pyfits.update(reprojected_to_wsclean_gsm_fitsname_fine_chan,reprojected_gsm_map_fine_chan,header=new_header)
           print("wrote image %s" %  reprojected_to_wsclean_gsm_fitsname_fine_chan)
+          
+          #untiy (miriad)
+          pyfits.writeto(reprojected_to_wsclean_unity_fitsname_fine_chan,reprojected_unity_map_fine_chan,clobber=True)
+          #print new_header
+          pyfits.update(reprojected_to_wsclean_unity_fitsname_fine_chan,reprojected_unity_map_fine_chan,header=new_header)
+          print("wrote image %s" %  reprojected_to_wsclean_unity_fitsname_fine_chan)
     
+        
           #model needs to be in Jy/pix
           #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
        
@@ -10371,6 +10407,20 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
           pyfits.update(reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header)
           print("saved %s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan))
+          
+          #unity miriad
+          #check the model image for non-finite values and scale to Jy per pix:
+          with fits.open("%s" % (reprojected_to_wsclean_unity_fitsname_fine_chan)) as hdu_list_fine_chan:
+             data_fine_chan = hdu_list_fine_chan[0].data
+          #replace nans with zeros
+          data_new_fine_chan = np.nan_to_num(data_fine_chan)
+          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
+          
+          #write out a new fits file
+          fits.writeto("%s" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
+          pyfits.update(reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header)
+          print("saved %s" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan))
+          
           
           for pol in ['X','Y']:
              if use_analytic_beam:
@@ -10416,7 +10466,12 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              cmd = "fits in=%s out=%s op=xyin" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
              print(cmd)
              os.system(cmd)
-             
+
+             #unity miriad
+             cmd = "fits in=%s out=%s op=xyin" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan,reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan)
+             print(cmd)
+             os.system(cmd)
+                          
              #regrid beam to gsm (or should I do other way round? beam has already been regridded twice!?)
              cmd = "regrid in=%s out=%s tin=%s tol=0" % (beam_image_sin_projected_im_name,beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan)
              print(cmd)
@@ -10454,25 +10509,48 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              pyfits.update(apparent_sky_fits_name_fine_chan,data_new,header=new_header)
              print("saved %s" % (apparent_sky_fits_name_fine_chan))
              
-       for pol in ['X','Y']:      
-             #stuff for FAST 
+             ####unity miriad
+             #Now have a gsm and a beam. multiply 'em'
+             apparent_unity_sky_fits_name_prefix_fine_chan = "apparent_unity_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
+             apparent_unity_sky_im_name_fine_chan = "apparent_unity_sky_LST_%03d_%0.3f_MHz_wsclean-%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             apparent_unity_sky_unity_fits_name_fine_chan = "%s-%04d-%s%s-model.fits" % (apparent_unity_sky_fits_name_prefix_fine_chan,fine_chan_index,pol,pol)
+             
+             cmd = "rm -rf %s %s" % (apparent_unity_sky_im_name_fine_chan,apparent_unity_sky_fits_name_fine_chan)
+             print(cmd)
+             os.system(cmd)
+   
+             cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan,apparent_unity_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)
+             
+             cmd = "fits in=%s out=%s op=xyout" % (apparent_unity_sky_im_name_fine_chan,apparent_unity_sky_fits_name_fine_chan)
+             print(cmd)
+             os.system(cmd) 
+       
+             print("wrote %s" % apparent_unity_sky_fits_name_fine_chan)
+             
+             
+             #check the model image for non-finite values 
+             with fits.open("%s" % (apparent_unity_sky_fits_name_fine_chan)) as hdu_list:
+                data = hdu_list[0].data
+             #replace nans with zeros
+             data_new = np.nan_to_num(data)
+             
+             #write out a new fits file
+             fits.writeto("%s" % (apparent_unity_sky_fits_name_fine_chan),data_new,clobber=True)
+             pyfits.update(apparent_unity_sky_fits_name_fine_chan,data_new,header=new_header)
+             print("saved %s" % (apparent_unity_sky_fits_name_fine_chan))
+             ###
+              
+              
+                  
+             #stuff for FAST - uses uvfits files even though calibrating ms data
              EDA2_obs_time = obs_time_list[0]
              uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
              uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
              unity_sky_uvfits_filename = "%s/unity_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
              unity_sky_vis_filename = "%s/unity_chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time) 
                   
-             apparent_unity_sky_im_name = "%s/apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (EDA2_chan,lst_deg,pol,freq_MHz)
-             apparent_unity_sky_im_name_copy = "apparent_unity_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
-             #uv_dist_plot_name = "test_uvdist.png"
-             
-             cmd = "rm -rf %s" % (apparent_unity_sky_im_name_copy)
-             print(cmd)
-             os.system(cmd)
-             
-             cmd = "cp -r %s %s" % (apparent_unity_sky_im_name,apparent_unity_sky_im_name_copy)
-             print(cmd)
-             os.system(cmd)
              
              cmd = "rm -rf %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename)
              print(cmd)
@@ -10484,11 +10562,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              os.system(cmd)
       
              
-             cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
+             cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_fine_chan,unity_sky_vis_filename)
              print(cmd)
              os.system(cmd)
              
-      
              
              #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
              #print(cmd)
@@ -13546,9 +13623,9 @@ pol_list = ['X']
 ##calibrate each individually first and concat
 ##do this outside chan dir
 ##if doing individual chans:
-#chan_num = 0
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
+chan_num = 0
+freq_MHz_list = [freq_MHz_array[chan_num]]
+EDA2_chan_list = [EDA2_chan_list[chan_num]]
 plot_cal = False
 #wsclean = False
 wsclean = True
