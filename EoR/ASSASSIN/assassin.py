@@ -10346,10 +10346,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           gsm_map = gsm.generate(freq_MHz_fine_chan)
           unity_map = gsm_map * 0. + unity_sky_value
           
-          hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G')
+          hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G',overwrite=True)
           print("wrote %s" % gsm_hpx_fits_name_fine_chan)
                     
-          hp.write_map(unity_hpx_fits_name_fine_chan,unity_map,coord='G')
+          hp.write_map(unity_hpx_fits_name_fine_chan,unity_map,coord='G',overwrite=True)
           print("wrote %s" % unity_hpx_fits_name_fine_chan)         
           
           hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
