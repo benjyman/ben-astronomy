@@ -3292,6 +3292,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
          if EDA2_data:
             #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+            #2020 paper:
             freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
             #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
             #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
@@ -3758,7 +3759,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       for fine_chan_index in fine_chan_index_array:
          fine_chan_index = int(fine_chan_index)
          if EDA2_data:
-            #for 20200303 and 20200304 data fine chan order is reversed
+            #for 20200303 and 20200304 data fine chan order is reversed?
             freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
             #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
             #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
@@ -5253,7 +5254,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       freq_MHz_fine_array = np.load(freq_MHz_fine_array_filename)
       freq_MHz_fine_array = freq_MHz_fine_array[0:length_freq_MHz_fine_chan_to_plot]
        
-      
+
           
       if EDA2_data==True:
          for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
@@ -5377,12 +5378,17 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          else:
             label1='recovered %s' % pol
          
-         #for fig9b change this to unflagged
+         #for fig9b (2020) change this to unflagged
+         #old, no pol
          #t_sky_measured_array_filename = "t_sky_measured_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
          #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s%s_%s_flagged.npy" % (lst_string,signal_type_postfix,model_type)
+        
+         t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
+         t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
+      
          #for sims use unflagged (need to update model_from_saved_data to use subtr_Y data properly for flagged ATM does nothing!):
-         t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
-         t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
+         #t_sky_measured_array_filename = "t_sky_measured_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
+         #t_sky_measured_error_array_filename = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s.npy" % (lst_string,pol,signal_type_postfix,model_type)
          
          freq_MHz_fine_array_filename = "freq_MHz_fine_array_lst_%s%s.npy" % (lst_string,signal_type_postfix)
          
@@ -5396,7 +5402,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          n_baselines_used_array = np.load(n_baselines_used_array_filename)
          n_baselines_used_array = n_baselines_used_array[0:length_freq_MHz_fine_chan_to_plot]
           
-          
+ 
          #subtract a polynomial fit
          #in log log space:
          sky_array = t_sky_measured_array[t_sky_measured_array>0.]
@@ -5411,7 +5417,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             freq_array_cut = freq_MHz_array[t_sky_measured_array>0.]
          else:
             freq_array_cut = freq_MHz_fine_array[t_sky_measured_array>0.]
-            
+  
          log_freq_MHz_array = np.log10(freq_array_cut)
          
          
@@ -10315,9 +10321,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           centre_freq = float(freq_MHz)
           fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
           
-          #dont reverse chan order
-          freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-          #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+          #dont reverse chan order (2020 paper)
+          #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+          #do reverse chan order (time av cal 2021 miriad)
+          freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
           
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
@@ -13684,8 +13691,8 @@ pol_list = ['X','Y']
 #chan_num = 1
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[0:2]
-#EDA2_chan_list = EDA2_chan_list[0:2]
+freq_MHz_list = freq_MHz_array[0:5]
+EDA2_chan_list = EDA2_chan_list[0:5]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -13695,7 +13702,7 @@ per_chan_cal = True
 
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -13754,12 +13761,12 @@ model_type_list = ['OLS_fixed_intercept']
 #also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
 #if doing individual chans:
 #EDA2 data:
-#pol_list = ['X']
+pol_list = ['X']
 #chan_num = 1
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[0:2]
-#EDA2_chan_list = EDA2_chan_list[0:2]
+freq_MHz_list = freq_MHz_array[0:5]
+EDA2_chan_list = EDA2_chan_list[0:5]
 
 
 print len(freq_MHz_list)
@@ -13775,7 +13782,7 @@ poly_order=5
 #plot_iso_ant_int_response()
 #sys.exit()
  
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 
@@ -13783,7 +13790,7 @@ include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=False
 ##woden sims from 50 to 193 MHz
