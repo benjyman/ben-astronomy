@@ -4961,11 +4961,15 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          label2='predicted GSM'
          t_sky_theoretical_list = []
          EDA2_chan_list_input = EDA2_chan_list[0:len(freq_MHz_list)]
-         for EDA2_chan in EDA2_chan_list_input:
-               EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)          
+         for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list_input):
+               freq_MHz = 400./512.*float(EDA2_chan)
+               EDA2_chan_dir = "%s%s/" % (EDA2_data_dir,EDA2_chan)  
+               lst = lst_hrs_list[EDA2_chan_index]
+               lst_deg = (float(lst)/24)*360.        
                #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)      
                #sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
-               sky_averaged_diffuse_array_beam_lsts_filename = "t_sky_theoretical_array_lst_%s_pol_%s%s.npy" % (lst_string,pol,signal_type_postfix)
+               #sky_averaged_diffuse_array_beam_lsts_filename = "t_sky_theoretical_array_lst_%s_pol_%s%s.npy" % (lst_string,pol,signal_type_postfix)
+               sky_averaged_diffuse_array_beam_lsts_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
                diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
                diffuse_global_value = diffuse_global_value_array[0]   
                t_sky_theoretical_list.append(diffuse_global_value)
@@ -10317,6 +10321,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        ##########################
        apparent_unity_sky_im_name_fine_chan_list_X = []
        apparent_unity_sky_im_name_fine_chan_list_Y = []
+       apparent_angular_sky_im_name_fine_chan_list_X = []
+       apparent_angular_sky_im_name_fine_chan_list_Y = []
        for fine_chan_index in range(0,32):
           centre_freq = float(freq_MHz)
           fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
@@ -10328,7 +10334,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
-          #(these get made in simulate() but could easily pull that code out and put it here so you don't need to run both TODO )
+          #(these get made in here now, no need to run simulate
           gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
           unity_hpx_fits_name_fine_chan = "%s/unity_sky_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,centre_freq)
           
@@ -10344,8 +10350,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           reprojected_to_wsclean_unity_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
+          
 
-          #actually remake the gsm files it is not hard and save as hpx fits (so dont need to run simulate anymore)
+          # remake the gsm files it is not hard and save as hpx fits (so dont need to run simulate anymore)
           
           jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
           unity_sky_value = 1. * jy_to_K
@@ -10549,6 +10556,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              with fits.open("%s" % (beam_image_sin_projected_regrid_gsm_fits_name)) as hdu_list:
                 beam_data = hdu_list[0].data
              beam_weighted_av_sky = np.nansum(sky_with_beam_K) / np.nansum(beam_data)
+             beam_weighted_av_sky_Jy = np.nansum(sky_with_beam) / np.nansum(beam_data)
                 
              #check the model image for non-finite values 
              with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
@@ -10563,33 +10571,52 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              
 
              
-             print("beam_weighted_av_sky is %E from %s and %s" % (beam_weighted_av_sky,apparent_sky_fits_name_fine_chan,beam_image_sin_projected_regrid_gsm_fits_name))
+             print("beam_weighted_av_sky is %E K (%E Jy) from %s and %s" % (beam_weighted_av_sky,beam_weighted_av_sky_Jy,apparent_sky_fits_name_fine_chan,beam_image_sin_projected_regrid_gsm_fits_name))
              
              beam_weighted_av_sky_array = np.asarray([beam_weighted_av_sky])
 
              np.save(sky_averaged_temp_cal_input_filename,beam_weighted_av_sky_array)
              print("saved %s" % (sky_averaged_temp_cal_input_filename))
              
-             ####unity miriad
-             #Now have a gsm and a beam. multiply 'em'
+             ####unity miriad (and angular)
+             #Now have a unity map and a beam. multiply 'em'
              apparent_unity_sky_im_name_fine_chan = "u_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
+             apparent_angular_sky_im_name_fine_chan = "a_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
  
              if pol=='X':
                 apparent_unity_sky_im_name_fine_chan_list_X.append(apparent_unity_sky_im_name_fine_chan)
+                apparent_angular_sky_im_name_fine_chan_list_X.append(apparent_angular_sky_im_name_fine_chan)
              else:
                 apparent_unity_sky_im_name_fine_chan_list_Y.append(apparent_unity_sky_im_name_fine_chan)
-
-             cmd = "rm -rf %s" % (apparent_unity_sky_im_name_fine_chan)
+                apparent_angular_sky_im_name_fine_chan_list_Y.append(apparent_angular_sky_im_name_fine_chan)
+             
+             cmd = "rm -rf %s %s" % (apparent_unity_sky_im_name_fine_chan,apparent_angular_sky_im_name_fine_chan)
              print(cmd)
              os.system(cmd)
    
              cmd = "maths exp=%s*%s out=%s " % (beam_image_sin_projected_regrid_gsm_im_name,reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan,apparent_unity_sky_im_name_fine_chan)
              print(cmd)
              os.system(cmd)
-              
-             #will use imcat to make a cube for uvmodel
+            
+             #and subtract global value from apparent gsm sky to get angular only
              
-                  
+             maths_apparent_sky_im_name_fine_chan = "app_LST_%03d_%0.3f_MHz_wsclean_%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+
+             cmd = "cp -r %s %s" % (apparent_sky_im_name_fine_chan,maths_apparent_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)     
+             
+             cmd = "maths exp=%s-%0.1f out=%s " % (maths_apparent_sky_im_name_fine_chan,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)
+
+             cmd = "rm -rf %s" % (maths_apparent_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)              
+             
+             
+             #will use imcat to make cubes for uvmodel
+                 
 
        
        ####
@@ -10601,22 +10628,31 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
           unity_sky_uvfits_filename = "%s/unity_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol)
           unity_sky_vis_filename = "%s/unity_chan_%s_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol) 
-          
+          angular_sky_uvfits_filename = "%s/angular_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol)
+          angular_sky_vis_filename = "%s/angular_chan_%s_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol) 
+                    
           apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
+          apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
           
           if pol=='X':
              unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_X)
+             angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_X)
           else:
              unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_Y)
-          
-          cmd = "rm -rf %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename, apparent_unity_sky_im_cube_name)
+             angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_Y)
+             
+          cmd = "rm -rf %s %s %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename,apparent_unity_sky_im_cube_name,angular_sky_uvfits_filename,angular_sky_vis_filename,apparent_angular_sky_im_cube_name)
           print(cmd)
           os.system(cmd)
           
           cmd = "imcat in=%s out=%s options=relax" % (unity_model_im_list_string,apparent_unity_sky_im_cube_name)
           print(cmd)
           os.system(cmd)
-           
+        
+          #imcat angular
+          cmd = "imcat in=%s out=%s options=relax" % (angular_model_im_list_string,apparent_angular_sky_im_cube_name)
+          print(cmd)
+          os.system(cmd)
           
           cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
           print(cmd)
@@ -10627,6 +10663,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           print(cmd)
           os.system(cmd)
           
+          #angular
+          cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename,apparent_angular_sky_im_cube_name,angular_sky_vis_filename)
+          print(cmd)
+          os.system(cmd)          
           
           #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
           #print(cmd)
@@ -10635,6 +10675,11 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
           print(cmd)
           os.system(cmd)
+          
+          cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (angular_sky_vis_filename,angular_sky_uvfits_filename)
+          print(cmd)
+          os.system(cmd)
+ 
           ####
           
           
