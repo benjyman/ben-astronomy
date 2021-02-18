@@ -2088,6 +2088,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    if EDA2_data:
       freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+      #try reversed
       #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
       #freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
    else:
@@ -5466,6 +5467,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             #y_min = 1.5 * -max_abs_residuals
             if model_type!='OLS_fixed_int_subtr_Y':
                if pol!='Y':
+                  y_max = 1.5 * max_abs_residuals
+                  y_min = 1.5 * -max_abs_residuals
+               else:
                   y_max = 1.5 * max_abs_residuals
                   y_min = 1.5 * -max_abs_residuals
             
@@ -10343,9 +10347,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
           
           #dont reverse chan order (2020 paper)
-          #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+          freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
           #do reverse chan order (time av cal 2021 miriad)
-          freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+          #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
           
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
@@ -13719,7 +13723,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #sys.exit()
 
 #DATA: (repeat twice with 'diffuse' then 'global_unity')
-pol_list = ['X','Y']
+pol_list = ['Y']
 #chan_num = 0
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 ####if FAST: for data need to simulate with 'global_unity' and then separately 'diffuse' (only if fast)
@@ -13751,132 +13755,154 @@ pol_list = ['X','Y']
 #chan_num = 1
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[0:5]
-#EDA2_chan_list = EDA2_chan_list[0:5]
+freq_MHz_list = freq_MHz_array[0:10]
+EDA2_chan_list = EDA2_chan_list[0:10]
 plot_cal = False
 #wsclean = False
 wsclean = True
 concat=True
 per_chan_cal = True
 
+for pol in pol_list:
+   pol_list_input = [pol]
+   #New cal Jan 2021 - try to average data in time first before cal
+   #2 Feb try withinitial full BW cal
+   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   #sys.exit()
+   
+   #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   #sys.exit()
+   
+   #Need to plug in monitor to namorrodor, can't do this with nohup or remotely
+   #make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
+   #sys.exit()
+    
+   #after calibration:
+   #no cal solutions for 64/chan_64_20191202T171624.vis
+   #no cal solutions for 129/chan_129_20191202T172036.vis
+   #no cal solutions for 129/chan_129_20191202T172046.vis
+   #no cal solutions for 129/chan_129_20191202T172051.vis
+   #no cal solutions for 129/chan_129_20191202T172056.vis
+   #no cal solutions for 129/chan_129_20191202T172100.vis
+   #no cal solutions for 129/chan_129_20191202T172105.vis
+   #no cal solutions for 129/chan_129_20191202T172110.vis
+   #no cal solutions for 129/chan_129_20191202T172120.vis
+   #no cal solutions for 129/chan_129_20191202T172125.vis
+   
+   #then concat
+   ##concat data 
+   #concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
+   #sys.exit()
+   #
+   
+   
+   #plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
+   #sys.exit()
+   
+   #model_type = 'OLS_with_intercept'
+   #model_type = 'mixedlm'
+   
+   model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
+   #model_type_list = ['OLS_fixed_intercept']
+   #model_type = 'OLS_fixed_int_subtr_Y'
+   
+   #model_type = 'OLS_fixed_int_min_vis'
+   #model_type = 'OLS_with_int_min_vis'
+   
+   #model_type = 'WLS'
+   #model_type = 'OLS_global_angular'
+   
+   
+   #look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
+   
+   #to save time:
+   #poor man's parallel programming:
+   #run this 5 seperate times, in 5 seperate screens, one for each freq with plot_only = False to get saved data products, then run with plot_only=True once with all freqs
+   #dont need to change lst_hrs_list, for eda2 data processing only the first lst ios used
+   #freq_MHz_list = [freq_MHz_list[5]]
+   #EDA2_chan_list = [EDA2_chan_list[5]]
+   
+   
+   #also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
+   #if doing individual chans:
+   #EDA2 data:
+   #pol_list = ['X','Y']
+   #chan_num = 1
+   #freq_MHz_list = [freq_MHz_array[chan_num]]
+   #EDA2_chan_list = [EDA2_chan_list[chan_num]]
+   freq_MHz_list = freq_MHz_array[0:10]
+   EDA2_chan_list = EDA2_chan_list[0:10]
+   
+   #for sims:
+   #freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
+   #freq_MHz_array = np.asarray(freq_MHz_list)
+   
+   #lst_hrs_list=['4']
+   #poly_order_list=[5,6,7]
+   poly_order=5
+   
+   #plot_iso_ant_int_response()
+   #sys.exit()
+    
+   plot_only = False
+   baseline_length_thresh_lambda = 0.5
+   include_angular_info = True
+   
+   ##WODEN sims signal extraction
+   woden=False
+   wsclean=True
+   fast=True
+   no_modelling=False
+   calculate_uniform_response=False
+   noise_coupling=False
+   ##woden sims from 50 to 193 MHz
+   ##dont need this any more
+   ##woden: centre_chans_number_list = [63,87,111,135,159,183]
+   #
+   ##make sourcelist and sbatch files on namorrodor:      
+   ##new centre chans list for 1 MHz wide chans
+   ##UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
+   ##year,month,day,hour,min,sec = 2020,03,03,15,00,00
+   #freq_MHz_list = np.arange(0,218)*1.28 + 50.
+   #freq_MHz_list = freq_MHz_list[0:100]
+   #print(freq_MHz_list)
+   #year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
+   ##year,month,day,hour,min,sec = 2015,11,29,15,33,43
+   #time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
+   ##write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
+   ##write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
+   ##sys.exit()
+   #
+   ##freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
+   ###just use the orig freq list from 50 to 199 MHz
+   #outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
+   #print(freq_MHz_list)
+   ###simulate to get the theoretical beam weighted global signal 
+   #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
+   
+   plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 
-#New cal Jan 2021 - try to average data in time first before cal
-#2 Feb try withinitial full BW cal
-calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-#sys.exit()
+sys.exit()
 
-#calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-#sys.exit()
-
-#Need to plug in monitor to namorrodor, can't do this with nohup or remotely
-#make_image_movie_from_ds9(EDA2_chan_list,n_obs_concat_list,'20200303_data.mp4')
-#sys.exit()
- 
-#after calibration:
-#no cal solutions for 64/chan_64_20191202T171624.vis
-#no cal solutions for 129/chan_129_20191202T172036.vis
-#no cal solutions for 129/chan_129_20191202T172046.vis
-#no cal solutions for 129/chan_129_20191202T172051.vis
-#no cal solutions for 129/chan_129_20191202T172056.vis
-#no cal solutions for 129/chan_129_20191202T172100.vis
-#no cal solutions for 129/chan_129_20191202T172105.vis
-#no cal solutions for 129/chan_129_20191202T172110.vis
-#no cal solutions for 129/chan_129_20191202T172120.vis
-#no cal solutions for 129/chan_129_20191202T172125.vis
-
-#then concat
-##concat data 
-#concat_EDA2_data(EDA2_chan_list=EDA2_chan_list,EDA2_obs_time_list_each_chan=EDA2_obs_time_list_each_chan,pol='X')
-#sys.exit()
-#
-
-
-#plot_EDA2_cal_sols('cal_64_ph.txt','cal_64_amp.txt')
-#sys.exit()
-
-#model_type = 'OLS_with_intercept'
-#model_type = 'mixedlm'
-
+#run poth pols for final plot
+freq_MHz_list = freq_MHz_array[0:10]
+EDA2_chan_list = EDA2_chan_list[0:10]
 model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
-#model_type_list = ['OLS_fixed_intercept']
-#model_type = 'OLS_fixed_int_subtr_Y'
-
-#model_type = 'OLS_fixed_int_min_vis'
-#model_type = 'OLS_with_int_min_vis'
-
-#model_type = 'WLS'
-#model_type = 'OLS_global_angular'
-
-
-#look here: https://towardsdatascience.com/when-and-how-to-use-weighted-least-squares-wls-models-a68808b1a89d
-
-#to save time:
-#poor man's parallel programming:
-#run this 5 seperate times, in 5 seperate screens, one for each freq with plot_only = False to get saved data products, then run with plot_only=True once with all freqs
-#dont need to change lst_hrs_list, for eda2 data processing only the first lst ios used
-#freq_MHz_list = [freq_MHz_list[5]]
-#EDA2_chan_list = [EDA2_chan_list[5]]
-
-
-#also need to change EDA2_obs_time_list_each_chan[x:] above, this is just so the correct first obsid is selected (only good for concat data, more than 1 obs)
-#if doing individual chans:
-#EDA2 data:
-#pol_list = ['X','Y']
-#chan_num = 1
-#freq_MHz_list = [freq_MHz_array[chan_num]]
-#EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[0:2]
-#EDA2_chan_list = EDA2_chan_list[0:2]
-
-#for sims:
-#freq_MHz_list = np.arange(start_chan,start_chan+n_chan,chan_step)
-#freq_MHz_array = np.asarray(freq_MHz_list)
-
-#lst_hrs_list=['4']
-#poly_order_list=[5,6,7]
+pol_list_input = ['Y']
 poly_order=5
-
-#plot_iso_ant_int_response()
-#sys.exit()
- 
 plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
-
-##WODEN sims signal extraction
 woden=False
 wsclean=True
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=False
-##woden sims from 50 to 193 MHz
-##dont need this any more
-##woden: centre_chans_number_list = [63,87,111,135,159,183]
-#
-##make sourcelist and sbatch files on namorrodor:      
-##new centre chans list for 1 MHz wide chans
-##UTC time: woden sims for LST 60 zenith "2015-11-29T15:33:43"
-##year,month,day,hour,min,sec = 2020,03,03,15,00,00
-#freq_MHz_list = np.arange(0,218)*1.28 + 50.
-#freq_MHz_list = freq_MHz_list[0:100]
-#print(freq_MHz_list)
-#year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
-##year,month,day,hour,min,sec = 2015,11,29,15,33,43
-#time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
-##write_woden_skymodels(freq_MHz_list,NSIDE,time_string,dipole_height_m,pol_list)
-##write_woden_sims_sbatch_file(freq_MHz_list,time_string,pol_list)
-##sys.exit()
-#
-##freq_MHz_list = np.asarray(woden_chan_list) + (np.arange(0,24)-13) 
-###just use the orig freq list from 50 to 199 MHz
-#outbase_name = 'lst_%0.2f_hr' % (float(lst_hrs_list[0]))
-#print(freq_MHz_list)
-###simulate to get the theoretical beam weighted global signal 
-#simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
 
-plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
+plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 sys.exit()
+
 
 #up to here with plot_only = False
 #chan_num = 90 - 64 #90 = 70MHz
