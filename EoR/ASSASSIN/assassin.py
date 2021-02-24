@@ -3210,7 +3210,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    lst_deg = (float(lst_hrs)/24.)*360.
    
    #for EDA2
-   n_ants = 256
+   #n_ants = 256
 
    n_pix = hp.nside2npix(NSIDE)
    print('n_pix')
@@ -3222,15 +3222,16 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    #need to understand this timestep stuff, for some reason EDA2 vis have more rows that expected ....
    #eda2 data includes autos?
    if EDA2_data:
-      n_baselines = n_ants*(n_ants-1) / 2. + 256
+      #n_baselines = n_ants*(n_ants-1) / 2. + 256
       #take the centre chan av temp as input
       sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
       sky_averaged_temp_cal_input_array = np.load(sky_averaged_temp_cal_input_filename)
       print("loaded %s " % sky_averaged_temp_cal_input_filename)
       beam_weighted_av_sky = sky_averaged_temp_cal_input_array
       print("beam_weighted_av_sky is %E" % beam_weighted_av_sky)
-   else:
-      n_baselines = n_ants*(n_ants-1) / 2.
+   #else:
+      #pass
+      #n_baselines = n_ants*(n_ants-1) / 2.
    
    if fast:
       print('doing fast')  
@@ -3349,7 +3350,21 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                #hdulist.close()
 
                data_baseline_array = uvtable['BASELINE']
-               #print(data_baseline_array)
+               print(data_baseline_array.shape)
+               print(data_baseline_array.min())
+               print(data_baseline_array.max())
+               #incl autos so b in quad eqn is -3
+               n_baselines = data_baseline_array.shape[0]
+               n_ants = int((-1 + math.sqrt(1 + 4*2*n_baselines) ) / 2)
+               print("n_ants is %s" % n_ants)
+               
+               full_auto_baseline_number_array = np.arange(1,257)*256 + np.arange(1,257)
+               
+               #find the indices where the baseline numbers in the data match the expected full autos (should match n_ants)
+               auto_baselines_in_data_mask = np.in1d(full_auto_baseline_number_array,data_baseline_array)
+               auto_baselines_in_data_count = np.count_nonzero(auto_baselines_in_data_mask)
+               print("auto_baselines_in_data %s" % auto_baselines_in_data_count)
+               sys.exit()
                
                #find indices of unity file where the baseline value is the same as the data baseline value
                #To find the indices of the elements in A that are present in B, I can do
@@ -3363,6 +3378,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                count2 = np.count_nonzero(data_common_inds)
                print('count of unity_common_inds')
                print(count2)
+
+               #get the autocorrelation baseline indices. done
+               #coherence = cross_a1_a2 / np.sqrt(auto_a1 * auto_a2)
+    
+               
 
 
                #only use dat where there is a common index with unity file
@@ -10287,6 +10307,8 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,phase_sol_filenam
    
    
 def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False):
+   #think about how to use coherence:
+   #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
    print("averaging EDA2 obs in time before calibration")
    #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
    #pol = pol_list[0]
@@ -13814,9 +13836,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #chan_num = 1
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-pol_list = ['X']
-#freq_MHz_list = freq_MHz_array[0:4]
-#EDA2_chan_list = EDA2_chan_list[0:4]
+pol_list = ['Y']
+freq_MHz_list = freq_MHz_array[0:2]
+EDA2_chan_list = EDA2_chan_list[0:2]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -13939,9 +13961,9 @@ for pol in pol_list:
    ###simulate to get the theoretical beam weighted global signal 
    #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
    
-   #plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
+   plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 
-#sys.exit()
+sys.exit()
 
 #run poth pols for final plot
 
