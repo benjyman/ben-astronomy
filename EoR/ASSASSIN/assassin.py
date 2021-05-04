@@ -3360,11 +3360,14 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                
                full_auto_baseline_number_array = np.arange(1,257)*256 + np.arange(1,257)
                
-               #find the indices where the baseline numbers in the data match the expected full autos (should match n_ants)
-               auto_baselines_in_data_mask = np.in1d(full_auto_baseline_number_array,data_baseline_array)
-               auto_baselines_in_data_count = np.count_nonzero(auto_baselines_in_data_mask)
-               print("auto_baselines_in_data %s" % auto_baselines_in_data_count)
-               sys.exit()
+               ##find the indices where the baseline numbers in the data match the expected full autos (should match n_ants)
+               #auto_baselines_in_data_mask = np.in1d(full_auto_baseline_number_array,data_baseline_array)
+               #auto_baselines_in_data_count = np.count_nonzero(auto_baselines_in_data_mask)
+               #print("auto_baselines_in_data %s" % auto_baselines_in_data_count)
+               
+               #ant1,ant2 = split_baseline(np.asarray([257,258,259]))
+               #print(ant1,ant2)
+               #sys.exit()
                
                #find indices of unity file where the baseline value is the same as the data baseline value
                #To find the indices of the elements in A that are present in B, I can do
@@ -5253,7 +5256,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    else:
       plt.legend(loc='lower right')
    if EDA2_data:
-      plt.ylim([500, 5000])
+      #plt.ylim([500, 5000])
+      #check first 5 chans:
+      plt.ylim([3500, 4500])
    #else:
       #plt.ylim([0, 4000])
    fig_name= "t_sky_measured_lst_%s%s_flagged.png" % (lst_string,signal_type_postfix)
@@ -8454,8 +8459,110 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
                
             cmd = "rm -rf %s %s" % (output_concat_vis_pyuvdata_name,output_concat_uvfits_pyuvdata_name)
             print(cmd)
-            os.system(cmd)         
+            os.system(cmd)  
+                   
+def simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs):
+   freq_step = 1 #MHz
+   centre_freq_GHz = float(centre_freq_MHz) / 1.0e3
+   start_freq_MHz = float(centre_freq_MHz) - (bandwidth_MHz/2.)
+   #get a multi channel model image (see calibrate time_av)
+   print("start lst %s hrs" % start_lst)
+   start_lst_deg = (float(start_lst)/24.)*360.
+   print("start lst %s deg" % start_lst_deg)
+   
+   lst_deg_array = np.arange(start_lst_deg,start_lst_deg+obs_length_hrs,obs_time_res_hrs)
+   
+   #generate sky model image cube:
+   freq_MHz_array = np.arange(start_freq_MHz,start_freq_MHz+bandwidth_MHz,freq_step)
+   gsm = GlobalSkyModel()
 
+   for lst_deg in lst_deg_array:
+      lst_hrs = lst_deg / 15.
+      for freq_MHz in freq_MHz_array:
+         freq_GHz = freq_MHz / 1.0e3
+         wavelength = 300./float(freq_MHz)  
+         gsm_hpx_fits_name_fine_chan = "map_LST_gsm_%03d_%0.3f_MHz_hpx.fits" % (lst_deg,freq_MHz)
+         print("%s" % gsm_hpx_fits_name_fine_chan)
+                   
+       
+         reprojected_to_wsclean_gsm_prefix_fine_chan = "gsm_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (lst_deg,freq_MHz)
+         reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+         reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
+         reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "gsm_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz) 
+
+         # make the gsm files it is not hard and save as hpx fits 
+         
+         jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+         
+         gsm_map = gsm.generate(freq_MHz)
+         
+         hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G',overwrite=True)
+         print("wrote %s" % gsm_hpx_fits_name_fine_chan)
+                       
+         hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
+         
+         year=2000
+         month=1
+         day=1
+         hour=np.floor(float(lst_deg))
+         minute=np.floor((float(lst_deg)-hour) * 60.)
+         second=((float(lst_deg)-hour) * 60. - minute) * 60.
+         
+         date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
+         #print date_time_string
+         #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
+         day_frac_plus_one = float(lst_deg)/24. + 1
+         miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
+                
+         #make blank uv dataset with right time and freq settings
+         model_vis_name_base = 'sitara_LST_%0.3f_%0.3f_MHz' % (lst_deg,freq_MHz)
+         out_vis_name = model_vis_name_base + '.vis'
+         out_uvfits_name = model_vis_name_base + '.uvfits'
+         ms_name = model_vis_name_base + '.ms'
+         
+         cmd = "rm -rf %s" % out_vis_name
+         print(cmd)
+         os.system(cmd)
+         
+         #change this to SCP
+         pointing_dec = "-26.70331940"
+         array_ant_locations_filename_255 = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
+         #point_jack.source
+         #flux,dra,ddec,bmaj,bmin,bpa,iflux,ipa,vflux
+         #     1.0000    3600.0000    -4668.05016    0.0000    0.0000    0.0000    0.0000    0.0000
+         #day_frac_plus_one_SP = float(lst)/24. + 1
+         #miriad_uvgen_time_string_SP = '00JUN%1.3f' % day_frac_plus_one_SP
+         cmd = "uvgen source=$MIRCAT/no.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename_255,miriad_uvgen_time_string,freq_GHz,float(lst_hrs),pointing_dec,harange_string,out_vis_name)
+         print(cmd)
+         os.system(cmd)
+      
+         cmd = "fits op=uvout in=%s out=%s " % (out_vis_name,out_uvfits_name)
+         print(cmd)
+         os.system(cmd)
+      
+         #import to ms
+         casa_string = "importuvfits(fitsfile='%s',vis='%s')" % (out_uvfits_name,ms_name)
+         casa_filename = 'casa_import.sh'
+         with open(casa_filename,'w') as f:
+            f.write(casa_string)
+         cmd = "casa -c %s" % casa_filename
+         print(cmd)
+         os.system(cmd)
+      
+         #will need to rm /tmp/tmp*  
+      
+         uncal_ms_image_prefix = "uncal_lstdeg_%s_freq_%s_MHz" % (lst_deg,freq_MHz)
+         uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         
+         #make a wsclean image of the uncalibrated ms just to get an image header to reproject to:
+         cmd = "wsclean -name %s -size %s %s -scale %s -pol xx -data-column DATA %s " % (uncal_ms_image_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+         print(cmd)
+         os.system(cmd)
+      
+
+  
 #main program
 def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_name,array_ant_locations_filename,array_label,EDA2_data=False):
    if EDA2_data:
@@ -10495,7 +10602,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           data=hdulist[0].data[0,0,:,:]
           new_header=hdulist[0].header
           
-          pix_size_deg = float(new_header['CDELT1'])
+          pix_size_deg = float(new_header['CDELT1']) #* 1.5      #hack - try a bigger pix area and check the effect
           pix_area_deg_sq = pix_size_deg*pix_size_deg
           pix_area_sr = pix_area_deg_sq / sq_deg_in_1_sr
           
@@ -13559,7 +13666,34 @@ def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filena
       hdulist.writeto(new_uvfits_name,overwrite=True)
       print("saved %s" % (new_uvfits_name))
 
+def split_baseline(baseline, shift=None):
+    """
+    Given a baseline, split it into it consistent stand ID numbers.
+    """
+    
+    if baseline.any() >= 65536:
+        ant1 = np.floor_divide((baseline - 65536),2048)
+        ant1 = np.mod((baseline - 65536),2048)
+        #ant1 = (baseline - 65536) // 2048
+        #ant2 = (baseline - 65536) % 2048
+    else:
+        ant1 = np.floor_divide(baseline,256)
+        ant2 = np.mod(baseline,256)
+        
+    return ant1,ant2
+    
+#SITARA:
+bandwidth_MHz = 5
+pol = 'Y'
+centre_freq_MHz = 150
+start_utc = "20150311T090000"
+obs_length_hrs = 12
+obs_time_res_hrs = 2
+start_lst = get_eda2_lst(eda_time_string=start_utc)
+simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs)
 
+sys.exit()
+    
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255_NEU.ant"
@@ -13837,8 +13971,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 pol_list = ['Y']
-freq_MHz_list = freq_MHz_array[0:2]
-EDA2_chan_list = EDA2_chan_list[0:2]
+freq_MHz_list = freq_MHz_array[0:5]
+EDA2_chan_list = EDA2_chan_list[0:5]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -13961,15 +14095,15 @@ for pol in pol_list:
    ###simulate to get the theoretical beam weighted global signal 
    #simulate(lst_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,outbase_name=outbase_name,array_ant_locations_filename=array_ant_locations_filename,array_label=array_label,EDA2_data=False)
    
-   plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
+   #plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 
-sys.exit()
+#sys.exit()
 
 #run poth pols for final plot
 
 #model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 model_type_list = ['OLS_fixed_intercept']
-pol_list_input = ['X','Y']
+pol_list_input = ['Y']
 poly_order=5
 plot_only = True
 baseline_length_thresh_lambda = 0.5
@@ -14125,6 +14259,5 @@ plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_li
 
 #Actually - this is pretty helpful for cure fitting:
 #http://keflavich.github.io/astr2600_notebooks/Lecture23_DataFitting.html#/10
-
 
 
