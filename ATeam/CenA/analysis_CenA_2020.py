@@ -72,19 +72,32 @@ def regrid_optical(template_imagename,input_imagename,smooth=0):
    #mucking around with headers
    ##replace the header of Ben_Radio_features.fits with the original header for CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits
    #hdulist = fits.open("%s" % ('CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits'))
+   #hdulist = fits.open("%s" % ('../Frame1/Ha_cont_subtracted_via_rband_scaling.fits'))
    #image_header_orig = hdulist[0].header
+   #print(image_header_orig)
+   #hdulist.info()
    #hdulist.close()
-   #
-   #hdulist = fits.open('Ben_Radio_features.fits')
-   #image_header = hdulist[0].header
-   #image_data = hdulist[0].data
-   #
-   #updated_image_name = 'Ben_Radio_features_header_update.fits'
-   #fits.writeto(updated_image_name,image_data,clobber=True)
+   ##
+   hdulist = fits.open('tmp8gkajc2c_dmimgthresh.fits')
+   image_header = hdulist[0].header
+   print(image_header)
+   image_data = hdulist[0].data
+   hdulist.info()
+   hdulist.close()
+   print(image_header['CRPIX1'])
+   image_header['NAXIS1'] = 6150
+   image_header['NAXIS2'] = 5190
+   image_header['CRPIX1'] = 3075
+   image_header['CRPIX2'] = 2595
+   
+   print(image_header['CRPIX1'])
+   print(image_header)
+   updated_image_name = 'tmp8gkajc2c_dmimgthresh_header_update.fits'
+   fits.writeto(updated_image_name,image_data,overwrite=True)
+   fits.update(updated_image_name,image_data,header=image_header)
    #fits.update(updated_image_name,image_data,header=image_header_orig)
-   #print("wrote image %s" %  updated_image_name) 
-   #
-   #sys.exit()
+   print("wrote image %s" %  updated_image_name) 
+   
    #hdulist = fits.open("%s" % ('3_Separate_HII_regions_from_Ha_edhead.fits'))
    #image_header_orig = hdulist[0].header
    #hdulist.close()
@@ -98,7 +111,7 @@ def regrid_optical(template_imagename,input_imagename,smooth=0):
    #fits.update(updated_image_name,image_data,header=image_header_orig)
    #print("wrote image %s" %  updated_image_name) 
    #
-   #sys.exit()
+   sys.exit()
    
      
    
@@ -607,9 +620,12 @@ def calculate_outflow_properties():
    const_eqn_26 = 55. / (sigma / (4.*np.pi)) #kpc
    T_x_7p4 = (r_th / const_eqn_26)**(2./3.)
    print("######T_x_7p4 is %E keV" % T_x_7p4)
+
    T_x_unscaled = T_x_7p4 * 2.2
    print("######T_x_unscaled is %E keV" % T_x_unscaled)
-
+   T_x_unscaled_K = (T_x_unscaled*1000.) * (eV_J / kb)
+   print("######T_x_unscaled_K is %E K" % T_x_unscaled_K)
+   
    #MWA south (arcmin):
    #radius = 63.
    #width = 90.
@@ -700,7 +716,12 @@ def calculate_outflow_properties():
    time_for_power_out_macro_Myr = time_for_power_out_macro_s / yr_sec / 1.e6
    print("time_for_power_out_macro_Myr is %E" % time_for_power_out_macro_Myr)
    
+   #accretion efficiency according to Michael McDonald
+   M_dot_in_micro_kg_s = M_dot_in_micro * M_solar / yr_sec
+   epsilon_mcd = power_out_macro_W / (M_dot_in_micro_kg_s * c**2) 
+   print("epsilon_mcd is %E" % epsilon_mcd)
    
+   sys.exit()
    
    ##Israel hot ionised  outflow
    #this number density is just for e-, dont know hot gas density at 1kpc - maybe could use krol at 2.7?
@@ -869,6 +890,33 @@ def calculate_outflow_properties():
    P_jet_erg_s = P_jet_W / erg_J
    print("P_jet_erg_s %E erg per sec" % P_jet_erg_s)
    
+   #Central cooling time
+   print("cooling time calcs")
+   #from G17 eqn 7:
+   #T_x_7p4_K = (T_x_7p4*1000.) * (eV_J / kb)
+   T_x_7p4_K = (T_x_7p4*1000.) * (eV_J / kb)
+   print("######T_x_7p4_K is %E K" % T_x_7p4_K)
+   L_x_43p8_erg_sec = T_x_7p4**3
+   print("L_x_43p8_erg_sec %E erg per sec" % L_x_43p8_erg_sec)
+   L_x_unscaled_erg_sec = L_x_43p8_erg_sec * 6e43
+   print("L_x_unscaled_erg_sec %E erg per sec" % L_x_unscaled_erg_sec)
+   
+   
+   
+   #duty cycle
+   # ratio of cooling luminosity (from X-rays) to the time-averaged jet power
+   power_erg_sec_outer_lobes = 2.0e43 #neff2015B
+   #x_ray_cooling_luminosity = ? # i dont think we know this ...
+   #Need to ask stas and max about this
+   
+   duty_cycle = L_x_unscaled_erg_sec / power_erg_sec_outer_lobes
+   print("duty_cycle (L_x_unscaled_erg_sec / power_erg_sec_outer_lobes) %E " % duty_cycle)
+   sys.exit()
+   
+   ##calculate the expected synchrotron emission levels and therefore the magnetic field strengths required to 
+   #confine the particles in the NML. Look at equation in Torrance's FIGARO paper and refs 
+   
+   
 def image_comparison_feain():
    feain_peak_core_mJy = 1441.68
    feain_rm_1_deg = 17.
@@ -1005,16 +1053,16 @@ def multicolor_dynamic_range_image(image_name,min_val_1,max_val_1,min_val_2,max_
    figmap.savefig(fig_name,dpi=1000)
    print("saved %s" % fig_name)
 
-image_name = "../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
-multicolor_dynamic_range_image(image_name,0,202,0,2.2,-.1,0.4)
-sys.exit()
+#image_name = "../CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
+#multicolor_dynamic_range_image(image_name,0,202,0,2.2,-.1,0.4)
+#sys.exit()
 
    
 #image_comparison_feain()
 #sys.exit()
 
-#calculate_outflow_properties()
-#sys.exit()
+calculate_outflow_properties()
+sys.exit()
 
 
 #mask_level=0.1
@@ -1052,8 +1100,9 @@ cen_A_rosat_p30_list = ['932428p-p30.fits','932429p-p30.fits','932430p-p30.fits'
 
 #template_imagename = 'rband_1sec_tr_fl_geo_ha.fits'
 #template_imagename = 'CenA_optical_template-image.fits'
-template_imagename = 'CenA_optical_template_3deg-image.fits'
-#template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
+#template_imagename = 'CenA_optical_template_3deg-image.fits'
+template_imagename = 'Ha_cont_subtracted_via_rband_scaling.fits'
+#template_imagename = "CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits"  
 
 #input_imagename = 'CenA_WCS_edhead.fits'
 #input_imagename = 'CenA_WCS_Ha_edhead.fits'
@@ -1076,11 +1125,12 @@ template_imagename = 'CenA_optical_template_3deg-image.fits'
 #input_name_list = ['HIemission_mom0.fits']
 #input_name_list = ['CenA_2015_2018_joint_145_robust0_image_pb_8_ims_08_weighted.fits']
 #input_name_list = ['Ha_cont_subtracted_via_rband_scaling.fits']
-input_name_list = ['CENA_HA.fits']
+#input_name_list = ['CENA_HA.fits']
+input_name_list = ['tmp8gkajc2c_dmimgthresh.fits']
 #i know this one works:
 #input_name_list = ['CenA_WCS.fits']
-#input_name_list = ['CenA_WCS_Ha.fits']
-#input_imagename = 'Ben_Radio_features.fits'
+#input_name_list = ['Ben_Radio_features_NR_header_update.fits']
+#input_imagename = 'Ben_Radio_features_NR.fits'
 #template_imagename,input_imagename)
 for input_name in input_name_list:
    #edhead_name = input_name.split('.fits')[0]+'_edhead.fits'
@@ -1089,7 +1139,7 @@ for input_name in input_name_list:
    #try no edhead for mikes:
    #regrid_optical(template_imagename,input_name)
    #CFHT ha subtr smooth
-   regrid_optical(input_name,input_name,smooth=4)  
+   regrid_optical(template_imagename,input_name)  
    
    
 #benjamin@namorrodor:/md0/ATeam/CenA/paper_2020/optical/new_connor
