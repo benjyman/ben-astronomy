@@ -148,7 +148,7 @@ inst_bw = 30.
 chan_width = 1.0
 #fine chan stuff
 centre_chan_index = 16
-fine_chan_width_Hz = 28935 #Hz
+fine_chan_width_Hz =  28935 #Hz should be:(400./512.)*1.0e6 
                      
 if array_ant_locations == 'eda2':
    #array_ant_locations_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen.ant'
@@ -2086,11 +2086,13 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    bandwidth = (n_fine_chans_used + 1) * fine_chan_width_MHz
    
-   if EDA2_data:
-      freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-      #try reversed
-      #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-      #freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
+   if EDA2_data:  #hack 2
+      if not reverse_fine_chans:
+         freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+      else:
+         #try reversed
+         freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+         #freq_MHz_fine_chan = centre_freq + (bandwidth/2.) - (fine_chan_index)*fine_chan_width_MHz 
    else:
       freq_MHz_fine_chan = centre_freq     
    wavelength = 300./float(freq_MHz_fine_chan)  
@@ -3081,8 +3083,10 @@ def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,
                   fine_chan_index = int(fine_chan_index)
                   
                   #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
-                  freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-                  #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+                  if not reverse_fine_chans:
+                     freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+                  else:
+                     freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
                   
                   #wavelength = 300./float(freq_MHz_fine_chan)
                   
@@ -3294,12 +3298,14 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          fine_chan_index = int(fine_chan_index)
          baseline_length_array_lambda_sorted_cut_list = []
 
-         if EDA2_data:
+         if EDA2_data: #hack 1
             #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
             #2020 paper:
-            freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
+            if not reverse_fine_chans:
+               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+            else:
+               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
          else:
             freq_MHz_fine_chan = freq_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
@@ -3481,7 +3487,10 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             VV_s_array = uvtable['VV'][unity_common_inds]
             VV_m_array = VV_s_array * c
        
-            
+            if reverse_fine_chans:
+               unity_fine_chan_index = 31 - fine_chan_index
+            else:
+               unity_fine_chan_index = fine_chan_index
             #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
             #yes but this should not affect the unity uvfits
             ####fine_chan_index_array = fine_chan_index_array[::-1]
@@ -3489,7 +3498,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             print(visibilities_single.shape)
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
-            real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
+            real_vis_data = visibilities_single[:,0,0,unity_fine_chan_index,0,0]
                          
             #Need to sort by baseline length (then only use short baselines)
             baseline_length_array_m = np.sqrt(UU_m_array**2 + VV_m_array**2)
@@ -3525,7 +3534,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             
 
             n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,unity_fine_chan_index))
             
 
             real_vis_data_sorted = real_vis_data_sorted_orig[UU_m_array_sorted_orig>0]
@@ -3569,7 +3578,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
 
             #real_vis_data = visibilities_single[:,0,0,fine_chan_index,0,0]
             #TEST!
-            real_vis_data = visibilities_single[:,0,0,fine_chan_index,pol_index,0]
+            real_vis_data = visibilities_single[:,0,0,unity_fine_chan_index,pol_index,0]
             
             #print(real_vis_data)
             #sys.exit()  
@@ -3608,7 +3617,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             
 
             n_baselines_included = len(baseline_length_array_lambda_sorted_cut)
-            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,fine_chan_index))
+            print("n_baselines_included %s for obs %s, fine chan %s" % (n_baselines_included,obs_time_fast,unity_fine_chan_index))
             
       
 
@@ -3787,9 +3796,11 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          fine_chan_index = int(fine_chan_index)
          if EDA2_data:
             #for 20200303 and 20200304 data fine chan order is reversed?
-            freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
-            #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
+            if not reverse_fine_chans:
+               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+            else:
+               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
          else:
             freq_MHz_fine_chan = freq_MHz
          wavelength = 300./float(freq_MHz_fine_chan)
@@ -4919,7 +4930,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             np.save(t_sky_measured_array_filename_flagged,t_sky_measured_array_flagged)
             np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
          np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
-       
+         
+         
+         
    #make a plot of diffuse global input  
    #dont need this at the moment
    #if 'diffuse_global' in signal_type_list:
@@ -5255,10 +5268,10 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       plt.legend(loc='upper right')
    else:
       plt.legend(loc='lower right')
-   if EDA2_data:
+   #if EDA2_data:
       #plt.ylim([500, 5000])
       #check first 5 chans:
-      plt.ylim([3500, 4500])
+      #plt.ylim([3500, 4500]) #hack
    #else:
       #plt.ylim([0, 4000])
    fig_name= "t_sky_measured_lst_%s%s_flagged.png" % (lst_string,signal_type_postfix)
@@ -9258,7 +9271,7 @@ def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_
                #uvmodel requires the model to be in Jy/pix
                #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
                
-               scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)
+               scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2) 
                print("scale map by %s to get to Jy/pix" % scale_fine_chan)
                
                reprojected_gsm_im_Jy_per_pix_name_fine_chan =  "%s_%s_%0.3f_MHz_reproj_Jy_pix.im" % (sky_model,date_time_string,freq_MHz_fine_chan)
@@ -10530,14 +10543,19 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        apparent_unity_sky_im_name_fine_chan_list_Y = []
        apparent_angular_sky_im_name_fine_chan_list_X = []
        apparent_angular_sky_im_name_fine_chan_list_Y = []
+       max_gsm_list = []
+       scale_fine_chan_list = []
        for fine_chan_index in range(0,32):
           centre_freq = float(freq_MHz)
           fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
           
+          #reversing or not reversing the order of the input images in the model appears to make zero difference to the result!
           #dont reverse chan order (2020 paper)
-          #freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-          #do reverse chan order (time av cal 2021 miriad)
-          freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+          if not reverse_fine_chans:
+             freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+          else:
+             #do reverse chan order (time av cal 2021 miriad)
+             freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
           
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
@@ -10564,8 +10582,11 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
           unity_sky_value = 1. * jy_to_K
           
-          gsm_map = gsm.generate(freq_MHz_fine_chan)
+          gsm_map = gsm.generate(freq_MHz_fine_chan) 
           unity_map = gsm_map * 0. + unity_sky_value
+          
+          max_gsm = np.max(gsm_map)
+          max_gsm_list.append(max_gsm)
           
           hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G',overwrite=True)
           print("wrote %s" % gsm_hpx_fits_name_fine_chan)
@@ -10645,16 +10666,29 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           #model needs to be in Jy/pix
           #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
        
-          scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)
+          scale_fine_chan = (2. * k * 1.0e26 * pix_area_sr) / (wavelength_fine_chan**2)  
           print("scale map by %s to get to Jy/pix" % scale_fine_chan)
           
+          scale_fine_chan_list.append(scale_fine_chan)
 
           #check the model image for non-finite values and scale to Jy per pix:
           with fits.open("%s" % (reprojected_to_wsclean_gsm_fitsname_fine_chan)) as hdu_list_fine_chan:
              data_fine_chan = hdu_list_fine_chan[0].data
           #replace nans with zeros
           data_new_fine_chan = np.nan_to_num(data_fine_chan)
-          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
+          ##
+          #hack for test:
+        
+          #scale_fine_chan_modified = scale_fine_chan * 1.2
+          #scale_fine_chan_modified = scale_fine_chan * (1.2 - float(fine_chan_index)*0.0125)
+          #print("scale_fine_chan_modified is ")
+          #print(scale_fine_chan_modified)
+          #print("scale_fine_chan is ")
+          #print(scale_fine_chan)
+          #This does make a difference - you can change the slope! So why does reversing the channels above not do anything?
+          #data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan_modified  # hack
+          
+          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan 
           
           #write out a new fits file
           fits.writeto("%s" % (reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
@@ -10674,7 +10708,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           pyfits.update(reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan,data_new_jy_per_pix_fine_chan,header=new_header)
           print("saved %s" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan))
           
-          for pol in pol_list:   #['X','Y']:
+          for pol in ['X','Y']:
              if use_analytic_beam:
                 if pol=='X':
                    beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz_fine_chan,'xx')
@@ -10892,11 +10926,16 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           
        ###########################
        ###########################
-       
+       #print(max_gsm_list)
+       #print(scale_fine_chan_list)
+        
+       #sys.exit()
+         
        # predict a multi-channel model
        cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
        print(cmd)
        os.system(cmd)
+       
        
        ##make  images to check 
        #cmd = "wsclean -name model_col_chan_%s_%s_ms -size %s %s -scale %s -pol xx -data-column MODEL_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
@@ -10942,11 +10981,13 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           print(cmd)
           os.system(cmd)
        
-          ###make an image to check (both pols) 32 chans, skip for now, takes ages
-          #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+          ###make an image to check (both pols) 32 chans, skip for now, takes ages 
+          #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
           #print(cmd)
           #os.system(cmd) 
-   
+          
+    
+          
           #############
    
           #calibrate per chan on time av ms
@@ -10971,13 +11012,19 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)
              
+             if plot_cal:
+                #Plot the cal solutions
+                cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+                print(cmd)
+                os.system(cmd)
+             
                       
           #write out the uvfits file
           casa_cmd_filename = 'export_individual_uvfits.sh'
           cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
           print(cmd)
           os.system(cmd)
-                
+                 
           cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
           print(cmd)
           os.system(cmd)
@@ -11403,9 +11450,11 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                      centre_freq = float(freq_MHz)
                      fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
                      
-                     #dont reverse chan order
-                     freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
-                     #freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
+                     if not reverse_fine_chans:
+                        #dont reverse chan order
+                        freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
+                     else:
+                        freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz
                      
                      wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
                      
@@ -13690,9 +13739,8 @@ start_utc = "20150311T090000"
 obs_length_hrs = 12
 obs_time_res_hrs = 2
 start_lst = get_eda2_lst(eda_time_string=start_utc)
-simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs)
-
-sys.exit()
+#simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs)
+#sys.exit()
     
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
@@ -13973,17 +14021,19 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 pol_list = ['Y']
 freq_MHz_list = freq_MHz_array[0:5]
 EDA2_chan_list = EDA2_chan_list[0:5]
-plot_cal = False
+plot_cal = True
 #wsclean = False
 wsclean = True
 concat=True
 per_chan_cal = True
+reverse_fine_chans = True
+
 
 for pol in pol_list:
    pol_list_input = [pol]
    #New cal Jan 2021 - try to average data in time first before cal
    #2 Feb try withinitial full BW cal
-   #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
    #sys.exit()
    
    #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -14105,13 +14155,13 @@ for pol in pol_list:
 model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['Y']
 poly_order=5
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 noise_coupling=False
 
@@ -14132,6 +14182,8 @@ wsclean=False # for sims or miriad cal
 fast=False
 no_modelling=True
 calculate_uniform_response=False
+
+
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response)
 
 #Need to change colors of plots throughout so they are suitable for color blindness and use dotted, dashed, or dot dashed lines instead of just colours (and different symbols in scatter plots)
