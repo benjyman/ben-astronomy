@@ -2086,6 +2086,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    bandwidth = (n_fine_chans_used + 1) * fine_chan_width_MHz
    
+   #maybe it is actually saved in the correct order now...., so don't reverse here?
+   #this makes no difference .. why not ?
    if EDA2_data:  #hack 2
       if not reverse_fine_chans:
          freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
@@ -4931,7 +4933,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             np.save(t_sky_measured_error_array_filename_flagged,t_sky_measured_error_array_flagged)       
          np.save(freq_MHz_fine_array_filename,freq_MHz_fine_array)
          
-         
+         #print(freq_MHz_fine_array)
+         #sys.exit()
          
    #make a plot of diffuse global input  
    #dont need this at the moment
@@ -5252,9 +5255,9 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,linestyle='-',alpha=0.7)
       if len(freq_MHz_list)==1:
          plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
-      else:
+      else: 
          plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
-    
+         #plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
       #if 'diffuse_global' in signal_type_list:
       #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
       #if include_angular_info:
@@ -14033,7 +14036,7 @@ for pol in pol_list:
    pol_list_input = [pol]
    #New cal Jan 2021 - try to average data in time first before cal
    #2 Feb try withinitial full BW cal
-   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
    #sys.exit()
    
    #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -14155,13 +14158,13 @@ for pol in pol_list:
 model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['Y']
 poly_order=5
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=False
 
