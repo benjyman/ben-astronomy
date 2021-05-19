@@ -14393,12 +14393,14 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
    #there might have been no obs:
    if EDA2_obs_time!=0:
       print(EDA2_obs_time)
-      lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
+      lst_eda2_hrs = "%0.1f" % get_eda2_lst(EDA2_obs_time)
+      #lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
    else:
       #just use the first LST
-      lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time_list[0][4::])
+      #lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time_list[0][4::])
+      lst_eda2_hrs = "%0.1f" % get_eda2_lst(EDA2_obs_time_list[0])
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
 
