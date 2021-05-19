@@ -10599,6 +10599,7 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
    concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
    output_prefix = "%s" % (array_label)
    signal_type_postfix = ''
+   n_fine_chans = 32
    if 'noise' in signal_type_list:
        signal_type_postfix += '_N'
        concat_output_name_base += '_N'
@@ -10686,12 +10687,6 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
       baseline_length_m = np.sqrt(UU_m**2 + VV_m**2)
             
       print("baseline length is %0.3f m" % baseline_length_m)
-               
-      #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
-      if wsclean:
-         n_fine_chans = visibilities_single.shape[4]
-      else:
-         n_fine_chans = visibilities_single.shape[3]
       
       if EDA2_data:
          n_edge_chans_omitted = 5 #two at start and 3 at end
@@ -10761,8 +10756,25 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
                   uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (lst_deg,start_freq,pol,freq_MHz_index) 
                else:
                   uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
-               
-            if not (unity or angular):
+
+            if unity or angular: 
+               print("%s" % uvfits_filename)
+               with fits.open(uvfits_filename) as hdulist:
+                  uvtable = hdulist[0].data
+                  uvtable_header = hdulist[0].header
+                  visibilities_single = uvtable['DATA']
+                  visibilities_shape = visibilities_single.shape
+                  print(visibilities_shape)
+                  
+                  real_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,0]
+                  imag_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,1]
+                  weights_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,2]
+            
+                  total_vis_power = np.sqrt(real_vis_data**2 + imag_vis_data**2)
+                  print(total_vis_power)
+                  vis_power_list.append(total_vis_power)
+  
+            else:
                #read the cal uvfits, extract real vis uu and vv
                print("%s" % uvfits_filename)
                with fits.open(uvfits_filename) as hdulist:
@@ -10792,22 +10804,7 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
                   total_vis_power = np.sqrt(real_vis_data**2 + imag_vis_data**2)
                   print(total_vis_power)
                   vis_power_list.append(total_vis_power)
-            else: 
-               print("%s" % uvfits_filename)
-               with fits.open(uvfits_filename) as hdulist:
-                  uvtable = hdulist[0].data
-                  uvtable_header = hdulist[0].header
-                  visibilities_single = uvtable['DATA']
-                  visibilities_shape = visibilities_single.shape
-                  print(visibilities_shape)
-                  
-                  real_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,0]
-                  imag_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,1]
-                  weights_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,2]
-            
-                  total_vis_power = np.sqrt(real_vis_data**2 + imag_vis_data**2)
-                  print(total_vis_power)
-                  vis_power_list.append(total_vis_power)
+
                
       vis_power_array = np.asarray(vis_power_list)
       freq_MHz_fine_chan_array = np.asarray(freq_MHz_fine_chan_list)
@@ -11332,8 +11329,6 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 #   header = hdu_list[0].header
                 #   print(header)
                      
-                
-                
                 cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename_fine_chan,uvfits_vis_filename_fine_chan)
                 print(cmd)
                 os.system(cmd)
@@ -11342,15 +11337,15 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 #print(cmd)
                 #os.system(cmd)
                 
-                apparent_unity_sky_im_name_centre_chan = "u_%0.3f_%s.im" % (centre_freq,pol)
-                apparent_angular_sky_im_name_centre_chan = "a_%0.3f_%s.im" % (centre_freq,pol)
+                #apparent_unity_sky_im_name_centre_chan = "u_%0.3f_%s.im" % (centre_freq,pol)
+                #apparent_angular_sky_im_name_centre_chan = "a_%0.3f_%s.im" % (centre_freq,pol)
              
-                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_unity_sky_im_name_centre_chan,unity_sky_vis_filename)
+                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_unity_sky_im_name_fine_chan,unity_sky_vis_filename)
                 print(cmd)
                 os.system(cmd)
                 
                 #angular
-                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_angular_sky_im_name_centre_chan,angular_sky_vis_filename)
+                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_angular_sky_im_name_fine_chan,angular_sky_vis_filename)
                 print(cmd)
                 os.system(cmd)          
                 
