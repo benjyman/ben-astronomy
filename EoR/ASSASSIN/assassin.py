@@ -11372,7 +11372,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        # predict a multi-channel model
        cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
        print(cmd)
-       #os.system(cmd)
+       os.system(cmd)
        
        
        ##make  images to check 
@@ -11392,7 +11392,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
        cmd = "rm -rf %s" % (gain_solutions_name)
        print(cmd)
-       #os.system(cmd)
+       os.system(cmd)
        
        #calibrate
        
@@ -11402,7 +11402,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #calibrate on all 32 chans to increase SNR (poor results if you don't do this)
        cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
        print(cmd)
-       #os.system(cmd)
+       os.system(cmd)
        
 
        #plot the sols and 
@@ -11411,13 +11411,13 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #Plot the cal solutions
              cmd = "aocal_plot.py  %s " % (gain_solutions_name)
              print(cmd)
-             #os.system(cmd)
+             os.system(cmd)
              
           #indent this if doing precal steps above   
 
           cmd = "applysolutions %s %s " % (av_ms_name,gain_solutions_name)
           print(cmd)
-          #os.system(cmd)
+          os.system(cmd)
        
           ###make an image to check (both pols) 32 chans, skip for now, takes ages 
           #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
@@ -11442,44 +11442,44 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #for av ms name use data column
              #cmd = "calibrate  -ch 1 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
              print(cmd)
-             #os.system(cmd)
+             os.system(cmd)
              
              #apply sols
              cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
              #cmd = "applysolutions  %s %s " % (av_ms_name,gain_solutions_name)
              print(cmd)
-             #os.system(cmd)
+             os.system(cmd)
              
              if plot_cal:
                 #Plot the cal solutions
                 cmd = "aocal_plot.py  %s " % (gain_solutions_name)
                 print(cmd)
-                #os.system(cmd)
+                os.system(cmd)
              
                       
           #write out the uvfits file
           casa_cmd_filename = 'export_individual_uvfits.sh'
           cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
           print(cmd)
-          #os.system(cmd)
+          os.system(cmd)
                  
           cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
           print(cmd)
-          #os.system(cmd)
+          os.system(cmd)
           
           with open(casa_cmd_filename,'w') as f:
              f.write(cmd)
                
           cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
           print(cmd)
-          #os.system(cmd)
+          os.system(cmd)
           
           #end indent
        
           #remove those nasty tmp files that CASA writes
           cmd = "rm -rf /tmp/tmp*"
           print(cmd)
-          #os.system(cmd)
+          os.system(cmd)
                     
        else:
           print("no cal solutions for %s" % (ms_name))
@@ -14460,7 +14460,7 @@ for pol in pol_list:
    pol_list_input = [pol]
    #New cal Jan 2021 - try to average data in time first before cal
    #2 Feb try withinitial full BW cal
-   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
    #sys.exit()
    
    #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -14598,8 +14598,8 @@ baseline_number = 10
 #pick angular or unity or neither (not both)
 unity = True
 angular=False
-inspect_cross_auto_power(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,woden=woden,noise_coupling=noise_coupling,baseline_number=baseline_number,unity=unity,angular=angular)
-sys.exit()
+#inspect_cross_auto_power(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,woden=woden,noise_coupling=noise_coupling,baseline_number=baseline_number,unity=unity,angular=angular)
+#sys.exit()
 
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 sys.exit()
