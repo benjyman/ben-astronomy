@@ -11362,6 +11362,11 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 print(cmd)
                 os.system(cmd)
        
+                #get rid of the copied fine chan uvfits and the unity vis
+                cmd = "rm -rf %s %s" % (uvfits_filename_fine_chan,unity_sky_vis_filename,angular_sky_vis_filename)
+                print(cmd)
+                os.system(cmd)
+                
                 ####
           
           
