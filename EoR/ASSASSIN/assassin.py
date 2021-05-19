@@ -2100,6 +2100,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    wavelength = 300./float(freq_MHz_fine_chan)  
    #wavelength = 300./float(centre_freq)  
    
+   #how does (synthesised) beam solid angle come into this?
    jy_to_K = (wavelength**2) / (2. * k * 1.0e26)   # * 6*PI? (or 4 pi and then fiddle X again?) There are also the visibility weights that I have ignored .... a factor of 120.8
    print("jy_to_K %.4E Jy" % jy_to_K)
    
@@ -2573,10 +2574,9 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       print("X_short_parallel_array all NaNs, returning Tsky NaN")
       return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan)
       
-      
-   
-   t_sky_K = jy_to_K * t_sky_jy
-   t_sky_error_K = jy_to_K * t_sky_error_jy
+   #hacks to remove jy_to_K for testing smoothness
+   t_sky_K =   t_sky_jy # *jy_to_K
+   t_sky_error_K =  t_sky_error_jy # * jy_to_K 
    print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
    fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
    fit_string_K = "y=%0.1fx" % t_sky_K
@@ -2589,7 +2589,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
-   fitted_values_K = results.fittedvalues * jy_to_K
+   fitted_values_K = results.fittedvalues  #* jy_to_K
    
    y_pos_K = np.max(fitted_values_K)
    x_pos = 1.2 * np.min(X_short_parallel_array)
@@ -2598,7 +2598,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    
-   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans * jy_to_K
+   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans #* jy_to_K
    
    #in Jy
    plt.clf()
@@ -2717,8 +2717,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       print("saved %s" % fig_name) 
       
       #convert to K
-      t_sky_K_flagged = jy_to_K * t_sky_jy
-      t_sky_error_K_flagged = jy_to_K * t_sky_error_jy
+      t_sky_K_flagged =  t_sky_jy #* jy_to_K
+      t_sky_error_K_flagged = t_sky_error_jy  # * jy_to_K 
       print("t_sky_K_flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
       #fig6b and 10b:
       #fit_string_K = "y=%0.1fx --> T(70 MHz)=-0.4 K" % t_sky_K_flagged      #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
@@ -2728,8 +2728,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       fit_string_K = "y=%sx" % int(t_sky_K_flagged)
    
       #plot in K
-      real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged * jy_to_K
-      fitted_values_K = results.fittedvalues * jy_to_K
+      real_vis_data_sorted_array_flagged_K = real_vis_data_sorted_array_flagged  #* jy_to_K
+      fitted_values_K = results.fittedvalues # * jy_to_K
       #fig10b
       y_pos_K = 1200 # * np.max(fitted_values_K) 
       x_pos_K = 0.45 #1.4 * np.min(X_short_parallel_array)
@@ -3282,12 +3282,20 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          n_fine_chans = visibilities_single.shape[4]
       else:
          n_fine_chans = visibilities_single.shape[3]
-               
+    
+      #only output a file for the central 27 chans
+      if EDA2_data:
+         n_edge_chans_omitted = 5 #two at start and 3 at end
+         n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+      else:
+         n_fine_chans_used = 1
+         n_edge_chans_omitted = 0
+          
       if EDA2_data:
          #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
          #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
          #changing this to test (15 Feb 2021)
-         fine_chan_index_array = range(n_fine_chans)
+         fine_chan_index_array = np.arange(n_fine_chans_used) + 2
          #print(fine_chan_index_array)
       else:
          fine_chan_index_array = np.asarray([0])
@@ -3669,29 +3677,32 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
          print("saved %s" % real_vis_data_sorted_array_filename)
 
          
-         
-      else:
-         pass
-      if n_obs_concat==1:
-         if wsclean==True:
-            uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-         elif woden:
-            if noise_coupling:
-               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
-            else:
-               uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index)
-         else:
-            uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-      else:
-         if wsclean==True:
-            #uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-            #use calibrated average data
-            uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         else:
-            #concat_chan_64_20191202T171525_n_obs_13.uvfits
-            #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-            uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      #what the hell was this else here for?     
+      #else:
+      #   pass
+      
+      #   Dont think we need or want any of this stuff - repeated below?
+      #if n_obs_concat==1:
+      #   if wsclean==True:
+      #      uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+      #   elif woden:
+      #      if noise_coupling:
+      #         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+      #      else:
+      #         uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index)
+      #   else:
+      #      uvfits_filename = "%s/cal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+      #else:
+      #   if wsclean==True:
+      #      #uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s_ws_cal.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      #      #use calibrated average data
+      #      uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      #   else:
+      #      #concat_chan_64_20191202T171525_n_obs_13.uvfits
+      #      #uvfits_filename = "%s/av_chan_%s_%s_n_obs_%s_t_av_cal_freq_av.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      #      uvfits_filename = "%s/concat_chan_%s_%s_n_obs_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
    else:
+      print("not doing fast")
       if EDA2_data:
          if n_obs_concat==1:
             if wsclean==True:
@@ -3729,7 +3740,15 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       n_fine_chans = visibilities.shape[4]
    else:
       n_fine_chans = visibilities.shape[3]
-   
+
+   #only output a file for the central 27 chans
+   if EDA2_data:
+      n_edge_chans_omitted = 5 #two at start and 3 at end
+      n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+   else:
+      n_fine_chans_used = 1
+      n_edge_chans_omitted = 0
+         
    uvfits_filename_list = []
    if EDA2_data:
       if n_obs_concat==1:
@@ -3788,7 +3807,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
       if EDA2_data:
          #print("EDA2 data. Omitting 1 edge chan each side, %s chans present, %s chans used" % (n_fine_chans,n_fine_chans-2))
          #fine_chan_index_array = range(n_fine_chans)[1:n_fine_chans-1]
-         fine_chan_index_array = range(n_fine_chans)
+         fine_chan_index_array = np.arange(n_fine_chans_used) + 2
          #print(fine_chan_index_array)
       else:
          fine_chan_index_array = np.asarray([0])
@@ -4354,7 +4373,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                X_short_parallel_array_filename_pure_inline = "X_short_parallel_array_pure_inline_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                np.save(X_short_parallel_array_filename_pure_inline,X_short_parallel_array_pure_inline)
                print("saved %s" % X_short_parallel_array_filename_pure_inline)
-               
+                
                X_short_parallel_array_filename_pure_parallel = "X_short_parallel_array_pure_parallel_%0.3f_MHz_%s_pol.npy" % (freq_MHz_fine_chan,pol)
                np.save(X_short_parallel_array_filename_pure_parallel,X_short_parallel_array_pure_parallel)
                print("saved %s" % X_short_parallel_array_filename_pure_parallel)
@@ -4866,7 +4885,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_measured_array_filename_flagged = "t_sky_measured_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
             t_sky_measured_error_array_filename_flagged = "t_sky_measured_error_array_lst_%s_pol_%s%s_%s_flagged.npy" % (lst_string,pol,signal_type_postfix,model_type)
 
-      
             #this replaces all the matrix stuff you do in model_tsky_from_saved_data
             freq_MHz_fine_array = np.full(t_sky_array_length,np.nan)
             for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
@@ -5253,15 +5271,19 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             t_sky_theoretical_array = np.load(t_sky_theoretical_array_to_plot_filename)
           
          plt.errorbar(freq_MHz_fine_array,t_sky_measured_array,yerr=t_sky_measured_error_array,label=label1,linestyle='-',alpha=0.7)
-      if len(freq_MHz_list)==1:
-         plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
-      else: 
-         plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
+      #hack to remove theoretical line for smoothness test
+      #if len(freq_MHz_list)==1:
+      #   plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2)
+      #else: 
+      #   plt.plot(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
          #plt.scatter(freq_MHz_list,t_sky_theoretical_array,label=label2,linestyle=':')
-      #if 'diffuse_global' in signal_type_list:
-      #   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
-      #if include_angular_info:
-      #   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
+      
+      
+      
+      ###if 'diffuse_global' in signal_type_list:
+      ###   plt.plot(freq_MHz_list,diffuse_global_value_array,label='input')
+      ###if include_angular_info:
+      ###   plt.plot(freq_MHz_list,t_sky_measured_global_array,label='with ang info')
 
    map_title="t_sky measured flagged" 
    plt.xlabel("Frequency (MHz)")
@@ -10428,7 +10450,388 @@ def plot_EDA2_cal_sols(EDA2_chan,EDA2_obs_time,fine_chan_index,phase_sol_filenam
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)  
    
+def inspect_cross_auto_power(lst_hrs_list,freq_MHz_list,pol_list,signal_type_list,sky_model,array_label,baseline_length_thresh_lambda,poly_order,EDA2_data=False,EDA2_chan_list='None',n_obs_concat_list=[],wsclean=False,fast=False,woden=True,noise_coupling=True,baseline_number=0,unity=False,angular=False):
+   n_fine_chans = 32
+   if EDA2_data:
+      n_edge_chans_omitted = 5 #two at start and 3 at end
+      n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+   else:
+      n_fine_chans_used = 1
+   n_edge_chans_omitted = 0
    
+   
+         
+   ant1, ant2 = decode_baseline(baseline_number)
+   for pol in pol_list:
+      print("inspecting cross and/or power(s) for baseline %s, ant %s and ant %s " % (int(baseline_number), ant1, ant2))
+      cross_power_array = np.full(int(len(freq_MHz_list)*n_fine_chans_used),np.nan)
+      auto_power_ant1_array = np.full(int(len(freq_MHz_list)*n_fine_chans_used),np.nan)
+      auto_power_ant2_array = np.full(int(len(freq_MHz_list)*n_fine_chans_used),np.nan)
+      fine_chan_array = np.full(int(len(freq_MHz_list)*n_fine_chans_used),np.nan)
+      unity_sky_value_K_array = np.full(int(len(freq_MHz_list)*n_fine_chans_used),np.nan)
+      
+      cross_power_array_filename = 'cross_power_%s_%s.npy' % (ant1,ant2)
+      auto_power_ant1_array_filename = 'auto_power_%s.npy' % (ant1)
+      auto_power_ant2_array_filename = 'auto_power_%s.npy' % (ant2)
+      fine_chan_array_filename = 'fine_chan_array_inspect_auto_cross_power.npy' 
+      unity_sky_value_K_array_filename = 'unity_sky_value_K_array.npy' 
+      
+      
+      #print(EDA2_obs_time_list)
+      for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+         start_fine_index =  freq_MHz_index * n_fine_chans_used 
+         end_fine_index = (freq_MHz_index * n_fine_chans_used) + n_fine_chans_used
+         #using global variable chan num so I can run lots in parallel (yes I know this is bad programming)
+         if EDA2_data==True:
+            if len(freq_MHz_list)==1:
+               EDA2_chan = EDA2_chan_list[0]
+               EDA2_obs_time = EDA2_obs_time_list[chan_num]
+            else:
+               EDA2_chan = EDA2_chan_list[freq_MHz_index]
+               EDA2_obs_time = EDA2_obs_time_list[freq_MHz_index]
+            if len(n_obs_concat_list) > 0:
+               if len(freq_MHz_list)==1:
+                  n_obs_concat = n_obs_concat_list[chan_num]
+               else:
+                  n_obs_concat = n_obs_concat_list[freq_MHz_index]
+            else:
+               n_obs_concat = 1
+         else:
+            EDA2_chan = None
+            EDA2_obs_time = None
+            n_obs_concat = 1
+         
+         #only the theoretical beam weighted av is taken from this function now,, rest is derived from saved files
+         #t_sky_measured,t_sky_measured_error,t_sky_theoretical,n_baselines_used = solve_for_tsky_from uvfits(freq_MHz,lst_hrs_list,pol,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,include_angular_info=include_angular_info,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat)
+         
+         ###THis is the one that works for the SIMS! at 20200422
+         if EDA2_data:
+         
+            auto_power_ant1_chan_array,fine_chan_array_chan,unity_sky_value_K_array_chan = get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model=sky_model,array_label=array_label,EDA2_data=EDA2_data,EDA2_obs_time=EDA2_obs_time,EDA2_chan=EDA2_chan,n_obs_concat=n_obs_concat,wsclean=wsclean,fast=fast,woden=woden,noise_coupling=noise_coupling,baseline_number=baseline_number,unity=unity,angular=angular)
+        
+        
+         auto_power_ant1_array[start_fine_index:end_fine_index] = auto_power_ant1_chan_array
+         fine_chan_array[start_fine_index:end_fine_index] = fine_chan_array_chan
+         unity_sky_value_K_array[start_fine_index:end_fine_index] = unity_sky_value_K_array_chan
+         
+         
+      np.save(auto_power_ant1_array_filename,auto_power_ant1_array)
+      np.save(fine_chan_array_filename,fine_chan_array)
+     
+      print(auto_power_ant1_array.shape)
+      print(auto_power_ant1_array)
+      print(fine_chan_array.shape)
+      print(fine_chan_array)
+ 
+
+      plt.clf()
+      
+      plt.plot(unity_sky_value_K_array)
+      
+      map_title="unity sky value K" 
+      #plt.xlabel("Frequency (MHz)")
+      plt.ylabel("unity sky value K")
+      plt.legend(loc='lower right')
+      #if EDA2_data:
+         #plt.ylim([500, 5000])
+      fig_name= "unity_sky_values_K.png" 
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      
+    
+      plt.clf()
+      
+      plt.plot(fine_chan_array)
+      
+      map_title="Frequency" 
+      #plt.xlabel("Frequency (MHz)")
+      plt.ylabel("Freq MHz")
+      plt.legend(loc='lower right')
+      #if EDA2_data:
+         #plt.ylim([500, 5000])
+      fig_name= "fine_chan_array_plot.png" 
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      
+      #plt.clf()
+      #
+      #plt.plot(auto_power_ant1_array)
+      #
+      #map_title="Cross power" 
+      ##plt.xlabel("Frequency (MHz)")
+      #plt.ylabel("Cross power (Jy)")
+      #plt.legend(loc='lower right')
+      ##if EDA2_data:
+      #   #plt.ylim([500, 5000])
+      #fig_name= "cross_power_baseline_%s_ants_%s_%s_pol_%s_noxlabel.png" % (baseline_number,ant1,ant2,pol)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name) 
+         
+      plt.clf()
+      
+      plt.plot(fine_chan_array,auto_power_ant1_array)
+      
+      map_title="Cross power" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("Cross power (Jy)")
+      plt.legend(loc='lower right')
+      #if EDA2_data:
+         #plt.ylim([500, 5000])
+      fig_name= "cross_power_baseline_%s_ants_%s_%s_pol_%s.png" % (baseline_number,ant1,ant2,pol)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name) 
+      
+   
+def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,signal_type_list,sky_model,array_label,EDA2_data=False,EDA2_obs_time='None',EDA2_chan='None',n_obs_concat=1,wsclean=False,fast=False,woden=True,noise_coupling=True,baseline_number=0,unity=False,angular=False):
+   if pol=='X':
+      pol_index = 0
+   elif pol=='Y':
+      pol_index = 1
+   else:
+      print('pol %s not recognised' % pol)
+      sys.exit()
+   freq_MHz = freq_MHz_list[freq_MHz_index]
+   start_freq = freq_MHz_list[0]
+   concat_output_name_base = "%s_%s_%s" % (array_label,pol,outbase_name)
+   output_prefix = "%s" % (array_label)
+   signal_type_postfix = ''
+   if 'noise' in signal_type_list:
+       signal_type_postfix += '_N'
+       concat_output_name_base += '_N'
+   if 'diffuse' in signal_type_list:
+       signal_type_postfix += '_D_%s' % sky_model
+       concat_output_name_base += '_D_%s' % sky_model
+       if woden:
+          type = "gsm"
+   if 'global_unity' in signal_type_list:
+       signal_type_postfix += '_GU'
+       concat_output_name_base += '_GU'
+   if 'diffuse_global' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse_global at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DG_%s' % sky_model
+          concat_output_name_base += '_DG_%s' % sky_model
+   if 'diffuse_angular' in signal_type_list:
+       if 'diffuse' in signal_type_list:
+          print("cant have diffuse and diffuse_angular at same time")
+          sys.exit()
+       else:
+          signal_type_postfix += '_DA_%s' % sky_model
+          concat_output_name_base += '_DA_%s' % sky_model
+   if 'global' in signal_type_list:
+       if 'global_EDGES' in signal_type_list:
+          print("cant have global and global_EDGES in signal_type_list")
+          sys.exit()
+       else:
+          signal_type_postfix += '_G' 
+          concat_output_name_base += '_G'
+   if 'global_EDGES' in signal_type_list:
+       signal_type_postfix += '_ED' 
+       concat_output_name_base += '_ED'
+       if woden:
+          type = "EDGES_uniform"
+   if 'gain_errors' in signal_type_list:
+       signal_type_postfix += '_GE'
+       concat_output_name_base += '_GE'
+   
+   n_lsts = len(lst_hrs_list)
+
+   lst_hrs = lst_hrs_list[freq_MHz_index]
+   lst_deg = (float(lst_hrs)/24.)*360.
+   
+   if fast:
+      if EDA2_data:
+         if unity:
+            uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,obs_time_fast,pol)
+         elif angular:
+            uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,obs_time_fast,pol)
+         else:
+            uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
+      elif woden:
+         if noise_coupling:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         else:
+            uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+         obs_time_list = ['1']
+      else:
+         uvfits_filename = "%s_LST_%03d_%s_%0.3f_MHz%s.uvfits" % (output_prefix,lst_deg,pol,freq_MHz,signal_type_postfix)
+         obs_time_list = ['1']
+      #read the cal uvfits, extract real vis uu and vv
+      print("%s" % uvfits_filename)
+      hdulist = fits.open(uvfits_filename)
+      #hdulist.info()
+      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #print info_string
+      uvtable = hdulist[0].data
+      uvtable_header = hdulist[0].header
+      #print(uvtable_header)
+      hdulist.close()
+
+      visibilities_single = uvtable['DATA']
+      visibilities_shape = visibilities_single.shape
+      print("visibilities_shape")
+      print(visibilities_shape)
+
+      UU_s = uvtable['UU'][baseline_number]
+      UU_m = UU_s * c   
+      VV_s = uvtable['VV'][baseline_number]
+      VV_m = VV_s * c
+
+      baseline_length_m = np.sqrt(UU_m**2 + VV_m**2)
+            
+      print("baseline length is %0.3f m" % baseline_length_m)
+               
+      #for some reason there is an extra column in the wsclean uvfits files, probably because of the way CASA exports them..
+      if wsclean:
+         n_fine_chans = visibilities_single.shape[4]
+      else:
+         n_fine_chans = visibilities_single.shape[3]
+      
+      if EDA2_data:
+         n_edge_chans_omitted = 5 #two at start and 3 at end
+         n_fine_chans_used = n_fine_chans - n_edge_chans_omitted
+      else:
+         n_fine_chans_used = 1
+         n_edge_chans_omitted = 0
+       
+      #only return the central n_fine_chans_used 
+      if EDA2_data:
+         fine_chan_index_array = np.arange(n_fine_chans_used) + 2
+      else:
+         fine_chan_index_array = np.asarray([0])
+      
+      centre_freq = float(freq_MHz)
+      fine_chan_width_MHz = fine_chan_width_Hz/1000000.         
+       
+      vis_power_list = []
+      freq_MHz_fine_chan_list = []
+      unity_sky_value_list = []
+      #now do for each fine chan:
+      for fine_chan_index in fine_chan_index_array:
+         fine_chan_index = int(fine_chan_index)
+         baseline_length_array_lambda_sorted_cut_list = []
+
+         if EDA2_data: #hack 1
+            #data coming out of the TPMs is reversed by coarse chan so for 20200303_data (and 20200304), need to change the freq calculation
+            #2020 paper:
+            if not reverse_fine_chans:
+               freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz 
+            else:
+               freq_MHz_fine_chan = centre_freq - (fine_chan_index - centre_chan_index + 1)*fine_chan_width_MHz 
+               #freq_MHz_fine_chan = centre_freq - (fine_chan_index)*fine_chan_width_MHz
+         else:
+            freq_MHz_fine_chan = freq_MHz
+         wavelength = 300./float(freq_MHz_fine_chan)
+         
+         jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+         unity_sky_value = 1. * jy_to_K
+         unity_sky_value_list.append(unity_sky_value)
+         #print("fine_chan index,MHz,wavelength")
+         #print(fine_chan_index)
+         #print(freq_MHz_fine_chan)
+         #print(wavelength)
+         
+         freq_MHz_fine_chan_list.append(freq_MHz_fine_chan)
+
+         for obs_time_fast in [EDA2_obs_time]:
+            if EDA2_data:
+               #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
+               #this is old pre woden miriad stuff
+               if unity:
+                  uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,obs_time_fast,pol)
+               elif angular:
+                  uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,obs_time_fast,pol)
+               else:
+                  uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+               #this is woden - havent run these yet
+               #unity_uvfits_filename = "%s/woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,freq_MHz_index) 
+               #angular_uvfits_filename = "%s/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,pol,freq_MHz_index) 
+            elif woden:
+               if noise_coupling:
+                  uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d_nc.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) #woden_LST_60.000_gsm_start_freq_50.000_band99.uvfits 
+               elif unity:
+                  uvfits_filename = "woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,start_freq,freq_MHz_index) 
+               elif angular:
+                  uvfits_filename = "woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (lst_deg,start_freq,pol,freq_MHz_index) 
+               else:
+                  uvfits_filename = "woden_LST_%0.3f_%s_start_freq_%0.3f_band%02d.uvfits" % (lst_deg,type,start_freq,freq_MHz_index) 
+               
+            if not (unity or angular):
+               #read the cal uvfits, extract real vis uu and vv
+               print("%s" % uvfits_filename)
+               with fits.open(uvfits_filename) as hdulist:
+                  #hdulist.info()
+                  #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+                  #print info_string
+                  uvtable = hdulist[0].data
+                  uvtable_header = hdulist[0].header
+                  #print(uvtable_header)
+                  #hdulist.close()
+   
+                  visibilities_single = uvtable['DATA']
+                  visibilities_shape = visibilities_single.shape
+                  #print("visibilities_shape")
+                  #print(visibilities_single)
+                  #print(visibilities_shape)
+                  
+                  if wsclean:
+                     real_vis_data = visibilities_single[baseline_number,0,0,0,fine_chan_index,pol_index,0]
+                     imag_vis_data = visibilities_single[baseline_number,0,0,0,fine_chan_index,pol_index,1]
+                     weights_vis_data = visibilities_single[baseline_number,0,0,0,fine_chan_index,pol_index,2]
+                  else:
+                     real_vis_data = visibilities_single[baseline_number,0,0,fine_chan_index,pol_index,0]
+                     imag_vis_data = visibilities_single[baseline_number,0,0,fine_chan_index,pol_index,1]
+                     weights_vis_data = visibilities_single[baseline_number,0,0,fine_chan_index,pol_index,2]
+            
+                  total_vis_power = np.sqrt(real_vis_data**2 + imag_vis_data**2)
+                  print(total_vis_power)
+                  vis_power_list.append(total_vis_power)
+            else: 
+               print("%s" % uvfits_filename)
+               with fits.open(uvfits_filename) as hdulist:
+                  uvtable = hdulist[0].data
+                  uvtable_header = hdulist[0].header
+                  visibilities_single = uvtable['DATA']
+                  visibilities_shape = visibilities_single.shape
+                  print(visibilities_shape)
+                  
+                  real_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,0]
+                  imag_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,1]
+                  weights_vis_data = visibilities_single[baseline_number,0,0,0,pol_index,2]
+            
+                  total_vis_power = np.sqrt(real_vis_data**2 + imag_vis_data**2)
+                  print(total_vis_power)
+                  vis_power_list.append(total_vis_power)
+               
+      vis_power_array = np.asarray(vis_power_list)
+      freq_MHz_fine_chan_array = np.asarray(freq_MHz_fine_chan_list)
+      unity_sky_value_array = np.asarray(unity_sky_value_list) 
+      #print(vis_power_array)
+      #print(vis_power_array.shape)
+      #print(freq_MHz_fine_chan_array)
+      #print(freq_MHz_fine_chan_array.shape)
+      
+      #plt.clf()
+      #plt.plot(vis_power_array)
+      #map_title="Cross power" 
+      ##plt.xlabel("Frequency (MHz)")
+      #plt.ylabel("Cross power (Jy)")
+      #plt.legend(loc='lower right')
+      ##if EDA2_data:
+      #   #plt.ylim([500, 5000])
+      #fig_name= "cross_power_baseline_%s_pol_%s_noxlabel_edachan_%s.png" % (baseline_number,pol,EDA2_chan)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name) 
+      
+      return vis_power_array,freq_MHz_fine_chan_array,unity_sky_value_array
+      
 def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False):
    #think about how to use coherence:
    #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
@@ -10447,6 +10850,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #freq_MHz = np.round(400./512.*float(EDA2_chan))
        freq_MHz = 400./512.*float(EDA2_chan)
        wavelength = 300./freq_MHz
+       centre_freq = float(freq_MHz)
+       fine_chan_width_MHz = fine_chan_width_Hz/1000000.  
        if uv_cutoff!=0:
           uv_cutoff_m = uv_cutoff * wavelength
        lst = lst_list[EDA2_chan_index]
@@ -10548,11 +10953,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        apparent_angular_sky_im_name_fine_chan_list_Y = []
        max_gsm_list = []
        scale_fine_chan_list = []
+       
        for fine_chan_index in range(0,32):
-          centre_freq = float(freq_MHz)
-          fine_chan_width_MHz = fine_chan_width_Hz/1000000.   
-          
-          #reversing or not reversing the order of the input images in the model appears to make zero difference to the result!
+           #reversing or not reversing the order of the input images in the model appears to make zero difference to the result!
           #dont reverse chan order (2020 paper)
           if not reverse_fine_chans:
              freq_MHz_fine_chan = centre_freq + (fine_chan_index - centre_chan_index)*fine_chan_width_MHz
@@ -10579,11 +10982,12 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
           
-
-          # remake the gsm files it is not hard and save as hpx fits (so dont need to run simulate anymore)
+          freq_MHz_fine_chan_for_jy_to_K = freq_MHz_fine_chan + (0.5 * fine_chan_width_MHz)
+          wavelength_fine_chan_for_jy_to_K = 300. / freq_MHz_fine_chan_for_jy_to_K
           
-          jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
-          unity_sky_value = 1. * jy_to_K
+          #jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
+          jy_to_K = (wavelength_fine_chan_for_jy_to_K**2) / (2. * k * 1.0e26) 
+          unity_sky_value = 1. #* jy_to_K (i think this should be divide to get to Jy from K?)
           
           gsm_map = gsm.generate(freq_MHz_fine_chan) 
           unity_map = gsm_map * 0. + unity_sky_value
@@ -10613,8 +11017,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           cmd = "wsclean -name %s -size %s %s -scale %s -pol xx -data-column DATA %s " % (uncal_ms_image_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
           print(cmd)
           os.system(cmd)
-          
-          
+
           
           ###
           if os.path.isfile(uncal_ms_image_name) and os.access(uncal_ms_image_name, os.R_OK):
@@ -10665,7 +11068,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           pyfits.update(reprojected_to_wsclean_unity_fitsname_fine_chan,reprojected_unity_map_fine_chan,header=new_header)
           print("wrote image %s" %  reprojected_to_wsclean_unity_fitsname_fine_chan)
     
-        
+          
           #model needs to be in Jy/pix
           #This scaling doesn't take into account the changing pixel area across the image - need too account for this somewhere with a 1/cos(za) term (can do it in the beam...)
        
@@ -10682,14 +11085,16 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           ##
           #hack for test:
         
-          #scale_fine_chan_modified = scale_fine_chan * 1.2
+          scale_fine_chan_modified = scale_fine_chan * 1.2
           #scale_fine_chan_modified = scale_fine_chan * (1.2 - float(fine_chan_index)*0.0125)
-          #print("scale_fine_chan_modified is ")
-          #print(scale_fine_chan_modified)
-          #print("scale_fine_chan is ")
-          #print(scale_fine_chan)
+          print("scale_fine_chan_modified is ")
+          print(scale_fine_chan_modified)
+          print("scale_fine_chan is ")
+          print(scale_fine_chan)
           #This does make a difference - you can change the slope! So why does reversing the channels above not do anything?
           #data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan_modified  # hack
+          
+          #hack to remove scaling to jy from brightness temp
           
           data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan 
           
@@ -10704,7 +11109,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              data_fine_chan = hdu_list_fine_chan[0].data
           #replace nans with zeros
           data_new_fine_chan = np.nan_to_num(data_fine_chan)
-          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
+          data_new_jy_per_pix_fine_chan = data_new_fine_chan #* scale_fine_chan
           
           #write out a new fits file
           fits.writeto("%s" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
@@ -10860,71 +11265,108 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              
              
              #will use imcat to make cubes for uvmodel
-                 
-
-       
-       ####
-       #stuff for FAST - uses uvfits files even though calibrating ms data
-       #need to do for both pols
-       for pol in pol_list:  
-          EDA2_obs_time = obs_time_list[0]
-          uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-          uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
-          unity_sky_uvfits_filename = "%s/unity_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol)
-          unity_sky_vis_filename = "%s/unity_chan_%s_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol) 
-          angular_sky_uvfits_filename = "%s/angular_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol)
-          angular_sky_vis_filename = "%s/angular_chan_%s_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time,pol) 
-                    
-          apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
-          apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
-          
-          if pol=='X':
-             unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_X)
-             angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_X)
-          else:
-             unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_Y)
-             angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_Y)
              
-          cmd = "rm -rf %s %s %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename,apparent_unity_sky_im_cube_name,angular_sky_uvfits_filename,angular_sky_vis_filename,apparent_angular_sky_im_cube_name)
-          print(cmd)
-          os.system(cmd)
-          
-          cmd = "imcat in=%s out=%s options=relax" % (unity_model_im_list_string,apparent_unity_sky_im_cube_name)
-          print(cmd)
-          os.system(cmd)
-        
-          #imcat angular
-          cmd = "imcat in=%s out=%s options=relax" % (angular_model_im_list_string,apparent_angular_sky_im_cube_name)
-          print(cmd)
-          os.system(cmd)
-          
-          cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
-          print(cmd)
-          os.system(cmd)
-         
-          
-          cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_cube_name,unity_sky_vis_filename)
-          print(cmd)
-          os.system(cmd)
-          
-          #angular
-          cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename,apparent_angular_sky_im_cube_name,angular_sky_vis_filename)
-          print(cmd)
-          os.system(cmd)          
-          
-          #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
-          #print(cmd)
-          #os.system(cmd)  
-          
-          cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
-          print(cmd)
-          os.system(cmd)
-          
-          cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (angular_sky_vis_filename,angular_sky_uvfits_filename)
-          print(cmd)
-          os.system(cmd)
- 
-          ####
+             
+             #instead of using imcat, write out a new uvfits for each fine chan
+       
+             #
+             #This next bit used to be outside of the fine chan loop,  moving it in and getting rid of multi-freq unity image (just use central chan) - do this for angular too TODO
+             
+             ####
+             #stuff for FAST - uses uvfits files even though calibrating ms data
+             #need to do for both pols
+             for pol in pol_list:  
+                EDA2_obs_time = obs_time_list[0]
+                uvfits_filename = "%s/chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+                uvfits_vis_filename = "%s/chan_%s_%s.vis" % (EDA2_chan,EDA2_chan,EDA2_obs_time)
+                uvfits_filename_fine_chan = "%s/chan_%s_fine_%02d_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time)
+                uvfits_vis_filename_fine_chan = "%s/chan_%s_fine_%02d_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time)
+                
+                unity_sky_uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol)
+                unity_sky_vis_filename = "%s/unity_chan_%s_%02d_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol) 
+                angular_sky_uvfits_filename = "%s/angular_chan_%s_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol)
+                angular_sky_vis_filename = "%s/angular_chan_%s_%02d_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol) 
+                          
+                #apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
+                #apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
+                #
+                #if pol=='X':
+                #   unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_X)
+                #   angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_X)
+                #else:
+                #   unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_Y)
+                #   angular_model_im_list_string = ','.join(apparent_angular_sky_im_name_fine_chan_list_Y)
+                #   
+                #cmd = "rm -rf %s %s %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_vis_filename,apparent_unity_sky_im_cube_name,angular_sky_uvfits_filename,angular_sky_vis_filename,apparent_angular_sky_im_cube_name)
+                cmd = "rm -rf %s %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,uvfits_filename_fine_chan,uvfits_vis_filename_fine_chan,angular_sky_uvfits_filename,angular_sky_vis_filename)
+                print(cmd)
+                os.system(cmd)
+                
+                #cmd = "imcat in=%s out=%s options=relax" % (unity_model_im_list_string,apparent_unity_sky_im_cube_name)
+                #print(cmd)
+                #os.system(cmd)
+                #
+                ##imcat angular
+                #cmd = "imcat in=%s out=%s options=relax" % (angular_model_im_list_string,apparent_angular_sky_im_cube_name)
+                #print(cmd)
+                #os.system(cmd)
+                
+                #cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
+                #print(cmd)
+                #os.system(cmd)
+                
+                #make a copy of the uvfits_filename so we can modify the header with the fine chan freq
+                cmd = "cp -r %s %s" % (uvfits_filename,uvfits_filename_fine_chan)
+                print(cmd)
+                os.system(cmd)
+                
+                #modify the uvfits_filename_fine_chan header here
+                with fits.open("%s" % (uvfits_filename_fine_chan),'update') as hdu_list:
+                   #data = hdu_list[0].data
+                   header = hdu_list[0].header
+                   hdu_list[0].header['CRVAL4'] = freq_MHz_fine_chan
+           
+                ##check  
+                #with fits.open("%s" % (uvfits_filename_fine_chan),readonly=True) as hdu_list:
+                #   #data = hdu_list[0].data
+                #   header = hdu_list[0].header
+                #   print(header)
+                     
+                
+                
+                cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename_fine_chan,uvfits_vis_filename_fine_chan)
+                print(cmd)
+                os.system(cmd)
+                
+                #cmd = "puthd in=%s/crval4 value=%0.3f" % (uvfits_vis_filename_fine_chan,freq_MHz_fine_chan)
+                #print(cmd)
+                #os.system(cmd)
+                
+                apparent_unity_sky_im_name_centre_chan = "u_%0.3f_%s.im" % (centre_freq,pol)
+                apparent_angular_sky_im_name_centre_chan = "a_%0.3f_%s.im" % (centre_freq,pol)
+             
+                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_unity_sky_im_name_centre_chan,unity_sky_vis_filename)
+                print(cmd)
+                os.system(cmd)
+                
+                #angular
+                cmd = "uvmodel vis=%s model=%s options=replace out=%s" % (uvfits_vis_filename_fine_chan,apparent_angular_sky_im_name_centre_chan,angular_sky_vis_filename)
+                print(cmd)
+                os.system(cmd)          
+                
+                #cmd = 'uvplt device="%s/png" vis=%s  axis=uvdist,amp options=nobase select=-auto' % (uv_dist_plot_name,out_vis)
+                #print(cmd)
+                #os.system(cmd)  
+                
+                cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (unity_sky_vis_filename,unity_sky_uvfits_filename)
+                print(cmd)
+                os.system(cmd)
+                
+                cmd = "fits in=%s op=uvout options=nocal,nopol,nopass out=%s" % (angular_sky_vis_filename,angular_sky_uvfits_filename)
+                print(cmd)
+                os.system(cmd)
+       
+                ####
           
           
        ###########################
@@ -10937,7 +11379,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        # predict a multi-channel model
        cmd = "wsclean -predict -name %s -size %s %s -scale %s -pol xx,yy -channels-out 32 %s " % (apparent_sky_fits_name_prefix_fine_chan,wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
        print(cmd)
-       os.system(cmd)
+       #os.system(cmd)
        
        
        ##make  images to check 
@@ -10957,7 +11399,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        
        cmd = "rm -rf %s" % (gain_solutions_name)
        print(cmd)
-       os.system(cmd)
+       #os.system(cmd)
        
        #calibrate
        
@@ -10967,7 +11409,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #calibrate on all 32 chans to increase SNR (poor results if you don't do this)
        cmd = "calibrate  -ch 32 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
        print(cmd)
-       os.system(cmd)
+       #os.system(cmd)
        
 
        #plot the sols and 
@@ -10976,13 +11418,13 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #Plot the cal solutions
              cmd = "aocal_plot.py  %s " % (gain_solutions_name)
              print(cmd)
-             os.system(cmd)
+             #os.system(cmd)
              
           #indent this if doing precal steps above   
 
           cmd = "applysolutions %s %s " % (av_ms_name,gain_solutions_name)
           print(cmd)
-          os.system(cmd)
+          #os.system(cmd)
        
           ###make an image to check (both pols) 32 chans, skip for now, takes ages 
           #cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
@@ -11007,44 +11449,44 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #for av ms name use data column
              #cmd = "calibrate  -ch 1 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
              print(cmd)
-             os.system(cmd)
+             #os.system(cmd)
              
              #apply sols
              cmd = "applysolutions -datacolumn CORRECTED_DATA %s %s " % (av_ms_name,gain_solutions_name)
              #cmd = "applysolutions  %s %s " % (av_ms_name,gain_solutions_name)
              print(cmd)
-             os.system(cmd)
+             #os.system(cmd)
              
              if plot_cal:
                 #Plot the cal solutions
                 cmd = "aocal_plot.py  %s " % (gain_solutions_name)
                 print(cmd)
-                os.system(cmd)
+                #os.system(cmd)
              
                       
           #write out the uvfits file
           casa_cmd_filename = 'export_individual_uvfits.sh'
           cmd = "rm -rf %s %s" % (calibrated_uvfits_filename_wsclean,casa_cmd_filename)
           print(cmd)
-          os.system(cmd)
+          #os.system(cmd)
                  
           cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='corrected',overwrite=True,writestation=False)" % (av_ms_name,calibrated_uvfits_filename_wsclean)
           print(cmd)
-          os.system(cmd)
+          #os.system(cmd)
           
           with open(casa_cmd_filename,'w') as f:
              f.write(cmd)
                
           cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
           print(cmd)
-          os.system(cmd)
+          #os.system(cmd)
           
           #end indent
        
           #remove those nasty tmp files that CASA writes
           cmd = "rm -rf /tmp/tmp*"
           print(cmd)
-          os.system(cmd)
+          #os.system(cmd)
                     
        else:
           print("no cal solutions for %s" % (ms_name))
@@ -11232,27 +11674,16 @@ def calibrate_eda2_data(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],
                   cmd = "cp -r %s %s" % (apparent_unity_sky_im_name,apparent_unity_sky_im_name_copy)
                   print(cmd)
                   os.system(cmd)
-                  
-                  
-                  apparent_zero_sky_im_name = "apparent_zero_sky_LST_%03d_%s_pol_%0.3f_MHz.im" % (lst_deg,pol,freq_MHz)
-                  
-                  cmd = "rm -rf %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,zero_sky_vis_filename,uvfits_vis_filename,apparent_zero_sky_im_name)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  cmd = "maths exp=%s*0.0 out=%s " % (apparent_unity_sky_im_name_copy,apparent_zero_sky_im_name)
+                   
+                  cmd = "rm -rf %s %s %s %s %s" % (unity_sky_uvfits_filename,unity_sky_vis_filename,zero_sky_vis_filename,uvfits_vis_filename)
                   print(cmd)
                   os.system(cmd)
                   
                   cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename,uvfits_vis_filename)
                   print(cmd)
                   os.system(cmd)
-
-                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_zero_sky_im_name,zero_sky_vis_filename)
-                  print(cmd)
-                  os.system(cmd)
-                  
-                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (zero_sky_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
+               
+                  cmd = "uvmodel vis=%s model=%s options=replace,mfs out=%s" % (uvfits_vis_filename,apparent_unity_sky_im_name_copy,unity_sky_vis_filename)
                   print(cmd)
                   os.system(cmd)
                   
@@ -14022,14 +14453,14 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 pol_list = ['Y']
-freq_MHz_list = freq_MHz_array[0:5]
-EDA2_chan_list = EDA2_chan_list[0:5]
-plot_cal = True
+freq_MHz_list = freq_MHz_array[0:3]
+EDA2_chan_list = EDA2_chan_list[0:3]
+plot_cal = False
 #wsclean = False
 wsclean = True
 concat=True
 per_chan_cal = True
-reverse_fine_chans = True
+reverse_fine_chans = False
 
 
 for pol in pol_list:
@@ -14158,18 +14589,28 @@ for pol in pol_list:
 model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['Y']
 poly_order=5
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 noise_coupling=False
 
+#have a look at the auto and cross power as a function of frequency for selected baselines and see if continuous
+#do this also in calibtate loop above for sanity check - am I calibrating twice on corrected data?? (you are, but does it matter?)
+baseline_number = 10
+#pick angular or unity or neither (not both)
+unity = True
+angular=False
+inspect_cross_auto_power(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,woden=woden,noise_coupling=noise_coupling,baseline_number=baseline_number,unity=unity,angular=angular)
+sys.exit()
+
 plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,pol_list=pol_list_input,signal_type_list=signal_type_list,sky_model=sky_model,array_label=array_label,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only,include_angular_info=include_angular_info,model_type_list=model_type_list, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,n_obs_concat_list=n_obs_concat_list,wsclean=wsclean,fast=fast,no_modelling=no_modelling,calculate_uniform_response=calculate_uniform_response,woden=woden,noise_coupling=noise_coupling)
 sys.exit()
+
 
 
 #up to here with plot_only = False
