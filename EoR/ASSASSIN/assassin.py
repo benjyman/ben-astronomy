@@ -3334,8 +3334,8 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                #uvfits_filename = "%s/wscal_chan_%s_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast)
                uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
                #this is old pre woden miriad stuff
-               unity_uvfits_filename = "%s/unity_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast,pol)
-               angular_uvfits_filename = "%s/angular_chan_%s_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,obs_time_fast,pol)
+               unity_uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,obs_time_fast,pol)
+               angular_uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,obs_time_fast,pol)
                #this is woden - havent run these yet
                #unity_uvfits_filename = "%s/woden_LST_%0.3f_unity_uniform_start_freq_%0.3f_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,freq_MHz_index) 
                #angular_uvfits_filename = "%s/woden_LST_%0.3f_gsm_start_freq_%0.3f_pol_%s_angular_band%02d.uvfits" % (EDA2_chan,lst_deg,start_freq,pol,freq_MHz_index) 
@@ -3471,6 +3471,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
                
             #######################################################################################################
             #now repeat for unity sky to get X_short_parallel!
+            #note there are separate uvfits for each fine chan
             print("%s" % unity_uvfits_filename)
             #TEST!
             #unity_uvfits_filename = '/md0/EoR/ASSASSIN/solve_for_tsky_weighted/global_unity/eda_model_LST_030_X_50_MHz_GU.uvfits'
@@ -3496,11 +3497,13 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             UU_m_array = UU_s_array * c   
             VV_s_array = uvtable['VV'][unity_common_inds]
             VV_m_array = VV_s_array * c
-       
-            if reverse_fine_chans:
-               unity_fine_chan_index = 31 - fine_chan_index
-            else:
-               unity_fine_chan_index = fine_chan_index
+            
+            #fine chan index is zero since we have a new uvfits for each fine chan
+            unity_fine_chan_index = 0
+            #if reverse_fine_chans:
+            #   unity_fine_chan_index = 31 - fine_chan_index
+            #else:
+            #   unity_fine_chan_index = fine_chan_index
             #the uvfits files used to make the unity sky data had reversed fine channel ordering (true for 20200303 and 20200304) - marcin will fix this in later data
             #yes but this should not affect the unity uvfits
             ####fine_chan_index_array = fine_chan_index_array[::-1]
@@ -14460,7 +14463,7 @@ for pol in pol_list:
    pol_list_input = [pol]
    #New cal Jan 2021 - try to average data in time first before cal
    #2 Feb try withinitial full BW cal
-   #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
    #sys.exit()
    
    #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -14593,8 +14596,7 @@ calculate_uniform_response=False
 noise_coupling=False
 
 #have a look at the auto and cross power as a function of frequency for selected baselines and see if continuous
-#do this also in calibtate loop above for sanity check - am I calibrating twice on corrected data?? (you are, but does it matter?)
-baseline_number = 10
+#do this also in calibtate loop above for sanity check - am I calibrating twice on corrected data?? (you are, but does it matter?)#baseline_number = 10
 #pick angular or unity or neither (not both)
 unity = True
 angular=False
