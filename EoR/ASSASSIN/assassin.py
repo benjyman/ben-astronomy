@@ -10978,12 +10978,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           reprojected_to_wsclean_unity_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
-          
-          freq_MHz_fine_chan_for_jy_to_K = freq_MHz_fine_chan + (0.5 * fine_chan_width_MHz)
-          wavelength_fine_chan_for_jy_to_K = 300. / freq_MHz_fine_chan_for_jy_to_K
-          
-          #jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
-          jy_to_K = (wavelength_fine_chan_for_jy_to_K**2) / (2. * k * 1.0e26) 
+
+          jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
           unity_sky_value = 1. #* jy_to_K (i think this should be divide to get to Jy from K?)
           
           gsm_map = gsm.generate(freq_MHz_fine_chan) 
@@ -11082,12 +11078,12 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           ##
           #hack for test:
         
-          scale_fine_chan_modified = scale_fine_chan * 1.2
+          #scale_fine_chan_modified = scale_fine_chan * 1.2
           #scale_fine_chan_modified = scale_fine_chan * (1.2 - float(fine_chan_index)*0.0125)
-          print("scale_fine_chan_modified is ")
-          print(scale_fine_chan_modified)
-          print("scale_fine_chan is ")
-          print(scale_fine_chan)
+          #print("scale_fine_chan_modified is ")
+          #print(scale_fine_chan_modified)
+          #print("scale_fine_chan is ")
+          #print(scale_fine_chan)
           #This does make a difference - you can change the slope! So why does reversing the channels above not do anything?
           #data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan_modified  # hack
           
@@ -11320,8 +11316,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 #modify the uvfits_filename_fine_chan header here
                 with fits.open("%s" % (uvfits_filename_fine_chan),'update') as hdu_list:
                    #data = hdu_list[0].data
-                   header = hdu_list[0].header
-                   hdu_list[0].header['CRVAL4'] = freq_MHz_fine_chan
+                   for hdu in hdu_list:
+                      hdu.header['CRVAL4'] = freq_MHz_fine_chan * 1.e6
+                      hdu.header['FREQ'] = freq_MHz_fine_chan * 1.e6
            
                 ##check  
                 #with fits.open("%s" % (uvfits_filename_fine_chan),readonly=True) as hdu_list:
@@ -11332,6 +11329,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 cmd = "fits in=%s op=uvin out=%s" % (uvfits_filename_fine_chan,uvfits_vis_filename_fine_chan)
                 print(cmd)
                 os.system(cmd)
+            
                 
                 #cmd = "puthd in=%s/crval4 value=%0.3f" % (uvfits_vis_filename_fine_chan,freq_MHz_fine_chan)
                 #print(cmd)
@@ -14462,7 +14460,7 @@ for pol in pol_list:
    pol_list_input = [pol]
    #New cal Jan 2021 - try to average data in time first before cal
    #2 Feb try withinitial full BW cal
-   #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+   calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
    #sys.exit()
    
    #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
