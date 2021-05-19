@@ -57,7 +57,7 @@ iers.conf.auto_download = False
 #download_IERS_A()
 
 import pyrap.tables as pt
-
+import ephem
 
 #color defs for color blindness contrast
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
@@ -91,6 +91,9 @@ mwa_latitude_deg = -26.70331940
 
 mwa_latitude_astropy = '-26.7d'
 mwa_longitude_astropy = '116.67d'
+
+mwa_latitude_ephem = '-26.7'
+mwa_longitude_ephem = '116.67'
 
 eda2_loc = EarthLocation(lat=-26.70*u.deg, lon=116.67*u.deg, height=0*u.m)
 utcoffset = 8*u.hour  # Western Australian Standard Time
@@ -250,19 +253,30 @@ z = np.polyfit(Aeff_freqs, Aeff_list, 3)
 p = np.poly1d(z)
 Aeff_for_freq_MHz_list = p(freq_MHz_list)
 
-def get_eda2_lst(eda_time_string="20151202T171727"):
-   ###Change this to use ephem instead of astropy
-   #Hack to get LST! use old time (2015) astropy.utils.iers.iers.IERSRangeError: (some) times are outside of range covered by IERS table.
-   #eda_time_string = "20191202T171727"
-   year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
-   eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
-   print(eda2_astropy_time_string)
-   eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
-   #calculate the local sidereal time for the MWA at eda2_astropy_time
-   eda2_obs_lst = eda2_astropy_time.sidereal_time('apparent')
-   eda2_obs_lst_hrs = eda2_obs_lst.value
-   return eda2_obs_lst_hrs
+#def get_eda2_lst(eda_time_string="20151202T171727"):
+#   ###Change this to use ephem instead of astropy
+#   #Hack to get LST! use old time (2015) astropy.utils.iers.iers.IERSRangeError: (some) times are outside of range covered by IERS table.
+#   #eda_time_string = "20191202T171727"
+#   year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
+#   eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
+#   print(eda2_astropy_time_string)
+#   eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+#   #calculate the local sidereal time for the MWA at eda2_astropy_time
+#   eda2_obs_lst = eda2_astropy_time.sidereal_time('apparent')
+#   eda2_obs_lst_hrs = eda2_obs_lst.value
+#   return eda2_obs_lst_hrs
 
+def get_eda2_lst(eda_time_string="20151202T171727"):
+   year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
+
+   eda2_observer = ephem.Observer()
+   eda2_observer.lon, eda2_observer.lat = mwa_longitude_ephem, mwa_latitude_ephem
+   eda2_observer.date = '%s/%s/%s %s:%s:%s' % (year,month,day,hour,minute,second)
+   eda2_obs_lst = eda2_observer.sidereal_time()
+   #print("LST is")
+   #print(eda2_obs_lst)
+   return eda2_obs_lst
+   
 def rotation_matrix(axis, theta):
    """
    Return the rotation matrix associated with counterclockwise rotation about
