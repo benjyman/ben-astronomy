@@ -10648,9 +10648,9 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
    if fast:
       if EDA2_data:
          if unity:
-            uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,obs_time_fast,pol)
+            uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,EDA2_obs_time,pol)
          elif angular:
-            uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,obs_time_fast,pol)
+            uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,centre_chan_index,EDA2_obs_time,pol)
          else:
             uvfits_filename = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat) 
       elif woden:
