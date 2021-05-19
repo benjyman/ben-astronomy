@@ -11280,8 +11280,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 
                 unity_sky_uvfits_filename = "%s/unity_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol)
                 unity_sky_vis_filename = "%s/unity_chan_%s_%02d_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol) 
-                angular_sky_uvfits_filename = "%s/angular_chan_%s_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol)
-                angular_sky_vis_filename = "%s/angular_chan_%s_%02d_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol) 
+                angular_sky_uvfits_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.uvfits" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol)
+                angular_sky_vis_filename = "%s/angular_chan_%s_fine_%02d_%s_pol_%s.vis" % (EDA2_chan,EDA2_chan,fine_chan_index,EDA2_obs_time,pol) 
                           
                 #apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
                 #apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
@@ -11363,7 +11363,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 os.system(cmd)
        
                 #get rid of the copied fine chan uvfits and the unity vis
-                cmd = "rm -rf %s %s" % (uvfits_filename_fine_chan,unity_sky_vis_filename,angular_sky_vis_filename)
+                cmd = "rm -rf %s %s %s" % (uvfits_filename_fine_chan,unity_sky_vis_filename,angular_sky_vis_filename)
                 print(cmd)
                 os.system(cmd)
                 
