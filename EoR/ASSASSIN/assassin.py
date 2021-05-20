@@ -2590,9 +2590,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       print("X_short_parallel_array all NaNs, returning Tsky NaN")
       return(np.nan,np.nan,np.nan,np.nan,freq_MHz_fine_chan)
       
-   #hacks to remove jy_to_K for testing smoothness
-   t_sky_K =   t_sky_jy # *jy_to_K
-   t_sky_error_K =  t_sky_error_jy # * jy_to_K 
+   t_sky_K =   t_sky_jy * jy_to_K
+   t_sky_error_K =  t_sky_error_jy * jy_to_K 
    print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
    fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
    fit_string_K = "y=%0.1fx" % t_sky_K
@@ -2605,7 +2604,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    y_pos = np.max(results.fittedvalues)
    x_pos = 1.2 * np.min(X_short_parallel_array)
    
-   fitted_values_K = results.fittedvalues  #* jy_to_K
+   fitted_values_K = results.fittedvalues * jy_to_K
    
    y_pos_K = np.max(fitted_values_K)
    x_pos = 1.2 * np.min(X_short_parallel_array)
@@ -2614,7 +2613,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    
-   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans #* jy_to_K
+   real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans * jy_to_K
    
    #in Jy
    plt.clf()
@@ -2780,15 +2779,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       t_sky_K_flagged = np.nan
       t_sky_error_K_flagged = np.nan  
       
-     
    else:
       t_sky_jy = np.nan
       t_sky_error_jy = np.nan
       t_sky_K_flagged = np.nan
       t_sky_error_K_flagged = np.nan
     
-
-   
    return t_sky_K,t_sky_error_K,t_sky_K_flagged,t_sky_error_K_flagged,freq_MHz_fine_chan
 
 def extract_data_from_eda2_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,EDA2_chan,n_obs,calculate_uniform_response=False,include_angular_info=True):
@@ -11123,10 +11119,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        print("number of good obs used in chan %s is %s" % (EDA2_chan,number_of_good_obs)) 
        
        #now average
-       av_uvfits_name = "%s/av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
-       av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
-       sum_ms_name = "%s/sum_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
-       calibrated_uvfits_filename_wsclean = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,len(obs_time_list))
+       av_uvfits_name = "%s/av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+       av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+       sum_ms_name = "%s/sum_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+       calibrated_uvfits_filename_wsclean = "%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
        
        
        
@@ -11351,7 +11347,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              data_fine_chan = hdu_list_fine_chan[0].data
           #replace nans with zeros
           data_new_fine_chan = np.nan_to_num(data_fine_chan)
-          data_new_jy_per_pix_fine_chan = data_new_fine_chan #* scale_fine_chan
+          data_new_jy_per_pix_fine_chan = data_new_fine_chan * scale_fine_chan
           
           #write out a new fits file
           fits.writeto("%s" % (reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan),data_new_jy_per_pix_fine_chan,clobber=True)
