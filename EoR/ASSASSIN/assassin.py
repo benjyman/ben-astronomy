@@ -11778,7 +11778,6 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)              
              
-             sys.exit()
              
              #will use imcat to make cubes for uvmodel
              
@@ -15010,7 +15009,7 @@ reverse_fine_chans = False   #this should always be false!
 pol_list_input = []
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -15132,13 +15131,13 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['X','Y']
 poly_order=5
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=True
+no_modelling=False
 calculate_uniform_response=False
 noise_coupling=False
 
@@ -15157,7 +15156,7 @@ noise_coupling=False
 #chan_num = 90 - 64 #90 = 70MHz
 #this is the start coarse chan
 chan_num = 0
-n_coarse_chans_to_plot = 20     #127 - 64 = 63 (all coarse chans)
+n_coarse_chans_to_plot = 63     #127 - 64 = 63 (all coarse chans)
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 freq_MHz_list = freq_MHz_array[chan_num:chan_num+n_coarse_chans_to_plot]
