@@ -1867,7 +1867,7 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
             plt.ylabel("Visibility amplitude")
             plt.legend(loc=1)
             #plt.ylim([0, 20])
-            fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
+            fig_name= "x_y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,pol,EDA2_obs_time)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             print("saved %s" % fig_name) 
@@ -2054,9 +2054,6 @@ def model_tsky_from_saved_data_eda2(freq_MHz_list,freq_MHz_index,lst_hrs_list,po
                t_sky_K_flagged = np.nan
                t_sky_error_K_flagged = np.nan
                
-             
-            
-   
             t_sky_K_list_flagged.append(t_sky_K_flagged)
             t_sky_error_K_list_flagged.append(t_sky_error_K_flagged)
          else:
@@ -2254,18 +2251,18 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       
       if fast:
          Y_short_parallel_angular_array = np.concatenate(Y_short_parallel_angular_array)
-         Y_short_parallel_angular_array = Y_short_parallel_angular_array
-         
-         
+         #   Y_short_parallel_angular_array = Y_short_parallel_angular_array
+
       #plot a histogram of Y values
       plt.clf()
       n, bins, patches = plt.hist(Y_short_parallel_angular_array)
       map_title="Histogram of Y values (angular response)" 
-      fig_name= "hist_Y_angular_%0.3f_MHz_%s_pol%s.png" % (freq_MHz,pol,signal_type_postfix)
+      fig_name= "hist_Y_angular_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name)
+      
                
    if not fast:
       X_short_parallel_array_pure_parallel = np.load(X_short_parallel_array_filename_pure_parallel).real
@@ -2350,77 +2347,77 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          figmap.savefig(fig_name) #,dpi=1000 for paper fig4a
          print("saved %s" % fig_name) 
          
-      
-      X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
-      
-      if include_angular_info:
-         Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
+   #also do for fast   
+   X_short_parallel_array_diffuse_Jy = (diffuse_global_value * X_short_parallel_array) / jy_to_K
    
-         #full response
-         #need to convert between Jy and K
-      
-         Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
+   if include_angular_info:
+      #Y_short_parallel_array_norm = Y_short_parallel_angular_array / X_short_parallel_array_max_pure_inline
+   
+      #full response
+      #need to convert between Jy and K
+   
+      Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array * jy_to_K #/ jy_to_K
 
-         #need to update full response to include fine chans
-         full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
+      #need to update full response to include fine chans
+      full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
    
    
    
-      
-      #also include Y and the sum of X plus Y
-      plt.clf()
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-      #fist attempt:
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
-      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
-      
-      #need to update update full response to include fine chans
-      plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,label='Expected uniform diffuse response Jy',color=color_dark_blue,marker='s',s=3)
-      if include_angular_info:
-         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
-      ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-      map_title="Response to uniform sky vs baseline length data" 
-      plt.xlabel("Baseline length (wavelengths)")
-      plt.ylabel("Visibility amplitude")
-      plt.legend(loc=1)
-      #plt.ylim([0, 20])
-      fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
-      
-      
-      
-      #fig13 paper1
-      #Repeat in K
-      #also include Y and the sum of X plus Y
-      real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
-      X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
-      if include_angular_info:
-         full_response_Jy_K = full_response_Jy * jy_to_K
-      
-      plt.clf()
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
-      plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_K,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
-      #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
-      
-      #need to update update full response to include fine chans
-      plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,label='Expected uniform diffuse response',color=color_dark_blue,marker='s',s=3)
-      if include_angular_info:
-         plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
-      ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
-      map_title="Response to uniform sky vs baseline length data" 
-      plt.xlabel("Baseline length (wavelengths)")
-      plt.ylabel("Visibility amplitude (K)")
-      plt.legend(loc=1)
-      #plt.ylim([0, 20])
-      fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
-      figmap = plt.gcf()
-      # fig13:
-      #figmap.savefig(fig_name,dpi=1000)
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
+   
+   #also include Y and the sum of X plus Y
+   plt.clf()
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+   #fist attempt:
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,s=1,label='%s visibility amplitude' % real_or_simulated_string)
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+   
+   #need to update update full response to include fine chans
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy,label='Expected uniform diffuse response Jy',color=color_dark_blue,marker='s',s=3)
+   if include_angular_info:
+      plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy,label='Expected full response Jy',color=color_orange_red,marker='>',s=3)
+   ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="Response to uniform sky vs baseline length data" 
+   plt.xlabel("Baseline length (wavelengths)")
+   plt.ylabel("Visibility amplitude")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
+   
+   
+   
+   #fig13 paper1
+   #Repeat in K
+   #also include Y and the sum of X plus Y
+   real_vis_data_sorted_array_K = real_vis_data_sorted_array * jy_to_K
+   X_short_parallel_array_diffuse_Jy_K =  X_short_parallel_array_diffuse_Jy * jy_to_K
+   if include_angular_info:
+      full_response_Jy_K = full_response_Jy * jy_to_K
+   
+   plt.clf()
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_norm,s=1,label='Expected uniform sky response')
+   plt.scatter(baseline_length_array_lambda_sorted_cut,real_vis_data_sorted_array_K,label='%s visibility amplitude' % real_or_simulated_string,color=color_yellow,marker='o',s=3)
+   #plt.scatter(baseline_length_array_lambda_sorted_cut,Y_short_parallel_array_norm,s=1,label='Expected angular response')
+   
+   #need to update update full response to include fine chans
+   plt.scatter(baseline_length_array_lambda_sorted_cut,X_short_parallel_array_diffuse_Jy_K,label='Expected uniform diffuse response',color=color_dark_blue,marker='s',s=3)
+   if include_angular_info:
+      plt.scatter(baseline_length_array_lambda_sorted_cut,full_response_Jy_K,label='Expected full response',color=color_orange_red,marker='>',s=3)
+   ##plt.plot(n_ants_array,expected_residuals,label='sqrt(n_arrays)',linestyle=':')
+   map_title="Response to uniform sky vs baseline length data" 
+   plt.xlabel("Baseline length (wavelengths)")
+   plt.ylabel("Visibility amplitude (K)")
+   plt.legend(loc=1)
+   #plt.ylim([0, 20])
+   fig_name= "X_Y_and_real_vis_vs_uv_dist_%0.3f_MHz_%s_pol%s_K.png" % (freq_MHz_fine_chan,pol,signal_type_postfix)
+   figmap = plt.gcf()
+   # fig13:
+   #figmap.savefig(fig_name,dpi=1000)
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name) 
       
       
       
@@ -2509,12 +2506,12 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_error_jy = results.bse[0]
          
          #repeat for sim
-         model = sm.OLS(sim_vis_data_sorted_array, X_short_parallel_array,missing='drop')
-         results = model.fit()
-         parameters = results.params
+         model_sim = sm.OLS(sim_vis_data_sorted_array, X_short_parallel_array,missing='drop')
+         results_sim = model_sim.fit()
+         parameters_sim = results_sim.params
          #print parameters
-         t_sky_sim_jy = parameters[0]
-         t_sky_sim_error_jy = results.bse[0]         
+         t_sky_sim_jy = parameters_sim[0]
+         t_sky_sim_error_jy = results_sim.bse[0]         
          
       if model_type=='OLS_fixed_int_min_vis':
          model = sm.OLS(real_vis_data_min_in_X_bin_array, X_bin_centres_array,missing='drop')
@@ -2538,7 +2535,8 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          if fast and woden:
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
          elif fast and EDA2_data:
-            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
+            #real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
+            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
          else:
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
          real_vis_data_sorted_array_subtr_Y_K = real_vis_data_sorted_array_subtr_Y * jy_to_K
@@ -2550,21 +2548,39 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          t_sky_jy = parameters[0]
          t_sky_error_jy = results.bse[0]
 
+
          #repeat for sim
          if fast and EDA2_data:
-            sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array
+            sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
+            #sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array
+         
+            ##plot the subtr_y and Y_short array
+            plt.clf()
+            plt.plot(X_short_parallel_array, sim_vis_data_sorted_array_subtr_Y,label='%s Y' % 'sim',linestyle='None',marker='.')
+            ##plt.plot(X_short_parallel_array_nonans, sim_vis_data_sorted_array_nonans,label='%s data' % 'sim',linestyle='None',marker='.')
+            ##plt.plot(X_short_parallel_array_nonans, results_sim.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')    
+         
+            map_title="Data and fit" 
+            plt.xlabel("Expected global-signal response")
+            plt.ylabel("Real comp. Y (Jy)")
+            plt.legend(loc=1)
+            ##plt.text(x_pos_sim, y_pos_sim, fit_string_sim)
+            ##plt.ylim([0, 3.5])
+            fig_name= "check_Y_x_y_OLS_sim_plot_%0.3f_MHz_%s_pol%s_%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            plt.close()
+            print("saved %s" % fig_name)
          else:
             print("can't do sims")
-         sim_vis_data_sorted_array_subtr_Y_K = sim_vis_data_sorted_array_subtr_Y * jy_to_K
-         model = sm.OLS(sim_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
-         results = model.fit()
+         #sim_vis_data_sorted_array_subtr_Y_K = sim_vis_data_sorted_array_subtr_Y * jy_to_K
+         model_sim = sm.OLS(sim_vis_data_sorted_array_subtr_Y, X_short_parallel_array,missing='drop')
+         results_sim = model_sim.fit()
          ##print results.summary()
-         parameters = results.params
+         parameters_sim = results_sim.params
          #print parameters
-         t_sky_sim_jy = parameters[0]
-         t_sky_sim_error_jy = results.bse[0]
-         
-         
+         t_sky_sim_jy = parameters_sim[0]
+         t_sky_sim_error_jy = results_sim.bse[0]   
       elif model_type=='OLS_with_intercept':
          X_short_parallel_array = sm.add_constant(X_short_parallel_array)
          model = sm.OLS(real_vis_data_sorted_array, X_short_parallel_array,missing='drop')
@@ -2632,6 +2648,14 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    
    ratio_in_out = diffuse_global_value / t_sky_K
    print("ratio between input and output T_sky is %0.4f" % ratio_in_out )
+
+   y_pos = np.max(results.fittedvalues)
+   x_pos = 1.2 * np.min(X_short_parallel_array)
+   
+   fitted_values_K = results.fittedvalues * jy_to_K
+   
+   y_pos_K = np.max(fitted_values_K)
+   x_pos = 1.2 * np.min(X_short_parallel_array)
    
    #repeat for sims
    t_sky_sim_K =   t_sky_sim_jy #* jy_to_K
@@ -2643,18 +2667,24 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    ratio_in_out_sim = diffuse_global_value / t_sky_sim_K
    print("ratio between input and output T_sky_sim is %0.4f" % ratio_in_out_sim )
    
-   y_pos = np.max(results.fittedvalues)
-   x_pos = 1.2 * np.min(X_short_parallel_array)
+   #if model_type=='OLS_fixed_int_subtr_Y':
+   #   sys.exit()
    
-   fitted_values_K = results.fittedvalues * jy_to_K
+   y_pos_sim = np.max(results_sim.fittedvalues)
+   x_pos_sim = 1.2 * np.min(X_short_parallel_array)
    
-   y_pos_K = np.max(fitted_values_K)
-   x_pos = 1.2 * np.min(X_short_parallel_array)
+   fitted_values_K_sim = results_sim.fittedvalues * jy_to_K
+   
+   y_pos_K_sim = np.max(fitted_values_K_sim)
+   x_pos_sim = 1.2 * np.min(X_short_parallel_array)
     
    #get rid of nans
    real_vis_data_sorted_array_nonans = real_vis_data_sorted_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
+   #sim_vis_data_sorted_array_nonans = sim_vis_data_sorted_array[(np.logical_not(np.isnan(sim_vis_data_sorted_array)))]
    X_short_parallel_array_nonans = X_short_parallel_array[(np.logical_not(np.isnan(real_vis_data_sorted_array)))]
    real_vis_data_sorted_array_nonans_K = real_vis_data_sorted_array_nonans * jy_to_K
+   #sim_vis_data_sorted_array_nonans_K = sim_vis_data_sorted_array_nonans * jy_to_K
+   
    
    #in Jy
    plt.clf()
@@ -2722,8 +2752,33 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
    plt.close()
    print("saved %s" % fig_name) 
    
+   #repeat for sims
+   #in Jy
+   plt.clf()
+   if model_type=="OLS_fixed_int_subtr_Y":
+      #sim_vis_data_sorted_array_subtr_Y_nonans = sim_vis_data_sorted_array_subtr_Y[(np.logical_not(np.isnan(sim_vis_data_sorted_array)))]
+      plt.plot(X_short_parallel_array, sim_vis_data_sorted_array_subtr_Y,label='%s data - Y' % 'sim',linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array, sim_vis_data_sorted_array,label='%s data' % 'sim',linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array, results_sim.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+   else:
+      plt.scatter(X_short_parallel_array, sim_vis_data_sorted_array,label='%s data' % real_or_simulated_string,linestyle='None',marker='.')
+      plt.plot(X_short_parallel_array, results_sim.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
    
+   #maybe the problem has to do with the nonans stuff
+
+   map_title="Data and fit" 
+   plt.xlabel("Expected global-signal response")
+   plt.ylabel("Real comp. sim (Jy)")
+   plt.legend(loc=1)
+   plt.text(x_pos_sim, y_pos_sim, fit_string_sim)
+   #plt.ylim([0, 3.5])
+   fig_name= "x_y_OLS_sim_plot_%0.3f_MHz_%s_pol%s_%s.png" % (freq_MHz_fine_chan,pol,signal_type_postfix,model_type)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name) 
    
+   #flagging
    #now use the fit to identify outliers probably due to rfi
    #subtract the model from the data
    real_vis_data_sorted_array_subtr_model = real_vis_data_sorted_array_nonans - results.fittedvalues
@@ -3540,8 +3595,6 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             hdulist.close()
             
             #only use the values where the baselines are common
-            
-            
             visibilities_single = uvtable['DATA'][unity_common_inds]
             visibilities_shape = visibilities_single.shape
             print("visibilities_shape")
@@ -3628,14 +3681,15 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #print(uvtable_header)
             hdulist.close()
       
-            visibilities_single = uvtable['DATA']
+            #only use the values where the baselines are common
+            visibilities_single = uvtable['DATA'][unity_common_inds]
             visibilities_shape = visibilities_single.shape
             print("visibilities_shape")
             print(visibilities_shape)
             
-            UU_s_array = uvtable['UU']
+            UU_s_array = uvtable['UU'][unity_common_inds]
             UU_m_array = UU_s_array * c   
-            VV_s_array = uvtable['VV']
+            VV_s_array = uvtable['VV'][unity_common_inds]
             VV_m_array = VV_s_array * c
       
 
@@ -3708,14 +3762,14 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
             #print(uvtable_header)
             hdulist.close()
       
-            visibilities_single = uvtable['DATA']
+            visibilities_single = uvtable['DATA'][unity_common_inds]
             visibilities_shape = visibilities_single.shape
             print("visibilities_shape")
             print(visibilities_shape)
             
-            UU_s_array = uvtable['UU']
+            UU_s_array = uvtable['UU'][unity_common_inds]
             UU_m_array = UU_s_array * c   
-            VV_s_array = uvtable['VV']
+            VV_s_array = uvtable['VV'][unity_common_inds]
             VV_m_array = VV_s_array * c
       
 
@@ -5289,8 +5343,8 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    else:
       #comment out for fig5
       plt.legend(loc='lower right')
-   if EDA2_data:
-      plt.ylim([500, 5000])
+   #if EDA2_data:
+   #   plt.ylim([500, 5000])
    #else:
       #plt.ylim([-1, 0.5])
       #commented out for fig5
@@ -5738,7 +5792,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             if model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
             rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-            print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+            print("rms_of_residuals %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
             
             max_abs_residuals = np.max(np.abs(residual_of_log_fit))
             #
@@ -5797,7 +5851,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                if model_type=='OLS_fixed_int_subtr_Y':
                   both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
                rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-               print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+               print("rms_of_residuals %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
                
                max_abs_residuals = np.max(np.abs(residual_of_log_fit))
                #
@@ -15009,7 +15063,7 @@ reverse_fine_chans = False   #this should always be false!
 pol_list_input = []
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
@@ -15131,7 +15185,7 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['X','Y']
 poly_order=5
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
@@ -15156,7 +15210,7 @@ noise_coupling=False
 #chan_num = 90 - 64 #90 = 70MHz
 #this is the start coarse chan
 chan_num = 0
-n_coarse_chans_to_plot = 63     #127 - 64 = 63 (all coarse chans)
+n_coarse_chans_to_plot = 2     #127 - 64 = 63 (all coarse chans)
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 freq_MHz_list = freq_MHz_array[chan_num:chan_num+n_coarse_chans_to_plot]
