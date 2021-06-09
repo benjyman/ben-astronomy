@@ -2356,7 +2356,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
       #full response
       #need to convert between Jy and K
    
-      Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array * jy_to_K #/ jy_to_K
+      Y_short_parallel_angular_array_Jy = Y_short_parallel_angular_array / jy_to_K
 
       #need to update full response to include fine chans
       full_response_Jy =  X_short_parallel_array_diffuse_Jy + Y_short_parallel_angular_array_Jy
@@ -2535,8 +2535,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
          if fast and woden:
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
          elif fast and EDA2_data:
-            #real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
-            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
+            real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array
          else:
             real_vis_data_sorted_array_subtr_Y = real_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
          real_vis_data_sorted_array_subtr_Y_K = real_vis_data_sorted_array_subtr_Y * jy_to_K
@@ -2551,9 +2550,7 @@ def model_tsky_from_saved_data(freq_MHz_list,freq_MHz_index,lst_hrs,pol,signal_t
 
          #repeat for sim
          if fast and EDA2_data:
-            sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array_Jy
-            #sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array
-         
+            sim_vis_data_sorted_array_subtr_Y = sim_vis_data_sorted_array - Y_short_parallel_angular_array
             ##plot the subtr_y and Y_short array
             plt.clf()
             plt.plot(X_short_parallel_array, sim_vis_data_sorted_array_subtr_Y,label='%s Y' % 'sim',linestyle='None',marker='.')
@@ -11793,7 +11790,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #apparent_unity_sky_im_name_fine_chan = "u_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
              #apparent_angular_sky_im_name_fine_chan = "a_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
              apparent_unity_sky_im_name_fine_chan = "u_%03d_%0.3f_MHz-%04d-%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
-             apparent_angular_sky_im_name_fine_chan = "a_%03d_%0.3f_MHz-%04d-%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
+             apparent_angular_sky_im_name_fine_chan_no_beam = "a_nb_%03d_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
+             apparent_angular_sky_im_name_fine_chan = "a_%03d_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
              
              
              
@@ -11804,7 +11802,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
                 apparent_unity_sky_im_name_fine_chan_list_Y.append(apparent_unity_sky_im_name_fine_chan)
                 apparent_angular_sky_im_name_fine_chan_list_Y.append(apparent_angular_sky_im_name_fine_chan)
              
-             cmd = "rm -rf %s %s" % (apparent_unity_sky_im_name_fine_chan,apparent_angular_sky_im_name_fine_chan)
+             cmd = "rm -rf %s %s" % (apparent_unity_sky_im_name_fine_chan,apparent_angular_sky_im_name_fine_chan_no_beam)
              print(cmd)
              os.system(cmd)
    
@@ -11812,26 +11810,40 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)
             
-             #and subtract global value from apparent gsm sky to get angular only
+             #originally I was subtracting the global value from apparent gsm sky to get angular only
+             #What I actually need to do (as in WODEN sims) is to subtract the global value from the image 
+             #unattenuated by the beam and then apply the beam!
              
-             maths_apparent_sky_im_name_fine_chan = "app_LST_%03d_%0.3f_MHz_wsclean_%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             maths_sky_im_name_fine_chan_no_beam = "nb_LST_%03d_%0.3f_MHz_wsclean_%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             maths_beam_image_sin_projected_im_name = 'beam_%s_%0.3f_MHz.im' % (pol,freq_MHz_fine_chan)
 
-             cmd = "rm -rf %s" % (maths_apparent_sky_im_name_fine_chan)
+             cmd = "rm -rf %s %s" % (maths_sky_im_name_fine_chan_no_beam,maths_beam_image_sin_projected_im_name)
              print(cmd)
              os.system(cmd)
              
-             cmd = "cp -r %s %s" % (apparent_sky_im_name_fine_chan,maths_apparent_sky_im_name_fine_chan)
+             cmd = "cp -r %s %s" % (reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan,maths_sky_im_name_fine_chan_no_beam)
              print(cmd)
              os.system(cmd)     
-             
-             cmd = "maths exp=%s-%0.5f out=%s " % (maths_apparent_sky_im_name_fine_chan,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan)
+
+             cmd = "cp -r %s %s" % (beam_image_sin_projected_regrid_gsm_im_name,maths_beam_image_sin_projected_im_name)
+             print(cmd)
+             os.system(cmd)  
+                          
+             cmd = "maths exp=%s-%0.5f out=%s " % (maths_sky_im_name_fine_chan_no_beam,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan_no_beam)
              print(cmd)
              os.system(cmd)
 
-             cmd = "rm -rf %s" % (maths_apparent_sky_im_name_fine_chan)
+             cmd = "rm -rf %s" % (apparent_angular_sky_im_name_fine_chan)
              print(cmd)
              os.system(cmd)              
              
+             cmd = "maths exp=%s*%s out=%s " % (maths_beam_image_sin_projected_im_name,apparent_angular_sky_im_name_fine_chan_no_beam,apparent_angular_sky_im_name_fine_chan)
+             print(cmd)
+             os.system(cmd)             
+
+             cmd = "rm -rf %s %s" % (maths_sky_im_name_fine_chan_no_beam,maths_beam_image_sin_projected_im_name)
+             print(cmd)
+             os.system(cmd)      
              
              #will use imcat to make cubes for uvmodel
              
@@ -15185,7 +15197,7 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['X','Y']
 poly_order=5
-plot_only = True
+plot_only = False
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
@@ -15210,7 +15222,7 @@ noise_coupling=False
 #chan_num = 90 - 64 #90 = 70MHz
 #this is the start coarse chan
 chan_num = 0
-n_coarse_chans_to_plot = 2     #127 - 64 = 63 (all coarse chans)
+n_coarse_chans_to_plot = 63     #127 - 64 = 63 (all coarse chans)
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
 freq_MHz_list = freq_MHz_array[chan_num:chan_num+n_coarse_chans_to_plot]
