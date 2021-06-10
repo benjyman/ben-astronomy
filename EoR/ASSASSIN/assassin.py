@@ -11829,7 +11829,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)  
                           
-             cmd = "maths exp=%s-%0.10f out=%s " % (maths_sky_im_name_fine_chan_no_beam,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan_no_beam)
+             cmd = "maths exp=%s-%0.12f out=%s " % (maths_sky_im_name_fine_chan_no_beam,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan_no_beam)
              print(cmd)
              os.system(cmd)
 
