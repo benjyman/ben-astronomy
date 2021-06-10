@@ -5898,7 +5898,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #if len(model_type_list)>1:
       #   plt.legend(loc=1)
       plt.legend(loc=1)
-      #plt.ylim([y_min, y_max])
+      plt.ylim([y_min, y_max])
       fig_name= "eda2_log_fit_residual_tsy_measured_poly_%s_lst_%s%s_no_e_bars.png" % (poly_order,lst_string,signal_type_postfix)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
@@ -11829,7 +11829,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print(cmd)
              os.system(cmd)  
                           
-             cmd = "maths exp=%s-%0.5f out=%s " % (maths_sky_im_name_fine_chan_no_beam,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan_no_beam)
+             cmd = "maths exp=%s-%0.10f out=%s " % (maths_sky_im_name_fine_chan_no_beam,beam_weighted_av_sky_Jy,apparent_angular_sky_im_name_fine_chan_no_beam)
              print(cmd)
              os.system(cmd)
 
@@ -15075,7 +15075,7 @@ reverse_fine_chans = False   #this should always be false!
 pol_list_input = []
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
-#calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #sys.exit()
 
 #calibrate_eda2_data(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
