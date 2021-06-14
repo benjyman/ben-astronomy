@@ -3333,7 +3333,7 @@ def solve_for_tsky_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,pol,sig
    if EDA2_data:
       #n_baselines = n_ants*(n_ants-1) / 2. + 256
       #take the centre chan av temp as input
-      sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
+      sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%0.3f_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
       sky_averaged_temp_cal_input_array = np.load(sky_averaged_temp_cal_input_filename)
       print("loaded %s " % sky_averaged_temp_cal_input_filename)
       beam_weighted_av_sky = sky_averaged_temp_cal_input_array
@@ -5241,14 +5241,14 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                #sky_averaged_diffuse_array_beam_lsts_filename =  "woden_map_start_freq_%0.3f_hpx_%s_%s_%s_%s_%s_%s_pol_%s_global_foreground.npy" % (start_freq,year,month,day,hour,min,sec,pol)      
                #sky_averaged_diffuse_array_beam_lsts_filename = "%seda_model_%s_lst_2.00_hr_int_0.13_hr_N_D_gsm_sky_averaged_diffuse_beam.npy" % (EDA2_chan_dir,pol)
                #sky_averaged_diffuse_array_beam_lsts_filename = "t_sky_theoretical_array_lst_%s_pol_%s%s.npy" % (lst_string,pol,signal_type_postfix)
-               sky_averaged_diffuse_array_beam_lsts_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
+               sky_averaged_diffuse_array_beam_lsts_filename = "%s/sky_av_input_cal_%s_LST_%0.3f_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz,pol)
                diffuse_global_value_array = np.load(sky_averaged_diffuse_array_beam_lsts_filename)
                diffuse_global_value = diffuse_global_value_array[0]   
                t_sky_theoretical_list.append(diffuse_global_value)
                
                #monopole is same for both pols
                if pol_index==0:
-                  sky_global_monopole_temp_filename = "%s/sky_mono_temp_%s_LST_%03d_%0.3f_MHz.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
+                  sky_global_monopole_temp_filename = "%s/sky_mono_temp_%s_LST_%0.3f_%0.3f_MHz.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
                   sky_global_monopole_array = np.load(sky_global_monopole_temp_filename)
                   sky_global_monopole_value = sky_global_monopole_array[0]
                   t_sky_monopole_list.append(sky_global_monopole_value)
@@ -11193,13 +11193,13 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #No need for a multi-freq model cube for each obs, just use centre freq 
        wsclean_cal_ms_name_list = []
        for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
-          gsm_hpx_fits_name_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
-          unity_hpx_fits_name_chan = "%s/unity_sky_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,freq_MHz)
+          gsm_hpx_fits_name_chan = "%s/%s_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
+          unity_hpx_fits_name_chan = "%s/unity_sky_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,freq_MHz)
        
-          reprojected_to_wsclean_gsm_prefix_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
+          reprojected_to_wsclean_gsm_prefix_chan = "%s/%s_map_LST_%0.3f_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
           reprojected_to_wsclean_gsm_fitsname_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_chan)
           reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_chan)
-          reprojected_to_wsclean_gsm_im_name_Jy_per_pix_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz)
+          reprojected_to_wsclean_gsm_im_name_Jy_per_pix_chan = "%s_map_LST_%0.3f_%0.3f_MHz_hpx_reproj_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz)
 
           # remake the gsm files it is not hard and save as hpx fits (so dont need to run simulate anymore)
        
@@ -11328,8 +11328,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              os.system(cmd)
           
              #Now have a gsm and a beam. multiply 'em'
-             apparent_sky_fits_name_prefix_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
-             apparent_sky_im_name_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean.im" % (lst_deg,freq_MHz)
+             apparent_sky_fits_name_prefix_chan = "apparent_sky_LST_%0.3f_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
+             apparent_sky_im_name_chan = "apparent_sky_LST_%0.3f_%0.3f_MHz_wsclean.im" % (lst_deg,freq_MHz)
              apparent_sky_fits_name_chan = "%s-%s%s-model.fits" % (apparent_sky_fits_name_prefix_chan,pol,pol)
              
              cmd = "rm -rf %s %s" % (apparent_sky_im_name_chan,apparent_sky_fits_name_chan)
@@ -11514,21 +11514,21 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           wavelength_fine_chan = 300./float(freq_MHz_fine_chan)
           
           #(these get made in here now, no need to run simulate
-          gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
-          unity_hpx_fits_name_fine_chan = "%s/unity_sky_map_LST_%03d_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,centre_freq)
+          gsm_hpx_fits_name_fine_chan = "%s/%s_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+          unity_hpx_fits_name_fine_chan = "%s/unity_sky_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,centre_freq)
           
        
-          reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_gsm_prefix_fine_chan = "%s/%s_map_LST_%0.3f_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
           reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
           reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
-          reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "%s_map_LST_%0.3f_%0.3f_MHz_hpx_reproj_Jy_per_pix.im" % (sky_model,lst_deg,freq_MHz_fine_chan)
 
 
           #going to make unity sky ones too (so dont need to run simulate)
-          reprojected_to_wsclean_unity_prefix_fine_chan = "%s/unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_unity_prefix_fine_chan = "%s/unity_map_LST_%0.3f_%0.3f_MHz_hpx_reprojected_wsclean" % (EDA2_chan,lst_deg,freq_MHz_fine_chan)
           reprojected_to_wsclean_unity_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
           reprojected_to_wsclean_unity_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_unity_prefix_fine_chan)
-          reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
+          reprojected_to_wsclean_unity_im_name_Jy_per_pix_fine_chan = "unity_map_LST_%0.3f_%0.3f_MHz_hpx_reproj_Jy_per_pix.im" % (lst_deg,freq_MHz_fine_chan)
 
           jy_to_K = (wavelength_fine_chan**2) / (2. * k * 1.0e26) 
           unity_sky_value = 1. #* jy_to_K (i think this should be divide to get to Jy from K?)
@@ -11537,7 +11537,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
           unity_map = gsm_map * 0. + unity_sky_value
           
           #here get the true predicted global monolpole (not beam averaged)
-          sky_global_monopole_temp_filename = "%s/sky_mono_temp_%s_LST_%03d_%0.3f_MHz.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
+          sky_global_monopole_temp_filename = "%s/sky_mono_temp_%s_LST_%0.3f_%0.3f_MHz.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan)
           monopole_temp = np.mean(gsm_map)   
           
           monopole_temp_array = np.asarray([monopole_temp])
@@ -11734,8 +11734,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              
              
              #Now have a gsm and a beam. multiply 'em'
-             apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
-             apparent_sky_im_name_fine_chan = "apparent_sky_LST_%03d_%0.3f_MHz_wsclean-%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             apparent_sky_fits_name_prefix_fine_chan = "apparent_sky_LST_%0.3f_%0.3f_MHz_wsclean" % (lst_deg,freq_MHz)
+             apparent_sky_im_name_fine_chan = "apparent_sky_LST_%0.3f_%0.3f_MHz_wsclean-%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
              apparent_sky_fits_name_fine_chan = "%s-%04d-%s%s-model.fits" % (apparent_sky_fits_name_prefix_fine_chan,fine_chan_index,pol,pol)
              
              
@@ -11754,7 +11754,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              print("wrote %s" % apparent_sky_fits_name_fine_chan)
                 
              #get the correct input average sky temp value (before removing nans)
-             sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%03d_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan,pol)
+             sky_averaged_temp_cal_input_filename = "%s/sky_av_input_cal_%s_LST_%0.3f_%0.3f_MHz_pol_%s.npy" % (EDA2_chan,sky_model,lst_deg,freq_MHz_fine_chan,pol)
              with fits.open("%s" % (apparent_sky_fits_name_fine_chan)) as hdu_list:
                 sky_with_beam = hdu_list[0].data
                 sky_with_beam_K = sky_with_beam / scale_fine_chan
@@ -11789,9 +11789,9 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #Now have a unity map and a beam. multiply 'em'
              #apparent_unity_sky_im_name_fine_chan = "u_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
              #apparent_angular_sky_im_name_fine_chan = "a_%0.3f_%s.im" % (freq_MHz_fine_chan,pol)
-             apparent_unity_sky_im_name_fine_chan = "u_%03d_%0.3f_MHz-%04d-%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
-             apparent_angular_sky_im_name_fine_chan_no_beam = "a_nb_%03d_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
-             apparent_angular_sky_im_name_fine_chan = "a_%03d_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
+             apparent_unity_sky_im_name_fine_chan = "u_%0.3f_%0.3f_MHz-%04d-%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
+             apparent_angular_sky_im_name_fine_chan_no_beam = "a_nb_%0.3f_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
+             apparent_angular_sky_im_name_fine_chan = "a_%0.3f_%0.3f_MHz_%04d_%s.im" % (lst_deg,freq_MHz,fine_chan_index,pol)
              
              
              
@@ -11814,7 +11814,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              #What I actually need to do (as in WODEN sims) is to subtract the global value from the image 
              #unattenuated by the beam and then apply the beam!
              
-             maths_sky_im_name_fine_chan_no_beam = "nb_LST_%03d_%0.3f_MHz_wsclean_%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
+             maths_sky_im_name_fine_chan_no_beam = "nb_LST_%0.3f_%0.3f_MHz_wsclean_%04d.im" % (lst_deg,freq_MHz,fine_chan_index)
              maths_beam_image_sin_projected_im_name = 'beam_%s_%0.3f_MHz.im' % (pol,freq_MHz_fine_chan)
 
              cmd = "rm -rf %s %s" % (maths_sky_im_name_fine_chan_no_beam,maths_beam_image_sin_projected_im_name)
@@ -11873,8 +11873,8 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
              
              
                        
-             #apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
-             #apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%03d_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
+             #apparent_unity_sky_im_cube_name = "apparent_unity_sky_LST_%0.3f_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)    
+             #apparent_angular_sky_im_cube_name = "apparent_angular_sky_LST_%0.3f_%0.3f_MHz_cube_pol_%s.im" % (lst_deg,freq_MHz,pol)
              #
              #if pol=='X':
              #   unity_model_im_list_string = ','.join(apparent_unity_sky_im_name_fine_chan_list_X)
@@ -14982,19 +14982,18 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
    #there might have been no obs:
    if EDA2_obs_time!=0:
       print(EDA2_obs_time)
-      lst_eda2_hrs = "%0.1f" % get_eda2_lst(EDA2_obs_time)
+      lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time)
       #lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time[4::])
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
    else:
       #just use the first LST
       #lst_eda2_hrs = "%0.1f" % get_eda2_lst("2015%s" % EDA2_obs_time_list[0][4::])
-      lst_eda2_hrs = "%0.1f" % get_eda2_lst(EDA2_obs_time_list[0])
+      lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
 
 print(lst_hrs_list)
-
 
 #EDA2
 #array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
