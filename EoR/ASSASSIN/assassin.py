@@ -30,8 +30,8 @@ import time
 from reproject import reproject_from_healpix
 import pyfits
 from astropy.wcs import WCS
-from astropy.io import fits
-from scipy.interpolate import interp1d
+from astropy.io import fits 
+from scipy.interpolate import interp2d,griddata,interp1d
 from scipy.ndimage import map_coordinates
 from scipy import signal
 import numpy.polynomial.polynomial as poly
@@ -58,6 +58,8 @@ iers.conf.auto_download = False
 
 import pyrap.tables as pt
 import ephem
+
+from scipy.io import loadmat
 
 #color defs for color blindness contrast
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
@@ -5702,9 +5704,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
    #   
    #   rms_of_residuals_glob_ang = np.sqrt(np.mean(residual_of_log_fit_glob_ang**2))
    #   print("rms_of_residuals_glob_ang is %0.3f K" % rms_of_residuals_glob_ang)
-   
 
-   
    #no error bar plot what we want
    linestyle_list = ['dashdot','solid','dotted','dashed','dashdot','solid','dotted','dashed']
    color_list=[color_dark_blue,color_orange_red,color_green,color_orange,color_black,color_light_blue,color_pink,color_yellow]
@@ -5779,12 +5779,6 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
          sky_sim_array = t_sky_sim_measured_array[t_sky_measured_array>0.]
          sky_beam_wtd_av_array = t_sky_beam_wtd_av_array[t_sky_measured_array>0.]
          
-         print(pol)
-         print(model_type)
-         print(sky_array.shape)
-         print(sky_sim_array.shape)
-         print(sky_beam_wtd_av_array.shape)
-         
          if not EDA2_data:
             t_sky_theoretical_array_cut = t_sky_theoretical_array[t_sky_measured_array>0.]
             n_baselines_used_array_cut = n_baselines_used_array[t_sky_measured_array>0.]
@@ -5819,7 +5813,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
             if model_type=='OLS_fixed_int_subtr_Y':
                both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
             rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-            print("rms_of_residuals %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
+            print("rms_of_residuals data %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
             
             max_abs_residuals = np.max(np.abs(residual_of_log_fit))
             #
@@ -5878,7 +5872,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                if model_type=='OLS_fixed_int_subtr_Y':
                   both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
                rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-               print("rms_of_residuals %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
+               print("rms_of_residuals sims %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
                
                max_abs_residuals = np.max(np.abs(residual_of_log_fit))
                #
@@ -5900,7 +5894,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                #print(residual_of_log_fit)
                
                #fig7b:
-               print("plotting index %s" % plotting_index)
+               #print("plotting index %s" % plotting_index)
                plt.plot(freq_array_cut,residual_of_log_fit,label=label2,linestyle=linestyle_list[plotting_index],color=color_list[plotting_index])
                #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
                #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
@@ -5931,7 +5925,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                if model_type=='OLS_fixed_int_subtr_Y':
                   both_pol_residual_sum_array_subtr_Y += residual_of_log_fit
                rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-               print("rms_of_residuals %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
+               print("rms_of_residuals beam wtd av %s %s is %0.3f K" % (model_type,pol,rms_of_residuals))
                
                max_abs_residuals = np.max(np.abs(residual_of_log_fit))
                #
@@ -5953,7 +5947,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
                #print(residual_of_log_fit)
                
                #fig7b:
-               print("plotting index %s" % plotting_index)
+               #print("plotting index %s" % plotting_index)
                plt.plot(freq_array_cut,residual_of_log_fit,label="beam_wtd_av %s" % pol)
                #plt.plot(freq_array_cut,residual_of_log_fit,label=label1,linestyle=linestyle_list[model_type_index])
                #plt.text(50, max_abs_residuals + y_offset, "%srms=%1.2f K" % (linestyle_list[model_type_index],rms_of_residuals),{'color': colour})
@@ -6028,10 +6022,7 @@ def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,pol_list,signal_type
       #figmap.savefig(fig_name)
       #print("saved %s" % fig_name) 
       #plt.close() 
-      
-      
-      
-      
+
       #repeat for per chan av
       if EDA2_data:
          plt.clf()
@@ -14852,7 +14843,268 @@ def split_baseline(baseline, shift=None):
         ant2 = np.mod(baseline,256)
         
     return ant1,ant2
-    
+
+def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
+   #method = 'nearest', 'linear', 'cubic'
+   npix = hp.nside2npix(nside)
+   print("npix is %s" % npix)
+   #['kx', 'geo_ph', '__header__', '__globals__', 'Ephi', 'kz', 'ky', '__version__', 'Etheta']
+   #(<type 'numpy.ndarray'>, (361, 91, 256))
+   #(<type 'numpy.ndarray'>, (361, 91, 256))
+   print("converting MATLAB EEPs")
+   for pol in ['X','Y']:
+      for freq_MHz in freq_MHz_list:
+         freq_Hz_string = "%d" % (freq_MHz*1000000)
+         EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
+         beam_data = loadmat(EEP_name)
+         print("loaded %s " % EEP_name)
+         #print(beam_data.keys())
+         #print(type(beam_data['Ephi']),beam_data['Ephi'].shape)
+         #print(type(beam_data['Etheta']),beam_data['Etheta'].shape)
+         #These are complex arrays
+         #print(E_phi.dtype)
+         #print(E_phi.shape)
+         #print(E_phi[360][1])
+         #print(E_phi[0][1])
+         #data for az 0 and az 360 is same as expected, discard angle 360
+         #(361, 91, 256)
+         E_phi = beam_data['Ephi'][0:360][:]
+         E_theta = beam_data['Etheta'][0:360][:]
+         # The format of the data is in standard spherical coordinates (theta, phi).
+         # Where theta is the zenith angle and phi is anti-clockwise going from east to north looking down at the array. 
+         # The 'origin' will be on the top left corner. Going from top to bottom is increasing in phi and going left to right is increasing in theta. 
+         azimuth_deg_array = np.arange(360)
+         zenith_angle_deg_array = np.arange(91)
+         
+         beam_power_cube = np.abs(E_theta)**2 + np.abs(E_phi)**2
+         #print(beam_power_cube.shape)
+         
+         beam_power_cube_slice = beam_power_cube[:,:,0]
+         #print(beam_power_cube_slice.shape)
+         #print(beam_power_cube_slice[:,0])
+         #sys.exit()
+         #beam_power_cube_slice_transpose = np.transpose(beam_power_cube_slice)
+         beam_power_cube_slice_flat = beam_power_cube_slice.flatten('F')
+         
+         #see https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp2d.html
+         
+         repetitions = 91
+         
+         ang_repeats_array = np.tile(azimuth_deg_array, (repetitions, 1))
+         #print(az_repeats_array[0:2])
+         #print(az_repeats_array.shape)
+         az_ang_repeats_array_flat = ang_repeats_array.flatten()
+         #print(az_ang_repeats_array_flat.shape)
+         #print(az_ang_repeats_array_flat[0:750])
+         
+         repetitions = 360
+         ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
+         
+         zenith_angle_repeats_array_flat = ang_repeats_array.flatten('F')
+         #print(zenith_angle_repeats_array_flat.shape)
+         #print(zenith_angle_repeats_array_flat[0:750])
+         
+         zenith_angle_repeats_array_flat_rad = zenith_angle_repeats_array_flat / 180. * np.pi
+         az_ang_repeats_array_flat_rad = (az_ang_repeats_array_flat) / 180. * np.pi
+         
+         #print(zenith_angle_repeats_array_flat_rad.shape)
+         #print(az_ang_repeats_array_flat_rad.shape)
+         #print(beam_power_cube_slice_flat.shape)
+         
+         #beam_interp = interp2d(zenith_angle_repeats_array_flat_rad,az_ang_repeats_array_flat_rad, beam_power_cube_slice_flat)
+             
+         
+         hpx_pix_num_array = np.arange(npix)
+         hpx_angles_rad = hp.pix2ang(nside,hpx_pix_num_array) 
+         hpx_angles_rad_zenith_angle = hpx_angles_rad[0]
+         hpx_angles_rad_azimuth = hpx_angles_rad[1]
+         
+         #print(az_ang_repeats_array_flat_rad[0:750])
+         #print(zenith_angle_repeats_array_flat_rad[0:750])
+         #print(beam_power_cube_slice_flat[0:750])
+
+         regridded_to_hpx_beam_power = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), beam_power_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method=method)
+        
+         #print(regridded_to_hpx_beam_power.shape)
+         #view regridded beam
+         plt.clf()
+         map_title="regridded beam sim"
+         ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+         hp.orthview(map=regridded_to_hpx_beam_power,half_sky=False,rot=(0,90,0),title=map_title)
+         #hp.mollview(map=regridded_to_hpx_beam_power,coord='C',title=map_title,rot=(0,0,0)) #,min=0, max=7000)
+         fig_name="regridded_sim_beam_%s_%0.3f_MHz.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+        
+         
+         ##cube 256 stuff - probably wrong
+         #beam_power_cube_flat = beam_power_cube.reshape(-1, beam_power_cube.shape[-1])
+         #print(beam_power_cube_flat.shape)
+         #
+         #an_array = azimuth_deg_array
+         #repetitions = 91
+         #repeats_array = np.transpose([an_array] * repetitions)
+         #print(repeats_array.shape)
+ 
+         #cube_reps = 256
+         #phi_theta_array_cube = np.repeat(repeats_array[:, :, np.newaxis], cube_reps, axis=2)
+         #print(phi_theta_array_cube.shape)
+ 
+         #phi_theta_array_cube_flat = phi_theta_array_cube.reshape(-1, phi_theta_array_cube.shape[-1])
+         #print(phi_theta_array_cube_flat.shape)
+         
+         #beam_interp = interp2d(phi_theta_array_cube_flat, azimuth_deg_array, beam_power_cube)
+         #print(beam_interp.shape)
+         ####
+         
+         
+         
+         #look at code/AAVS-1/dipole_beam_tests.py for what you did before, antenna ordering etc
+         #from daniel email to Jishnu: 
+         
+         ##Below is from Jishnu (Load_beam_feko_mollview_1.ipynb): 
+         # "Etheta_elem1 = beam_data['Etheta_elem1']\n",
+         #"Etheta_elem2 = beam_data['Etheta_elem2']\n",
+         #"\n",
+         #"Ephi_elem1   = beam_data['Ephi_elem1']\n",
+         #"Ephi_elem2   = beam_data['Ephi_elem2']\n",
+         #"\n",
+         #"Az_pt = beam_data['Az_pt'][0,:]\n",
+         #"ZA_pt = beam_data['ZA_pt'][0,:]\n",
+         #"\n",
+         #"fullbeam_1 = np.abs(Etheta_elem1)**2 + np.abs(Ephi_elem1)**2\n",
+         #"fullbeam_2 = np.abs(Etheta_elem2)**2 + np.abs(Ephi_elem2)**2\n",
+         #"\n",
+         #"def calc_beam_values(n_side, n_pix, nu):\n",
+         #"    \n",
+         #"    beam_index = int(round(nu-70))\n",
+         #"    \n",
+         #"    if beam_index < 0:\n",
+         #"        beam_index = 0\n",
+         #"    if beam_index > 150:\n",
+         #"        beam_index = -1\n",
+         #"    \n",
+         #"    beam_interp = interpolate.interp2d(ZA_pt, Az_pt, fullbeam_1[:,:,beam_index])\n",
+         #"    dipole_beam_map = np.zeros(n_pix, dtype=float)\n",
+         #"    \n",
+         #"    for pix_index in range(n_pix):   \n",
+         #"        ZA, Az = hp.pix2ang(n_side, pix_index, nest=False, lonlat=False)   \n",
+         #"        ZA = np.pi-ZA\n",
+         #"        if ZA<np.pi/2:\n",
+         #"            dipole_beam_map[pix_index] = beam_interp(ZA*180/np.pi, Az*180/np.pi)\n",
+         #"\n",
+         #"    beam_max = np.max(dipole_beam_map)\n",
+         #"    dipole_beam_map = dipole_beam_map / beam_max \n",
+         #"    \n",
+         #"    return dipole_beam_map"  
+         
+         
+def get_antenna_table_from_uvfits(uvfits_name):
+   print("getting antenna table from %s " % uvfits_name)
+   with fits.open(uvfits_name) as hdulist:
+      uvtable = hdulist[0].data
+      uvtable_header = hdulist[0].header
+      hdulist.info()
+      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      print(info_string)
+      #print(uvtable_header)
+      #see https://pyuvdata.readthedocs.io/en/v1.5/_modules/pyuvdata/uvfits.html
+      ant_hdu = hdulist['AIPS AN']
+      print(ant_hdu.data)
+
+def cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_filename,combined_ant_pos_name_filename):
+   ##Open up one of Daniel's files and take a look:
+   #Xpol Ephi Phase:
+   antenna_name_list = range(1,257)
+
+   #Daniels sims:
+   antenna_position_x_list=[]
+   antenna_position_y_list=[]
+   with open(ant_pos_sim_filename,'r') as f:
+      lines = f.readlines()
+   for line in lines:
+      antenna_position_x = float(line.strip().split()[1])
+      antenna_position_y = float(line.strip().split()[2])
+      antenna_position_x_list.append(antenna_position_x)
+      antenna_position_y_list.append(antenna_position_y)   
+   
+   antenna_position_x_m = np.asarray(antenna_position_x_list)
+   antenna_position_y_m = np.asarray(antenna_position_y_list)
+   
+   
+   #Plot antenna positions
+   antenna_position_plot_figname = 'ant_pos_eda2_sims.png'
+   antenna_position_plot_title = 'Antenna Positions EDA2 Beam Sims '
+   
+   fig, ax = plt.subplots()
+   ax.scatter(antenna_position_x_m,antenna_position_y_m, marker='.')
+   
+   for i, name in enumerate(antenna_name_list):
+       ax.annotate(str(name), (antenna_position_x_m[i],antenna_position_y_m[i]),size=5)
+       
+   plt.xlabel('X offset from centre (m) ')
+   plt.ylabel('Y offset from centre (m) ')
+   plt.title(antenna_position_plot_title)
+   plt.savefig(antenna_position_plot_figname,dpi = 300)
+   print('saved %s ' % antenna_position_plot_figname)
+   
+   #Randalls:
+   antenna_position_x_list_on_ground=[]
+   antenna_position_y_list_on_ground=[]
+   antenna_names_list_on_ground=[]
+   new_antenna_position_list=[]
+   with open(ant_pos_on_ground_filename,'r') as f:
+      lines = f.readlines()
+   for line in lines:
+      antenna_name_on_ground = line.strip().split('\t')[0]
+      antenna_position_x_on_ground = float(line.strip().split()[1])
+      antenna_position_y_on_ground = float(line.strip().split()[2])
+      antenna_names_list_on_ground.append(antenna_name_on_ground)
+      antenna_position_x_list_on_ground.append(antenna_position_x_on_ground)
+      antenna_position_y_list_on_ground.append(antenna_position_y_on_ground)
+         
+   
+   antenna_position_x_m_on_ground = np.asarray(antenna_position_x_list_on_ground)
+   antenna_position_y_m_on_ground = np.asarray(antenna_position_y_list_on_ground)
+
+   position_tolerance = 0.1
+   for pos_index,x_pos_on_ground in enumerate(antenna_position_x_m_on_ground):
+      y_pos_on_ground = antenna_position_y_m_on_ground[pos_index]
+      antenna_name_on_ground = antenna_names_list_on_ground[pos_index]
+      for x_pos_sim_index,x_pos_sim in enumerate(antenna_position_x_m):
+         y_pos_sim = antenna_position_y_m[x_pos_sim_index]
+         antenna_name_sim = str(x_pos_sim_index+1)
+         x_diff = abs(x_pos_on_ground-x_pos_sim)
+         y_diff = abs(y_pos_on_ground-y_pos_sim)
+         if ((x_diff < position_tolerance) and (y_diff < position_tolerance)):
+            new_position_line = "%s %s %s %s %s %s" % (antenna_name_on_ground,x_pos_on_ground,y_pos_on_ground,antenna_name_sim,x_pos_sim,y_pos_sim)
+            new_antenna_position_list.append(new_position_line)
+   
+   with open (combined_ant_pos_name_filename, 'w') as outfile:
+       outfile.write("\n".join(new_antenna_position_list))
+   print('wrote %s' % combined_ant_pos_name_filename)
+   
+   
+   #Plot antenna positions
+   antenna_position_plot_figname = 'antenna_positions_aavs1_beam_tests_randall.png'
+   antenna_position_plot_title = 'Antenna Positions AAVS-1 Beam Tests Randall'
+   
+   fig, ax = plt.subplots()
+   ax.scatter(antenna_position_x_m,antenna_position_y_m, marker='.')
+   
+   for i, name in enumerate(antenna_name_list):
+       ax.annotate(str(name), (antenna_position_x_m[i],antenna_position_y_m[i]),size=5)
+   
+   plt.xlabel('X offset from centre (m) ')
+   plt.ylabel('Y offset from centre (m) ')
+   plt.title(antenna_position_plot_title)
+   plt.savefig(antenna_position_plot_figname,dpi = 300)
+   print('save %s ' % antenna_position_plot_figname)
+         
+         
+         
+         
 #SITARA:
 bandwidth_MHz = 5
 pol = 'Y'
@@ -15028,7 +15280,6 @@ EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
 #EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200304_data/",EDA2_chan_list)
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 
-
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 
 n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
@@ -15050,8 +15301,6 @@ EDA2_chan_list = EDA2_chan_list[0:]
 
 print(freq_MHz_list)
 print(EDA2_chan_list)
-
-
 
 #eda2_data_filename = "chan_%s_%s.uvfits" % (int(EDA2_chan),EDA2_obs_time)
 #eda2_data_filename = "chan_90_20191202T171727.uvfits"
@@ -15143,8 +15392,8 @@ print(lst_hrs_list)
 #chan_num = 1
 #freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-#freq_MHz_list = freq_MHz_array[18:23]
-#EDA2_chan_list = EDA2_chan_list[18:23]
+freq_MHz_list = freq_MHz_array[0:2]
+EDA2_chan_list = EDA2_chan_list[0:2]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -15152,6 +15401,18 @@ concat=True
 per_chan_cal = True
 reverse_fine_chans = False   #this should always be false!
 
+#uvfits_name = "64/chan_64_20200303T133729.uvfits"
+#get_antenna_table_from_uvfits(uvfits_name)
+#sys.exit()
+##Daniels sims and EDA2 positions from Marcin and antenna numbering match!!!!
+#ant_pos_on_ground_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/antenna_locations_marcin.txt'
+#ant_pos_sim_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/EDA2_loc_190605.txt'
+#combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'
+#cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_filename,combined_ant_pos_name_filename)
+#sys.exit()
+
+convert_matlab_EEPs(freq_MHz_list,nside=32)
+sys.exit()
 
 #don't need to cal separately each pol anymore, using wsclean predict and calibrate!
 #for pol in pol_list:
@@ -15280,13 +15541,13 @@ model_type_list = ['OLS_fixed_intercept','OLS_fixed_int_subtr_Y']
 #model_type_list = ['OLS_fixed_intercept']
 pol_list_input = ['X','Y']
 poly_order=5
-plot_only = False
+plot_only = True
 baseline_length_thresh_lambda = 0.5
 include_angular_info = True
 woden=False
 wsclean=True
 fast=True
-no_modelling=False
+no_modelling=True
 calculate_uniform_response=False
 noise_coupling=False
 
