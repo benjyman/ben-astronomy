@@ -11227,7 +11227,9 @@ def get_visibility_power_from_uvfits(freq_MHz_list,freq_MHz_index,lst_hrs_list,p
       
       return vis_power_array,freq_MHz_fine_chan_array,unity_sky_value_array
       
-def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False,EDA2_data=True):
+def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_list=[],sky_model_im_name='',n_obs_concat_list=[],concat=False,wsclean=False,plot_cal=False,uv_cutoff=0,per_chan_cal=False,EDA2_data=True,sim_only_EDA2=[]):
+   if len(sim_only_EDA2)!=0:
+      sim_only=True
    #think about how to use coherence:
    #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
    print("averaging EDA2 obs in time before calibration")
@@ -11235,7 +11237,10 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
    #pol = pol_list[0]
    gsm  = GlobalSkyModel()
    wsclean_imsize = '512'
-   wsclean_scale = '900asec'    
+   wsclean_scale = '900asec'  
+   
+   #if not sim_only:
+     
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
        if len(n_obs_concat_list) > 0:
           if len(EDA2_chan_list)==1:
@@ -14844,7 +14849,7 @@ def split_baseline(baseline, shift=None):
         
     return ant1,ant2
 
-def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
+def convert_matlab_EEPs(freq_MHz_list,nside,method='cubic',analytic_beam_dir='/md0/EoR/ASSASSIN/beam_fits/fine_chan/'):
    #method = 'nearest', 'linear', 'cubic'
    npix = hp.nside2npix(nside)
    print("npix is %s" % npix)
@@ -14854,6 +14859,7 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
    print("converting MATLAB EEPs")
    for pol in ['X','Y']:
       for freq_MHz in freq_MHz_list:
+         wavelength = 300./ freq_MHz
          freq_Hz_string = "%d" % (freq_MHz*1000000)
          EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
          beam_data = loadmat(EEP_name)
@@ -14868,12 +14874,17 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
          #print(E_phi[0][1])
          #data for az 0 and az 360 is same as expected, discard angle 360
          #(361, 91, 256)
-         E_phi = beam_data['Ephi'][0:360][:]
-         E_theta = beam_data['Etheta'][0:360][:]
+         E_phi = beam_data['Ephi'][0:361][:]
+         E_theta = beam_data['Etheta'][0:361][:]
          # The format of the data is in standard spherical coordinates (theta, phi).
          # Where theta is the zenith angle and phi is anti-clockwise going from east to north looking down at the array. 
          # The 'origin' will be on the top left corner. Going from top to bottom is increasing in phi and going left to right is increasing in theta. 
-         azimuth_deg_array = np.arange(360)
+         
+         #daniels azimuth different from analytic beam - need to revcerse it and add 90 deg
+         #azimuth_deg_array = np.arange(361)
+         azimuth_deg_array = np.flip(np.arange(361) + 90.)
+         azimuth_deg_array[azimuth_deg_array >= 361] = azimuth_deg_array[azimuth_deg_array >= 361] - 361
+         
          zenith_angle_deg_array = np.arange(91)
          
          beam_power_cube = np.abs(E_theta)**2 + np.abs(E_phi)**2
@@ -14897,7 +14908,7 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
          #print(az_ang_repeats_array_flat.shape)
          #print(az_ang_repeats_array_flat[0:750])
          
-         repetitions = 360
+         repetitions = 361
          ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
          
          zenith_angle_repeats_array_flat = ang_repeats_array.flatten('F')
@@ -14924,19 +14935,103 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
          #print(beam_power_cube_slice_flat[0:750])
 
          regridded_to_hpx_beam_power = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), beam_power_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method=method)
+         regridded_to_hpx_beam_power_norm = regridded_to_hpx_beam_power / np.nanmax(regridded_to_hpx_beam_power)
+         regridded_to_hpx_beam_power_norm_log = np.log10(regridded_to_hpx_beam_power_norm)
+         
+         #rotate appropriately:
+         dec_rotate = 90. - float(mwa_latitude_ephem)
+         r_beam = hp.Rotator(rot=[0,dec_rotate], coord=['C', 'C'], deg=True)  
+         rotated_beam = r_beam.rotate_map(regridded_to_hpx_beam_power_norm)
+         
+         sim_beam_hpx_fits_name = 'sim_beam_rotated_hpx_%s_%0.3f_MHz.fits' % (pol,freq_MHz)
+         hp.write_map(sim_beam_hpx_fits_name,rotated_beam,coord='C',nest=False,overwrite=True)
+         
+         
+         ##print(regridded_to_hpx_beam_power.shape)
+         ##view regridded beam
+         #plt.clf()
+         #map_title="regridded beam sim"
+         ###hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+         ##hp.orthview(map=regridded_to_hpx_beam_power_norm,half_sky=True,rot=(0,90,0),title=map_title)
+         ##hp.mollview(map=regridded_to_hpx_beam_power,coord='C',title=map_title,rot=(0,0,0)) #,min=0, max=7000)
+         #fig_name="regridded_sim_beam_%s_%0.3f_MHz.png" % (pol,freq_MHz)
+         #figmap = plt.gcf()
+         #figmap.savefig(fig_name)
+         #print("saved %s" % fig_name)
+
+         
+         #This is somewhat tricky, the analytic beam images are in sin projection, the sims are in spherical coords, need to reproject
+         #1. can generate hpx_analytic beams and then treat them same as the sims
+         #2. need to check that when you take an analytic hpx beam and reproject it to sin projection it matches the beam images we are using
+         
+         #compare to : make_hpx_beam(NSIDE,pol,wavelength,dipole_height_m):
+         
+         #azimuth angle is defined differently between analytic beams and sime - add 90 deg somewhere
+         
+         analytic_beam_hpx = make_hpx_beam(nside,pol,wavelength,dipole_height_m)
+         
+         #also rotate analytic beam: 
+         rotated_beam_analytic = r_beam.rotate_map(analytic_beam_hpx)
+         
+         analytic_beam_hpx_fits_name = 'analytic_beam_rotated_hpx_%s_%0.3f_MHz.fits' % (pol,freq_MHz)
+         hp.write_map(analytic_beam_hpx_fits_name,rotated_beam_analytic,coord='C',nest=False,overwrite=True)
+         
+         
+         #plt.clf()
+         #map_title="analystic beam from hpx"
+         ###hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+         #hp.orthview(map=analytic_beam_hpx,half_sky=True,rot=(0,90,0),title=map_title)
+         ##hp.mollview(map=regridded_to_hpx_beam_power,coord='C',title=map_title,rot=(0,0,0)) #,min=0, max=7000)
+         #fig_name="analytic_beam_from_hpx_%s_%0.3f_MHz.png" % (pol,freq_MHz)
+         #figmap = plt.gcf()
+         #figmap.savefig(fig_name)
+         #print("saved %s" % fig_name)
+                  
+         #beam_image_sin_projected_fitsname = "model_%0.3f_MHz_%s.fits" % (freq_MHz,'xx')
+         
+         #I think we need to use adaptive resampling: https://reproject.readthedocs.io/en/stable/celestial.html#adaptive-resampling
+         #(or not use reproject_from_healpix, just do everything in hpx)
+         
+         #try using reproject_from_hpx to reproject to your RA 0, Dec=latitude beam image in sin proejction
+         model_beam_image_sin_proj_name = '/md0/EoR/ASSASSIN/beam_fits/model_100_MHz_xx.fits'
+         with fits.open(model_beam_image_sin_proj_name) as hdulist:
+            model_header = hdulist[0].header
         
-         #print(regridded_to_hpx_beam_power.shape)
-         #view regridded beam
-         plt.clf()
-         map_title="regridded beam sim"
-         ##hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
-         hp.orthview(map=regridded_to_hpx_beam_power,half_sky=False,rot=(0,90,0),title=map_title)
-         #hp.mollview(map=regridded_to_hpx_beam_power,coord='C',title=map_title,rot=(0,0,0)) #,min=0, max=7000)
-         fig_name="regridded_sim_beam_%s_%0.3f_MHz.png" % (pol,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)
-        
+         reproj_imsize = int(model_header['naxis1'])
+         print(reproj_imsize)
+         target_wcs = WCS(model_header)
+         
+         hdu_sim_beam = fits.open(sim_beam_hpx_fits_name)[1]
+         reprojected_sim_beam,footprint = reproject_from_healpix(hdu_sim_beam,target_wcs,shape_out=(reproj_imsize,reproj_imsize), order='bilinear',field=0)
+       
+         #write the map to fits
+         reprojected_sim_beam_fitsname = "reprojected_sim_beam_%s_%0.3f_MHz.fits" % (pol,freq_MHz)
+         fits.writeto(reprojected_sim_beam_fitsname,reprojected_sim_beam,overwrite=True)
+         fits.update(reprojected_sim_beam_fitsname,reprojected_sim_beam,header=model_header)
+         print("wrote image %s" %  reprojected_sim_beam_fitsname)
+
+         #repeat for analytic:
+         hdu_analytic_beam = fits.open(analytic_beam_hpx_fits_name)[1]
+         reprojected_analytic_beam,footprint = reproject_from_healpix(hdu_analytic_beam,target_wcs,shape_out=(reproj_imsize,reproj_imsize), order='bilinear',field=0)
+       
+         #write the map to fits
+         reprojected_analytic_beam_fitsname = "reprojected_analytic_beam_%s_%0.3f_MHz.fits" % (pol,freq_MHz)
+         fits.writeto(reprojected_analytic_beam_fitsname,reprojected_analytic_beam,overwrite=True)
+         fits.update(reprojected_analytic_beam_fitsname,reprojected_analytic_beam,header=model_header)
+         print("wrote image %s" %  reprojected_analytic_beam_fitsname)
+   
+   
+         ##print(regridded_to_hpx_beam_power.shape)
+         ##view regridded beam
+         #plt.clf()
+         #map_title="regridded beam sim"
+         ###hp.orthview(map=gsm_map,half_sky=True,xsize=2000,title=map_title,rot=(0,0,0),min=0, max=100)
+         #hp.orthview(map=regridded_to_hpx_beam_power_norm_log,half_sky=True,rot=(0,90,0),title=map_title)
+         ##hp.mollview(map=regridded_to_hpx_beam_power,coord='C',title=map_title,rot=(0,0,0)) #,min=0, max=7000)
+         #fig_name="regridded_sim_beam_log_%s_%0.3f_MHz.png" % (pol,freq_MHz)
+         #figmap = plt.gcf()
+         #figmap.savefig(fig_name)
+         #print("saved %s" % fig_name)        
          
          ##cube 256 stuff - probably wrong
          #beam_power_cube_flat = beam_power_cube.reshape(-1, beam_power_cube.shape[-1])
@@ -14957,8 +15052,6 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
          #beam_interp = interp2d(phi_theta_array_cube_flat, azimuth_deg_array, beam_power_cube)
          #print(beam_interp.shape)
          ####
-         
-         
          
          #look at code/AAVS-1/dipole_beam_tests.py for what you did before, antenna ordering etc
          #from daniel email to Jishnu: 
@@ -14998,7 +15091,10 @@ def convert_matlab_EEPs(freq_MHz_list,nside,method='linear'):
          #"    dipole_beam_map = dipole_beam_map / beam_max \n",
          #"    \n",
          #"    return dipole_beam_map"  
-         
+         #     
+         #     beam_map = calc_beam_values(n_side=64, n_pix=49152, nu=100)\n",
+         #     r_beam = hp.Rotator(rot=[-90,-90], coord=['C', 'C'], deg=True)  #rot=[ra_deg, dec_deg]
+         #     antenna_beam = r_beam.rotate_map_pixel(calc_beam_values(n_side=64, n_pix=49152, nu=150))
          
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
@@ -15280,12 +15376,15 @@ EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
 #EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan("/md0/EoR/EDA2/20200304_data/",EDA2_chan_list)
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 
+
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 
 n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
 
 EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan] 
 
+#test just to see when Galaxy rises now
+EDA2_obs_time_list = ['20210621T150000']
 
 #just for SIMS for EDA2 data (REMOVE!!!), have to manually cd to chan dir and run just simulate:
 #EDA2_chan_list = [129]
@@ -15308,8 +15407,6 @@ print(EDA2_chan_list)
 
 
 
-
-##need to use an old year ...
 lst_hrs_list = []
 for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
    #there might have been no obs:
@@ -15327,6 +15424,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       lst_hrs_list.append(lst_eda2_hrs)
 
 print(lst_hrs_list)
+
 
 #EDA2
 #array_layout_filename = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
@@ -15389,11 +15487,11 @@ print(lst_hrs_list)
 
 ##do this outside chan dir
 ##if doing individual chans:
-#chan_num = 1
-#freq_MHz_list = [freq_MHz_array[chan_num]]
+chan_num = 1
+freq_MHz_list = [freq_MHz_array[chan_num]]
 #EDA2_chan_list = [EDA2_chan_list[chan_num]]
-freq_MHz_list = freq_MHz_array[0:2]
-EDA2_chan_list = EDA2_chan_list[0:2]
+#freq_MHz_list = freq_MHz_array[0:2]
+#EDA2_chan_list = EDA2_chan_list[0:2]
 plot_cal = False
 #wsclean = False
 wsclean = True
@@ -15411,7 +15509,7 @@ reverse_fine_chans = False   #this should always be false!
 #cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_filename,combined_ant_pos_name_filename)
 #sys.exit()
 
-convert_matlab_EEPs(freq_MHz_list,nside=32)
+convert_matlab_EEPs(freq_MHz_list,nside=512)
 sys.exit()
 
 #don't need to cal separately each pol anymore, using wsclean predict and calibrate!
