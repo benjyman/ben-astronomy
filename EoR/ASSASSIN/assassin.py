@@ -15324,7 +15324,194 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       print(cmd)
       os.system(cmd)
       
+def simulate_eda2_with_complex_beams(freq_MHz,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'):
+   npix = hp.nside2npix(nside)
+   with open(antenna_layout_filename) as f:
+      lines = f.readlines()
+      n_ants = len(lines) 
+         
+   #hpx rotate stuff
+   dec_rotate = 90. - float(mwa_latitude_ephem)
+   r_beam = hp.Rotator(rot=[0,dec_rotate], coord=['C', 'C'], deg=True) 
       
+   #see Jishnu's SITARA paper 1, appendix B
+   #first get it working for a single baseline, ant index 0 and 1
+   #Get the right beams (EEPs from Daniel) and convert (interpolate) to healpix
+   freq_Hz_string = "%d" % (freq_MHz*1000000)
+         
+   for pol in ['X']:  #,'Y'
+      EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
+      beam_data = loadmat(EEP_name)
+      print("loaded %s " % EEP_name)
+
+      E_phi_cube = beam_data['Ephi'][0:361][:]
+      E_theta_cube = beam_data['Etheta'][0:361][:]
+      
+      #angle interpolation stuff
+      azimuth_deg_array = np.flip(np.arange(361) + 90.)
+      azimuth_deg_array[azimuth_deg_array >= 361] = azimuth_deg_array[azimuth_deg_array >= 361] - 361
+      zenith_angle_deg_array = np.arange(91)
+      
+      repetitions = 91
+      ang_repeats_array = np.tile(azimuth_deg_array, (repetitions, 1))
+      az_ang_repeats_array_flat = ang_repeats_array.flatten()
+      
+      repetitions = 361
+      ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
+      
+      zenith_angle_repeats_array_flat = ang_repeats_array.flatten('F')
+      zenith_angle_repeats_array_flat_rad = zenith_angle_repeats_array_flat / 180. * np.pi
+      az_ang_repeats_array_flat_rad = (az_ang_repeats_array_flat) / 180. * np.pi
+          
+      hpx_pix_num_array = np.arange(npix)
+      hpx_angles_rad = hp.pix2ang(nside,hpx_pix_num_array) 
+      hpx_angles_rad_zenith_angle = hpx_angles_rad[0]
+      hpx_angles_rad_azimuth = hpx_angles_rad[1]
+      
+      #first and only baseline:
+      ant_index_1 = 0
+      ant_index_2 = 0
+      ant_name_1 = lines[ant_index_1].split()[0]
+      ant_name_2 = lines[ant_index_2].split()[0]
+      #interpolate E_phi and E_theta separately
+      #ant 1
+      E_phi_cube_slice_1 = E_phi_cube[:,:,ant_index_1]
+      E_phi_cube_slice_flat_1 = E_phi_cube_slice_1.flatten('F')
+      regridded_to_hpx_E_phi_complex_1 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat_1, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+      
+      #do all the inter stuff first, then rotate at end (otherwise end up with hole in the middle)
+
+      
+      #repeat for E_theta:
+      E_theta_cube_slice_1 = E_theta_cube[:,:,ant_index_1]
+      E_theta_cube_slice_flat_1 = E_theta_cube_slice_1.flatten('F')
+      regridded_to_hpx_E_theta_complex_1 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat_1, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+  
+      #rotate appropriately:
+      #rotated_E_phi_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_phi_complex_1)      
+      #rotated_E_theta_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_theta_complex_1) 
+        
+          
+      ##sanity check power pattern:
+      power_pattern_1 = np.abs(regridded_to_hpx_E_phi_complex_1)**2 + np.abs(regridded_to_hpx_E_theta_complex_1)**2
+      rotated_power_pattern_1  = r_beam.rotate_map(power_pattern_1)
+      
+      plt.clf()
+      map_title="rotated beam sim"
+      hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_1,pol,freq_MHz)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+
+      #Add some text to the png
+      img = Image.open("%s" % fig_name)
+      draw = ImageDraw.Draw(img)
+      font = ImageFont.truetype('FreeSans.ttf',30)
+      draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
+      img.save("%s" % fig_name)
+      
+      sys.exit()
+      
+      complex_beam_1 = np.matrix(np.empty((npix,2), dtype=complex))
+      complex_beam_1[:,0] = np.matrix(rotated_E_theta_complex_1).transpose()
+      complex_beam_1[:,1] = np.matrix(rotated_E_phi_complex_1).transpose()
+      
+      ##sanity check power pattern:
+      power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
+      print(power_pattern[:,0].shape)
+      plt.clf()
+      map_title=""
+      hp.orthview(map=power_pattern[:,0],half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      fig_name="check2_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      
+      ## Add some text to the png
+      img = Image.open("%s" % fig_name)
+      draw = ImageDraw.Draw(img)
+      font = ImageFont.truetype('FreeSans.ttf',30)
+      draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+      img.save("%s" % fig_name)
+      
+      
+         
+      
+      #repeat for ant 2
+      E_phi_cube_slice_2 = E_phi_cube[:,:,ant_index_2]
+      E_phi_cube_slice_flat_2 = E_phi_cube_slice_2.flatten('F')
+      regridded_to_hpx_E_phi_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+      #rotate appropriately:
+      rotated_E_phi_complex_2 = r_beam.rotate_map(regridded_to_hpx_E_phi_complex_2)
+      
+      #repeat for E_theta:
+      E_theta_cube_slice_2 = E_theta_cube[:,:,ant_index_2]
+      E_theta_cube_slice_flat_2 = E_theta_cube_slice_2.flatten('F')
+      regridded_to_hpx_E_theta_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+      #rotate appropriately:
+      rotated_E_theta_complex_2 = r_beam.rotate_map(regridded_to_hpx_E_theta_complex_2)      
+    
+      complex_beam_2 = np.matrix(np.empty((npix,2), dtype=complex))
+      complex_beam_2[:,0] = np.matrix(rotated_E_theta_complex_2).transpose()
+      complex_beam_2[:,1] = np.matrix(rotated_E_phi_complex_2).transpose()
+      complex_beam_2_H = complex_beam_2.H
+   
+      #construct the power pattern using the diagonal as in SITARA 1 appendix B
+      print(complex_beam_1[:,0].shape)
+      print(complex_beam_2[:,0].shape)
+      print(complex_beam_1.dtype)
+      print(complex_beam_2.dtype)
+      
+      if ant_index_1==ant_index_2:
+         ##sanity check power pattern:
+         power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
+         print(power_pattern[:,0].shape)
+         plt.clf()
+         map_title=""
+         hp.orthview(map=power_pattern[:,0],half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+         fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+      
+         ## Add some text to the png
+         img = Image.open("%s" % fig_name)
+         draw = ImageDraw.Draw(img)
+         font = ImageFont.truetype('FreeSans.ttf',30)
+         draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+         img.save("%s" % fig_name)
+      
+
+         
+         beam_matmul = np.matmul(complex_beam_1,complex_beam_2_H)
+         print(beam_matmul.shape)
+         print(beam_matmul.dtype)
+      
+         power_pattern = np.asarray(beam_matmul.diagonal())[0,:]
+     
+         print(power_pattern.shape)
+         print(power_pattern.dtype)
+     
+         ##sanity check power pattern:
+         #power_pattern_2 = np.abs(rotated_E_phi_complex_2)**2 + np.abs(rotated_E_theta_complex_2)**2
+         plt.clf()
+         map_title=""
+         hp.orthview(map=power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+         fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+   
+         ## Add some text to the png
+         img = Image.open("%s" % fig_name)
+         draw = ImageDraw.Draw(img)
+         font = ImageFont.truetype('FreeSans.ttf',30)
+         draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+         img.save("%s" % fig_name)
+      
+      
+      sys.exit()
       
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
@@ -15628,8 +15815,8 @@ freq_MHz_array = 400./512.*EDA2_chan_list_array
 freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
-print(freq_MHz_list)
-print(EDA2_chan_list)
+#print(freq_MHz_list)
+#print(EDA2_chan_list)
 
 #eda2_data_filename = "chan_%s_%s.uvfits" % (int(EDA2_chan),EDA2_obs_time)
 #eda2_data_filename = "chan_90_20191202T171727.uvfits"
@@ -15653,7 +15840,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       #print(lst_eda2_hrs)
       lst_hrs_list.append(lst_eda2_hrs)
 
-print(lst_hrs_list)
+#print(lst_hrs_list)
 
 
 #EDA2
@@ -15738,6 +15925,9 @@ reverse_fine_chans = False   #this should always be false!
 combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'
 #cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_filename,combined_ant_pos_name_filename)
 #sys.exit()
+
+simulate_eda2_with_complex_beams(freq_MHz_list[0],nside=32)
+sys.exit()
 
 ant_index = 0
 convert_matlab_EEPs_by_ant(ant_index,freq_MHz_list,nside=512)
