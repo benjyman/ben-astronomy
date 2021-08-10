@@ -15370,7 +15370,7 @@ def simulate_eda2_with_complex_beams(freq_MHz,nside=512,antenna_layout_filename=
       
       #first and only baseline:
       ant_index_1 = 0
-      ant_index_2 = 0
+      ant_index_2 = 1
       ant_name_1 = lines[ant_index_1].split()[0]
       ant_name_2 = lines[ant_index_2].split()[0]
       #interpolate E_phi and E_theta separately
@@ -15393,127 +15393,108 @@ def simulate_eda2_with_complex_beams(freq_MHz,nside=512,antenna_layout_filename=
         
           
       ##sanity check power pattern:
-      power_pattern_1 = np.abs(regridded_to_hpx_E_phi_complex_1)**2 + np.abs(regridded_to_hpx_E_theta_complex_1)**2
-      rotated_power_pattern_1  = r_beam.rotate_map(power_pattern_1)
+      #power_pattern_1 = np.abs(regridded_to_hpx_E_phi_complex_1)**2 + np.abs(regridded_to_hpx_E_theta_complex_1)**2
+      #rotated_power_pattern_1  = r_beam.rotate_map(power_pattern_1)
       
-      plt.clf()
-      map_title="rotated beam sim"
-      hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_1,pol,freq_MHz)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
+      #plt.clf()
+      #map_title="rotated beam sim"
+      #hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      #fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_1,pol,freq_MHz)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name)
 
-      #Add some text to the png
-      img = Image.open("%s" % fig_name)
-      draw = ImageDraw.Draw(img)
-      font = ImageFont.truetype('FreeSans.ttf',30)
-      draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
-      img.save("%s" % fig_name)
-      
-      
+      ##Add some text to the png
+      #img = Image.open("%s" % fig_name)
+      #draw = ImageDraw.Draw(img)
+      #font = ImageFont.truetype('FreeSans.ttf',30)
+      #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
+      #img.save("%s" % fig_name)
       
       complex_beam_1 = np.matrix(np.empty((npix,2), dtype=complex))
       complex_beam_1[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_1).transpose()
       complex_beam_1[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_1).transpose()
       
       ##sanity check power pattern:
-      power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
-      power_pattern = power_pattern[:,0]
-      print(power_pattern.shape)
-      rotated_power_pattern = r_beam.rotate_map(power_pattern)
+      #power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
+      #power_pattern = power_pattern[:,0]
+      #print(power_pattern.shape)
+      #rotated_power_pattern = r_beam.rotate_map(power_pattern)
       
-      plt.clf()
-      map_title=""
-      hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      fig_name="check2_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
+      #plt.clf()
+      #map_title=""
+      #hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      #fig_name="check2_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name)
       
-      ## Add some text to the png
-      img = Image.open("%s" % fig_name)
-      draw = ImageDraw.Draw(img)
-      font = ImageFont.truetype('FreeSans.ttf',30)
-      draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
-      img.save("%s" % fig_name)
-      
-      sys.exit()
-         
+      ### Add some text to the png
+      #img = Image.open("%s" % fig_name)
+      #draw = ImageDraw.Draw(img)
+      #font = ImageFont.truetype('FreeSans.ttf',30)
+      #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+      #img.save("%s" % fig_name)
+
       
       #repeat for ant 2
       E_phi_cube_slice_2 = E_phi_cube[:,:,ant_index_2]
       E_phi_cube_slice_flat_2 = E_phi_cube_slice_2.flatten('F')
       regridded_to_hpx_E_phi_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-      #rotate appropriately:
-      rotated_E_phi_complex_2 = r_beam.rotate_map(regridded_to_hpx_E_phi_complex_2)
-      
+
       #repeat for E_theta:
       E_theta_cube_slice_2 = E_theta_cube[:,:,ant_index_2]
       E_theta_cube_slice_flat_2 = E_theta_cube_slice_2.flatten('F')
       regridded_to_hpx_E_theta_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-      #rotate appropriately:
-      rotated_E_theta_complex_2 = r_beam.rotate_map(regridded_to_hpx_E_theta_complex_2)      
     
       complex_beam_2 = np.matrix(np.empty((npix,2), dtype=complex))
-      complex_beam_2[:,0] = np.matrix(rotated_E_theta_complex_2).transpose()
-      complex_beam_2[:,1] = np.matrix(rotated_E_phi_complex_2).transpose()
+      complex_beam_2[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_2).transpose()
+      complex_beam_2[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_2).transpose()
       complex_beam_2_H = complex_beam_2.H
    
       #construct the power pattern using the diagonal as in SITARA 1 appendix B
-      print(complex_beam_1[:,0].shape)
-      print(complex_beam_2[:,0].shape)
-      print(complex_beam_1.dtype)
-      print(complex_beam_2.dtype)
-      
-      if ant_index_1==ant_index_2:
-         ##sanity check power pattern:
-         power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
-         print(power_pattern[:,0].shape)
-         plt.clf()
-         map_title=""
-         hp.orthview(map=power_pattern[:,0],half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)
-      
-         ## Add some text to the png
-         img = Image.open("%s" % fig_name)
-         draw = ImageDraw.Draw(img)
-         font = ImageFont.truetype('FreeSans.ttf',30)
-         draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
-         img.save("%s" % fig_name)
-      
 
-         
-         beam_matmul = np.matmul(complex_beam_1,complex_beam_2_H)
-         print(beam_matmul.shape)
-         print(beam_matmul.dtype)
+      ###sanity check power pattern:
+      #power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_2[:,1]))**2
+      #power_pattern = power_pattern[:,0]
+      #rotated_power_pattern = r_beam.rotate_map(power_pattern)
+      #plt.clf()
+      #map_title=""
+      #hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      #fig_name="check3_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #print("saved %s" % fig_name)
       
-         power_pattern = np.asarray(beam_matmul.diagonal())[0,:]
+      ### Add some text to the png
+      #img = Image.open("%s" % fig_name)
+      #draw = ImageDraw.Draw(img)
+      #font = ImageFont.truetype('FreeSans.ttf',30)
+      #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+      #img.save("%s" % fig_name)
+      
+      beam_matmul = np.matmul(complex_beam_1,complex_beam_2_H)
+      power_pattern = np.asarray(beam_matmul.diagonal())[0,:]
+      rotated_power_pattern = r_beam.rotate_map(power_pattern)
      
-         print(power_pattern.shape)
-         print(power_pattern.dtype)
-     
-         ##sanity check power pattern:
-         #power_pattern_2 = np.abs(rotated_E_phi_complex_2)**2 + np.abs(rotated_E_theta_complex_2)**2
-         plt.clf()
-         map_title=""
-         hp.orthview(map=power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         fig_name="check_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)
+      ##sanity check power pattern:
+      #power_pattern_2 = np.abs(rotated_E_phi_complex_2)**2 + np.abs(rotated_E_theta_complex_2)**2
+      plt.clf()
+      map_title=""
+      #hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      hp.mollview(map=rotated_power_pattern,title=map_title)
+      fig_name="check4_complex_power_pattern_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,ant_index_2,pol,freq_MHz)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
    
-         ## Add some text to the png
-         img = Image.open("%s" % fig_name)
-         draw = ImageDraw.Draw(img)
-         font = ImageFont.truetype('FreeSans.ttf',30)
-         draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
-         img.save("%s" % fig_name)
-      
-      
+      ## Add some text to the png
+      img = Image.open("%s" % fig_name)
+      draw = ImageDraw.Draw(img)
+      font = ImageFont.truetype('FreeSans.ttf',30)
+      draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
+      img.save("%s" % fig_name)
+
       sys.exit()
       
 def get_antenna_table_from_uvfits(uvfits_name):
