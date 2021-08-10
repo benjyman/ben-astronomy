@@ -15411,18 +15411,21 @@ def simulate_eda2_with_complex_beams(freq_MHz,nside=512,antenna_layout_filename=
       draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
       img.save("%s" % fig_name)
       
-      sys.exit()
+      
       
       complex_beam_1 = np.matrix(np.empty((npix,2), dtype=complex))
-      complex_beam_1[:,0] = np.matrix(rotated_E_theta_complex_1).transpose()
-      complex_beam_1[:,1] = np.matrix(rotated_E_phi_complex_1).transpose()
+      complex_beam_1[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_1).transpose()
+      complex_beam_1[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_1).transpose()
       
       ##sanity check power pattern:
       power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_1[:,1]))**2
-      print(power_pattern[:,0].shape)
+      power_pattern = power_pattern[:,0]
+      print(power_pattern.shape)
+      rotated_power_pattern = r_beam.rotate_map(power_pattern)
+      
       plt.clf()
       map_title=""
-      hp.orthview(map=power_pattern[:,0],half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+      hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
       fig_name="check2_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
@@ -15435,7 +15438,7 @@ def simulate_eda2_with_complex_beams(freq_MHz,nside=512,antenna_layout_filename=
       draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
       img.save("%s" % fig_name)
       
-      
+      sys.exit()
          
       
       #repeat for ant 2
