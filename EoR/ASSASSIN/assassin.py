@@ -8897,107 +8897,148 @@ def simulate_assassin(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model
             print(cmd)
             os.system(cmd)  
                    
-def simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs):
-   freq_step = 1 #MHz
-   centre_freq_GHz = float(centre_freq_MHz) / 1.0e3
-   start_freq_MHz = float(centre_freq_MHz) - (bandwidth_MHz/2.)
-   #get a multi channel model image (see calibrate time_av)
-   print("start lst %s hrs" % start_lst)
-   start_lst_deg = (float(start_lst)/24.)*360.
-   print("start lst %s deg" % start_lst_deg)
+def simulate_sitara(lst_hrs,nside=512):
+   n_ants = 2
+   freq_MHz_array = np.arange(70,70+151)
+   npix = hp.nside2npix(nside)
+   lst_hrs = float(lst_hrs)
+   lst_deg = lst_hrs * 15.
+   unity_sky_value = 1.
    
-   lst_deg_array = np.arange(start_lst_deg,start_lst_deg+obs_length_hrs,obs_time_res_hrs)
+   #hpx rotate stuff, rotate the complex beams to zenith at the required LST
+   dec_rotate = 90. - float(mwa_latitude_ephem)
+   ra_rotate = lst_deg
+   r_beam_dec = hp.Rotator(rot=[0,dec_rotate], coord=['C', 'C'], deg=True) 
+   r_beam_ra = hp.Rotator(rot=[ra_rotate,0], coord=['C', 'C'], deg=True)    
    
-   #generate sky model image cube:
-   freq_MHz_array = np.arange(start_freq_MHz,start_freq_MHz+bandwidth_MHz,freq_step)
-   gsm = GlobalSkyModel()
+   EEP_name = '/md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat'
+   #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
+   beam_data = loadmat(EEP_name)
+   print("loaded %s " % EEP_name)
+   #print(beam_data.keys())
+   
+   E_phi_element_1_cube = beam_data['Ephi_elem1']
+   E_phi_element_2_cube = beam_data['Ephi_elem2']
+   E_theta_element_1_cube = beam_data['Etheta_elem1']
+   E_theta_element_2_cube = beam_data['Etheta_elem2']
 
-   for lst_deg in lst_deg_array:
-      lst_hrs = lst_deg / 15.
-      for freq_MHz in freq_MHz_array:
-         freq_GHz = freq_MHz / 1.0e3
-         wavelength = 300./float(freq_MHz)  
-         gsm_hpx_fits_name_fine_chan = "map_LST_gsm_%03d_%0.3f_MHz_hpx.fits" % (lst_deg,freq_MHz)
-         print("%s" % gsm_hpx_fits_name_fine_chan)
-                   
+   #angle interpolation stuff
+   azimuth_deg_array = np.flip(np.arange(361) + 90.)
+   azimuth_deg_array[azimuth_deg_array >= 361] = azimuth_deg_array[azimuth_deg_array >= 361] - 361
+   zenith_angle_deg_array = np.arange(91)
+   
+   repetitions = 91
+   ang_repeats_array = np.tile(azimuth_deg_array, (repetitions, 1))
+   az_ang_repeats_array_flat = ang_repeats_array.flatten()
+   
+   repetitions = 361
+   ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
+   
+   zenith_angle_repeats_array_flat = ang_repeats_array.flatten('F')
+   zenith_angle_repeats_array_flat_rad = zenith_angle_repeats_array_flat / 180. * np.pi
+   az_ang_repeats_array_flat_rad = (az_ang_repeats_array_flat) / 180. * np.pi
        
-         reprojected_to_wsclean_gsm_prefix_fine_chan = "gsm_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean" % (lst_deg,freq_MHz)
-         reprojected_to_wsclean_gsm_fitsname_fine_chan = "%s.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
-         reprojected_to_wsclean_gsm_fitsname_Jy_per_pix_fine_chan = "%s_Jy_per_pix.fits" % (reprojected_to_wsclean_gsm_prefix_fine_chan)
-         reprojected_to_wsclean_gsm_im_name_Jy_per_pix_fine_chan = "gsm_map_LST_%03d_%0.3f_MHz_hpx_reprojected_wsclean_Jy_per_pix.im" % (lst_deg,freq_MHz) 
+   hpx_pix_num_array = np.arange(npix)
+   hpx_angles_rad = hp.pix2ang(nside,hpx_pix_num_array) 
+   hpx_angles_rad_zenith_angle = hpx_angles_rad[0]
+   hpx_angles_rad_azimuth = hpx_angles_rad[1]
+   
+   test_n_freqs = 151
 
-         # make the gsm files it is not hard and save as hpx fits 
-         
-         jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-         
-         gsm_map = gsm.generate(freq_MHz)
-         
-         hp.write_map(gsm_hpx_fits_name_fine_chan,gsm_map,coord='G',overwrite=True)
-         print("wrote %s" % gsm_hpx_fits_name_fine_chan)
-                       
-         hdu_gsm_fine_chan = fits.open(gsm_hpx_fits_name_fine_chan)[1]
-         
-         year=2000
-         month=1
-         day=1
-         hour=np.floor(float(lst_deg))
-         minute=np.floor((float(lst_deg)-hour) * 60.)
-         second=((float(lst_deg)-hour) * 60. - minute) * 60.
-         
-         date_time_string = '%s_%02d_%02d_%02d_%02d_%02d' % (year,float(month),float(day),hour,minute,second)
-         #print date_time_string
-         #for miriad time just use 00JAN1$fakedayfrac as in Randall's sims (can't put in a four digit year anyway)
-         day_frac_plus_one = float(lst_deg)/24. + 1
-         miriad_uvgen_time_string = '00JAN%1.3f' % day_frac_plus_one
-                
-         #make blank uv dataset with right time and freq settings
-         model_vis_name_base = 'sitara_LST_%0.3f_%0.3f_MHz' % (lst_deg,freq_MHz)
-         out_vis_name = model_vis_name_base + '.vis'
-         out_uvfits_name = model_vis_name_base + '.uvfits'
-         ms_name = model_vis_name_base + '.ms'
-         
-         cmd = "rm -rf %s" % out_vis_name
-         print(cmd)
-         os.system(cmd)
-         
-         #change this to SCP
-         pointing_dec = "-26.70331940"
-         array_ant_locations_filename_255 = '/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant'
-         #point_jack.source
-         #flux,dra,ddec,bmaj,bmin,bpa,iflux,ipa,vflux
-         #     1.0000    3600.0000    -4668.05016    0.0000    0.0000    0.0000    0.0000    0.0000
-         #day_frac_plus_one_SP = float(lst)/24. + 1
-         #miriad_uvgen_time_string_SP = '00JUN%1.3f' % day_frac_plus_one_SP
-         cmd = "uvgen source=$MIRCAT/no.source ant='%s' baseunit=-3.33564 corr='1,1,0,1' time=%s freq=%.4f,0.0 radec='%2.3f,%s' harange=%s lat=-26.70331940 out=%s stokes=xx  " % (array_ant_locations_filename_255,miriad_uvgen_time_string,freq_GHz,float(lst_hrs),pointing_dec,harange_string,out_vis_name)
-         print(cmd)
-         os.system(cmd)
-      
-         cmd = "fits op=uvout in=%s out=%s " % (out_vis_name,out_uvfits_name)
-         print(cmd)
-         os.system(cmd)
-      
-         #import to ms
-         casa_string = "importuvfits(fitsfile='%s',vis='%s')" % (out_uvfits_name,ms_name)
-         casa_filename = 'casa_import.sh'
-         with open(casa_filename,'w') as f:
-            f.write(casa_string)
-         cmd = "casa -c %s" % casa_filename
-         print(cmd)
-         os.system(cmd)
-      
-         #will need to rm /tmp/tmp*  
-      
-         uncal_ms_image_prefix = "uncal_lstdeg_%s_freq_%s_MHz" % (lst_deg,freq_MHz)
-         uncal_ms_image_name = "%s-image.fits" % uncal_ms_image_prefix
-         wsclean_imsize = '512'
-         wsclean_scale = '900asec'
-         
-         #make a wsclean image of the uncalibrated ms just to get an image header to reproject to:
-         cmd = "wsclean -name %s -size %s %s -scale %s -pol xx -data-column DATA %s " % (uncal_ms_image_prefix,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-         print(cmd)
-         os.system(cmd)
-      
+   E_phi_element_1_cube_slice = E_phi_element_1_cube[:,:,0:0+test_n_freqs]
+   flattened_size = int(E_phi_element_1_cube_slice.shape[0]*E_phi_element_1_cube_slice.shape[1])
+   E_phi_element_1_cube_slice = E_phi_element_1_cube_slice.transpose([1,0,2])
+   E_phi_element_1_cube_slice_flat = E_phi_element_1_cube_slice.reshape(flattened_size,E_phi_element_1_cube_slice.shape[2])
+   regridded_to_hpx_E_phi_element_1_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_element_1_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
 
+   E_phi_element_2_cube_slice = E_phi_element_2_cube[:,:,0:0+test_n_freqs]
+   E_phi_element_2_cube_slice = E_phi_element_2_cube_slice.transpose([1,0,2])
+   E_phi_element_2_cube_slice_flat = E_phi_element_2_cube_slice.reshape(flattened_size,E_phi_element_2_cube_slice.shape[2])
+   regridded_to_hpx_E_phi_element_2_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_element_2_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+
+   E_theta_element_1_cube_slice = E_theta_element_1_cube[:,:,0:0+test_n_freqs]
+   E_theta_element_1_cube_slice = E_theta_element_1_cube_slice.transpose([1,0,2])
+   E_theta_element_1_cube_slice_flat = E_theta_element_1_cube_slice.reshape(flattened_size,E_theta_element_1_cube_slice.shape[2])
+   regridded_to_hpx_E_theta_element_1_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_element_1_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+   
+   E_theta_element_2_cube_slice = E_theta_element_2_cube[:,:,0:0+test_n_freqs]
+   E_theta_element_2_cube_slice = E_theta_element_2_cube_slice.transpose([1,0,2])
+   E_theta_element_2_cube_slice_flat = E_theta_element_2_cube_slice.reshape(flattened_size,E_theta_element_2_cube_slice.shape[2])
+   regridded_to_hpx_E_theta_element_2_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_element_2_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+   
+
+   
+   #element 1
+   complex_beam_cube_1 = np.empty((npix,2,test_n_freqs), dtype=complex)
+   complex_beam_cube_1[:,0,:] = regridded_to_hpx_E_theta_element_1_complex
+   complex_beam_cube_1[:,1,:] = regridded_to_hpx_E_phi_element_1_complex
+
+   #element 2
+   complex_beam_cube_2 = np.empty((npix,2,test_n_freqs), dtype=complex)
+   complex_beam_cube_2[:,0,:] = regridded_to_hpx_E_theta_element_2_complex
+   complex_beam_cube_2[:,1,:] = regridded_to_hpx_E_phi_element_2_complex
+
+   ####sanity check power pattern:
+   #power_pattern_1 = np.abs(complex_beam_cube_1[:,0,0])**2 + np.abs(complex_beam_cube_1[:,1,0])**2
+   #rotated_power_pattern_1  = r_beam_dec.rotate_map(power_pattern_1)
+   #plt.clf()
+   #map_title="rotated beam sim"
+   #hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+   #fig_name="check1_complex_power_pattern_sitara.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name)
+
+   #Now we have beams, need a sky!
+   gsm = GlobalSkyModel()
+   gsm_map_512_cube = gsm.generate(freq_MHz_array[0:test_n_freqs])
+   gsm_map_cube = hp.ud_grade(gsm_map_512_cube,nside)
+   
+   #(don't)rotate gsm - rotate the beam, easier for SITARA since there are only 2
+   #dec_rotate_gsm = 90. - float(mwa_latitude_ephem)
+   #r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], coord=['C', 'C'], deg=True)
+   #r_gsm_ra = hp.Rotator(rot=[-lst_deg,0], coord=['C', 'C'], deg=True)
+   ##convert to celestial coords
+   #r_gsm_C = hp.Rotator(coord=['G','C'])
+   #rotated_gsm_C = r_gsm_C.rotate_map(gsm_map)
+   ##rotate the sky insted of the beams (cause beams are a cube)
+   #rotated_gsm_C_dec = r_gsm_dec.rotate_map(rotated_gsm_C)
+   #rotated_gsm_C_dec_ra = r_gsm_ra.rotate_map(rotated_gsm_C_dec)
+   #unity_sky_repeats_array = gsm_map_cube * 0 + unity_sky_value
+   #unity_sky_repeats_array = np.transpose(unity_sky_repeats_array)
+   
+   unity_sky_repeats_array = np.zeros((npix,test_n_freqs)) + unity_sky_value
+   
+   power_pattern_cube = np.einsum('ij...,ij...->i...', complex_beam_cube_1, np.conj(complex_beam_cube_2))
+   power_pattern_cube = np.nan_to_num(power_pattern_cube)
+   unity_sky_beam_cube = np.einsum('ij,ij->ij',unity_sky_repeats_array, power_pattern_cube)
+   
+   ######sanity check:
+   #plt.clf()
+   #map_title=""
+   ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+   #hp.mollview(map=unity_sky_beam_cube[:,2],title=map_title)
+   #fig_name="check3_complex_power_pattern_sitara.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name) 
+
+   unity_sky_beam_sum_array = np.einsum('ij->j',unity_sky_beam_cube)
+   power_pattern_cube_mag = np.abs(power_pattern_cube)
+   power_pattern_cube_mag_sum_array = np.einsum('ij->j',power_pattern_cube_mag)
+   visibility_array = unity_sky_beam_sum_array / power_pattern_cube_mag_sum_array
+
+
+   #plot uniform response vs freq
+   plt.clf()
+   map_title="uniform response sitara"
+   plt.plot(freq_MHz_array[0:test_n_freqs],visibility_array)
+   plt.ylabel("Real part of vis")
+   plt.xlabel("Frequency (MHz)")
+   fig_name="uniform_response_from_complex_beams_sitara.png"
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
   
 #main program
 def simulate(lst_list,freq_MHz_list,pol_list,signal_type_list,sky_model,outbase_name,array_ant_locations_filename,array_label,EDA2_data=False):
@@ -15857,19 +15898,6 @@ def cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_fi
    print('save %s ' % antenna_position_plot_figname)
          
          
-         
-         
-#SITARA:
-bandwidth_MHz = 5
-pol = 'Y'
-centre_freq_MHz = 150
-start_utc = "20150311T090000"
-obs_length_hrs = 12
-obs_time_res_hrs = 2
-#start_lst = get_eda2_lst(eda_time_string=start_utc)
-#simulate_sitara(start_lst,centre_freq_MHz,bandwidth_MHz,pol,obs_length_hrs,obs_time_res_hrs)
-#sys.exit()
-    
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_match_daniel_255_NEU.ant"
@@ -16166,6 +16194,9 @@ reverse_fine_chans = False   #this should always be false!
 combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'
 #cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_filename,combined_ant_pos_name_filename)
 #sys.exit()
+
+simulate_sitara(lst_hrs_list[0],nside=32)
+sys.exit()
 
 simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list[0],nside=32)
 sys.exit()
