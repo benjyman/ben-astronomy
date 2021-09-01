@@ -15364,8 +15364,8 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       print(cmd)
       os.system(cmd)
       
-def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'):
-   test_n_ants = 3
+def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False):
+   test_n_ants = 256
    npix = hp.nside2npix(nside)
    lst_hrs = float(lst_hrs)
    lst_deg = lst_hrs * 15.
@@ -15387,403 +15387,509 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    
    baseline_index_10_unity_vis_list = []
    
-   for freq_MHz in freq_MHz_list.tolist():
+   for freq_MHz in freq_MHz_list:
       freq_MHz = float(freq_MHz)
       freq_Hz_string = "%d" % (freq_MHz*1000000)
       wavelength = 300./freq_MHz
       jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
       k_0=2.*np.pi/wavelength
       unity_sky_value = 1. 
-            
-      for pol in ['X']:  #,'Y'
-         EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
-         #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
-         beam_data = loadmat(EEP_name)
-         print("loaded %s " % EEP_name)
-   
-         E_phi_cube = beam_data['Ephi'][0:361][:][:]
-         E_theta_cube = beam_data['Etheta'][0:361][:][:]
-
-         #This is code from plotting the AAVS1 antennas phases, they need to be referenced to some antenna or location
-         #We need to add in the geometric phase wrt to a single location for all antennas
-         
-         #try just using the first antenna (index zero) as reference (it shouldn't matter which one?)
-         E_theta_complex_ant_index_0 = E_theta_cube[:,:,0]
-         E_phi_complex_ant_index_0 = E_phi_cube[:,:,0]
-         
-         beam_gain_complex  = np.einsum('ij,ij...->ij...',E_theta_complex_ant_index_0, np.conj(E_theta_cube)) + np.einsum('ij,ij...->ij...',E_phi_complex_ant_index_0, np.conj(E_phi_cube)) 
-         beam_gain_complex_phase_rad = np.angle(beam_gain_complex)
-
-         phase_ramp_phi_theta = np.zeros(beam_gain_complex_phase_rad.shape)
-         
-         azimuth_deg_array = np.flip(np.arange(361) + 90.)
-         azimuth_deg_array[azimuth_deg_array >= 361] = azimuth_deg_array[azimuth_deg_array >= 361] - 361
-         zenith_angle_deg_array = np.arange(91)
-         
-         #(az = phi)
-         repetitions = 91
-         az_ang_repeats_array = np.tile(azimuth_deg_array, (repetitions, 1))
-         az_ang_repeats_array_rad = az_ang_repeats_array / 180. * np.pi
-         az_ang_repeats_array_rad_transpose = np.transpose(az_ang_repeats_array_rad)
-         #(zenith_ang = theta)
-         repetitions = 361
-         zenith_ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
-         zenith_ang_repeats_array_rad = zenith_ang_repeats_array / 180. * np.pi
-         
-         az_ang_repeats_array_rad_transpose_cos = np.cos(az_ang_repeats_array_rad_transpose)
-         az_ang_repeats_array_rad_transpose_sin = np.sin(az_ang_repeats_array_rad_transpose)
-         zenith_ang_repeats_array_rad_sin = np.sin(zenith_ang_repeats_array_rad)
-         
-         #element-by-element multiplication:
-         #k_x = k_0 * np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_cos, zenith_ang_repeats_array_rad_sin)
-         #k_y = k_0 * np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_sin, zenith_ang_repeats_array_rad_sin)
-         
-         #need to split up into phi and theta components
-         k_x_phi = k_0 * az_ang_repeats_array_rad_transpose_cos
-         k_x_theta = k_0 * zenith_ang_repeats_array_rad_sin
-         k_y_phi = k_0 * az_ang_repeats_array_rad_transpose_sin
-         k_y_theta = k_0 * zenith_ang_repeats_array_rad_sin
-         
-         
-         #now need delta_x and delta_y (difference in x and x pos for each antenna wrt antenna index 0)
-         x_pos_ant_index_0 = float(lines[0].split()[1])
-         y_pos_ant_index_0 = float(lines[0].split()[2])
-            
-         x_pos_array_ant = np.asarray([ant_string.split()[1] for ant_string in lines[0:test_n_ants]],dtype=float)
-         y_pos_array_ant = np.asarray([ant_string.split()[2] for ant_string in lines[0:test_n_ants]],dtype=float)
-         
-         delta_x_array = x_pos_ant_index_0 - x_pos_array_ant
-         delta_y_array = y_pos_ant_index_0 - y_pos_array_ant
-         
-         phase_delta_array_phi_1 = delta_x_array[1] * k_x_phi + delta_y_array[1] * k_y_phi
-         phase_delta_array_theta_1 = delta_x_array[1] * k_x_theta + delta_y_array[1] * k_y_theta
-         
-         #keep the phases from wrapping
-         phase_delta_array_phi_1[phase_delta_array_phi_1 < -np.pi] = phase_delta_array_phi_1[phase_delta_array_phi_1 < -np.pi] + (2 * np.pi)  
-         phase_delta_array_phi_1[phase_delta_array_phi_1 > np.pi] = phase_delta_array_phi_1[phase_delta_array_phi_1 > np.pi] - (2 * np.pi) 
-         phase_delta_array_theta_1[phase_delta_array_theta_1 < -np.pi] = phase_delta_array_theta_1[phase_delta_array_theta_1 < -np.pi] + (2 * np.pi)  
-         phase_delta_array_theta_1[phase_delta_array_theta_1 > np.pi] = phase_delta_array_theta_1[phase_delta_array_theta_1 > np.pi] - (2 * np.pi)
-         
-         
-         #now see if we can add this phase delta to E_phi and E_theta
-         E_phi_cube_slice_1 = E_phi_cube[:,:,1]
-         E_phi_cube_slice_1_mag = np.abs(E_phi_cube_slice_1)
-         E_phi_cube_slice_1_phase = np.angle(E_phi_cube_slice_1)
-         E_phi_cube_slice_1_phase_plus_delta = E_phi_cube_slice_1_phase + phase_delta_array_phi_1
-
-         #keep the phases from wrapping
-         E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta < -np.pi] = E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta < -np.pi] + (2 * np.pi)  
-         E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta > np.pi] = E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta > np.pi] - (2 * np.pi) 
-
-         E_theta_cube_slice_1 = E_theta_cube[:,:,1]
-         E_theta_cube_slice_1_mag = np.abs(E_theta_cube_slice_1)
-         E_theta_cube_slice_1_phase = np.angle(E_theta_cube_slice_1)
-         E_theta_cube_slice_1_phase_plus_delta = E_theta_cube_slice_1_phase + phase_delta_array_theta_1
-
-         #keep the phases from wrapping
-         E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta < -np.pi] = E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta < -np.pi] + (2 * np.pi)  
-         E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta > np.pi] = E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta > np.pi] - (2 * np.pi) 
-
-         #just put in the delta and see if it is a ramp
-         E_phi_cube_slice_1_with_phase_delta = 1. * np.exp(1j*phase_delta_array_phi_1) #E_phi_cube_slice_1_mag * np.exp(1j*E_phi_cube_slice_1_phase_plus_delta)
-         E_phi_cube[:,:,1] = E_phi_cube_slice_1_with_phase_delta
-
-         E_theta_cube_slice_1_with_phase_delta = 1. * np.exp(1j*phase_delta_array_theta_1) #E_theta_cube_slice_1_mag * np.exp(1j*E_theta_cube_slice_1_phase_plus_delta)
-         E_theta_cube[:,:,1] = E_theta_cube_slice_1_with_phase_delta
-         
-         #delta_x = ant_pos_x - ant002_pos_x_daniel
-         #delta_y = ant_pos_y - ant002_pos_y_daniel
-         
-         ##For two antennas, the gains can be separated such that:
-         ## g1g2* (e_ant1)T (e_ant2)*
-         ##where g1 and g2 are the complex gain solutions and e_ant_1 and e_ant2 are the complex beam vectors with components in e_theta and e_phi
-         ##So it is this quantity: (e_ant1)T (e_ant2)* that affects the gain solutions, hence the gain solution phase will correct for variations in this
-         ##So we need to calculate (e_ant1)T (e_ant2)* and find the phase of it, call it the beam_gain
-         #
-         #beam_gain_complex = Etheta_complex_Ant002*Etheta_complex_ant.conjugate() + Ephi_complex_Ant002*Ephi_complex_ant.conjugate()
-         #beam_gain_complex_phase_rad = np.angle(beam_gain_complex)
-         #phase_ramp_phi_theta = np.zeros([361,91])
-         #for phi in range(0,361):
-         #   for theta in range(0,91):
-         #      phi_rad = phi/180.*np.pi
-         #      theta_rad = theta/180.*np.pi
-         #      k_x = k_0 * np.cos(phi_rad)* np.sin(theta_rad)
-         #      k_y = k_0 * np.sin(phi_rad)* np.sin(theta_rad)
-         #      phase_delta = k_x * delta_x + k_y * delta_y
-         #      while (phase_delta < -np.pi ):
-         #         phase_delta += 2*np.pi
-         #      while (phase_delta > np.pi):
-         #         phase_delta -= 2*np.pi
-         #      phase_ramp_phi_theta[phi,theta] = phase_delta
-         #      beam_gain_complex_phase_rad[phi,theta] += phase_delta
-         #      if (beam_gain_complex_phase_rad[phi,theta] >= np.pi):
-         #         beam_gain_complex_phase_rad[phi,theta] -= 2*np.pi
-         #      if (beam_gain_complex_phase_rad[phi,theta] <= -np.pi):
-         #         beam_gain_complex_phase_rad[phi,theta] += 2*np.pi 
-         #
-         #phase_pattern_deg = beam_gain_complex_phase_rad/np.pi*180.
-         #phase_ramp_phi_theta_deg = phase_ramp_phi_theta/np.pi*180.
-         #np.save(phase_pattern_ant_filename,beam_gain_complex_phase_rad)
-         #print "saved %s" % phase_pattern_ant_filename
-
-         #angle interpolation stuff
-         az_ang_repeats_array_flat_rad = az_ang_repeats_array_rad.flatten()    
-         zenith_angle_repeats_array_flat_rad = zenith_ang_repeats_array_rad.flatten('F')
-
-         hpx_pix_num_array = np.arange(npix)
-         hpx_angles_rad = hp.pix2ang(nside,hpx_pix_num_array) 
-         hpx_angles_rad_zenith_angle = hpx_angles_rad[0]
-         hpx_angles_rad_azimuth = hpx_angles_rad[1]
-         
-         E_phi_cube_slice = E_phi_cube[:,:,0:0+test_n_ants]
-         #E_phi_cube_slice = E_phi_cube[:,:,ant_index_1]
-         #E_phi_cube_slice_flat = E_phi_cube_slice.flatten('F')
-         #see https://stackoverflow.com/questions/18757742/how-to-flatten-only-some-dimensions-of-a-numpy-array
-         flattened_size = int(E_phi_cube_slice.shape[0]*E_phi_cube_slice.shape[1])
-         E_phi_cube_slice = E_phi_cube_slice.transpose([1,0,2])
-         E_phi_cube_slice_flat = E_phi_cube_slice.reshape(flattened_size,E_phi_cube_slice.shape[2])
-         #E_phi_cube_slice_flat_1 = E_phi_cube_slice.reshape(-1, E_phi_cube_slice.shape[-1])
-         regridded_to_hpx_E_phi_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-         #do all the inter stuff first, then rotate at end (otherwise end up with hole in the middle)
-   
-         #repeat for E_theta:
-         #E_theta_cube_slice = E_theta_cube[:,:,ant_index_1]
-         #E_theta_cube_slice_flat = E_theta_cube_slice.flatten('F')
-         E_theta_cube_slice = E_theta_cube[:,:,0:0+test_n_ants]
-         E_theta_cube_slice = E_theta_cube_slice.transpose([1,0,2])
-         #E_theta_cube_slice_flat = E_theta_cube_slice.reshape(-1, E_theta_cube_slice.shape[-1])
-         E_theta_cube_slice_flat = E_theta_cube_slice.reshape(flattened_size,E_theta_cube_slice.shape[2])
-         regridded_to_hpx_E_theta_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-   
-         #rotate appropriately:
-         #rotated_E_phi_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_phi_complex_1)      
-         #rotated_E_theta_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_theta_complex_1) 
+      
+      baseline_length_lambda_array = np.empty(int(test_n_ants*test_n_ants))
+      unity_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
+      unity_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
+      gsm_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
+      gsm_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
            
-             
-         ###sanity check power pattern:
-         #power_pattern_1 = np.abs(regridded_to_hpx_E_phi_complex_1[:,1])**2 + np.abs(regridded_to_hpx_E_theta_complex_1[:,1])**2
-         #rotated_power_pattern_1  = r_beam_dec.rotate_map(power_pattern_1)
+           
+      for pol in ['X']:  #,'Y'
+         unity_cross_visibility_real_array_filename = "unity_cross_visibility_real_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         unity_cross_visibility_imag_array_filename = "unity_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
          
-         #plt.clf()
-         #map_title="rotated beam sim"
-         #hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         #fig_name="check1_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_1,pol,freq_MHz)
-         #figmap = plt.gcf()
-         #figmap.savefig(fig_name)
-         #print("saved %s" % fig_name)
+         baseline_length_lambda_array_filename = "baseline_length_lambda_array_%s_%0.3f.npy" % (pol,freq_MHz)
          
-         #Add some text to the png
-         #img = Image.open("%s" % fig_name)
-         #draw = ImageDraw.Draw(img)
-         #font = ImageFont.truetype('FreeSans.ttf',30)
-         #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
-         #img.save("%s" % fig_name)
-         
-         #old matrix way:
-         #complex_beam_1 = np.matrix(np.empty((npix,2), dtype=complex))
-         #complex_beam_1[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_1).transpose()
-         #complex_beam_1[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_1).transpose()
-         
-         #new array way:
-         complex_beam_cube = np.empty((npix,2,test_n_ants), dtype=complex)
-         complex_beam_cube[:,0,:] = regridded_to_hpx_E_theta_complex
-         complex_beam_cube[:,1,:] = regridded_to_hpx_E_phi_complex
-         
-                           
-         ##DOn't need to repeat separately for ant 2 as it is all done in the cube abaove!
-         ##repeat for ant 2
-         #E_phi_cube_slice_2 = E_phi_cube[:,:,ant_index_2]
-         #E_phi_cube_slice_flat_2 = E_phi_cube_slice_2.flatten('F')
-         #regridded_to_hpx_E_phi_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-         #      
-         ##repeat for E_theta:
-         #E_theta_cube_slice_2 = E_theta_cube[:,:,ant_index_2]
-         #E_theta_cube_slice_flat_2 = E_theta_cube_slice_2.flatten('F')
-         #regridded_to_hpx_E_theta_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
-         
-         
-         #complex_beam_2 = np.matrix(np.empty((npix,2), dtype=complex))
-         #complex_beam_2[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_2).transpose()
-         #complex_beam_2[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_2).transpose()
-         
-         
-         
-         #complex_beam_cube_H = np.conj(complex_beam_cube.transpose([1,0,2]))
-         
-         
-         
-         #construct the power pattern using the diagonal as in SITARA 1 appendix B
-         
-         ###sanity check power pattern:
-         #power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_2[:,1]))**2
-         #power_pattern = power_pattern[:,0]
-         #rotated_power_pattern = r_beam.rotate_map(power_pattern)
-         #plt.clf()
-         #map_title=""
-         #hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         #fig_name="check3_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
-         #figmap = plt.gcf()
-         #figmap.savefig(fig_name)
-         #print("saved %s" % fig_name)
-         
-         ### Add some text to the png
-         #img = Image.open("%s" % fig_name)
-         #draw = ImageDraw.Draw(img)
-         #font = ImageFont.truetype('FreeSans.ttf',30)
-         #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
-         #img.save("%s" % fig_name)
-         
-         #forget this costly matrix multiply stuff, do with arrays and only compute the terms that end up in the diagonal
-         #https://stackoverflow.com/questions/14758283/is-there-a-numpy-scipy-dot-product-calculating-only-the-diagonal-entries-of-the
-         #beam_matmul = np.matmul(complex_beam_1,complex_beam_2_H)
-         #power_pattern = np.asarray(beam_matmul.diagonal())[0,:]
-         
-         #try for one slice to start
-         #beam_matmul = np.dot(complex_beam_cube[:,:,0],complex_beam_cube_H[:,:,0])
-         #beam_matmul = np.einsum('ij,kj',complex_beam_cube[:,:,0],np.conj(complex_beam_cube[:,:,0]))
-         #gonna have to learn python einsum: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
-         #https://ajcr.net/Basic-guide-to-einsum/
-         #https://stackoverflow.com/questions/64533775/calculation-diagonal-elements-of-matrices-multiplication-in-numpy-package
-         #pretty sure the above step and the one below can be achieved in one go with einsum
-         #power_pattern = np.einsum('ii->i', beam_matmul)
-   
-         #Now we have beams, need a sky!
-         gsm = GlobalSkyModel()
-         gsm_map_512 = gsm.generate(freq_MHz)
-         gsm_map = hp.ud_grade(gsm_map_512,nside)
-   
-         
-         #(don't)rotate gsm map to correct RA,DEC (zenith)
-         dec_rotate_gsm = 90. - float(mwa_latitude_ephem)
-         r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], coord=['C', 'C'], deg=True)
-         r_gsm_ra = hp.Rotator(rot=[-lst_deg,0], coord=['C', 'C'], deg=True)
-         #convert to celestial coords
-         r_gsm_C = hp.Rotator(coord=['G','C'])
-         rotated_gsm_C = r_gsm_C.rotate_map(gsm_map)
-         
-         #rotate the sky insted of the beams (cause beams are a cube)
-         rotated_gsm_C_dec = r_gsm_dec.rotate_map(rotated_gsm_C)
-         rotated_gsm_C_dec_ra = r_gsm_ra.rotate_map(rotated_gsm_C_dec)
-         
-         #make a cube with copies of tsky, dimensions (npix,test_n_ants)
-         gsm_repeats_array = np.tile(rotated_gsm_C_dec_ra, (test_n_ants,1))
-         gsm_repeats_array = np.transpose(gsm_repeats_array)
-   
-         unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
-   
-         for ant_index_1 in range(0,test_n_ants):
-            #sitara-like baseline ant1,ant2 = (0,69) or 0,10
-            #for ant_index_1 in range(68,69):
-            #from jishnu via slack:
-            #Tsky_12  = np.sum(b_12*(sky_val))/np.sum(np.abs(b_12)) 
-            #Tsky_11 = np.abs(np.sum(b_1*(sky_val))/np.sum(np.abs(b_1)))
+         if not plot_from_saved:
+            EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
+            #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
+            beam_data = loadmat(EEP_name)
+            print("loaded %s " % EEP_name)
             
-            power_pattern_cube = np.einsum('ij,ij...->i...', complex_beam_cube[:,:,ant_index_1], np.conj(complex_beam_cube[:,:,:]))
-            power_pattern_cube = np.nan_to_num(power_pattern_cube)
-            #May need to rotate the sky map instead of the beams, I dont think healpy can rotate a cube, and 
-            #it makes sense anyway from an efficiency point of view since there is just one sky (ignoring frequency) but many beams...
-            #rotated_power_pattern = r_beam_dec.rotate_map(power_pattern_cube[:,0])
-            #rotated_power_pattern = r_beam_ra.rotate_map(rotated_power_pattern)
-            unity_sky_beam_cube = np.einsum('ij,ij->ij',unity_sky_repeats_array, power_pattern_cube)
+            E_phi_cube = beam_data['Ephi'][:,:,0:test_n_ants]
+            E_theta_cube = beam_data['Etheta'][:,:,0:test_n_ants]
+            
+            #This is code from plotting the AAVS1 antennas phases, they need to be referenced to some antenna or location
+            #We need to add in the geometric phase wrt to a single location for all antennas
    
-            ######sanity check:
+            azimuth_deg_array = np.flip(np.arange(361) + 90.)
+            azimuth_deg_array[azimuth_deg_array >= 361] = azimuth_deg_array[azimuth_deg_array >= 361] - 361
+            zenith_angle_deg_array = np.arange(91)
+            
+            #(az = phi)
+            repetitions = 91
+            az_ang_repeats_array = np.tile(azimuth_deg_array, (repetitions, 1))
+            az_ang_repeats_array_rad = az_ang_repeats_array / 180. * np.pi
+            az_ang_repeats_array_rad_transpose = np.transpose(az_ang_repeats_array_rad)
+            #(zenith_ang = theta)
+            repetitions = 361
+            zenith_ang_repeats_array = np.tile(zenith_angle_deg_array, (repetitions, 1))
+            zenith_ang_repeats_array_rad = zenith_ang_repeats_array / 180. * np.pi
+            
+            az_ang_repeats_array_rad_transpose_cos = np.cos(az_ang_repeats_array_rad_transpose)
+            az_ang_repeats_array_rad_transpose_sin = np.sin(az_ang_repeats_array_rad_transpose)
+            zenith_ang_repeats_array_rad_sin = np.sin(zenith_ang_repeats_array_rad)
+            
+            #element-by-element multiplication:
+            k_x = np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_cos, zenith_ang_repeats_array_rad_sin)
+            k_y = np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_sin, zenith_ang_repeats_array_rad_sin)
+            
+            ##need to split up into phi and theta components (this must be wrong)
+            #k_x_phi = k_0 * az_ang_repeats_array_rad_transpose_cos
+            #k_x_theta = k_0 * zenith_ang_repeats_array_rad_sin
+            #k_y_phi = k_0 * az_ang_repeats_array_rad_transpose_sin
+            #k_y_theta = k_0 * zenith_ang_repeats_array_rad_sin
+            
+            #now need delta_x and delta_y (difference in x and x pos for each antenna wrt antenna index 0)
+            #check if daniels positions are 1,2 or 4,5 index in this file
+            #I think need to do this in the ant loop
+            x_pos_ant_index_0 = float(lines[0].split()[4])
+            y_pos_ant_index_0 = float(lines[0].split()[5])
+               
+            x_pos_array_ant = np.asarray([ant_string.split()[4] for ant_string in lines[0:test_n_ants]],dtype=float)
+            y_pos_array_ant = np.asarray([ant_string.split()[5] for ant_string in lines[0:test_n_ants]],dtype=float)
+            
+            delta_x_array = x_pos_array_ant - x_pos_ant_index_0
+            delta_y_array = y_pos_array_ant - y_pos_ant_index_0
+            
+            phase_delta = k_0 * (np.einsum('i,jk->jki', delta_x_array, k_x) + np.einsum('i,jk->jki', delta_y_array, k_y))
+            phase_delta[phase_delta < -np.pi] = phase_delta[phase_delta < -np.pi] + (2 * np.pi)  
+            phase_delta[phase_delta > np.pi] = phase_delta[phase_delta > np.pi] - (2 * np.pi) 
+   
+            E_phi_cube_plus_delta = E_phi_cube * np.exp(1j*phase_delta)
+            E_theta_cube_plus_delta = E_theta_cube * np.exp(1j*phase_delta)
+   
+            #phase wrap causing trouble?
+            E_phi_cube_plus_delta_mag = np.abs(E_phi_cube_plus_delta)
+            E_phi_cube_plus_delta_phase = np.angle(E_phi_cube_plus_delta)
+            E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
+            E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
+            E_phi_cube = E_phi_cube_plus_delta_mag * np.exp(1j*E_phi_cube_plus_delta_phase)
+                     
+            E_theta_cube_plus_delta_mag = np.abs(E_theta_cube_plus_delta)
+            E_theta_cube_plus_delta_phase = np.angle(E_theta_cube_plus_delta)
+            E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
+            E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
+            E_theta_cube = E_theta_cube_plus_delta_mag * np.exp(1j*E_theta_cube_plus_delta_phase)
+           
+            #now add this phase to both E_theta and E_phi
+            
+            #phase_delta_1 = k_x * delta_x_array[1] + k_y * delta_y_array[1]
+            #phase_delta_1[phase_delta_1 < -np.pi] = phase_delta_1[phase_delta_1 < -np.pi] + (2 * np.pi)  
+            #phase_delta_1[phase_delta_1 > np.pi] = phase_delta_1[phase_delta_1 > np.pi] - (2 * np.pi) 
+            
+            
+            ##again I don't think you can split them like this
+            #phase_delta_array_phi_1 = delta_x_array[1] * k_x_phi + delta_y_array[1] * k_y_phi
+            #phase_delta_array_theta_1 = delta_x_array[1] * k_x_theta + delta_y_array[1] * k_y_theta
+            ##keep the phases from wrapping
+            #phase_delta_array_phi_1[phase_delta_array_phi_1 < -np.pi] = phase_delta_array_phi_1[phase_delta_array_phi_1 < -np.pi] + (2 * np.pi)  
+            #phase_delta_array_phi_1[phase_delta_array_phi_1 > np.pi] = phase_delta_array_phi_1[phase_delta_array_phi_1 > np.pi] - (2 * np.pi) 
+            #phase_delta_array_theta_1[phase_delta_array_theta_1 < -np.pi] = phase_delta_array_theta_1[phase_delta_array_theta_1 < -np.pi] + (2 * np.pi)  
+            #phase_delta_array_theta_1[phase_delta_array_theta_1 > np.pi] = phase_delta_array_theta_1[phase_delta_array_theta_1 > np.pi] - (2 * np.pi)
+            ##now see if we can add this phase delta to E_phi and E_theta
+            #E_phi_cube_slice_1 = E_phi_cube[:,:,1]
+            #E_phi_cube_slice_1_mag = np.abs(E_phi_cube_slice_1)
+            #E_phi_cube_slice_1_phase = np.angle(E_phi_cube_slice_1)
+            #E_phi_cube_slice_1_phase_plus_delta = E_phi_cube_slice_1_phase + phase_delta_array_phi_1
+            ##keep the phases from wrapping
+            #E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta < -np.pi] = E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta < -np.pi] + (2 * np.pi)  
+            #E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta > np.pi] = E_phi_cube_slice_1_phase_plus_delta[E_phi_cube_slice_1_phase_plus_delta > np.pi] - (2 * np.pi) 
+            #E_theta_cube_slice_1 = E_theta_cube[:,:,1]
+            #E_theta_cube_slice_1_mag = np.abs(E_theta_cube_slice_1)
+            #E_theta_cube_slice_1_phase = np.angle(E_theta_cube_slice_1)
+            #E_theta_cube_slice_1_phase_plus_delta = E_theta_cube_slice_1_phase + phase_delta_array_theta_1
+            #keep the phases from wrapping
+            #E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta < -np.pi] = E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta < -np.pi] + (2 * np.pi)  
+            #E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta > np.pi] = E_theta_cube_slice_1_phase_plus_delta[E_theta_cube_slice_1_phase_plus_delta > np.pi] - (2 * np.pi) 
+            #E_phi_cube_slice_1_with_phase_delta = E_phi_cube_slice_1_mag * np.exp(1j*E_phi_cube_slice_1_phase_plus_delta)
+            #E_phi_cube[:,:,1] = E_phi_cube_slice_1_with_phase_delta
+            #E_theta_cube_slice_1_with_phase_delta = E_theta_cube_slice_1_mag * np.exp(1j*E_theta_cube_slice_1_phase_plus_delta)
+            #E_theta_cube[:,:,1] = E_theta_cube_slice_1_with_phase_delta
+            
+            ###########################
+            
+            #delta_x = ant_pos_x - ant002_pos_x_daniel
+            #delta_y = ant_pos_y - ant002_pos_y_daniel
+            
+            ##For two antennas, the gains can be separated such that:
+            ## g1g2* (e_ant1)T (e_ant2)*
+            ##where g1 and g2 are the complex gain solutions and e_ant_1 and e_ant2 are the complex beam vectors with components in e_theta and e_phi
+            ##So it is this quantity: (e_ant1)T (e_ant2)* that affects the gain solutions, hence the gain solution phase will correct for variations in this
+            ##So we need to calculate (e_ant1)T (e_ant2)* and find the phase of it, call it the beam_gain
+            #
+            #beam_gain_complex = Etheta_complex_Ant002*Etheta_complex_ant.conjugate() + Ephi_complex_Ant002*Ephi_complex_ant.conjugate()
+            #beam_gain_complex_phase_rad = np.angle(beam_gain_complex)
+            #phase_ramp_phi_theta = np.zeros([361,91])
+            #for phi in range(0,361):
+            #   for theta in range(0,91):
+            #      phi_rad = phi/180.*np.pi
+            #      theta_rad = theta/180.*np.pi
+            #      k_x = k_0 * np.cos(phi_rad)* np.sin(theta_rad)
+            #      k_y = k_0 * np.sin(phi_rad)* np.sin(theta_rad)
+            #      phase_delta = k_x * delta_x + k_y * delta_y
+            #      while (phase_delta < -np.pi ):
+            #         phase_delta += 2*np.pi
+            #      while (phase_delta > np.pi):
+            #         phase_delta -= 2*np.pi
+            #      phase_ramp_phi_theta[phi,theta] = phase_delta
+            #      beam_gain_complex_phase_rad[phi,theta] += phase_delta
+            #      if (beam_gain_complex_phase_rad[phi,theta] >= np.pi):
+            #         beam_gain_complex_phase_rad[phi,theta] -= 2*np.pi
+            #      if (beam_gain_complex_phase_rad[phi,theta] <= -np.pi):
+            #         beam_gain_complex_phase_rad[phi,theta] += 2*np.pi 
+            #
+            #phase_pattern_deg = beam_gain_complex_phase_rad/np.pi*180.
+            #phase_ramp_phi_theta_deg = phase_ramp_phi_theta/np.pi*180.
+            #np.save(phase_pattern_ant_filename,beam_gain_complex_phase_rad)
+            #print "saved %s" % phase_pattern_ant_filename
+   
+            #angle interpolation stuff
+            az_ang_repeats_array_flat_rad = az_ang_repeats_array_rad.flatten()    
+            zenith_angle_repeats_array_flat_rad = zenith_ang_repeats_array_rad.flatten('F')
+   
+            hpx_pix_num_array = np.arange(npix)
+            hpx_angles_rad = hp.pix2ang(nside,hpx_pix_num_array) 
+            hpx_angles_rad_zenith_angle = hpx_angles_rad[0]
+            hpx_angles_rad_azimuth = hpx_angles_rad[1]
+            
+            E_phi_cube_slice = E_phi_cube[:,:,0:0+test_n_ants]
+            #E_phi_cube_slice = E_phi_cube[:,:,ant_index_1]
+            #E_phi_cube_slice_flat = E_phi_cube_slice.flatten('F')
+            #see https://stackoverflow.com/questions/18757742/how-to-flatten-only-some-dimensions-of-a-numpy-array
+            flattened_size = int(E_phi_cube_slice.shape[0]*E_phi_cube_slice.shape[1])
+            E_phi_cube_slice = E_phi_cube_slice.transpose([1,0,2])
+            E_phi_cube_slice_flat = E_phi_cube_slice.reshape(flattened_size,E_phi_cube_slice.shape[2])
+            #E_phi_cube_slice_flat_1 = E_phi_cube_slice.reshape(-1, E_phi_cube_slice.shape[-1])
+            regridded_to_hpx_E_phi_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+            #do all the inter stuff first, then rotate at end (otherwise end up with hole in the middle)
+      
+            #repeat for E_theta:
+            #E_theta_cube_slice = E_theta_cube[:,:,ant_index_1]
+            #E_theta_cube_slice_flat = E_theta_cube_slice.flatten('F')
+            E_theta_cube_slice = E_theta_cube[:,:,0:0+test_n_ants]
+            E_theta_cube_slice = E_theta_cube_slice.transpose([1,0,2])
+            #E_theta_cube_slice_flat = E_theta_cube_slice.reshape(-1, E_theta_cube_slice.shape[-1])
+            E_theta_cube_slice_flat = E_theta_cube_slice.reshape(flattened_size,E_theta_cube_slice.shape[2])
+            regridded_to_hpx_E_theta_complex = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+   
+            ##repeat for phase ramp:
+            #phase_delta_slice = phase_delta.transpose([1,0,2])
+            #phase_delta_slice_flat = phase_delta_slice.reshape(flattened_size,phase_delta_slice.shape[2])
+            #regridded_to_hpx_phase_delta = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), phase_delta_slice_flat, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+   
             #plt.clf()
-            #map_title=""
-            ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            #hp.mollview(map=power_pattern_cube[:,0],title=map_title)
-            #fig_name="check4_pattern_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'0',pol,freq_MHz)
+            #map_title="rotated beam sim"
+            #hp.orthview(map=regridded_to_hpx_phase_delta[:,2],half_sky=True,rot=(0,90,0),title=map_title)
+            #fig_name="check3_phase_delta_%s_%0.3f_MHz.png" % (pol,freq_MHz)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
-            #print("saved %s" % fig_name)    
+            #print("saved %s" % fig_name)      
+    
+            #rotate appropriately:
+            #rotated_E_phi_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_phi_complex_1)      
+            #rotated_E_theta_complex_1 = r_beam.rotate_map(regridded_to_hpx_E_theta_complex_1) 
+                 
+            ###sanity check power pattern:
+            #power_pattern_1 = np.abs(regridded_to_hpx_E_phi_complex_1[:,1])**2 + np.abs(regridded_to_hpx_E_theta_complex_1[:,1])**2
+            #rotated_power_pattern_1  = r_beam_dec.rotate_map(power_pattern_1)
             
-            unity_sky_beam_sum_array = np.einsum('ij->j',unity_sky_beam_cube)
-            power_pattern_cube_mag = np.abs(power_pattern_cube)
-            power_pattern_cube_mag_sum_array = np.einsum('ij->j',power_pattern_cube_mag)
-            visibility_array = unity_sky_beam_sum_array / power_pattern_cube_mag_sum_array
-            auto_correlation = visibility_array[ant_index_1]
-            
-            #print(visibility_array)
-   
-            #sum_unity_sky_beam = np.nansum(unity_sky_beam)
-            #sum_mag_beam = np.nansum(np.abs(rotated_power_pattern))
-            #visibility = sum_unity_sky_beam / sum_mag_beam
-            
-   
-            
-            #####sanity check:
-            plt.clf()
-            map_title=""
-            #####hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            hp.mollview(map=power_pattern_cube[:,1],rot=(0,90,0),title=map_title)
-            fig_name="check4_complex_power_pattern_mag_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'0',pol,freq_MHz)
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)
-            
-            #phase?
-            power_pattern_cube_phase = np.angle(power_pattern_cube)
-            power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] = power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] + (2 * np.pi)  
-            power_pattern_cube_phase[power_pattern_cube_phase > np.pi] = power_pattern_cube_phase[power_pattern_cube_phase > np.pi] - (2 * np.pi) 
-
-            
-            plt.clf()
-            map_title=""
-            #####hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            hp.mollview(map=power_pattern_cube_phase[:,1],rot=(0,90,0),title=map_title)
-            fig_name="check4_complex_power_pattern_phase_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'1',pol,freq_MHz)
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)
-               
-            sys.exit()
-                     
-            ### Add some text to the png
-            #img = Image.open("%s" % fig_name)
-            #draw = ImageDraw.Draw(img)
-            #font = ImageFont.truetype('FreeSans.ttf',30)
-            #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
-            #img.save("%s" % fig_name)
-            
-            x_pos_ant1 = float(lines[ant_index_1].split()[1])
-            y_pos_ant1 = float(lines[ant_index_1].split()[2])
-            
-            x_pos_array_ant2 = np.asarray([ant_string.split()[1] for ant_string in lines[0:test_n_ants]],dtype=float)
-            y_pos_array_ant2 = np.asarray([ant_string.split()[2] for ant_string in lines[0:test_n_ants]],dtype=float)
-            baseline_length_array = np.sqrt((x_pos_ant1 - x_pos_array_ant2)**2 + (y_pos_ant1 - y_pos_array_ant2)**2)
-            
-            print(baseline_length_array[10])
-            #print(baseline_length_array[68])
-            
-            ##print(visibility_list)
-            visibility_real_array = np.real(visibility_array)
-            baseline_length_lambda_array = baseline_length_array / wavelength
-            ##plot the real part of the visibilty
             #plt.clf()
-            #map_title="uniform response"
-            #plt.scatter(baseline_length_lambda_array,visibility_real_array)
-            #plt.ylabel("Real part of vis")
-            #plt.xlabel("Baseline length (wavelengths)")
-            #fig_name="unity_response_from_complex_beams.png"
+            #map_title="rotated beam sim"
+            #hp.orthview(map=rotated_power_pattern_1,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            #fig_name="check1_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_1,pol,freq_MHz)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
             #print("saved %s" % fig_name)
             
-            print(visibility_real_array[10])
-            baseline_index_10_unity_vis_list.append(visibility_real_array[10])
+            #Add some text to the png
+            #img = Image.open("%s" % fig_name)
+            #draw = ImageDraw.Draw(img)
+            #font = ImageFont.truetype('FreeSans.ttf',30)
+            #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_1),(0,0,0),font=font)
+            #img.save("%s" % fig_name)
+            
+            #old matrix way:
+            #complex_beam_1 = np.matrix(np.empty((npix,2), dtype=complex))
+            #complex_beam_1[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_1).transpose()
+            #complex_beam_1[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_1).transpose()
+            
+            #new array way:
+            complex_beam_cube = np.empty((npix,2,test_n_ants), dtype=complex)
+            complex_beam_cube[:,0,:] = regridded_to_hpx_E_theta_complex
+            complex_beam_cube[:,1,:] = regridded_to_hpx_E_phi_complex
+                            
+            ##DOn't need to repeat separately for ant 2 as it is all done in the cube abaove!
+            ##repeat for ant 2
+            #E_phi_cube_slice_2 = E_phi_cube[:,:,ant_index_2]
+            #E_phi_cube_slice_flat_2 = E_phi_cube_slice_2.flatten('F')
+            #regridded_to_hpx_E_phi_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_phi_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+            #      
+            ##repeat for E_theta:
+            #E_theta_cube_slice_2 = E_theta_cube[:,:,ant_index_2]
+            #E_theta_cube_slice_flat_2 = E_theta_cube_slice_2.flatten('F')
+            #regridded_to_hpx_E_theta_complex_2 = griddata((az_ang_repeats_array_flat_rad,zenith_angle_repeats_array_flat_rad), E_theta_cube_slice_flat_2, (hpx_angles_rad_azimuth,hpx_angles_rad_zenith_angle), method='cubic')
+            
+            #complex_beam_2 = np.matrix(np.empty((npix,2), dtype=complex))
+            #complex_beam_2[:,0] = np.matrix(regridded_to_hpx_E_theta_complex_2).transpose()
+            #complex_beam_2[:,1] = np.matrix(regridded_to_hpx_E_phi_complex_2).transpose()
+            
+            #complex_beam_cube_H = np.conj(complex_beam_cube.transpose([1,0,2]))
+            
+            #construct the power pattern using the diagonal as in SITARA 1 appendix B
+            
+            ###sanity check power pattern:
+            #power_pattern = np.abs(np.array(complex_beam_1[:,0]))**2 + np.abs(np.array(complex_beam_2[:,1]))**2
+            #power_pattern = power_pattern[:,0]
+            #rotated_power_pattern = r_beam.rotate_map(power_pattern)
+            #plt.clf()
+            #map_title=""
+            #hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            #fig_name="check3_complex_power_pattern_%s_%s_%0.3f_MHz.png" % (ant_index_2,pol,freq_MHz)
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print("saved %s" % fig_name)
+            
+            ### Add some text to the png
+            #img = Image.open("%s" % fig_name)
+            #draw = ImageDraw.Draw(img)
+            #font = ImageFont.truetype('FreeSans.ttf',30)
+            #draw.text((10, 10),"%0.3f MHz\n  %s " % (freq_MHz,ant_name_2),(0,0,0),font=font)
+            #img.save("%s" % fig_name)
+            
+            #forget this costly matrix multiply stuff, do with arrays and only compute the terms that end up in the diagonal
+            #https://stackoverflow.com/questions/14758283/is-there-a-numpy-scipy-dot-product-calculating-only-the-diagonal-entries-of-the
+            #beam_matmul = np.matmul(complex_beam_1,complex_beam_2_H)
+            #power_pattern = np.asarray(beam_matmul.diagonal())[0,:]
+            
+            #try for one slice to start
+            #beam_matmul = np.dot(complex_beam_cube[:,:,0],complex_beam_cube_H[:,:,0])
+            #beam_matmul = np.einsum('ij,kj',complex_beam_cube[:,:,0],np.conj(complex_beam_cube[:,:,0]))
+            #gonna have to learn python einsum: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+            #https://ajcr.net/Basic-guide-to-einsum/
+            #https://stackoverflow.com/questions/64533775/calculation-diagonal-elements-of-matrices-multiplication-in-numpy-package
+            #pretty sure the above step and the one below can be achieved in one go with einsum
+            #power_pattern = np.einsum('ii->i', beam_matmul)
       
+            #Now we have beams, need a sky!
+            gsm = GlobalSkyModel()
+            gsm_map_512 = gsm.generate(freq_MHz)
+            gsm_map = hp.ud_grade(gsm_map_512,nside)
       
+            
+            #(don't)rotate gsm map to correct RA,DEC (zenith)
+            dec_rotate_gsm = 90. - float(mwa_latitude_ephem)
+            r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], coord=['C', 'C'], deg=True)
+            r_gsm_ra = hp.Rotator(rot=[-lst_deg,0], coord=['C', 'C'], deg=True)
+            #convert to celestial coords
+            r_gsm_C = hp.Rotator(coord=['G','C'])
+            rotated_gsm_C = r_gsm_C.rotate_map(gsm_map)
+            
+            #rotate the sky insted of the beams (cause beams are a cube per ant)
+            rotated_gsm_C_dec = r_gsm_dec.rotate_map(rotated_gsm_C)
+            rotated_gsm_C_dec_ra = r_gsm_ra.rotate_map(rotated_gsm_C_dec)
+            
+            #make a cube with copies of tsky, dimensions (npix,test_n_ants)
+            gsm_repeats_array = np.tile(rotated_gsm_C_dec_ra, (test_n_ants,1))
+            gsm_repeats_array = np.transpose(gsm_repeats_array)
+      
+            unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
+      
+            for ant_index_1 in range(0,test_n_ants):
+               print(ant_index_1)
+               #sitara-like baseline ant1,ant2 = (0,69) or 0,10
+               #for ant_index_1 in range(68,69):
+               #from jishnu via slack:
+               #Tsky_12  = np.sum(b_12*(sky_val))/np.sum(np.abs(b_12)) 
+               #Tsky_11 = np.abs(np.sum(b_1*(sky_val))/np.sum(np.abs(b_1)))
+               
+               power_pattern_cube = np.einsum('ij,ij...->i...', complex_beam_cube[:,:,ant_index_1], np.conj(complex_beam_cube[:,:,:]))
+               power_pattern_cube = np.nan_to_num(power_pattern_cube)
+               
+               ################
+               ##add in the phase delta to ant index 1
+               #power_pattern_cube_mag = np.abs(power_pattern_cube)
+               #power_pattern_cube_phase = np.angle(power_pattern_cube)
+                
+               #power_pattern_cube_phase_plus_delta = power_pattern_cube_phase + regridded_to_hpx_phase_delta
+               
+               ##keep the phases from wrapping
+               #power_pattern_cube_phase_plus_delta[power_pattern_cube_phase_plus_delta < -np.pi] = power_pattern_cube_phase_plus_delta[power_pattern_cube_phase_plus_delta < -np.pi] + (2 * np.pi)  
+               #power_pattern_cube_phase_plus_delta[power_pattern_cube_phase_plus_delta > np.pi] = power_pattern_cube_phase_plus_delta[power_pattern_cube_phase_plus_delta > np.pi] - (2 * np.pi) 
+               #power_pattern_cube_slice_with_phase_delta = power_pattern_cube_mag * np.exp(1j*power_pattern_cube_phase_plus_delta)
+               #power_pattern_cube = power_pattern_cube_slice_with_phase_delta
+               #power_pattern_cube = np.nan_to_num(power_pattern_cube)
+               
+               #May need to rotate the sky map instead of the beams, I dont think healpy can rotate a cube, and 
+               #it makes sense anyway from an efficiency point of view since there is just one sky (ignoring frequency) but many beams...
+               #rotated_power_pattern = r_beam_dec.rotate_map(power_pattern_cube[:,0])
+               #rotated_power_pattern = r_beam_ra.rotate_map(rotated_power_pattern)
+               unity_sky_beam_cube = np.einsum('ij,ij->ij',unity_sky_repeats_array, power_pattern_cube)
+               gsm_sky_beam_cube = np.einsum('ij,ij->ij',gsm_repeats_array, power_pattern_cube)
+      
+               ######sanity check:
+               #plt.clf()
+               #map_title=""
+               ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+               #hp.mollview(map=power_pattern_cube[:,0],title=map_title)
+               #fig_name="check4_pattern_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'0',pol,freq_MHz)
+               #figmap = plt.gcf()
+               #figmap.savefig(fig_name)
+               #print("saved %s" % fig_name)    
+               
+               unity_sky_beam_sum_array = np.einsum('ij->j',unity_sky_beam_cube)
+               gsm_sky_beam_sum_array = np.einsum('ij->j',gsm_sky_beam_cube)
+               power_pattern_cube_mag = np.abs(power_pattern_cube)
+               power_pattern_cube_mag_sum_array = np.einsum('ij->j',power_pattern_cube_mag)
+               unity_visibility_array = unity_sky_beam_sum_array / power_pattern_cube_mag_sum_array
+               gsm_visibility_array = gsm_sky_beam_sum_array / power_pattern_cube_mag_sum_array
+  
+               
+               #print(visibility_array)
+      
+               #sum_unity_sky_beam = np.nansum(unity_sky_beam)
+               #sum_mag_beam = np.nansum(np.abs(rotated_power_pattern))
+               #visibility = sum_unity_sky_beam / sum_mag_beam
+               
+      
+               
+               #####sanity check:
+               #plt.clf()
+               #map_title=""
+               ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+               #hp.mollview(map=power_pattern_cube[:,1],rot=(0,90,0),title=map_title)
+               #fig_name="check4_complex_power_pattern_mag_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'0',pol,freq_MHz)
+               #figmap = plt.gcf()
+               #figmap.savefig(fig_name)
+               #print("saved %s" % fig_name)
+               
+               ##phase sanity check?
+               #power_pattern_cube_phase = np.angle(power_pattern_cube)
+               #power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] = power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] + (2 * np.pi)  
+               #power_pattern_cube_phase[power_pattern_cube_phase > np.pi] = power_pattern_cube_phase[power_pattern_cube_phase > np.pi] - (2 * np.pi) 
+               #plt.clf()
+               #map_title=""
+               #hp.orthview(map=power_pattern_cube_phase[:,1],half_sky=True,rot=(0,90,0),title=map_title)
+               ##hp.mollview(map=power_pattern_cube_phase[:,1],rot=(0,90,0),title=map_title)
+               #fig_name="check4_complex_power_pattern_phase_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,'1',pol,freq_MHz)
+               #figmap = plt.gcf()
+               #figmap.savefig(fig_name)
+               #print("saved %s" % fig_name)
+                  
+               #sys.exit()
+                        
+               ### Add some text to the png
+               #img = Image.open("%s" % fig_name)
+               #draw = ImageDraw.Draw(img)
+               #font = ImageFont.truetype('FreeSans.ttf',30)
+               #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
+               #img.save("%s" % fig_name)
+               
+               x_pos_ant1 = float(lines[ant_index_1].split()[4])
+               y_pos_ant1 = float(lines[ant_index_1].split()[5])
+               
+               x_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[0:test_n_ants]],dtype=float)
+               y_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[0:test_n_ants]],dtype=float)
+               baseline_length_array = np.sqrt((x_pos_ant1 - x_pos_array_ant2)**2 + (y_pos_ant1 - y_pos_array_ant2)**2)
+               
+               #print(baseline_length_array[10])
+               #print(baseline_length_array[68])
+               
+               ##print(visibility_list)
+               unity_visibility_real_array = np.real(unity_visibility_array)
+               unity_visibility_imag_array = np.imag(unity_visibility_array)
+               gsm_visibility_real_array = np.real(gsm_visibility_array)
+               gsm_visibility_imag_array = np.imag(gsm_visibility_array)
+               
+               baseline_length_lambda = baseline_length_array / wavelength
+               ##plot the real part of the visibilty
+               #plt.clf()
+               #map_title="uniform response"
+               #plt.scatter(baseline_length_lambda_array,visibility_real_array)
+               #plt.ylabel("Real part of vis")
+               #plt.xlabel("Baseline length (wavelengths)")
+               #fig_name="unity_response_from_complex_beams.png"
+               #figmap = plt.gcf()
+               #figmap.savefig(fig_name)
+               #print("saved %s" % fig_name)
+               
+               #print(visibility_real_array[10])
+               #baseline_index_10_unity_vis_list.append(visibility_real_array[10])
+               #visibility_real_array = np.roll(visibility_real_array,ant_index_1)
+               #add in visibility list stuff here:
+   
+               start_index = int(ant_index_1 * test_n_ants)
+               unity_cross_visibility_real_array[start_index:start_index+test_n_ants] = unity_visibility_real_array
+               unity_cross_visibility_imag_array[start_index:start_index+test_n_ants] = unity_visibility_imag_array
+               gsm_cross_visibility_real_array[start_index:start_index+test_n_ants] = gsm_visibility_real_array
+               gsm_cross_visibility_imag_array[start_index:start_index+test_n_ants] = gsm_visibility_imag_array
+               baseline_length_lambda_array[start_index:start_index+test_n_ants] = baseline_length_lambda
+            
+            #save the arrays
+            np.save(unity_cross_visibility_real_array_filename,unity_cross_visibility_real_array)
+            np.save(unity_cross_visibility_imag_array_filename,unity_cross_visibility_imag_array)
+            np.save(gsm_cross_visibility_real_array_filename,gsm_cross_visibility_real_array)
+            np.save(gsm_cross_visibility_imag_array_filename,gsm_cross_visibility_imag_array)            
+            np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
+            
+         else:
+            unity_cross_visibility_real_array = np.load(unity_cross_visibility_real_array_filename)
+            unity_cross_visibility_imag_array = np.load(unity_cross_visibility_imag_array_filename)
+            gsm_cross_visibility_real_array = np.load(gsm_cross_visibility_real_array_filename)
+            gsm_cross_visibility_imag_array = np.load(gsm_cross_visibility_imag_array_filename)            
+            baseline_length_lambda_array = np.load(baseline_length_lambda_array_filename)
+         
+         ##plot the real part of the visibilty - unity
+         plt.clf()
+         map_title="uniform response"
+         plt.scatter(baseline_length_lambda_array,unity_cross_visibility_real_array,s=1)
+         plt.xlim(0.2, 2)
+         plt.ylabel("Real part of vis")
+         plt.xlabel("Baseline length (wavelengths)")
+         fig_name="unity_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+         
 
-   plt.clf()
-   map_title="uniform response baseline index 10"
-   plt.scatter(freq_MHz_list,baseline_index_10_unity_vis_list)
-   plt.ylabel("Real part of vis")
-   plt.xlabel("Frequency (MHz)")
-   fig_name="unity_response_from_complex_beams_baseline_index_10.png"
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name)
+         ##plot the real part of the visibilty - unity
+         plt.clf()
+         map_title="gsm response"
+         plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_real_array,s=1)
+         plt.xlim(0.2, 2)
+         plt.ylabel("Real part of vis")
+         plt.xlabel("Baseline length (wavelengths)")
+         fig_name="gsm_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+                  
+         #now to extract global sky temp from gsm sim vis by comparing to unity vis - but
+         #since we now use the complex beam pattern, we don't expect unity sky response to 
+         #be purely real - not sure how to deal with that!
+         #Then to making these vis into uvfits/miriad format, or at least phased properly (to zenith?)
+         
+         
+   #plt.clf()
+   #map_title="uniform response baseline index 10"
+   #plt.scatter(freq_MHz_list,baseline_index_10_unity_vis_list)
+   #plt.ylabel("Real part of vis")
+   #plt.xlabel("Frequency (MHz)")
+   #fig_name="unity_response_from_complex_beams_baseline_index_10.png"
+   #figmap = plt.gcf()
+   #figmap.savefig(fig_name)
+   #print("saved %s" % fig_name)
 
-   sys.exit()
       ####sanity check:
       #plt.clf()
       #map_title=""
@@ -15844,6 +15950,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       ##print(visibility_list)
       #cross_visibility_real_array = np.real(np.asarray(cross_visibility_list))
       #baseline_length_lambda_array = np.asarray(baseline_length_list) / wavelength
+      
       ##plot the real part of the visibilty
       #plt.clf()
       #map_title="uniform response"
@@ -16301,7 +16408,8 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 #simulate_sitara(lst_hrs_list[0],nside=32)
 #sys.exit()
 
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list[0],nside=32)
+#unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
+simulate_eda2_with_complex_beams([freq_MHz_list[0]],lst_hrs_list[0],nside=32,plot_from_saved=False)
 sys.exit()
 
 #ant_index = 0
