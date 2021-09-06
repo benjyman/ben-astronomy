@@ -15364,17 +15364,21 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       print(cmd)
       os.system(cmd)
       
-def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False):
+def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
    test_n_ants = 256
+   n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
+   print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
+   n_baselines_test_with_autos = int(test_n_ants*(test_n_ants-1) / 2. + test_n_ants)
+   print("n_baselines from test %s ants with autos: %s" % (test_n_ants, n_baselines_test_with_autos))
+   
    npix = hp.nside2npix(nside)
    lst_hrs = float(lst_hrs)
    lst_deg = lst_hrs * 15.
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
       n_ants = len(lines) 
-   
    n_baselines = n_ants*(n_ants-1) / 2.
-   print("n_baselines: %s" % n_baselines)
+   print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
          
    #hpx rotate stuff, rotate the complex beams to zenith at the required LST
    dec_rotate = 90. - float(mwa_latitude_ephem)
@@ -15395,7 +15399,9 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       k_0=2.*np.pi/wavelength
       unity_sky_value = 1. 
       
-      baseline_length_lambda_array = np.empty(int(test_n_ants*test_n_ants))
+      unity_auto_array = np.empty(test_n_ants)
+      gsm_auto_array = np.empty(test_n_ants)
+      baseline_length_lambda_array = np.empty(n_baselines_test)
       unity_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
       unity_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
       gsm_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
@@ -15407,6 +15413,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          unity_cross_visibility_imag_array_filename = "unity_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
          gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%0.3f.npy" % (pol,freq_MHz)
          gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         unity_auto_array_filename = "unity_auto_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         gsm_auto_array_filename = "gsm_auto_array_%s_%0.3f.npy" % (pol,freq_MHz)
          
          baseline_length_lambda_array_filename = "baseline_length_lambda_array_%s_%0.3f.npy" % (pol,freq_MHz)
          
@@ -15704,7 +15712,9 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             gsm_repeats_array = np.transpose(gsm_repeats_array)
       
             unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
-      
+            
+            start_index = 0
+            end_index = start_index + (test_n_ants-1)
             for ant_index_1 in range(0,test_n_ants):
                print(ant_index_1)
                #sitara-like baseline ant1,ant2 = (0,69) or 0,10
@@ -15712,9 +15722,11 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                #from jishnu via slack:
                #Tsky_12  = np.sum(b_12*(sky_val))/np.sum(np.abs(b_12)) 
                #Tsky_11 = np.abs(np.sum(b_1*(sky_val))/np.sum(np.abs(b_1)))
-               
-               power_pattern_cube = np.einsum('ij,ij...->i...', complex_beam_cube[:,:,ant_index_1], np.conj(complex_beam_cube[:,:,:]))
+               start_cube_index = ant_index_1
+               end_cube_index = test_n_ants
+               power_pattern_cube = np.einsum('ij,ij...->i...', complex_beam_cube[:,:,ant_index_1], np.conj(complex_beam_cube[:,:,ant_index_1:test_n_ants]))
                power_pattern_cube = np.nan_to_num(power_pattern_cube)
+               
                
                ################
                ##add in the phase delta to ant index 1
@@ -15734,8 +15746,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                #it makes sense anyway from an efficiency point of view since there is just one sky (ignoring frequency) but many beams...
                #rotated_power_pattern = r_beam_dec.rotate_map(power_pattern_cube[:,0])
                #rotated_power_pattern = r_beam_ra.rotate_map(rotated_power_pattern)
-               unity_sky_beam_cube = np.einsum('ij,ij->ij',unity_sky_repeats_array, power_pattern_cube)
-               gsm_sky_beam_cube = np.einsum('ij,ij->ij',gsm_repeats_array, power_pattern_cube)
+               unity_sky_beam_cube = np.einsum('ij,ij->ij',unity_sky_repeats_array[:,ant_index_1:test_n_ants], power_pattern_cube)
+               gsm_sky_beam_cube = np.einsum('ij,ij->ij',gsm_repeats_array[:,ant_index_1:test_n_ants], power_pattern_cube)
       
                ######sanity check:
                #plt.clf()
@@ -15753,10 +15765,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                power_pattern_cube_mag_sum_array = np.einsum('ij->j',power_pattern_cube_mag)
                unity_visibility_array = unity_sky_beam_sum_array / power_pattern_cube_mag_sum_array
                gsm_visibility_array = gsm_sky_beam_sum_array / power_pattern_cube_mag_sum_array
-  
-               
-               #print(visibility_array)
-      
+
                #sum_unity_sky_beam = np.nansum(unity_sky_beam)
                #sum_mag_beam = np.nansum(np.abs(rotated_power_pattern))
                #visibility = sum_unity_sky_beam / sum_mag_beam
@@ -15798,8 +15807,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                x_pos_ant1 = float(lines[ant_index_1].split()[4])
                y_pos_ant1 = float(lines[ant_index_1].split()[5])
                
-               x_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[0:test_n_ants]],dtype=float)
-               y_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[0:test_n_ants]],dtype=float)
+               x_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
+               y_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
                baseline_length_array = np.sqrt((x_pos_ant1 - x_pos_array_ant2)**2 + (y_pos_ant1 - y_pos_array_ant2)**2)
                
                #print(baseline_length_array[10])
@@ -15827,13 +15836,17 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                #baseline_index_10_unity_vis_list.append(visibility_real_array[10])
                #visibility_real_array = np.roll(visibility_real_array,ant_index_1)
                #add in visibility list stuff here:
-   
-               start_index = int(ant_index_1 * test_n_ants)
-               unity_cross_visibility_real_array[start_index:start_index+test_n_ants] = unity_visibility_real_array
-               unity_cross_visibility_imag_array[start_index:start_index+test_n_ants] = unity_visibility_imag_array
-               gsm_cross_visibility_real_array[start_index:start_index+test_n_ants] = gsm_visibility_real_array
-               gsm_cross_visibility_imag_array[start_index:start_index+test_n_ants] = gsm_visibility_imag_array
-               baseline_length_lambda_array[start_index:start_index+test_n_ants] = baseline_length_lambda
+               unity_cross_visibility_real_array[start_index:end_index] = unity_visibility_real_array[1:]
+               unity_cross_visibility_imag_array[start_index:end_index] = unity_visibility_imag_array[1:]
+               gsm_cross_visibility_real_array[start_index:end_index] = gsm_visibility_real_array[1:]
+               gsm_cross_visibility_imag_array[start_index:end_index] = gsm_visibility_imag_array[1:]
+               baseline_length_lambda_array[start_index:end_index] = baseline_length_lambda[1:]
+            
+               unity_auto_array[ant_index_1] = unity_visibility_real_array[0]
+               gsm_auto_array[ant_index_1] = gsm_visibility_real_array[0]
+            
+               start_index += (test_n_ants-1-ant_index_1)
+               end_index += (test_n_ants-2-ant_index_1)
             
             #save the arrays
             np.save(unity_cross_visibility_real_array_filename,unity_cross_visibility_real_array)
@@ -15841,6 +15854,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             np.save(gsm_cross_visibility_real_array_filename,gsm_cross_visibility_real_array)
             np.save(gsm_cross_visibility_imag_array_filename,gsm_cross_visibility_imag_array)            
             np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
+            np.save(unity_auto_array_filename,unity_auto_array)
+            np.save(gsm_auto_array_filename,gsm_auto_array)
             
          else:
             unity_cross_visibility_real_array = np.load(unity_cross_visibility_real_array_filename)
@@ -15848,7 +15863,10 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             gsm_cross_visibility_real_array = np.load(gsm_cross_visibility_real_array_filename)
             gsm_cross_visibility_imag_array = np.load(gsm_cross_visibility_imag_array_filename)            
             baseline_length_lambda_array = np.load(baseline_length_lambda_array_filename)
-         
+            unity_auto_array = np.load(unity_auto_array_filename)
+            gsm_auto_array = np.load(gsm_auto_array_filename)
+            
+            
          ##plot the real part of the visibilty - unity
          plt.clf()
          map_title="uniform response"
@@ -15860,7 +15878,18 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name)
-         
+
+         ##plot the imaginary part of the visibilty - unity
+         plt.clf()
+         map_title="uniform response"
+         plt.scatter(baseline_length_lambda_array,unity_cross_visibility_imag_array,s=1)
+         plt.xlim(0.2, 2)
+         plt.ylabel("Imag. part of vis")
+         plt.xlabel("Baseline length (wavelengths)")
+         fig_name="unity_response_from_complex_beams_imag_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)        
 
          ##plot the real part of the visibilty - unity
          plt.clf()
@@ -15873,138 +15902,65 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name)
-                  
+
+         plt.clf()
+         map_title="gsm response"
+         plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_imag_array,s=1)
+         plt.xlim(0.2, 2)
+         plt.ylabel("Imag part of vis")
+         plt.xlabel("Baseline length (wavelengths)")
+         fig_name="gsm_response_from_complex_beams_imag_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+         
+         #Autos!
+         ant_index_array = range(0,test_n_ants)
+         plt.clf()
+         map_title="uniform auto response"
+         plt.scatter(ant_index_array,unity_auto_array,s=1)
+         #plt.xlim(0.2, 2)
+         plt.ylabel("Auto vis")
+         plt.xlabel("Antenna index")
+         fig_name="unity_auto_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
+
+         ##
+         plt.clf()
+         map_title="uniform response"
+         plt.scatter(ant_index_array,gsm_auto_array,s=1)
+         #plt.xlim(0.2, 2)
+         plt.ylabel("Auto vis (K)")
+         plt.xlabel("Intenna index")
+         fig_name="gsm_auto_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)  
+         
+                           
          #now to extract global sky temp from gsm sim vis by comparing to unity vis - but
          #since we now use the complex beam pattern, we don't expect unity sky response to 
          #be purely real - not sure how to deal with that!
          #Then to making these vis into uvfits/miriad format, or at least phased properly (to zenith?)
          
-         
-   #plt.clf()
-   #map_title="uniform response baseline index 10"
-   #plt.scatter(freq_MHz_list,baseline_index_10_unity_vis_list)
-   #plt.ylabel("Real part of vis")
-   #plt.xlabel("Frequency (MHz)")
-   #fig_name="unity_response_from_complex_beams_baseline_index_10.png"
-   #figmap = plt.gcf()
-   #figmap.savefig(fig_name)
-   #print("saved %s" % fig_name)
+         #Lets look at some data at the same LST
+         uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         print("%s" % uvfits_filename)
+         hdulist = fits.open(uvfits_filename)
+         uvtable = hdulist[0].data
+         uvtable_header = hdulist[0].header
+         hdulist.close()
+         visibilities = uvtable['DATA']
+         visibilities_shape = visibilities.shape
+         print("visibilities_shape")
+         print(visibilities_shape)
 
-      ####sanity check:
-      #plt.clf()
-      #map_title=""
-      ####hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      #hp.mollview(map=rotated_gsm_C_dec_ra,title=map_title)
-      #fig_name="check4_rot_gsm_%s_%0.3f_MHz.png" % (pol,freq_MHz)
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #print("saved %s" % fig_name)
+def write_to_miriad_vis(uvw_array, auto_11, auto_22, cross_12, freq_MHz):
+   print("writing to miriad file")
    
-      ### Add some text to the png
-      #img = Image.open("%s" % fig_name)
-      #draw = ImageDraw.Draw(img)
-      #font = ImageFont.truetype('FreeSans.ttf',30)
-      #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
-      #img.save("%s" % fig_name)
-      
-      
-      ##
-      #cross_visibility_list = []
-      #auto_visibility_list = []
-      #baseline_length_list = []
 
-      ##ant_index_1 = 0
-      #ant_name_1 = lines[ant_index_1].split()[0]
-      #ant_x_pos_1 = float(lines[ant_index_1].split()[1])   #dont assume x=east-west, cant remember
-      #ant_y_pos_1 = float(lines[ant_index_1].split()[2])
-
-      ##ant_index_2 = 1
-      #ant_name_2 = lines[ant_index_2].split()[0]
-      #ant_x_pos_2 = float(lines[ant_index_2].split()[1])  #dont assume x=east-west, cant remember
-      #ant_y_pos_2 = float(lines[ant_index_2].split()[2])
-      
-      #baseline_length = np.sqrt((ant_x_pos_1-ant_x_pos_2)**2 + (ant_y_pos_1-ant_y_pos_2)**2)
-      #if (ant_index_1==ant_index_2):
-      #   pass
-      #else:
-      #   baseline_length_list.append(baseline_length)
-      ##interpolate E_phi and E_theta separately
-      ##ant 1
-      
-      
-      ##now try to reproduce the unity sky response from McKinley et al 2020
-      
-      #no need to rotate the unity map!
-      
-      #unity_sky_beam = unity_map * rotated_power_pattern
-      #sum_unity_sky_beam = np.nansum(unity_sky_beam)
-      #sum_mag_beam = np.nansum(np.abs(rotated_power_pattern))
-      #visibility = sum_unity_sky_beam / sum_mag_beam
-      #print(visibility)
-      #if (ant_index_1==ant_index_2):
-      #   auto_visibility_list.append(visibility)
-      #else:
-      #   cross_visibility_list.append(visibility)
-      
-      
-      ##print(visibility_list)
-      #cross_visibility_real_array = np.real(np.asarray(cross_visibility_list))
-      #baseline_length_lambda_array = np.asarray(baseline_length_list) / wavelength
-      
-      ##plot the real part of the visibilty
-      #plt.clf()
-      #map_title="uniform response"
-      #plt.scatter(baseline_length_lambda_array,cross_visibility_real_array)
-      #plt.ylabel("Real part of vis")
-      #plt.xlabel("Baseline length (wavelengths)")
-      #fig_name="unity_response_from_complex_beams.png"
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #print("saved %s" % fig_name)
-      
-      ###sanity check:
-      #plt.clf()
-      #map_title=""
-      ###hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      #hp.mollview(map=unity_sky_beam,title=map_title)
-      #fig_name="check4_complex_power_pattern_%s_%s_%s_%0.3f_MHz.png" % (ant_index_1,ant_index_2,pol,freq_MHz)
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #print("saved %s" % fig_name)
-   
-      ### Add some text to the png
-      #img = Image.open("%s" % fig_name)
-      #draw = ImageDraw.Draw(img)
-      #font = ImageFont.truetype('FreeSans.ttf',30)
-      #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
-      #img.save("%s" % fig_name)
- 
-
-      
-      ##rotate the beam in ra to correct LST
-      #rotated_power_pattern_ra = r_beam_ra.rotate_map(rotated_power_pattern)
-      ##multiply the rotated beam by the gsm
-      #gsm_beam = rotated_power_pattern_ra*rotated_gsm_C
-      ####sanity beam rotation:
-      #plt.clf()
-      #map_title="rotated gsm and beam"
-      ##hp.orthview(map=gsm_beam,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      #hp.mollview(map=gsm_beam,title=map_title)
-      #fig_name="check8_rotated_gsm_beam_%0.3f_MHz.png" % (freq_MHz)
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #print("saved %s" % fig_name)
-      
-      ## Add some text to the png
-      #img = Image.open("%s" % fig_name)
-      #draw = ImageDraw.Draw(img)
-      #font = ImageFont.truetype('FreeSans.ttf',30)
-      #draw.text((10, 10),"%0.3f MHz\n %0.3f hrs " % (freq_MHz,lst_hrs),(0,0,0),font=font)
-      #img.save("%s" % fig_name)
-      
-       
-     
-      
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
    with fits.open(uvfits_name) as hdulist:
@@ -16409,7 +16365,9 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 #sys.exit()
 
 #unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
-simulate_eda2_with_complex_beams([freq_MHz_list[0]],lst_hrs_list[0],nside=32,plot_from_saved=False)
+chan_num = 0
+plot_from_saved = False
+simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 sys.exit()
 
 #ant_index = 0
