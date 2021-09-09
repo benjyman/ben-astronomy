@@ -61,6 +61,12 @@ import ephem
 
 from scipy.io import loadmat
 
+#for making miriad files:
+import aipy as a
+
+
+
+
 #color defs for color blindness contrast
 #from https://davidmathlogic.com/colorblind/#%23000000-%23E69F00-%2356B4E9-%23009E73-%23F0E442-%230072B2-%23D55E00-%23CC79A7
 color_black = '#000000'
@@ -90,6 +96,7 @@ mwa_longitude_pyephem = "116:40.2488"
 mwa_elevation = 0
 
 mwa_latitude_deg = -26.70331940
+mwa_longitude_deg = 116.670575
 
 mwa_latitude_astropy = '-26.7d'
 mwa_longitude_astropy = '116.67d'
@@ -268,7 +275,7 @@ Aeff_for_freq_MHz_list = p(freq_MHz_list)
 #   eda2_obs_lst_hrs = eda2_obs_lst.value
 #   return eda2_obs_lst_hrs
 
-def get_eda2_lst(eda_time_string="20151202T171727"):
+def get_eda2_lst(eda_time_string):
    year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
 
    eda2_observer = ephem.Observer()
@@ -11316,6 +11323,7 @@ def calibrate_eda2_data_time_av(EDA2_chan_list,obs_type='night',lst_list=[],pol_
        #No need for a multi-freq model cube for each obs, just use centre freq 
        wsclean_cal_ms_name_list = []
        for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
+          print(EDA2_obs_time)
           gsm_hpx_fits_name_chan = "%s/%s_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,sky_model,lst_deg,freq_MHz)
           unity_hpx_fits_name_chan = "%s/unity_sky_map_LST_%0.3f_%0.3f_MHz_hpx.fits" % (EDA2_chan,lst_deg,freq_MHz)
        
@@ -15388,10 +15396,18 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    #see Jishnu's SITARA paper 1, appendix B
    #first get it working for a single baseline, ant index 0 and 1
    #Get the right beams (EEPs from Daniel) and convert (interpolate) to healpix
+
+   uu_array = np.empty(n_baselines_test)
+   vv_array = np.empty(n_baselines_test)
+   ww_array = np.empty(n_baselines_test)
+   baseline_number_array = np.empty(n_baselines_test)
+      
+   uu_array_filename = "uu_array.npy" 
+   vv_array_filename = "vv_array.npy" 
+   ww_array_filename = "ww_array.npy"      
+   baseline_number_array_filename = "baseline_number_array.npy" 
    
-   baseline_index_10_unity_vis_list = []
-   
-   for freq_MHz in freq_MHz_list:
+   for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       freq_MHz = float(freq_MHz)
       freq_Hz_string = "%d" % (freq_MHz*1000000)
       wavelength = 300./freq_MHz
@@ -15402,21 +15418,23 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       unity_auto_array = np.empty(test_n_ants)
       gsm_auto_array = np.empty(test_n_ants)
       baseline_length_lambda_array = np.empty(n_baselines_test)
+
       unity_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
       unity_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
       gsm_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
       gsm_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
            
            
-      for pol in ['X']:  #,'Y'
+      for pol_index,pol in enumerate(['X']):  #,'Y'
          unity_cross_visibility_real_array_filename = "unity_cross_visibility_real_array_%s_%0.3f.npy" % (pol,freq_MHz)
          unity_cross_visibility_imag_array_filename = "unity_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
-         gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%0.3f.npy" % (pol,freq_MHz)
-         gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
+         gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
          unity_auto_array_filename = "unity_auto_array_%s_%0.3f.npy" % (pol,freq_MHz)
-         gsm_auto_array_filename = "gsm_auto_array_%s_%0.3f.npy" % (pol,freq_MHz)
+         gsm_auto_array_filename = "gsm_auto_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
          
          baseline_length_lambda_array_filename = "baseline_length_lambda_array_%s_%0.3f.npy" % (pol,freq_MHz)
+
          
          if not plot_from_saved:
             EEP_name = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,pol)
@@ -15806,11 +15824,21 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                
                x_pos_ant1 = float(lines[ant_index_1].split()[4])
                y_pos_ant1 = float(lines[ant_index_1].split()[5])
+               z_pos_ant1 = 0.
                
                x_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
                y_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
-               baseline_length_array = np.sqrt((x_pos_ant1 - x_pos_array_ant2)**2 + (y_pos_ant1 - y_pos_array_ant2)**2)
+               z_pos_array_ant2 = y_pos_array_ant2 * 0.
                
+               if (pol_index==0 and freq_MHz_index==0):
+                  uu_sub_array = x_pos_ant1 - x_pos_array_ant2
+                  vv_sub_array = y_pos_ant1 - y_pos_array_ant2
+                  ww_sub_array = z_pos_ant1 - z_pos_array_ant2
+                  baseline_number_sub_array = (ant_index_1 * 256) + np.arange(ant_index_1,test_n_ants)
+               
+               
+               baseline_length_array = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2)
+                       
                #print(baseline_length_array[10])
                #print(baseline_length_array[68])
                
@@ -15841,7 +15869,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                gsm_cross_visibility_real_array[start_index:end_index] = gsm_visibility_real_array[1:]
                gsm_cross_visibility_imag_array[start_index:end_index] = gsm_visibility_imag_array[1:]
                baseline_length_lambda_array[start_index:end_index] = baseline_length_lambda[1:]
-            
+               if (pol_index==0 and freq_MHz_index==0):
+                  uu_array[start_index:end_index] = uu_sub_array[1:]
+                  vv_array[start_index:end_index] = vv_sub_array[1:]
+                  ww_array[start_index:end_index] = ww_sub_array[1:]
+                  baseline_number_array[start_index:end_index] = baseline_number_sub_array[1:]
+
                unity_auto_array[ant_index_1] = unity_visibility_real_array[0]
                gsm_auto_array[ant_index_1] = gsm_visibility_real_array[0]
             
@@ -15856,7 +15889,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
             np.save(unity_auto_array_filename,unity_auto_array)
             np.save(gsm_auto_array_filename,gsm_auto_array)
-            
+            if (pol_index==0 and freq_MHz_index==0):
+               np.save(uu_array_filename,uu_array)
+               np.save(vv_array_filename,vv_array)
+               np.save(ww_array_filename,ww_array)
+               np.save(baseline_number_array_filename,baseline_number_array)
+               
          else:
             unity_cross_visibility_real_array = np.load(unity_cross_visibility_real_array_filename)
             unity_cross_visibility_imag_array = np.load(unity_cross_visibility_imag_array_filename)
@@ -15865,6 +15903,10 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             baseline_length_lambda_array = np.load(baseline_length_lambda_array_filename)
             unity_auto_array = np.load(unity_auto_array_filename)
             gsm_auto_array = np.load(gsm_auto_array_filename)
+            baseline_number_array = np.load(baseline_number_array_filename)
+            uu_array = np.load(uu_array_filename)
+            vv_array = np.load(vv_array_filename)
+            ww_array = np.load(ww_array_filename)
             
             
          ##plot the real part of the visibilty - unity
@@ -15898,7 +15940,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          plt.xlim(0.2, 2)
          plt.ylabel("Real part of vis")
          plt.xlabel("Baseline length (wavelengths)")
-         fig_name="gsm_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         fig_name="gsm_response_from_complex_beams_%s_%s_%0.3f.png" % (EDA2_obs_time,pol,freq_MHz)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name)
@@ -15909,7 +15951,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          plt.xlim(0.2, 2)
          plt.ylabel("Imag part of vis")
          plt.xlabel("Baseline length (wavelengths)")
-         fig_name="gsm_response_from_complex_beams_imag_%s_%0.3f.png" % (pol,freq_MHz)
+         fig_name="gsm_response_from_complex_beams_imag_%s_%s_%0.3f.png" % (EDA2_obs_time,pol,freq_MHz)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name)
@@ -15929,12 +15971,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
 
          ##
          plt.clf()
-         map_title="uniform response"
+         map_title="gsm auto response"
          plt.scatter(ant_index_array,gsm_auto_array,s=1)
          #plt.xlim(0.2, 2)
          plt.ylabel("Auto vis (K)")
          plt.xlabel("Intenna index")
-         fig_name="gsm_auto_response_from_complex_beams_%s_%0.3f.png" % (pol,freq_MHz)
+         fig_name="gsm_auto_response_from_complex_beams_%s_%s_%0.3f.png" % (EDA2_obs_time,pol,freq_MHz)
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          print("saved %s" % fig_name)  
@@ -15957,10 +15999,184 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          print("visibilities_shape")
          print(visibilities_shape)
 
-def write_to_miriad_vis(uvw_array, auto_11, auto_22, cross_12, freq_MHz):
-   print("writing to miriad file")
+def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'):
+   lst_hrs = float(lst_hrs)
+   lst_deg = lst_hrs * 15.
+   with open(antenna_layout_filename) as f:
+      lines = f.readlines()
+      n_ants = len(lines) 
+   n_baselines = n_ants*(n_ants-1) / 2.
+   print("read %s" % antenna_layout_filename)
+   print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
    
+   #time stuff
+   year, month, day, hour, minute, second = EDA2_obs_time[0:4], EDA2_obs_time[4:6],EDA2_obs_time[6:8], EDA2_obs_time[9:11],EDA2_obs_time[11:13],EDA2_obs_time[13:15]
+   eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
+   print(eda2_astropy_time_string)
+   eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+  
+   
+   for freq_MHz in freq_MHz_list:
+      for pol in ['X']:
+         gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
+         gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
+         gsm_auto_array_filename = "gsm_auto_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
+         uu_array_filename = "uu_array.npy" 
+         vv_array_filename = "vv_array.npy" 
+         ww_array_filename = "ww_array.npy"      
+         baseline_number_array_filename = "baseline_number_array.npy"       
+         
+         gsm_cross_visibility_real_array = np.load(gsm_cross_visibility_real_array_filename)
+         gsm_cross_visibility_imag_array = np.load(gsm_cross_visibility_imag_array_filename)            
+         gsm_auto_array = np.load(gsm_auto_array_filename)
+         baseline_number_array = np.load(baseline_number_array_filename)
+         uu_array = np.load(uu_array_filename)
+         vv_array = np.load(vv_array_filename)
+         ww_array = np.load(ww_array_filename)
+         
+         print("writing to miriad file")
+         NFFT = 1
+         SITE_LON = 116.670575
+         FREQ_GHz = np.array([freq_MHz/1000.])#np.linspace(0.000, 0.250, NFFT);
+         
+         #timestr = time.strftime("%Y%m%d-%H%M%S")
+         
+         mir_file = "%s_%0.3f.vis" % (EDA2_obs_time,freq_MHz)
+         # mir_file = "test.vis"
+         cmd = "rm -rf %s" % mir_file
+         print(cmd)
+         os.system(cmd)
+         
+         print ("Writing out "+ mir_file)
+         uv = a.miriad.UV(mir_file, 'new')
+         uv['history'] = 'test file\n'
+         
+         uv.add_var('latitud','d')
+         uv.add_var('npol','i')
+         uv.add_var('nspect', 'i')
+         uv.add_var('obsdec', 'd')
+         uv.add_var('vsource', 'r')
+         uv.add_var('ischan', 'i')
+         uv.add_var('operator', 'a')
+         uv.add_var('nants', 'i')
+         uv.add_var('baseline', 'r')
+         uv.add_var('sfreq', 'd')
+         uv.add_var('inttime', 'r')
+         uv.add_var('source', 'a')
+         uv.add_var('epoch', 'r')
+         uv.add_var('version', 'a')
+         uv.add_var('ra', 'd')
+         uv.add_var('restfreq', 'd')
+         uv.add_var('nschan', 'i')
+         uv.add_var('sdf', 'd')
+         uv.add_var('corr', 'r')
+         uv.add_var('freq', 'd')
+         uv.add_var('longitu', 'd')
+         uv.add_var('nchan', 'i')
+         uv.add_var('tscale', 'r')
+         uv.add_var('antpos', 'd')
+         uv.add_var('telescop', 'a')
+         uv.add_var('pol', 'i')
+         uv.add_var('coord', 'd')
+         uv.add_var('veldop', 'r')
+         uv.add_var('lst', 'd')
+         uv.add_var('time', 'd')
+         uv.add_var('dec', 'd')
+         uv.add_var('obsra', 'd')
+         uv.add_var('jyperk', 'r')
+         uv.add_var('systemp', 'r')
+         
+         uv['latitud'] = mwa_latitude_deg*np.pi/180.0
+         uv['npol'] = 2
+         uv['nspect'] = 1
+         uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
+         uv['vsource'] = 0.0
+         uv['ischan'] = 0
+         uv['operator'] = 'J'
+         uv['nants'] = 256
+         uv['baseline'] = 0.0
+         uv['sfreq'] = FREQ_GHz[0]
+         uv['inttime'] = 1.0
+         uv['source'] = 'zenith'
+         uv['epoch'] = 2000.0
+         uv['version'] = 'A'
+         uv['ra'] = lst_deg*np.pi/180.0
+         uv['restfreq'] = 0.0
+         uv['nschan'] = NFFT
+         uv['sdf'] = 28/1000000. #FREQ_GHz[1]-FREQ_GHz[0]
+         uv['corr'] = 0.0 
+         uv['freq'] = FREQ_GHz[0]
+         uv['longitu'] = mwa_longitude_deg*np.pi/180.0
+         uv['nchan'] = NFFT
+         uv['tscale'] = 0.0
+         uv['antpos'] = 0.0
+         uv['telescop'] = 'EDA2_sim'
+         uv['pol'] = 1
+         uv['coord'] = 0.0
+         uv['veldop'] = 0.0
+         uv['lst'] = 0.0
+         uv['time'] = 0.0
+         uv['dec'] = mwa_latitude_deg*np.pi/180.0
+         uv['obsra'] = lst_deg*np.pi/180.0
+         uv['jyperk'] = 1.0
+         uv['systemp'] = 1.0
+         
+         
+         beam = a.phs.Beam(FREQ_GHz)
+         ants = []
+         for ant_string in lines:
+            x_pos = ant_string.split()[4]
+            y_pos = ant_string.split()[5]
+            z_pos = 0.
+            ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
 
+         aa = a.phs.AntennaArray(ants=ants,location=("-26:42:11.23", "116:40:14.07"))
+         aa.set_jultime(eda2_astropy_time.jd)
+         uv['lst'] = float(aa.sidereal_time())
+
+         data_mask = np.zeros(NFFT)
+         
+         #from AIPY doco:write(preamble, data, flags=None)
+         #Write the next data record. data must be a complex, masked array. preamble must be (uvw, t, (i,j)), where
+         #uvw is an array of u,v,w, t is the Julian date, and (i,j) is an antenna pair.
+         #add data
+         
+         #put in cross first then do autos
+         for baseline_number_index, baseline_number in enumerate(baseline_number_array):
+            complex_cross = np.asarray([gsm_cross_visibility_real_array[baseline_number_index] + 1j*gsm_cross_visibility_imag_array[baseline_number_index]])
+            cross_vis = np.ma.array(complex_cross, mask=data_mask, dtype=np.complex64)
+            uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
+            ant1,ant2 = decode_baseline(baseline_number)
+            uvw_12 = np.array(uvw_array, dtype=np.double)
+            preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
+            uv.write(preamble,cross_vis)
+         
+         for gsm_auto_index,gsm_auto in enumerate(gsm_auto_array):
+            auto_power = np.asarray([gsm_auto])
+            auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+            uvw_array = [0,0,0]
+            uvw_11 = np.array(uvw_array, dtype=np.double)
+            preamble = (uvw_11, eda2_astropy_time.jd, (gsm_auto_index,gsm_auto_index)) 
+            uv.write(preamble,auto_vis)
+        
+         del(uv)
+           
+         ##check by image
+         map_name = 'test_eda.image'
+         beam_name = 'test_eda.beam'
+         cmd = "rm -rf %s %s" % (map_name,beam_name)
+         print(cmd)
+         os.system(cmd)
+         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600" % (mir_file,map_name,beam_name)
+         print(cmd)
+         os.system(cmd)
+          
+         #uv = a.miriad.UV(mir_file)
+         #for p, d in uv.all():
+         #   print(p, uv['pol'])
+         #   print(d)
+          
+            
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
    with fits.open(uvfits_name) as hdulist:
@@ -16155,8 +16371,6 @@ EDA2_data = True
 #EDA2_chan_list = [64,77,90,103,116,129]
 
 #20200217 data (dont use 63 / 49 MHz dont have beam model! missing 127 and 128 so just do to incl 126)
-#20200303:
-EDA2_chan_list = range(64,127)
 #20200304:
 
 #test progress 
@@ -16220,7 +16434,13 @@ EDA2_chan_list = range(64,127)
 
 
 #EDA2_data_dir = '/md0/EoR/EDA2/20191213_data/'
-EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'
+EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
+#EDA2_data_dir = '/md0/EoR/EDA2/20210813/'
+
+#20200303:
+EDA2_chan_list = range(64,127) 
+#EDA2_chan_list = [142]
+
 #inv fine chans
 #EDA2_data_dir = '/md0/EoR/EDA2/inv_uvfits/20200303_213605/'
 #20200217 data (don't use 'edge' times):
@@ -16364,10 +16584,11 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 #simulate_sitara(lst_hrs_list[0],nside=32)
 #sys.exit()
 
-#unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
+##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
 plot_from_saved = False
-simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 sys.exit()
 
 #ant_index = 0
@@ -16375,11 +16596,11 @@ sys.exit()
 #freq_MHz_list_index = 0
 #convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside=512)
 
-sys.exit()
 
 #don't need to cal separately each pol anymore, using wsclean predict and calibrate!
 #for pol in pol_list:
 pol_list_input = []
+chan_num = 0
 #New cal Jan 2021 - try to average data in time first before cal
 #2 Feb try withinitial full BW cal
 #calibrate_eda2_data_time_av(EDA2_chan_list=EDA2_chan_list,obs_type='night',lst_list=lst_hrs_list,pol_list=pol_list_input,n_obs_concat_list=n_obs_concat_list,concat=concat,wsclean=wsclean,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
