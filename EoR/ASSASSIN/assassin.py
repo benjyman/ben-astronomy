@@ -87,8 +87,10 @@ k = 1.38065e-23
 sq_deg_in_1_sr = (180./math.pi)**2
 #Need to specify the location of the observatory (MWA ... put in exact EDA later)
 # Setup observatory location - in this case, MWA, Australia
-#latitude_degrees=-26.70331940
-#longitude_degrees=116.67081524
+mwa_latitude_degrees=-26.70331940
+mwa_longitude_degrees=116.67081524
+mwa_latitude_rad = float(mwa_latitude_degrees/180.*np.pi)
+mwa_longitude_rad = float(mwa_longitude_degrees/180.*np.pi)
 #elevation_m=377.83
 
 mwa_latitude_pyephem = "-26:42.199"
@@ -103,6 +105,7 @@ mwa_longitude_astropy = '116.67d'
 
 mwa_latitude_ephem = '-26.7'
 mwa_longitude_ephem = '116.67'
+
 
 eda2_loc = EarthLocation(lat=-26.70*u.deg, lon=116.67*u.deg, height=0*u.m)
 utcoffset = 8*u.hour  # Western Australian Standard Time
@@ -15373,7 +15376,7 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       os.system(cmd)
       
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
-   test_n_ants = 256
+   test_n_ants = 10
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
    n_baselines_test_with_autos = int(test_n_ants*(test_n_ants-1) / 2. + test_n_ants)
@@ -15387,7 +15390,23 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       n_ants = len(lines) 
    n_baselines = n_ants*(n_ants-1) / 2.
    print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
-         
+
+   #antenna coord stuff (for calculating UVWs)
+   #check if daniels positions are 1,2 or 4,5 index in this file
+   #I think need to do this in the ant loop
+   x_pos_ant_index_0 = float(lines[0].split()[4])
+   y_pos_ant_index_0 = float(lines[0].split()[5])
+   z_pos_ant_index_0 = 0.
+      
+   x_pos_array_ant = np.asarray([ant_string.split()[4] for ant_string in lines[0:test_n_ants]],dtype=float)
+   y_pos_array_ant = np.asarray([ant_string.split()[5] for ant_string in lines[0:test_n_ants]],dtype=float)
+   z_pos_array_ant = 0. * y_pos_array_ant
+   
+   #could change this to mean position or zero...
+   delta_x_array = x_pos_array_ant - x_pos_ant_index_0
+   delta_y_array = y_pos_array_ant - y_pos_ant_index_0
+   delta_z_array = z_pos_array_ant - z_pos_ant_index_0
+
    #hpx rotate stuff, rotate the complex beams to zenith at the required LST
    dec_rotate = 90. - float(mwa_latitude_ephem)
    ra_rotate = lst_deg
@@ -15475,19 +15494,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             #k_x_theta = k_0 * zenith_ang_repeats_array_rad_sin
             #k_y_phi = k_0 * az_ang_repeats_array_rad_transpose_sin
             #k_y_theta = k_0 * zenith_ang_repeats_array_rad_sin
-            
-            #now need delta_x and delta_y (difference in x and x pos for each antenna wrt antenna index 0)
-            #check if daniels positions are 1,2 or 4,5 index in this file
-            #I think need to do this in the ant loop
-            x_pos_ant_index_0 = float(lines[0].split()[4])
-            y_pos_ant_index_0 = float(lines[0].split()[5])
-               
-            x_pos_array_ant = np.asarray([ant_string.split()[4] for ant_string in lines[0:test_n_ants]],dtype=float)
-            y_pos_array_ant = np.asarray([ant_string.split()[5] for ant_string in lines[0:test_n_ants]],dtype=float)
-            
-            delta_x_array = x_pos_array_ant - x_pos_ant_index_0
-            delta_y_array = y_pos_array_ant - y_pos_ant_index_0
-            
+   
             phase_delta = k_0 * (np.einsum('i,jk->jki', delta_x_array, k_x) + np.einsum('i,jk->jki', delta_y_array, k_y))
             phase_delta[phase_delta < -np.pi] = phase_delta[phase_delta < -np.pi] + (2 * np.pi)  
             phase_delta[phase_delta > np.pi] = phase_delta[phase_delta > np.pi] - (2 * np.pi) 
@@ -15822,22 +15829,36 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
                #img.save("%s" % fig_name)
                
-               x_pos_ant1 = float(lines[ant_index_1].split()[4])
-               y_pos_ant1 = float(lines[ant_index_1].split()[5])
-               z_pos_ant1 = 0.
+               E_pos_ant1 = float(lines[ant_index_1].split()[4])
+               N_pos_ant1 = float(lines[ant_index_1].split()[5])
+               U_pos_ant1 = 0.
                
-               x_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
-               y_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
-               z_pos_array_ant2 = y_pos_array_ant2 * 0.
+               E_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
+               N_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
+               U_pos_array_ant2 = N_pos_array_ant2 * 0.
+
+               #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
+               x_pos_ant1 = -1*N_pos_ant1*np.sin(mwa_latitude_rad) + U_pos_ant1*np.cos(mwa_latitude_rad)
+               y_pos_ant1 = E_pos_ant1 
+               z_pos_ant1 = N_pos_ant1*np.cos(mwa_latitude_rad) + U_pos_ant1*np.sin(mwa_latitude_rad)
                
-               if (pol_index==0 and freq_MHz_index==0):
-                  uu_sub_array = x_pos_ant1 - x_pos_array_ant2
-                  vv_sub_array = y_pos_ant1 - y_pos_array_ant2
-                  ww_sub_array = z_pos_ant1 - z_pos_array_ant2
+               x_pos_ant2 = -1*N_pos_array_ant2*np.sin(mwa_latitude_rad) + U_pos_array_ant2*np.cos(mwa_latitude_rad)
+               y_pos_ant2 = E_pos_array_ant2
+               z_pos_ant2 = N_pos_array_ant2*np.cos(mwa_latitude_rad) + U_pos_array_ant2*np.sin(mwa_latitude_rad)
+                              
+               x_diff = x_pos_ant1 - x_pos_ant2
+               y_diff = y_pos_ant1 - y_pos_ant2
+               z_diff = z_pos_ant1 - z_pos_ant2
+            
+               if (pol_index==0):
+                  #now need delta_x and delta_y (difference in x and x pos for each antenna wrt antenna index 0)
+                  uu_sub_array,vv_sub_array,ww_sub_array = calc_uvw(x_diff,y_diff,z_diff,wavelength,hourangle=0.,declination=mwa_latitude_rad)
+                  #From CASA coord convention doc https://casa.nrao.edu/Memos/CoordConvention.pdf
+                  ## Assign x->East and x-North. This is the local geographic csys
+               
                   baseline_number_sub_array = (ant_index_1 * 256) + np.arange(ant_index_1,test_n_ants)
                
-               
-               baseline_length_array = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2)
+               baseline_length_lambda = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2)
                        
                #print(baseline_length_array[10])
                #print(baseline_length_array[68])
@@ -15848,7 +15869,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                gsm_visibility_real_array = np.real(gsm_visibility_array)
                gsm_visibility_imag_array = np.imag(gsm_visibility_array)
                
-               baseline_length_lambda = baseline_length_array / wavelength
+               #already in wavelength units
+               ###baseline_length_lambda = baseline_length_array / wavelength
                ##plot the real part of the visibilty
                #plt.clf()
                #map_title="uniform response"
@@ -16175,8 +16197,14 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          #for p, d in uv.all():
          #   print(p, uv['pol'])
          #   print(d)
-          
-            
+
+def calc_uvw(x_diff,y_diff,z_diff,wavelength,hourangle=0.,declination=mwa_latitude_rad):
+   print("calculating uvws")
+   uu_array = (1./wavelength)*(np.sin(hourangle)*x_diff + np.cos(hourangle)*y_diff + 0.*z_diff)
+   vv_array = (1./wavelength)*(-np.sin(declination)*np.cos(hourangle)*x_diff + np.sin(declination)*np.sin(hourangle)*y_diff + np.cos(declination)*z_diff) 
+   ww_array = (1./wavelength)*(np.cos(declination)*np.cos(hourangle)*x_diff - np.cos(declination)*np.sin(hourangle)*y_diff + np.sin(declination)*z_diff) 
+   return(uu_array,vv_array,ww_array)
+           
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
    with fits.open(uvfits_name) as hdulist:
@@ -16587,8 +16615,8 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
 plot_from_saved = False
-#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
-write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 sys.exit()
 
 #ant_index = 0
