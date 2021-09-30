@@ -15376,7 +15376,7 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       os.system(cmd)
       
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
-   test_n_ants = 10
+   test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
    n_baselines_test_with_autos = int(test_n_ants*(test_n_ants-1) / 2. + test_n_ants)
@@ -15744,7 +15744,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             zenith_pixel = hp.ang2pix(512,np.radians(90.-(zenith_dec)),np.radians(zenith_ra))
             point_source_at_zenith_sky_512[zenith_pixel] = 1000000.
             
-            #plt.clf()
+            #plt.cjlf()
             #map_title=""
             #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
             #hp.mollview(map=hp.ud_grade(point_source_at_zenith_sky_512,nside),rot=(0,90,0),title=map_title)
@@ -16059,6 +16059,9 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             np.save(gsm_auto_array_filename,gsm_auto_array)
             np.save(zenith_point_source_auto_array_filename,zenith_point_source_auto_array)
             if (pol_index==0 and freq_MHz_index==0):
+               print(uu_array)
+               print(vv_array)
+               print(ww_array)
                np.save(uu_array_filename,uu_array)
                np.save(vv_array_filename,vv_array)
                np.save(ww_array_filename,ww_array)
@@ -16183,17 +16186,17 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          #be purely real - not sure how to deal with that!
          #Then to making these vis into uvfits/miriad format, or at least phased properly (to zenith?)
          
-         #Lets look at some data at the same LST
-         uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         print("%s" % uvfits_filename)
-         hdulist = fits.open(uvfits_filename)
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         hdulist.close()
-         visibilities = uvtable['DATA']
-         visibilities_shape = visibilities.shape
-         print("visibilities_shape")
-         print(visibilities_shape)
+         ##Lets look at some data at the same LST
+         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         #print("%s" % uvfits_filename)
+         #hdulist = fits.open(uvfits_filename)
+         #uvtable = hdulist[0].data
+         #uvtable_header = hdulist[0].header
+         #hdulist.close()
+         #visibilities = uvtable['DATA']
+         #visibilities_shape = visibilities.shape
+         #print("visibilities_shape")
+         #print(visibilities_shape)
 
 def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'):
    lst_hrs = float(lst_hrs)
@@ -16237,30 +16240,43 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          vv_array_m = np.load(vv_array_filename)
          ww_array_m = np.load(ww_array_filename)
          
+         #print(uu_array_m)
+         #print(vv_array_m)
+         #print(ww_array_m)
+         
          #phase centre zenith
          #print(np.max(ww_array_m))
          #print(gsm_cross_visibility_real_array[0:10])
          #print(gsm_cross_visibility_imag_array[0:10])
          
          ##GSM:
-         auto_array = np.load(gsm_auto_array_filename)
-         cross_visibility_complex_array = gsm_cross_visibility_real_array + 1j*gsm_cross_visibility_imag_array
+         #auto_array = np.load(gsm_auto_array_filename)
+         #cross_visibility_complex_array = gsm_cross_visibility_real_array + 1j*gsm_cross_visibility_imag_array
          #Try point source instead
-         #auto_array = np.load(zenith_point_source_auto_array_filename)
-         #cross_visibility_complex_array = zenith_point_source_cross_visibility_real_array + 1j*zenith_point_source_cross_visibility_imag_array
+         auto_array = np.load(zenith_point_source_auto_array_filename)
+         cross_visibility_complex_array = zenith_point_source_cross_visibility_real_array + 1j*zenith_point_source_cross_visibility_imag_array
+         
+         cross_visibility_real_array = np.real(cross_visibility_complex_array)
+         cross_visibility_imag_array = np.imag(cross_visibility_complex_array)
+         
          
          #not needed for zenith?
-         cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
-         cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
-         cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
+         #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
+         #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
+         #cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
          
          
          
          
-         #miriad wants u.v.w in units of seconds!
-         uu_array = uu_array_m / c
-         vv_array = vv_array_m / c
-         ww_array = ww_array_m / c
+         #miriad wants u.v.w in units of seconds, but it divides by c itself!
+         uu_array = uu_array_m #/ c
+         vv_array = vv_array_m #/ c
+         ww_array = ww_array_m #/ c
+ 
+         #print(c)
+         #print(uu_array)
+         #print(vv_array)
+         #print(ww_array)
          
          print("writing to miriad file")
          NFFT = 1
@@ -16379,6 +16395,9 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
             uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
             #print(uvw_array)
             ant1,ant2 = decode_baseline(baseline_number)
+            print(baseline_number)
+            print(ant1,ant2)
+            #LOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
             #print(ant1,ant2)
             uvw_12 = np.array(uvw_array, dtype=np.double)
             preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
@@ -16426,14 +16445,49 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          uvfits_filename = mir_file_uvfits_name
          print("%s" % uvfits_filename)
          hdulist = fits.open(uvfits_filename)
+         #hdulist.info()
+         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+         #print(info_string)
          uvtable = hdulist[0].data
+         UU_s_array = uvtable['UU']
+         VV_s_array = uvtable['VV']
+         WW_s_array = uvtable['WW']
+         print(UU_s_array[0:3])
+         print(VV_s_array[0:3])
+         print(WW_s_array[0:3])
+         baseline = uvtable['baseline']
+         print(len(baseline))
+         print(np.max(baseline))
+         print(np.min(baseline))
+         sys.exit()
          uvtable_header = hdulist[0].header
          hdulist.close()
          visibilities = uvtable['DATA']
          visibilities_shape = visibilities.shape
-         print("visibilities_shape")
-         print(visibilities_shape)
+         #print("visibilities_shape")
+         #print(visibilities_shape)
           
+         #Lets look at some data at the same LST
+         uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         print("%s" % uvfits_filename)
+         hdulist = fits.open(uvfits_filename)
+         #hdulist.info()
+         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+         #print(info_string)
+         uvtable = hdulist[0].data
+         UU_s_array = uvtable['UU']
+         VV_s_array = uvtable['VV']
+         WW_s_array = uvtable['WW']
+         print(UU_s_array[0:3])
+         print(VV_s_array[0:3])
+         print(WW_s_array[0:3])
+         uvtable_header = hdulist[0].header
+         hdulist.close()
+         visibilities = uvtable['DATA']
+         visibilities_shape = visibilities.shape
+         #print("visibilities_shape")
+         #print(visibilities_shape)
+         
          #uv = a.miriad.UV(mir_file)
          #for p, d in uv.all():
          #   print(p, uv['pol'])
@@ -16461,7 +16515,6 @@ def calc_uvw(x_diff,y_diff,z_diff,wavelength,hourangle=0.,declination=mwa_latitu
    uu_array = (np.sin(hourangle)*x_diff + np.cos(hourangle)*y_diff + 0.*z_diff) #* (1./wavelength)
    vv_array = (-np.sin(declination)*np.cos(hourangle)*x_diff + np.sin(declination)*np.sin(hourangle)*y_diff + np.cos(declination)*z_diff) #* (1./wavelength)
    ww_array = (np.cos(declination)*np.cos(hourangle)*x_diff - np.cos(declination)*np.sin(hourangle)*y_diff + np.sin(declination)*z_diff) #* (1./wavelength)
-   
    return(uu_array,vv_array,ww_array)
            
 def get_antenna_table_from_uvfits(uvfits_name):
