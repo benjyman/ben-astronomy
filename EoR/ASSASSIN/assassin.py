@@ -14772,6 +14772,10 @@ def decode_baseline(baseline_code):
        a2 = int(baseline_code % 256)
        a1 = int((baseline_code - a2) / 256)
    return a1,a2
+
+def cal_standard_baseline_number(ant1,ant2):
+   baseline_number = (ant1 * 256) + ant2
+   return baseline_number
            
 def add_noise_coupling_to_sim_uvfits(uvfits_filename,uv_correlation_array_filename_x,uv_correlation_array_filename_y):
    #testing for 50 MHz:
@@ -15408,11 +15412,11 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    #no this is wrong I think because it is all in sperical coors of az el
    ##delta_x_array,delta_y_array,delta_z_array = calc_x_y_z_diff_from_E_N_U(E_pos_ant_index_0,E_pos_array_ant,N_pos_ant_index_0,N_pos_array_ant,U_pos_ant_index_0,U_pos_array_ant)
    
-   ##need to change this to mean position 
+   ##need to change this to mean position (don't think it matters)?
    
-   delta_x_array = E_pos_array_ant - np.mean(E_pos_array_ant) #- E_pos_ant_index_0
-   delta_y_array = N_pos_array_ant - np.mean(N_pos_array_ant) #- N_pos_ant_index_0
-   delta_z_array = U_pos_array_ant - np.mean(U_pos_array_ant) #- U_pos_ant_index_0
+   delta_x_array = E_pos_array_ant - E_pos_ant_index_0 #- np.mean(E_pos_array_ant) #
+   delta_y_array = N_pos_array_ant - N_pos_ant_index_0 #- np.mean(N_pos_array_ant) #
+   delta_z_array = U_pos_array_ant - U_pos_ant_index_0 # - np.mean(U_pos_array_ant) #
 
    #hpx rotate stuff, rotate the complex beams to zenith at the required LST
    dec_rotate = 90. - float(mwa_latitude_ephem)
@@ -15432,7 +15436,6 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       freq_MHz = float(freq_MHz)
       freq_Hz_string = "%d" % (freq_MHz*1000000)
       wavelength = 300./freq_MHz
-      jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
       k_0=2.*np.pi / wavelength 
       unity_sky_value = 1. 
       
@@ -15499,8 +15502,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             zenith_ang_repeats_array_rad_sin = np.sin(zenith_ang_repeats_array_rad)
             
             #element-by-element multiplication:
-            k_x = np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_cos, zenith_ang_repeats_array_rad_sin)
-            k_y = np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_sin, zenith_ang_repeats_array_rad_sin)
+            k_x =  np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_cos, zenith_ang_repeats_array_rad_sin)
+            k_y =  np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_sin, zenith_ang_repeats_array_rad_sin)
             
             ##need to split up into phi and theta components (this must be wrong)
             #k_x_phi = k_0 * az_ang_repeats_array_rad_transpose_cos
@@ -15509,25 +15512,28 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             #k_y_theta = k_0 * zenith_ang_repeats_array_rad_sin
    
             phase_delta = k_0 * (np.einsum('i,jk->jki', delta_x_array, k_x) + np.einsum('i,jk->jki', delta_y_array, k_y))
-            phase_delta[phase_delta < -np.pi] = phase_delta[phase_delta < -np.pi] + (2 * np.pi)  
-            phase_delta[phase_delta > np.pi] = phase_delta[phase_delta > np.pi] - (2 * np.pi) 
+            #phase_delta[phase_delta < -np.pi] = phase_delta[phase_delta < -np.pi] + (2 * np.pi)  
+            #phase_delta[phase_delta > np.pi] = phase_delta[phase_delta > np.pi] - (2 * np.pi) 
    
             E_phi_cube_plus_delta = E_phi_cube * np.exp(1j*phase_delta)
             E_theta_cube_plus_delta = E_theta_cube * np.exp(1j*phase_delta)
    
             #phase wrap causing trouble?
-            E_phi_cube_plus_delta_mag = np.abs(E_phi_cube_plus_delta)
-            E_phi_cube_plus_delta_phase = np.angle(E_phi_cube_plus_delta)
-            E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
-            E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
-            E_phi_cube = E_phi_cube_plus_delta_mag * np.exp(1j*E_phi_cube_plus_delta_phase)
-                     
-            E_theta_cube_plus_delta_mag = np.abs(E_theta_cube_plus_delta)
-            E_theta_cube_plus_delta_phase = np.angle(E_theta_cube_plus_delta)
-            E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
-            E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
-            E_theta_cube = E_theta_cube_plus_delta_mag * np.exp(1j*E_theta_cube_plus_delta_phase)
-           
+            #E_phi_cube_plus_delta_mag = np.abs(E_phi_cube_plus_delta)
+            #E_phi_cube_plus_delta_phase = np.angle(E_phi_cube_plus_delta)
+            #E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
+            #E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] = E_phi_cube_plus_delta_phase[E_phi_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
+            #E_phi_cube = E_phi_cube_plus_delta_mag * np.exp(1j*E_phi_cube_plus_delta_phase)
+            #         
+            #E_theta_cube_plus_delta_mag = np.abs(E_theta_cube_plus_delta)
+            #E_theta_cube_plus_delta_phase = np.angle(E_theta_cube_plus_delta)
+            #E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase < -np.pi] + (2 * np.pi)  
+            #E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] = E_theta_cube_plus_delta_phase[E_theta_cube_plus_delta_phase > np.pi] - (2 * np.pi) 
+            #E_theta_cube = E_theta_cube_plus_delta_mag * np.exp(1j*E_theta_cube_plus_delta_phase)
+            
+            E_theta_cube = E_theta_cube_plus_delta
+            E_phi_cube = E_phi_cube_plus_delta
+            
             #now add this phase to both E_theta and E_phi
             
             #phase_delta_1 = k_x * delta_x_array[1] + k_y * delta_y_array[1]
@@ -15731,8 +15737,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             gsm = GlobalSkyModel()
             gsm_map_512 = gsm.generate(freq_MHz)
             full_nside = hp.npix2nside(gsm_map_512.shape[0])
-            print(full_nside)
+            #print(full_nside)
             point_source_at_zenith_sky_512 = gsm_map_512 * 0.
+            
+            #need to either generate gsm map in MJy.sr and convert to Jy/pix, or convert manually:
+            #scale = (2. * k * 1.0e26 * pix_area_sr) / (wavelength**2)
+            #print("scale map by %s to get to Jy/pix" % scale)
             
             #follow Jacks advice - 1 K (Jy?) point source at zenith
             #going to rotate sky not beam. Beam is in spherical coords, not RA/dec, but they are the same if you do 90 deg - dec for theta
@@ -15744,36 +15754,41 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             zenith_pixel = hp.ang2pix(512,np.radians(90.-(zenith_dec)),np.radians(zenith_ra))
             point_source_at_zenith_sky_512[zenith_pixel] = 1000000.
             
-            #plt.cjlf()
-            #map_title=""
+            plt.clf()
+            map_title=""
             #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            #hp.mollview(map=hp.ud_grade(point_source_at_zenith_sky_512,nside),rot=(0,90,0),title=map_title)
-            #fig_name="check1_pt_src_LST_%0.1f_%s_%0.3f_MHz.png" % (lst_deg,pol,freq_MHz)
-            #figmap = plt.gcf()
-            #figmap.savefig(fig_name)
-            #print("saved %s" % fig_name) 
+            hp.mollview(map=hp.ud_grade(point_source_at_zenith_sky_512,nside),rot=(0,90,0),title=map_title)
+            fig_name="check1_pt_src_LST_%0.1f_%s_%0.3f_MHz.png" % (lst_deg,pol,freq_MHz)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print("saved %s" % fig_name) 
             
             
             #do all the rotation stuff on the full res maps ()
             dec_rotate_gsm = zenith_dec-90. 
             ra_rotate_gsm = zenith_ra
             
+            #i've got my coord system messed up here a bit - dec (theta) should go first in the rotation ...
+            #https://zonca.dev/2021/03/rotate-maps-healpy.html
             r_gsm_C = hp.Rotator(coord=['G','C'])
-            r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], deg=True) #, coord=['C', 'C']
-            r_gsm_ra = hp.Rotator(rot=[ra_rotate_gsm,0], deg=True)
- 
-            rotated_point_source_at_zenith_sky_ra_512 = r_gsm_ra.rotate_map(point_source_at_zenith_sky_512)      
+            #r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], deg=True) #, coord=['C', 'C']
+            #r_gsm_ra = hp.Rotator(rot=[ra_rotate_gsm,0], deg=True)
+            r_gsm_C_ra_dec = hp.Rotator(coord=['G','C'],rot=[ra_rotate_gsm,dec_rotate_gsm], deg=True)
+            r_pt_src_ra_dec = hp.Rotator(coord=['C'],rot=[ra_rotate_gsm,dec_rotate_gsm], deg=True)
+            
+            #rotated_point_source_at_zenith_sky_ra_512 = r_gsm_ra.rotate_map(point_source_at_zenith_sky_512)      
 
             #plt.clf()
             #map_title=""
-            #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            #hp.mollview(map=hp.ud_grade(rotated_point_source_at_zenith_sky_ra_512,nside),rot=(0,90,0),title=map_title)
+            ########hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            #hp.mollview(map=hp.ud_grade(rotated_point_source_at_zenith_sky_ra_512,nside),rot=(0,0,0),title=map_title)
             #fig_name="check2ra_pt_src_LST_%0.1f_%s_%0.3f_MHz.png" % (lst_deg,pol,freq_MHz)
             #figmap = plt.gcf()
             #figmap.savefig(fig_name)
             #print("saved %s" % fig_name)      
             
-            rotated_point_source_at_zenith_sky_ra_dec_512 = r_gsm_dec.rotate_map(rotated_point_source_at_zenith_sky_ra_512)
+            #rotated_point_source_at_zenith_sky_ra_dec_512 = r_gsm_dec.rotate_map(rotated_point_source_at_zenith_sky_ra_512)
+            rotated_point_source_at_zenith_sky_ra_dec_512 = r_pt_src_ra_dec.rotate_map(point_source_at_zenith_sky_512)
             
             plt.clf()
             map_title=""
@@ -15795,6 +15810,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             figmap.savefig(fig_name)
             print("saved %s" % fig_name)    
               
+
             
             plt.clf()
             map_title=""
@@ -15806,32 +15822,35 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             print("saved %s" % fig_name)  
             
             
-            #convert to celestial coords
-            rotated_gsm_C_512 = r_gsm_C.rotate_map(gsm_map_512)
+            ##convert to celestial coords
+            #rotated_gsm_C_512 = r_gsm_C.rotate_map(gsm_map_512)
 
-            plt.clf()
-            map_title=""
-            ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            hp.mollview(map=rotated_gsm_C_512,rot=(0,90,0),title=map_title)
-            fig_name="check2_gsm_celestial.png" 
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)
+            #plt.clf()
+            #map_title=""
+            #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            #hp.mollview(map=rotated_gsm_C_512,rot=(0,0,0),title=map_title)
+            #fig_name="check2_gsm_celestial.png" 
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print("saved %s" % fig_name)
             
             #rotate the sky insted of the beams (cause beams are a cube per ant)
-            rotated_gsm_C_ra_512 = r_gsm_ra.rotate_map(rotated_gsm_C_512)
+            #rotated_gsm_C_ra_512 = r_gsm_ra.rotate_map(rotated_gsm_C_512)
 
-            plt.clf()
-            map_title=""
-            ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-            hp.mollview(map=rotated_gsm_C_ra_512,rot=(0,90,0),title=map_title)
-            fig_name="check3_gsm_rot_ra.png" 
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)         
+            #plt.clf()
+            #map_title=""
+            #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            #hp.mollview(map=rotated_gsm_C_ra_512,rot=(0,0,0),title=map_title)
+            #fig_name="check3_gsm_rot_ra.png" 
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #print("saved %s" % fig_name)         
             
             
-            rotated_gsm_C_ra_dec_512 = r_gsm_dec.rotate_map(rotated_gsm_C_ra_512)
+            #rotated_gsm_C_ra_dec_512 = r_gsm_dec.rotate_map(rotated_gsm_C_ra_512)
+            rotated_gsm_C_ra_dec_512 = r_gsm_C_ra_dec.rotate_map(gsm_map_512)
+
+
 
             plt.clf()
             map_title=""
@@ -15852,7 +15871,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             print("saved %s" % fig_name)
-
+            
             
             #make a cube with copies of tsky, dimensions (npix,test_n_ants)
             gsm_repeats_array = np.tile(gsm_map, (test_n_ants,1))
@@ -15862,8 +15881,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             zenith_point_source_repeats_array = np.transpose(zenith_point_source_repeats_array)
             
             unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
-
-               
+            
             start_index = 0
             end_index = start_index + (test_n_ants-1)
             for ant_index_1 in range(0,test_n_ants):
@@ -15945,7 +15963,6 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                figmap.savefig(fig_name)
                print("saved %s" % fig_name)               
 
-               
                ##phase sanity check?
                #power_pattern_cube_phase = np.angle(power_pattern_cube)
                #power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] = power_pattern_cube_phase[power_pattern_cube_phase < -np.pi] + (2 * np.pi)  
@@ -15967,23 +15984,21 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                #font = ImageFont.truetype('FreeSans.ttf',30)
                #draw.text((10, 10),"%0.3f MHz\n  %s %s " % (freq_MHz,ant_name_1,ant_name_2),(0,0,0),font=font)
                #img.save("%s" % fig_name)
-               
 
-               
                E_pos_ant1 = float(lines[ant_index_1].split()[4])
                N_pos_ant1 = float(lines[ant_index_1].split()[5])
                U_pos_ant1 = 0.
+               
                
                E_pos_array_ant2 = np.asarray([ant_string.split()[4] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
                N_pos_array_ant2 = np.asarray([ant_string.split()[5] for ant_string in lines[ant_index_1:test_n_ants]],dtype=float)
                U_pos_array_ant2 = N_pos_array_ant2 * 0.
 
                x_diff,y_diff,z_diff = calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_array_ant2,N_pos_ant1,N_pos_array_ant2,U_pos_ant1,U_pos_array_ant2)
-                              
-
+               
                if (pol_index==0):
                   #now need delta_x and delta_y (difference in x and x pos for each antenna wrt antenna index 0)
-                  uu_sub_array,vv_sub_array,ww_sub_array = calc_uvw(x_diff,y_diff,z_diff,wavelength,hourangle=0.,declination=mwa_latitude_rad)
+                  uu_sub_array,vv_sub_array,ww_sub_array = calc_uvw(x_diff,y_diff,z_diff,freq_MHz,hourangle=0.,declination=mwa_latitude_rad)
                   #uvw calcs from: https://web.njit.edu/~gary/728/Lecture6.html
                   #see also https://www.atnf.csiro.au/research/radio-school/2014/talks/ATNF2014-Advanced.pdf
                   #also see CASA coord convention doc https://casa.nrao.edu/Memos/CoordConvention.pdf
@@ -16059,9 +16074,9 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             np.save(gsm_auto_array_filename,gsm_auto_array)
             np.save(zenith_point_source_auto_array_filename,zenith_point_source_auto_array)
             if (pol_index==0 and freq_MHz_index==0):
-               print(uu_array)
-               print(vv_array)
-               print(ww_array)
+               #print(uu_array)
+               #print(vv_array)
+               #print(ww_array)
                np.save(uu_array_filename,uu_array)
                np.save(vv_array_filename,vv_array)
                np.save(ww_array_filename,ww_array)
@@ -16198,7 +16213,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          #print("visibilities_shape")
          #print(visibilities_shape)
 
-def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt'):
+def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',pt_source=False):
    lst_hrs = float(lst_hrs)
    lst_deg = lst_hrs * 15.
    with open(antenna_layout_filename) as f:
@@ -16216,6 +16231,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
   
    
    for freq_MHz in freq_MHz_list:
+      wavelength = 300./freq_MHz
       for pol in ['X']:
          gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
          gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
@@ -16236,9 +16252,11 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          
          zenith_point_source_auto_array = np.load(zenith_point_source_auto_array_filename)
          baseline_number_array = np.load(baseline_number_array_filename)
-         uu_array_m = np.load(uu_array_filename)
-         vv_array_m = np.load(vv_array_filename)
-         ww_array_m = np.load(ww_array_filename)
+         #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
+         #swapping uu and vv and making the new vv negative fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
+         uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
+         vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
+         ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
          
          #print(uu_array_m)
          #print(vv_array_m)
@@ -16250,11 +16268,13 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          #print(gsm_cross_visibility_imag_array[0:10])
          
          ##GSM:
-         #auto_array = np.load(gsm_auto_array_filename)
-         #cross_visibility_complex_array = gsm_cross_visibility_real_array + 1j*gsm_cross_visibility_imag_array
-         #Try point source instead
-         auto_array = np.load(zenith_point_source_auto_array_filename)
-         cross_visibility_complex_array = zenith_point_source_cross_visibility_real_array + 1j*zenith_point_source_cross_visibility_imag_array
+         if not pt_source:
+            auto_array = np.load(gsm_auto_array_filename)
+            cross_visibility_complex_array = gsm_cross_visibility_real_array + 1j*gsm_cross_visibility_imag_array
+         else:
+            #Try point source instead
+            auto_array = np.load(zenith_point_source_auto_array_filename)
+            cross_visibility_complex_array = zenith_point_source_cross_visibility_real_array + 1j*zenith_point_source_cross_visibility_imag_array
          
          cross_visibility_real_array = np.real(cross_visibility_complex_array)
          cross_visibility_imag_array = np.imag(cross_visibility_complex_array)
@@ -16268,10 +16288,9 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          
          
          
-         #miriad wants u.v.w in units of seconds, but it divides by c itself!
-         uu_array = uu_array_m #/ c
-         vv_array = vv_array_m #/ c
-         ww_array = ww_array_m #/ c
+         #miriad wants u.v.w in units of seconds, but it divides by c itself! (does it also divide by wavelength?) ... nanosecs?
+         #i am lost, but maybe there is hope here: https://github.com/HERA-Team/aipy/blob/main/doc/source/tutorial.rst
+
  
          #print(c)
          #print(uu_array)
@@ -16367,15 +16386,17 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          uv['systemp'] = 1.0
          
          
+         #need to set the x,y,z positions of the antennas properly and then use the generate uvw to get the uvws to write.
          beam = a.phs.Beam(FREQ_GHz)
          ants = []
          for ant_string in lines:
-            x_pos = ant_string.split()[4]
-            y_pos = ant_string.split()[5]
-            z_pos = 0.
+            E_pos = float(ant_string.split()[4])
+            N_pos = float(ant_string.split()[5])
+            U_pos = 0.
+            x_pos,y_pos,z_pos = calc_x_y_z_pos_from_E_N_U(E_pos,N_pos,U_pos)
             ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
-
-         aa = a.phs.AntennaArray(ants=ants,location=("-26:42:11.23", "116:40:14.07"))
+         
+         aa = a.phs.AntennaArray(ants=ants,location=("116:40:14.07","-26:42:11.23"))
          aa.set_jultime(eda2_astropy_time.jd)
          uv['lst'] = float(aa.sidereal_time())
          uv['antpos'] = np.arange(256*3,dtype='d')
@@ -16395,11 +16416,19 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
             uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
             #print(uvw_array)
             ant1,ant2 = decode_baseline(baseline_number)
-            print(baseline_number)
-            print(ant1,ant2)
-            #LOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
+            #uvw = aa.gen_uvw(ant1,ant2)
+            #print(uvw.shape)
+            #print(uvw)
+            #uvw_array = [uvw[0,0,0],uvw[1,0,0],uvw[2,0,0]]
+            #print(baseline_number)
             #print(ant1,ant2)
+            #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
+            #I think I can just add one to the antenna indices ... nope
             uvw_12 = np.array(uvw_array, dtype=np.double)
+            if baseline_number_index==0:
+               print('uvw')
+               print(uvw_12)
+               u_in = uvw_12[0]
             preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
             uv.write(preamble,cross_vis)
          
@@ -16419,7 +16448,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          cmd = "rm -rf %s %s" % (map_name,beam_name)
          print(cmd)
          os.system(cmd)
-         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (mir_file,map_name,beam_name)
+         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx" % (mir_file,map_name,beam_name)
          print(cmd)
          os.system(cmd) 
          
@@ -16430,8 +16459,6 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          #print(check_uv['antpos'])
          print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
         
-         
-         
          ##export uvfits
          cmd = "rm -rf %s" % (mir_file_uvfits_name)
          print(cmd)
@@ -16449,44 +16476,136 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
          #print(info_string)
          uvtable = hdulist[0].data
-         UU_s_array = uvtable['UU']
-         VV_s_array = uvtable['VV']
-         WW_s_array = uvtable['WW']
-         print(UU_s_array[0:3])
-         print(VV_s_array[0:3])
-         print(WW_s_array[0:3])
-         baseline = uvtable['baseline']
-         print(len(baseline))
-         print(np.max(baseline))
-         print(np.min(baseline))
-         sys.exit()
          uvtable_header = hdulist[0].header
          hdulist.close()
-         visibilities = uvtable['DATA']
-         visibilities_shape = visibilities.shape
-         #print("visibilities_shape")
-         #print(visibilities_shape)
-          
+         sim_UU_s_array = uvtable['UU']
+         sim_VV_s_array = uvtable['VV']
+         sim_WW_s_array = uvtable['WW']
+         sim_baselines = uvtable['baseline']
+         sim_visibilities = uvtable['DATA']
+         sim_visibilities_shape = sim_visibilities.shape
+         print('sim_UU_s_array')
+         print(sim_UU_s_array)
+         sim_UU_m_array = sim_UU_s_array * c
+         print('sim_UU_m_array')
+         print(sim_UU_m_array)
+         u_in_miriad = sim_UU_s_array[0]
+         ratio_u_in = u_in/u_in_miriad
+         print('ratio_u_in')
+         print(ratio_u_in)
+         print("sim visibilities_shape")
+         print(sim_visibilities_shape)
+         #print(len(sim_baseline))
+         #print(len(sim_UU_s_array))
+         #convert from miriad baseline numbers
+         #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
+         converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
+         converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
+         converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
+         #print(converted_sim_baselines)
+
+
          #Lets look at some data at the same LST
          uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
          print("%s" % uvfits_filename)
          hdulist = fits.open(uvfits_filename)
          #hdulist.info()
          info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
          #print(info_string)
          uvtable = hdulist[0].data
-         UU_s_array = uvtable['UU']
-         VV_s_array = uvtable['VV']
-         WW_s_array = uvtable['WW']
-         print(UU_s_array[0:3])
-         print(VV_s_array[0:3])
-         print(WW_s_array[0:3])
          uvtable_header = hdulist[0].header
          hdulist.close()
-         visibilities = uvtable['DATA']
-         visibilities_shape = visibilities.shape
-         #print("visibilities_shape")
-         #print(visibilities_shape)
+         data_UU_s_array = uvtable['UU']
+         data_VV_s_array = uvtable['VV']
+         data_WW_s_array = uvtable['WW']
+         data_baselines = uvtable['baseline']
+         data_visibilities = uvtable['DATA']
+         data_visibilities_shape = data_visibilities.shape
+         print("data visibilities_shape")
+         print(data_visibilities_shape)
+         #print(len(data_baseline))
+         print('data_UU_s_array')
+         print(data_UU_s_array)
+         data_UU_m_array = data_UU_s_array * c
+         print('data_UU_m_array')
+         print(data_UU_m_array)
+         #print(np.max(data_baselines))
+         #print(np.min(data_baselines))
+
+         #make wsclean image to compare:
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -auto-threshold 5 -scale %s -pol xx,yy -data-column CORRECTED_DATA -channels-out 32 %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+         print(cmd)
+         os.system(cmd) 
+         
+         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
+         #uvfits_vis_name = 'test_eda_actual.vis'
+         #cmd = "rm -rf %s" % (uvfits_vis_name)
+         #print(cmd)
+         #os.system(cmd)
+         #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
+         #print(cmd)
+         #os.system(cmd)
+         ###check by image
+         #map_name = 'test_eda_actual.image'
+         #beam_name = 'test_eda_actual.beam'
+         #cmd = "rm -rf %s %s" % (map_name,beam_name)
+         #print(cmd)
+         #os.system(cmd)
+         #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
+         #print(cmd)
+         #os.system(cmd)
+
+         #Cant work out this baseline number stuff
+         #find common indices for baseline numbers
+         sim_common_inds = np.in1d(converted_sim_baselines,data_baselines)
+         #print(sim_common_inds)
+         #print(len(sim_common_inds))
+         sim_common_UU_s_array = sim_UU_s_array[sim_common_inds]
+         sim_common_VV_s_array = sim_VV_s_array[sim_common_inds]
+         sim_common_baselines_array = converted_sim_baselines[sim_common_inds]
+         data_common_inds = np.in1d(data_baselines,converted_sim_baselines)
+         #print(data_common_inds)
+         #print(len(data_common_inds))
+         data_common_UU_s_array = data_UU_s_array[data_common_inds]
+         data_common_VV_s_array = data_VV_s_array[data_common_inds]
+         data_common_baselines_array = data_baselines[data_common_inds]
+         #print(sim_common_VV_s_array[0:4])
+         #print(data_common_VV_s_array[0:4])         
+         
+         #Try just looking for u,v that are very simliar
+         print(np.max(data_UU_s_array))
+         print(np.min(data_UU_s_array))
+         print(np.max(sim_UU_s_array))
+         print(np.min(sim_UU_s_array))
+         
+         data_max_UU_index = np.argmax(data_UU_s_array)
+         print('data_max_UU_index')
+         print(data_max_UU_index)
+
+         data_max_UU_vis_value = data_visibilities[data_max_UU_index,0,0,0,15,3,0]
+         print('data_max_UU_vis_value')
+         print(data_max_UU_vis_value)
+         
+         sim_max_UU_index = np.argmax(sim_UU_s_array)
+         print('sim_max_UU_index')
+         print(sim_max_UU_index)        
+         
+         sim_max_UU_vis_value = sim_visibilities[sim_max_UU_index,0,0,0,0,0]
+         print('sim_max_UU_vis_value')
+         print(sim_max_UU_vis_value)  
+         
+         max_ratio = np.max(data_UU_s_array)/np.max(sim_UU_s_array)
+         min_ratio = np.min(data_UU_s_array)/np.min(sim_UU_s_array)
+         print(max_ratio)
+         print(min_ratio)
+         
+         max_ratio = np.max(data_VV_s_array)/np.max(sim_VV_s_array)
+         min_ratio = np.min(data_VV_s_array)/np.min(sim_VV_s_array)
+         print(max_ratio)
+         print(min_ratio)
          
          #uv = a.miriad.UV(mir_file)
          #for p, d in uv.all():
@@ -16495,28 +16614,67 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
 
 def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
    #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
-   x_pos_ant1 = -1*N_pos_ant1*np.sin(mwa_latitude_rad) + U_pos_ant1*np.cos(mwa_latitude_rad)
-   y_pos_ant1 = E_pos_ant1 
-   z_pos_ant1 = N_pos_ant1*np.cos(mwa_latitude_rad) + U_pos_ant1*np.sin(mwa_latitude_rad)
-                 
-   x_pos_ant2 = -1*N_pos_ant2*np.sin(mwa_latitude_rad) + U_pos_ant2*np.cos(mwa_latitude_rad)
-   y_pos_ant2 = E_pos_ant2
-   z_pos_ant2 = N_pos_ant2*np.cos(mwa_latitude_rad) + U_pos_ant2*np.sin(mwa_latitude_rad)
-                          
-   x_diff = x_pos_ant1 - x_pos_ant2
-   y_diff = y_pos_ant1 - y_pos_ant2
-   z_diff = z_pos_ant1 - z_pos_ant2
    
+   E_diff = E_pos_ant2 - E_pos_ant1
+   N_diff = N_pos_ant2 - N_pos_ant1
+   U_diff = U_pos_ant2 - U_pos_ant1
+   
+   x_diff = -1*N_diff*np.sin(mwa_latitude_rad) + U_diff*np.cos(mwa_latitude_rad)
+   y_diff = E_diff 
+   z_diff = N_diff*np.cos(mwa_latitude_rad) + U_diff*np.sin(mwa_latitude_rad)
+                 
+   #x_pos_ant2 = -1*N_pos_ant2*np.sin(mwa_latitude_rad) + U_pos_ant2*np.cos(mwa_latitude_rad)
+   #y_pos_ant2 = E_pos_ant2
+   #z_pos_ant2 = N_pos_ant2*np.cos(mwa_latitude_rad) + U_pos_ant2*np.sin(mwa_latitude_rad)
+
    return(x_diff,y_diff,z_diff)
 
-def calc_uvw(x_diff,y_diff,z_diff,wavelength,hourangle=0.,declination=mwa_latitude_rad):
+def calc_x_y_z_pos_from_E_N_U(E_pos_ant,N_pos_ant,U_pos_ant):
+   #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
+   x_pos_ant = -1*N_pos_ant*np.sin(mwa_latitude_rad) + U_pos_ant*np.cos(mwa_latitude_rad)
+   y_pos_ant = E_pos_ant
+   z_pos_ant = N_pos_ant*np.cos(mwa_latitude_rad) + U_pos_ant*np.sin(mwa_latitude_rad)
+                 
+   return(x_pos_ant,y_pos_ant,z_pos_ant)
+   
+def calc_uvw(x_diff,y_diff,z_diff,freq_MHz,hourangle=0.,declination=mwa_latitude_rad):
    #https://web.njit.edu/~gary/728/Lecture6.html
    print("calculating uvws")
-   uu_array = (np.sin(hourangle)*x_diff + np.cos(hourangle)*y_diff + 0.*z_diff) #* (1./wavelength)
-   vv_array = (-np.sin(declination)*np.cos(hourangle)*x_diff + np.sin(declination)*np.sin(hourangle)*y_diff + np.cos(declination)*z_diff) #* (1./wavelength)
-   ww_array = (np.cos(declination)*np.cos(hourangle)*x_diff - np.cos(declination)*np.sin(hourangle)*y_diff + np.sin(declination)*z_diff) #* (1./wavelength)
+   wavelength = 300./freq_MHz
+   x_diff_lambda = x_diff/wavelength
+   y_diff_lambda = y_diff/wavelength
+   z_diff_lambda = z_diff/wavelength
+   
+   uu_array = (np.sin(hourangle)*x_diff_lambda + np.cos(hourangle)*y_diff_lambda + 0.*z_diff_lambda) #* (1./wavelength)
+   vv_array = (-np.sin(declination)*np.cos(hourangle)*x_diff_lambda + np.sin(declination)*np.sin(hourangle)*y_diff_lambda + np.cos(declination)*z_diff_lambda) #* (1./wavelength)
+   ww_array = (np.cos(declination)*np.cos(hourangle)*x_diff_lambda - np.cos(declination)*np.sin(hourangle)*y_diff_lambda + np.sin(declination)*z_diff_lambda) #* (1./wavelength)
    return(uu_array,vv_array,ww_array)
-           
+
+#from Jack
+def enh2xyz(east,north,height,latitiude):
+    sl = sin(latitiude)
+    cl = cos(latitiude)
+    X = -north*sl + height*cl
+    Y = east
+    Z = north*cl + height*sl
+    return X,Y,Z
+    
+def get_uvw_freq(x_length=None,y_length=None,z_length=None,dec=None,ha=None,freq=None):
+    '''Takes the baseline length in metres and uses the frequency'''
+    
+    scale = freq / VELC
+    X = x_length * scale
+    Y = y_length * scale
+    Z = z_length * scale
+    
+    u = sin(ha)*X + cos(ha)*Y
+    v = -sin(dec)*cos(ha)*X + sin(dec)*sin(ha)*Y + cos(dec)*Z
+    w = cos(dec)*cos(ha)*X - cos(dec)*sin(ha)*Y + sin(dec)*Z
+    
+    return u,v,w
+    
+    
+               
 def get_antenna_table_from_uvfits(uvfits_name):
    print("getting antenna table from %s " % uvfits_name)
    with fits.open(uvfits_name) as hdulist:
@@ -16928,7 +17086,8 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 chan_num = 0
 plot_from_saved = False
 #simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
-write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+pt_source=False
+write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
 sys.exit()
 
 #ant_index = 0
