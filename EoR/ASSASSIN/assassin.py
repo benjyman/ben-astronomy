@@ -16512,10 +16512,10 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
          print(cmd)
          os.system(cmd)
-         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx" % (mir_file,map_name,beam_name)
+         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx robust=0" % (mir_file,map_name,beam_name)
          print(cmd)
          os.system(cmd) 
-         cmd = "clean map=%s beam=%s niters=1000 imsize=512 cell=900 stokes=xx out=%s" % (map_name,beam_name,map_name_clean)
+         cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=xx out=%s" % (map_name,beam_name,map_name_clean)
          print(cmd)
          os.system(cmd) 
          cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
@@ -16638,7 +16638,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          if pol=='X':
             wsclean_imsize = '512'
             wsclean_scale = '900asec'
-            cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -niter 1000 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+            cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
             print(cmd)
             os.system(cmd) 
          
@@ -16660,59 +16660,15 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          #print(cmd)
          #os.system(cmd)
 
-         #Cant work out this baseline number stuff
-         #find common indices for baseline numbers
-         sim_common_inds = np.in1d(converted_sim_baselines,data_baselines)
-         #print(sim_common_inds)
-         #print(len(sim_common_inds))
-         sim_common_UU_s_array = sim_UU_s_array[sim_common_inds]
-         sim_common_VV_s_array = sim_VV_s_array[sim_common_inds]
-         sim_common_baselines_array = converted_sim_baselines[sim_common_inds]
-         data_common_inds = np.in1d(data_baselines,converted_sim_baselines)
-         #print(data_common_inds)
-         #print(len(data_common_inds))
-         data_common_UU_s_array = data_UU_s_array[data_common_inds]
-         data_common_VV_s_array = data_VV_s_array[data_common_inds]
-         data_common_baselines_array = data_baselines[data_common_inds]
-         #print(sim_common_VV_s_array[0:4])
-         #print(data_common_VV_s_array[0:4])         
-         
-         #Try just looking for u,v that are very simliar
-         print(np.max(data_UU_s_array))
-         print(np.min(data_UU_s_array))
-         print(np.max(sim_UU_s_array))
-         print(np.min(sim_UU_s_array))
-         
-         data_max_UU_index = np.argmax(data_UU_s_array)
-         print('data_max_UU_index')
-         print(data_max_UU_index)
 
-         data_max_UU_vis_value = data_visibilities[data_max_UU_index,0,0,0,15,3,0]
-         print('data_max_UU_vis_value')
-         print(data_max_UU_vis_value)
+         #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
+         #antennas, so this alleviates the problem of the 255 limit for casa/ms
+         #Cant work out this baseline number stuff, just look at u,v values
+         #find common indices 
          
-         sim_max_UU_index = np.argmax(sim_UU_s_array)
-         print('sim_max_UU_index')
-         print(sim_max_UU_index)        
+
          
-         sim_max_UU_vis_value = sim_visibilities[sim_max_UU_index,0,0,0,0,0]
-         print('sim_max_UU_vis_value')
-         print(sim_max_UU_vis_value)  
-         
-         max_ratio = np.max(data_UU_s_array)/np.max(sim_UU_s_array)
-         min_ratio = np.min(data_UU_s_array)/np.min(sim_UU_s_array)
-         print(max_ratio)
-         print(min_ratio)
-         
-         max_ratio = np.max(data_VV_s_array)/np.max(sim_VV_s_array)
-         min_ratio = np.min(data_VV_s_array)/np.min(sim_VV_s_array)
-         print(max_ratio)
-         print(min_ratio)
-         
-         #uv = a.miriad.UV(mir_file)
-         #for p, d in uv.all():
-         #   print(p, uv['pol'])
-         #   print(d)
+
 
 def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
    #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
@@ -17187,7 +17143,7 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
 plot_from_saved = False
-simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 pt_source=False
 write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
 sys.exit()
