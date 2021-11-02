@@ -16491,15 +16491,16 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                print(uvw_12)
                u_in = uvw_12[0]
             preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
-            uv.write(preamble,cross_vis)
+            if ant2<255 and ant1<255:
+               uv.write(preamble,cross_vis)
          
-         for auto_index,auto in enumerate(auto_array):
-            auto_power = np.asarray([auto])
-            auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-            uvw_array = [0,0,0]
-            uvw_11 = np.array(uvw_array, dtype=np.double)
-            preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
-            uv.write(preamble,auto_vis)
+         #for auto_index,auto in enumerate(auto_array):
+         #   auto_power = np.asarray([auto])
+         #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+         #   uvw_array = [0,0,0]
+         #   uvw_11 = np.array(uvw_array, dtype=np.double)
+         #   preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
+         #   uv.write(preamble,auto_vis)
         
          del(uv)
         
@@ -16525,32 +16526,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          print(cmd)
          os.system(cmd)
 
-         #verify with wsclean - too many antennas - 255 max?
-         #read in the uvfits file
-         #casa_cmd_filename = 'import_uvfits.sh'
-         #cmd = "rm -rf %s" % (mir_file_ms_name)
-         #print(cmd)
-         #os.system(cmd)
-         #      
-         #cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
-         #print(cmd)
-         #os.system(cmd)
-         #
-         #with open(casa_cmd_filename,'w') as f:
-         #   f.write(cmd)
-         #     
-         #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-         #print(cmd)
-         #os.system(cmd)
-         #
-         #if pol=='X':
-         #   wsclean_imsize = '512'
-         #   wsclean_scale = '900asec'
-         #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         #   print(cmd)
-         #   os.system(cmd) 
-         #
-         #sys.exit()   
+
       
          check_uv = a.miriad.UV(mir_file)
          #print(check_uv.items())
@@ -16566,7 +16542,6 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
          print(cmd)
          os.system(cmd)
-
         
          #look at the uvfits file
          uvfits_filename = mir_file_uvfits_name
@@ -16584,17 +16559,36 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          sim_baselines = uvtable['baseline']
          sim_visibilities = uvtable['DATA']
          sim_visibilities_shape = sim_visibilities.shape
-         print('sim_UU_s_array')
-         print(sim_UU_s_array)
-         sim_UU_m_array = sim_UU_s_array * c
-         print('sim_UU_m_array')
-         print(sim_UU_m_array)
-         u_in_miriad = sim_UU_s_array[0]
-         ratio_u_in = u_in/u_in_miriad
-         print('ratio_u_in')
-         print(ratio_u_in)
-         print("sim visibilities_shape")
-         print(sim_visibilities_shape)
+         #print('sim_UU_s_array')
+         #print(sim_UU_s_array)
+         #sim_UU_m_array = sim_UU_s_array * c
+         #print('sim_UU_m_array')
+         #print(sim_UU_m_array)
+         #u_in_miriad = sim_UU_s_array[0]
+         #ratio_u_in = u_in/u_in_miriad
+         #print('ratio_u_in')
+         #print(ratio_u_in)
+         #print("sim visibilities_shape")
+         #print(sim_visibilities_shape)
+         print('sim_baselines')
+         print(len(sim_baselines))
+         print(np.max(sim_baselines))
+         
+         #what is going on with these baselines
+         for baseline_num_index,baseline_num in enumerate(sim_baselines):
+            #print(sim_baselines[index])
+            if baseline_num > (2**16):
+               print(baseline_num)
+               ant1,ant2 = decode_baseline(baseline_num)
+               print(ant1,ant2)
+         
+         #got it to work by not adding the last antenna i.e above:
+         #if ant2<255 and ant1<255:
+               #uv.write(preamble,cross_vis)
+         #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
+         
+         
+         
          #print(len(sim_baseline))
          #print(len(sim_UU_s_array))
          #convert from miriad baseline numbers
@@ -16604,6 +16598,35 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
          #print(converted_sim_baselines)
 
+         #try to read the data in to casa as a ms
+         #verify with wsclean - too many antennas - 255 max?
+         #read in the uvfits file
+         casa_cmd_filename = 'import_uvfits.sh'
+         cmd = "rm -rf %s" % (mir_file_ms_name)
+         print(cmd)
+         os.system(cmd)
+               
+         cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
+         print(cmd)
+         os.system(cmd)
+         
+         with open(casa_cmd_filename,'w') as f:
+            f.write(cmd)
+              
+         cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+         print(cmd)
+         os.system(cmd)
+         
+         sys.exit()
+         
+         #if pol=='X':
+         #   wsclean_imsize = '512'
+         #   wsclean_scale = '900asec'
+         #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         #   print(cmd)
+         #   os.system(cmd) 
+         #
+         #sys.exit()   
 
          #Lets look at some data at the same LST
          uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
