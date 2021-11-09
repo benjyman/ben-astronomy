@@ -56,7 +56,13 @@ iers.conf.auto_download = False
 #from astroplan import download_IERS_A
 #download_IERS_A()
 
+#i dont think pyrap works under python 3 (old) - use Kariukis ms_utils instead
 #import pyrap.tables as pt
+#from pyrap.tables import *
+#import pyrap
+sys.path.append("/md0/code/git/ben-astronomy/ms")
+from ms_utils import *
+
 import ephem
 
 from scipy.io import loadmat
@@ -16292,6 +16298,11 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
    
    for freq_MHz in freq_MHz_list:
       wavelength = 300./freq_MHz
+      
+      #initiate the miriad uv file outside the pol loop
+      print("initiate the miriad uv file outside the pol loop")
+      sys.exit()
+      
       for pol in ['X','Y']:
          gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
          gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
@@ -16412,7 +16423,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          uv.add_var('systemp', 'r')
          
          uv['latitud'] = mwa_latitude_deg*np.pi/180.0
-         uv['npol'] = 1
+         uv['npol'] = 4
          uv['nspect'] = 1
          uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
          uv['vsource'] = 0.0
@@ -16436,7 +16447,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          uv['tscale'] = 0.0
          uv['antpos'] = 0.0
          uv['telescop'] = 'EDA2_sim'
-         uv['pol'] = -5
+         #uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
          uv['coord'] = 0.0
          uv['veldop'] = 0.0
          uv['lst'] = 0.0
@@ -16492,202 +16503,252 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                u_in = uvw_12[0]
             preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
             if ant2<255 and ant1<255:
-               uv.write(preamble,cross_vis)
+               if pol=='X':
+                  uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
+                  uv.write(preamble,cross_vis)
+                  uv['pol'] = -7
+                  uv.write(preamble,cross_vis*0.)
+                  uv['pol'] = -8
+                  uv.write(preamble,cross_vis*0.)
+               else:
+                  uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
+                  uv.write(preamble,cross_vis)
          
-         #for auto_index,auto in enumerate(auto_array):
-         #   auto_power = np.asarray([auto])
-         #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-         #   uvw_array = [0,0,0]
-         #   uvw_11 = np.array(uvw_array, dtype=np.double)
-         #   preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
-         #   uv.write(preamble,auto_vis)
-        
-         del(uv)
-        
-         ##check by image
-         map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,pol)
-         beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,pol)
-         map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,pol)
-         map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,pol)
-         map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,pol)
-         cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
-         print(cmd)
-         os.system(cmd)
-         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx robust=0" % (mir_file,map_name,beam_name)
-         print(cmd)
-         os.system(cmd) 
-         cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=xx out=%s" % (map_name,beam_name,map_name_clean)
-         print(cmd)
-         os.system(cmd) 
-         cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
-         print(cmd)
-         os.system(cmd)      
-         cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
-         print(cmd)
-         os.system(cmd)
+            
+         
+      #for auto_index,auto in enumerate(auto_array):
+      #   auto_power = np.asarray([auto])
+      #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+      #   uvw_array = [0,0,0]
+      #   uvw_11 = np.array(uvw_array, dtype=np.double)
+      #   preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
+      #   uv.write(preamble,auto_vis)
+      
+      del(uv)
+      
+      ##check by image
+      map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,pol)
+      beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,pol)
+      map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,pol)
+      map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,pol)
+      map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,pol)
+      cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
+      print(cmd)
+      os.system(cmd)
+      cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx robust=0" % (mir_file,map_name,beam_name)
+      print(cmd)
+      os.system(cmd) 
+      cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=xx out=%s" % (map_name,beam_name,map_name_clean)
+      print(cmd)
+      os.system(cmd) 
+      cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
+      print(cmd)
+      os.system(cmd)      
+      cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
+      print(cmd)
+      os.system(cmd)
 
 
       
-         check_uv = a.miriad.UV(mir_file)
-         #print(check_uv.items())
-         #print(check_uv.vars())
-         #print(check_uv['nchan'])
-         #print(check_uv['antpos'])
-         print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
-        
-         ##export uvfits
-         cmd = "rm -rf %s" % (mir_file_uvfits_name)
+      check_uv = a.miriad.UV(mir_file)
+      #print(check_uv.items())
+      #print(check_uv.vars())
+      #print(check_uv['nchan'])
+      #print(check_uv['antpos'])
+      print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
+
+      
+      ##export uvfits
+      cmd = "rm -rf %s" % (mir_file_uvfits_name)
+      print(cmd)
+      os.system(cmd)
+      cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #look at the uvfits file
+      uvfits_filename = mir_file_uvfits_name
+      print("%s" % uvfits_filename)
+      hdulist = fits.open(uvfits_filename)
+      #hdulist.info()
+      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #print(info_string)
+      uvtable = hdulist[0].data
+      uvtable_header = hdulist[0].header
+      hdulist.close()
+      sim_UU_s_array = uvtable['UU']
+      sim_VV_s_array = uvtable['VV']
+      sim_WW_s_array = uvtable['WW']
+      sim_baselines = uvtable['baseline']
+      sim_visibilities = uvtable['DATA']
+      sim_visibilities_shape = sim_visibilities.shape
+      #print('sim_UU_s_array')
+      #print(sim_UU_s_array)
+      #sim_UU_m_array = sim_UU_s_array * c
+      #print('sim_UU_m_array')
+      #print(sim_UU_m_array)
+      #u_in_miriad = sim_UU_s_array[0]
+      #ratio_u_in = u_in/u_in_miriad
+      #print('ratio_u_in')
+      #print(ratio_u_in)
+      print("sim visibilities_shape")
+      print(sim_visibilities_shape)
+      print('sim_baselines')
+      print(len(sim_baselines))
+      print(np.max(sim_baselines))
+      
+      sys.exit()
+      
+      #what is going on with these baselines
+      for baseline_num_index,baseline_num in enumerate(sim_baselines):
+         #print(sim_baselines[index])
+         if baseline_num > (2**16):
+            print(baseline_num)
+            ant1,ant2 = decode_baseline(baseline_num)
+            print(ant1,ant2)
+      
+      #got it to work by not adding the last antenna i.e above:
+      #if ant2<255 and ant1<255:
+            #uv.write(preamble,cross_vis)
+      #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
+      
+      
+      
+      #print(len(sim_baseline))
+      #print(len(sim_UU_s_array))
+      #convert from miriad baseline numbers
+      #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
+      converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
+      converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
+      converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
+      #print(converted_sim_baselines)
+
+      #try to read the data in to casa as a ms
+      #verify with wsclean - too many antennas - 255 max?
+      #read in the uvfits file
+      casa_cmd_filename = 'import_uvfits.sh'
+      cmd = "rm -rf %s" % (mir_file_ms_name)
+      print(cmd)
+      os.system(cmd)
+            
+      cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
+      print(cmd)
+      os.system(cmd)
+      
+      with open(casa_cmd_filename,'w') as f:
+         f.write(cmd)
+           
+      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      print(cmd)
+      os.system(cmd)
+      
+      test_image_name = mir_file_ms_name.split('.ms')[0]
+      #try imaging the ms:
+      #if pol=='X':
+      #   wsclean_imsize = '512'
+      #   wsclean_scale = '900asec'
+      #   cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+      #   print(cmd)
+      #   os.system(cmd) 
+      
+      #try adding a model column
+      #use kariukis ms_utils
+      ms_table = table(mir_file_ms_name,readonly=False)
+      model_data = get_data(ms_table, col="DATA")
+      add_col(ms_table, "MODEL_DATA")
+      put_col(ms_table, "MODEL_DATA", model_data)
+      ms_table.close()
+
+      #try imaging the model column of the ms:
+      if pol=='X':
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
          print(cmd)
          os.system(cmd)
-         cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
+      
+      #try calibrate?
+      gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+      calibrate_options = ''
+      cmd = "rm -rf %s" % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)  
+      #calibrate
+      cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      sys.exit()
+      
+      #if pol=='X':
+      #   wsclean_imsize = '512'
+      #   wsclean_scale = '900asec'
+      #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+      #   print(cmd)
+      #   os.system(cmd) 
+      #
+      #sys.exit()   
+
+      #Lets look at some data at the same LST
+      uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+      print("%s" % uvfits_filename)
+      hdulist = fits.open(uvfits_filename)
+      #hdulist.info()
+      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      #print(info_string)
+      uvtable = hdulist[0].data
+      uvtable_header = hdulist[0].header
+      hdulist.close()
+      data_UU_s_array = uvtable['UU']
+      data_VV_s_array = uvtable['VV']
+      data_WW_s_array = uvtable['WW']
+      data_baselines = uvtable['baseline']
+      data_visibilities = uvtable['DATA']
+      data_visibilities_shape = data_visibilities.shape
+      print("data visibilities_shape")
+      print(data_visibilities_shape)
+      #print(len(data_baseline))
+      print('data_UU_s_array')
+      print(data_UU_s_array)
+      data_UU_m_array = data_UU_s_array * c
+      print('data_UU_m_array')
+      print(data_UU_m_array)
+      #print(np.max(data_baselines))
+      #print(np.min(data_baselines))
+
+      #make wsclean image to compare (no need to do twice, just image xx,yy):
+      #wsclean does not resore the cleaned image - clean is same as dirty!
+      if pol=='X':
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
          print(cmd)
-         os.system(cmd)
-        
-         #look at the uvfits file
-         uvfits_filename = mir_file_uvfits_name
-         print("%s" % uvfits_filename)
-         hdulist = fits.open(uvfits_filename)
-         #hdulist.info()
-         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         #print(info_string)
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         hdulist.close()
-         sim_UU_s_array = uvtable['UU']
-         sim_VV_s_array = uvtable['VV']
-         sim_WW_s_array = uvtable['WW']
-         sim_baselines = uvtable['baseline']
-         sim_visibilities = uvtable['DATA']
-         sim_visibilities_shape = sim_visibilities.shape
-         #print('sim_UU_s_array')
-         #print(sim_UU_s_array)
-         #sim_UU_m_array = sim_UU_s_array * c
-         #print('sim_UU_m_array')
-         #print(sim_UU_m_array)
-         #u_in_miriad = sim_UU_s_array[0]
-         #ratio_u_in = u_in/u_in_miriad
-         #print('ratio_u_in')
-         #print(ratio_u_in)
-         #print("sim visibilities_shape")
-         #print(sim_visibilities_shape)
-         print('sim_baselines')
-         print(len(sim_baselines))
-         print(np.max(sim_baselines))
-         
-         #what is going on with these baselines
-         for baseline_num_index,baseline_num in enumerate(sim_baselines):
-            #print(sim_baselines[index])
-            if baseline_num > (2**16):
-               print(baseline_num)
-               ant1,ant2 = decode_baseline(baseline_num)
-               print(ant1,ant2)
-         
-         #got it to work by not adding the last antenna i.e above:
-         #if ant2<255 and ant1<255:
-               #uv.write(preamble,cross_vis)
-         #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
-         
-         
-         
-         #print(len(sim_baseline))
-         #print(len(sim_UU_s_array))
-         #convert from miriad baseline numbers
-         #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
-         converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
-         converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
-         converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
-         #print(converted_sim_baselines)
-
-         #try to read the data in to casa as a ms
-         #verify with wsclean - too many antennas - 255 max?
-         #read in the uvfits file
-         casa_cmd_filename = 'import_uvfits.sh'
-         cmd = "rm -rf %s" % (mir_file_ms_name)
-         print(cmd)
-         os.system(cmd)
-               
-         cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
-         print(cmd)
-         os.system(cmd)
-         
-         with open(casa_cmd_filename,'w') as f:
-            f.write(cmd)
-              
-         cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-         print(cmd)
-         os.system(cmd)
-         
-         sys.exit()
-         
-         #if pol=='X':
-         #   wsclean_imsize = '512'
-         #   wsclean_scale = '900asec'
-         #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         #   print(cmd)
-         #   os.system(cmd) 
-         #
-         #sys.exit()   
-
-         #Lets look at some data at the same LST
-         uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         print("%s" % uvfits_filename)
-         hdulist = fits.open(uvfits_filename)
-         #hdulist.info()
-         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         #print(info_string)
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         hdulist.close()
-         data_UU_s_array = uvtable['UU']
-         data_VV_s_array = uvtable['VV']
-         data_WW_s_array = uvtable['WW']
-         data_baselines = uvtable['baseline']
-         data_visibilities = uvtable['DATA']
-         data_visibilities_shape = data_visibilities.shape
-         print("data visibilities_shape")
-         print(data_visibilities_shape)
-         #print(len(data_baseline))
-         print('data_UU_s_array')
-         print(data_UU_s_array)
-         data_UU_m_array = data_UU_s_array * c
-         print('data_UU_m_array')
-         print(data_UU_m_array)
-         #print(np.max(data_baselines))
-         #print(np.min(data_baselines))
-
-         #make wsclean image to compare (no need to do twice, just image xx,yy):
-         #wsclean does not resore the cleaned image - clean is same as dirty!
-         if pol=='X':
-            wsclean_imsize = '512'
-            wsclean_scale = '900asec'
-            cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-            print(cmd)
-            os.system(cmd) 
-         
-         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
-         #uvfits_vis_name = 'test_eda_actual.vis'
-         #cmd = "rm -rf %s" % (uvfits_vis_name)
-         #print(cmd)
-         #os.system(cmd)
-         #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
-         #print(cmd)
-         #os.system(cmd)
-         ###check by image
-         #map_name = 'test_eda_actual.image'
-         #beam_name = 'test_eda_actual.beam'
-         #cmd = "rm -rf %s %s" % (map_name,beam_name)
-         #print(cmd)
-         #os.system(cmd)
-         #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
-         #print(cmd)
-         #os.system(cmd)
+         os.system(cmd) 
+      
+      #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
+      #uvfits_vis_name = 'test_eda_actual.vis'
+      #cmd = "rm -rf %s" % (uvfits_vis_name)
+      #print(cmd)
+      #os.system(cmd)
+      #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
+      #print(cmd)
+      #os.system(cmd)
+      ###check by image
+      #map_name = 'test_eda_actual.image'
+      #beam_name = 'test_eda_actual.beam'
+      #cmd = "rm -rf %s %s" % (map_name,beam_name)
+      #print(cmd)
+      #os.system(cmd)
+      #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
+      #print(cmd)
+      #os.system(cmd)
 
 
-         #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
-         #antennas, so this alleviates the problem of the 255 limit for casa/ms
-         #Cant work out this baseline number stuff, just look at u,v values
-         #find common indices 
+      #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
+      #antennas, so this alleviates the problem of the 255 limit for casa/ms
+      #Cant work out this baseline number stuff, just look at u,v values
+      #find common indices 
          
 
          
