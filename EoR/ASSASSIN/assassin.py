@@ -16301,218 +16301,239 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       
       #initiate the miriad uv file outside the pol loop
       print("initiate the miriad uv file outside the pol loop")
-      sys.exit()
+      print("writing to miriad file")
+      NFFT = 1
+      SITE_LON = 116.670575
+      FREQ_GHz = np.array([freq_MHz/1000.])#np.linspace(0.000, 0.250, NFFT);
       
-      for pol in ['X','Y']:
-         gsm_cross_visibility_real_array_filename = "gsm_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-         gsm_cross_visibility_imag_array_filename = "gsm_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-         zenith_point_source_cross_visibility_real_array_filename = "zenith_point_source_cross_visibility_real_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-         zenith_point_source_cross_visibility_imag_array_filename = "zenith_point_source_cross_visibility_imag_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-                  
-         gsm_auto_array_filename = "gsm_auto_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-         zenith_point_source_auto_array_filename = "zenith_point_source_auto_array_%s_%s_%0.3f.npy" % (EDA2_obs_time,pol,freq_MHz)
-         uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
-         vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
-         ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
-         baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
-         
-         gsm_cross_visibility_real_array = np.load(gsm_cross_visibility_real_array_filename)
-         gsm_cross_visibility_imag_array = np.load(gsm_cross_visibility_imag_array_filename)        
-         zenith_point_source_cross_visibility_real_array = np.load(zenith_point_source_cross_visibility_real_array_filename)
-         zenith_point_source_cross_visibility_imag_array = np.load(zenith_point_source_cross_visibility_imag_array_filename)              
-         
-         zenith_point_source_auto_array = np.load(zenith_point_source_auto_array_filename)
-         baseline_number_array = np.load(baseline_number_array_filename)
-         #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
-         #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
-         uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
-         vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
-         ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
-         
-         #print(uu_array_m)
-         #print(vv_array_m)
-         #print(ww_array_m)
-         
-         #phase centre zenith
-         #print(np.max(ww_array_m))
-         #print(gsm_cross_visibility_real_array[0:10])
-         #print(gsm_cross_visibility_imag_array[0:10])
-         
-         ##GSM:
-         if not pt_source:
-            auto_array = np.load(gsm_auto_array_filename)
-            cross_visibility_complex_array = gsm_cross_visibility_real_array + 1j*gsm_cross_visibility_imag_array
-         else:
-            #Try point source instead
-            auto_array = np.load(zenith_point_source_auto_array_filename)
-            cross_visibility_complex_array = zenith_point_source_cross_visibility_real_array + 1j*zenith_point_source_cross_visibility_imag_array
-         
-         cross_visibility_real_array = np.real(cross_visibility_complex_array)
-         cross_visibility_imag_array = np.imag(cross_visibility_complex_array)
-         
-         
-         #not needed for zenith?
-         #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
-         #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
-         #cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
-         
-         
-         
-         
-         #miriad wants u.v.w in units of seconds, but it divides by c itself! (does it also divide by wavelength?) ... nanosecs?
-         #i am lost, but maybe there is hope here: https://github.com/HERA-Team/aipy/blob/main/doc/source/tutorial.rst
+      #timestr = time.strftime("%Y%m%d-%H%M%S")
+      
+      mir_file = "%s_%0.3f.vis" % (EDA2_obs_time,freq_MHz)
+      mir_file_uvfits_name = "%s_%0.3f.uvfits" % (EDA2_obs_time,freq_MHz)
+      mir_file_ms_name = "%s_%0.3f.ms" % (EDA2_obs_time,freq_MHz)
+      # mir_file = "test.vis"
+      cmd = "rm -rf %s" % mir_file
+      print(cmd)
+      os.system(cmd)
+      
+      print ("Writing out "+ mir_file)
+      uv = a.miriad.UV(mir_file, 'new')
+      uv['history'] = 'test file\n'
+      
+      uv.add_var('latitud','d')
+      uv.add_var('npol','i')
+      uv.add_var('nspect', 'i')
+      uv.add_var('obsdec', 'd')
+      uv.add_var('vsource', 'r')
+      uv.add_var('ischan', 'i')
+      uv.add_var('operator', 'a')
+      uv.add_var('nants', 'i')
+      uv.add_var('baseline', 'r')
+      uv.add_var('sfreq', 'd')
+      uv.add_var('inttime', 'r')
+      uv.add_var('source', 'a')
+      uv.add_var('epoch', 'r')
+      uv.add_var('version', 'a')
+      uv.add_var('ra', 'd')
+      uv.add_var('restfreq', 'd')
+      uv.add_var('nschan', 'i')
+      uv.add_var('sdf', 'd')
+      uv.add_var('corr', 'r')
+      uv.add_var('freq', 'd')
+      uv.add_var('longitu', 'd')
+      uv.add_var('nchan', 'i')
+      uv.add_var('tscale', 'r')
+      uv.add_var('antpos', 'd')
+      uv.add_var('telescop', 'a')
+      uv.add_var('pol', 'i')
+      uv.add_var('coord', 'd')
+      uv.add_var('veldop', 'r')
+      uv.add_var('lst', 'd')
+      uv.add_var('time', 'd')
+      uv.add_var('dec', 'd')
+      uv.add_var('obsra', 'd')
+      uv.add_var('jyperk', 'r')
+      uv.add_var('systemp', 'r')
+      
+      uv['latitud'] = mwa_latitude_deg*np.pi/180.0
+      uv['npol'] = 4
+      uv['nspect'] = 1
+      uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
+      uv['vsource'] = 0.0
+      uv['ischan'] = 0
+      uv['operator'] = 'J'
+      uv['nants'] = 256
+      uv['baseline'] = 0.0
+      uv['sfreq'] = FREQ_GHz[0]
+      uv['inttime'] = 1.0
+      uv['source'] = 'zenith'
+      uv['epoch'] = 2000.0
+      uv['version'] = 'A'
+      uv['ra'] = lst_deg*np.pi/180.0
+      uv['restfreq'] = 0.0
+      uv['nschan'] = NFFT
+      uv['sdf'] = 28/1000000. #FREQ_GHz[1]-FREQ_GHz[0]
+      uv['corr'] = 0.0 
+      uv['freq'] = FREQ_GHz[0]
+      uv['longitu'] = mwa_longitude_deg*np.pi/180.0
+      uv['nchan'] = NFFT
+      uv['tscale'] = 0.0
+      uv['antpos'] = 0.0
+      uv['telescop'] = 'EDA2_sim'
+      uv['pol'] = np.array([-5,-6,-7,-8])   #-5 is xx, -6 yy, -7 xy 8 yx
+      uv['coord'] = 0.0
+      uv['veldop'] = 0.0
+      uv['lst'] = 0.0
+      uv['time'] = 0.0
+      uv['dec'] = mwa_latitude_deg*np.pi/180.0
+      uv['obsra'] = lst_deg*np.pi/180.0
+      uv['jyperk'] = 1.0
+      uv['systemp'] = 1.0
+      
+      
+      #need to set the x,y,z positions of the antennas properly and then use the generate uvw to get the uvws to write.
+      beam = a.phs.Beam(FREQ_GHz)
+      ants = []
+      for ant_string in lines:
+         E_pos = float(ant_string.split()[4])
+         N_pos = float(ant_string.split()[5])
+         U_pos = 0.
+         x_pos,y_pos,z_pos = calc_x_y_z_pos_from_E_N_U(E_pos,N_pos,U_pos)
+         ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
+      
+      aa = a.phs.AntennaArray(ants=ants,location=("116:40:14.07","-26:42:11.23"))
+      aa.set_jultime(eda2_astropy_time.jd)
+      uv['lst'] = float(aa.sidereal_time())
+      uv['antpos'] = np.arange(256*3,dtype='d')
+      
+      data_mask = np.zeros(NFFT)
+      
+      gsm_cross_visibility_real_array_filename_X = "gsm_cross_visibility_real_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_X = "gsm_cross_visibility_imag_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_X = "zenith_point_source_cross_visibility_real_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_X = "zenith_point_source_cross_visibility_imag_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_auto_array_filename_X = "gsm_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_auto_array_filename_X = "zenith_point_source_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
 
- 
-         #print(c)
-         #print(uu_array)
-         #print(vv_array)
-         #print(ww_array)
-         
-         print("writing to miriad file")
-         NFFT = 1
-         SITE_LON = 116.670575
-         FREQ_GHz = np.array([freq_MHz/1000.])#np.linspace(0.000, 0.250, NFFT);
-         
-         #timestr = time.strftime("%Y%m%d-%H%M%S")
-         
-         mir_file = "%s_%0.3f_%s.vis" % (EDA2_obs_time,freq_MHz,pol)
-         mir_file_uvfits_name = "%s_%0.3f_%s.uvfits" % (EDA2_obs_time,freq_MHz,pol)
-         mir_file_ms_name = "%s_%0.3f_%s.ms" % (EDA2_obs_time,freq_MHz,pol)
-         # mir_file = "test.vis"
-         cmd = "rm -rf %s" % mir_file
-         print(cmd)
-         os.system(cmd)
-         
-         print ("Writing out "+ mir_file)
-         uv = a.miriad.UV(mir_file, 'new')
-         uv['history'] = 'test file\n'
-         
-         uv.add_var('latitud','d')
-         uv.add_var('npol','i')
-         uv.add_var('nspect', 'i')
-         uv.add_var('obsdec', 'd')
-         uv.add_var('vsource', 'r')
-         uv.add_var('ischan', 'i')
-         uv.add_var('operator', 'a')
-         uv.add_var('nants', 'i')
-         uv.add_var('baseline', 'r')
-         uv.add_var('sfreq', 'd')
-         uv.add_var('inttime', 'r')
-         uv.add_var('source', 'a')
-         uv.add_var('epoch', 'r')
-         uv.add_var('version', 'a')
-         uv.add_var('ra', 'd')
-         uv.add_var('restfreq', 'd')
-         uv.add_var('nschan', 'i')
-         uv.add_var('sdf', 'd')
-         uv.add_var('corr', 'r')
-         uv.add_var('freq', 'd')
-         uv.add_var('longitu', 'd')
-         uv.add_var('nchan', 'i')
-         uv.add_var('tscale', 'r')
-         uv.add_var('antpos', 'd')
-         uv.add_var('telescop', 'a')
-         uv.add_var('pol', 'i')
-         uv.add_var('coord', 'd')
-         uv.add_var('veldop', 'r')
-         uv.add_var('lst', 'd')
-         uv.add_var('time', 'd')
-         uv.add_var('dec', 'd')
-         uv.add_var('obsra', 'd')
-         uv.add_var('jyperk', 'r')
-         uv.add_var('systemp', 'r')
-         
-         uv['latitud'] = mwa_latitude_deg*np.pi/180.0
-         uv['npol'] = 4
-         uv['nspect'] = 1
-         uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
-         uv['vsource'] = 0.0
-         uv['ischan'] = 0
-         uv['operator'] = 'J'
-         uv['nants'] = 256
-         uv['baseline'] = 0.0
-         uv['sfreq'] = FREQ_GHz[0]
-         uv['inttime'] = 1.0
-         uv['source'] = 'zenith'
-         uv['epoch'] = 2000.0
-         uv['version'] = 'A'
-         uv['ra'] = lst_deg*np.pi/180.0
-         uv['restfreq'] = 0.0
-         uv['nschan'] = NFFT
-         uv['sdf'] = 28/1000000. #FREQ_GHz[1]-FREQ_GHz[0]
-         uv['corr'] = 0.0 
-         uv['freq'] = FREQ_GHz[0]
-         uv['longitu'] = mwa_longitude_deg*np.pi/180.0
-         uv['nchan'] = NFFT
-         uv['tscale'] = 0.0
-         uv['antpos'] = 0.0
-         uv['telescop'] = 'EDA2_sim'
-         #uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
-         uv['coord'] = 0.0
-         uv['veldop'] = 0.0
-         uv['lst'] = 0.0
-         uv['time'] = 0.0
-         uv['dec'] = mwa_latitude_deg*np.pi/180.0
-         uv['obsra'] = lst_deg*np.pi/180.0
-         uv['jyperk'] = 1.0
-         uv['systemp'] = 1.0
-         
-         
-         #need to set the x,y,z positions of the antennas properly and then use the generate uvw to get the uvws to write.
-         beam = a.phs.Beam(FREQ_GHz)
-         ants = []
-         for ant_string in lines:
-            E_pos = float(ant_string.split()[4])
-            N_pos = float(ant_string.split()[5])
-            U_pos = 0.
-            x_pos,y_pos,z_pos = calc_x_y_z_pos_from_E_N_U(E_pos,N_pos,U_pos)
-            ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
-         
-         aa = a.phs.AntennaArray(ants=ants,location=("116:40:14.07","-26:42:11.23"))
-         aa.set_jultime(eda2_astropy_time.jd)
-         uv['lst'] = float(aa.sidereal_time())
-         uv['antpos'] = np.arange(256*3,dtype='d')
-         
-         data_mask = np.zeros(NFFT)
-         
-         #from AIPY doco:write(preamble, data, flags=None)
-         #Write the next data record. data must be a complex, masked array. preamble must be (uvw, t, (i,j)), where
-         #uvw is an array of u,v,w, t is the Julian date, and (i,j) is an antenna pair.
-         #add data
-         
-         #put in cross first then do autos
-         for baseline_number_index, baseline_number in enumerate(baseline_number_array):
-            complex_cross = np.asarray([cross_visibility_real_array[baseline_number_index] + 1j*cross_visibility_imag_array[baseline_number_index]])
-            cross_vis = np.ma.array(complex_cross, mask=data_mask, dtype=np.complex64)
-            #print(cross_vis)
-            uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
-            #print(uvw_array)
-            ant1,ant2 = decode_baseline(baseline_number)
-            #uvw = aa.gen_uvw(ant1,ant2)
-            #print(uvw.shape)
-            #print(uvw)
-            #uvw_array = [uvw[0,0,0],uvw[1,0,0],uvw[2,0,0]]
-            #print(baseline_number)
-            #print(ant1,ant2)
-            #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
-            #I think I can just add one to the antenna indices ... nope
-            uvw_12 = np.array(uvw_array, dtype=np.double)
-            if baseline_number_index==0:
-               print('uvw')
-               print(uvw_12)
-               u_in = uvw_12[0]
-            preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
-            if ant2<255 and ant1<255:
-               if pol=='X':
-                  uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
-                  uv.write(preamble,cross_vis)
-                  uv['pol'] = -7
-                  uv.write(preamble,cross_vis*0.)
-                  uv['pol'] = -8
-                  uv.write(preamble,cross_vis*0.)
-               else:
-                  uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
-                  uv.write(preamble,cross_vis)
+      gsm_cross_visibility_real_array_filename_Y = "gsm_cross_visibility_real_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_Y = "gsm_cross_visibility_imag_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_Y = "zenith_point_source_cross_visibility_real_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_Y = "zenith_point_source_cross_visibility_imag_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_auto_array_filename_Y = "gsm_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_auto_array_filename_Y = "zenith_point_source_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      
+              
+      uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
+      vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
+      ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
+      baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
+      
+      gsm_cross_visibility_real_array_X = np.load(gsm_cross_visibility_real_array_filename_X)
+      gsm_cross_visibility_imag_array_X = np.load(gsm_cross_visibility_imag_array_filename_X)        
+      zenith_point_source_cross_visibility_real_array_X = np.load(zenith_point_source_cross_visibility_real_array_filename_X)
+      zenith_point_source_cross_visibility_imag_array_X = np.load(zenith_point_source_cross_visibility_imag_array_filename_X)              
+      zenith_point_source_auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
+      baseline_number_array = np.load(baseline_number_array_filename)
+      
+      gsm_cross_visibility_real_array_Y = np.load(gsm_cross_visibility_real_array_filename_Y)
+      gsm_cross_visibility_imag_array_Y = np.load(gsm_cross_visibility_imag_array_filename_Y)        
+      zenith_point_source_cross_visibility_real_array_Y = np.load(zenith_point_source_cross_visibility_real_array_filename_Y)
+      zenith_point_source_cross_visibility_imag_array_Y = np.load(zenith_point_source_cross_visibility_imag_array_filename_Y)              
+      zenith_point_source_auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
+      baseline_number_array = np.load(baseline_number_array_filename)
+
+      #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
+         #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
+      uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
+      vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
+      ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
+      
+      #print(uu_array_m)
+      #print(vv_array_m)
+      #print(ww_array_m)
+      
+      #phase centre zenith
+      #print(np.max(ww_array_m))
+      #print(gsm_cross_visibility_real_array[0:10])
+      #print(gsm_cross_visibility_imag_array[0:10])
+      
+      ##GSM:
+      if not pt_source:
+         auto_array_X = np.load(gsm_auto_array_filename_X)
+         cross_visibility_complex_array_X = gsm_cross_visibility_real_array_X + 1j*gsm_cross_visibility_imag_array_X
+         auto_array_Y = np.load(gsm_auto_array_filename_Y)
+         cross_visibility_complex_array_Y = gsm_cross_visibility_real_array_Y + 1j*gsm_cross_visibility_imag_array_Y
+      else:
+         #Try point source instead
+         auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
+         cross_visibility_complex_array_X = zenith_point_source_cross_visibility_real_array_X + 1j*zenith_point_source_cross_visibility_imag_array_X
+         auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
+         cross_visibility_complex_array_Y = zenith_point_source_cross_visibility_real_array_Y + 1j*zenith_point_source_cross_visibility_imag_array_Y
+      
+      cross_visibility_real_array_X = np.real(cross_visibility_complex_array_X)
+      cross_visibility_imag_array_X = np.imag(cross_visibility_complex_array_X)
+      cross_visibility_real_array_Y = np.real(cross_visibility_complex_array_Y)
+      cross_visibility_imag_array_Y = np.imag(cross_visibility_complex_array_Y)         
+      
+      
+      #not needed for zenith?
+      #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
+      #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
+      #cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
+      
+      #miriad wants u.v.w in units of seconds, but it divides by c itself! (does it also divide by wavelength?) ... nanosecs?
+      #i am lost, but maybe there is hope here: https://github.com/HERA-Team/aipy/blob/main/doc/source/tutorial.rst
+
+      #print(c)
+      #print(uu_array)
+      #print(vv_array)
+      #print(ww_array)
+
+      #from AIPY doco:write(preamble, data, flags=None)
+      #Write the next data record. data must be a complex, masked array. preamble must be (uvw, t, (i,j)), where
+      #uvw is an array of u,v,w, t is the Julian date, and (i,j) is an antenna pair.
+      #add data
+      
+      #put in cross first then do autos
+      #cant do x and y in a loop, can only go through the uvdata file once in order (miriad, am I right?)
+      for baseline_number_index, baseline_number in enumerate(baseline_number_array):
+         complex_cross_X = np.asarray([cross_visibility_real_array_X[baseline_number_index] + 1j*cross_visibility_imag_array_X[baseline_number_index]])
+         cross_vis_X = np.ma.array(complex_cross_X, mask=data_mask, dtype=np.complex64)
+         complex_cross_Y = np.asarray([cross_visibility_real_array_Y[baseline_number_index] + 1j*cross_visibility_imag_array_Y[baseline_number_index]])
+         cross_vis_Y = np.ma.array(complex_cross_Y, mask=data_mask, dtype=np.complex64)
+         #print(cross_vis)
+         uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
+         #print(uvw_array)
+         ant1,ant2 = decode_baseline(baseline_number)
+         #uvw = aa.gen_uvw(ant1,ant2)
+         #print(uvw.shape)
+         #print(uvw)
+         #uvw_array = [uvw[0,0,0],uvw[1,0,0],uvw[2,0,0]]
+         #print(baseline_number)
+         #print(ant1,ant2)
+         #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
+         #I think I can just add one to the antenna indices ... nope
+         uvw_12 = np.array(uvw_array, dtype=np.double)
+         if baseline_number_index==0:
+            print('uvw')
+            print(uvw_12)
+            u_in = uvw_12[0]
+         preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
+         if ant2<255 and ant1<255:
+            print("changing pol to -5 xx")
+            uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
+            uv.write(preamble,cross_vis_X)
+            print("changing pol to -7 xy")
+            uv['pol'] = -7
+            uv.write(preamble,cross_vis_X*0.)
+            print("changing pol to -8 yx")
+            uv['pol'] = -8
+            uv.write(preamble,cross_vis_X*0.)
+            print("changing pol to -6 yy")
+            uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
+            uv.write(preamble,cross_vis_Y)
+
+                  
          
             
          
@@ -16526,30 +16547,30 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       
       del(uv)
       
-      ##check by image
-      map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,pol)
-      beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,pol)
-      map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,pol)
-      map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,pol)
-      map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,pol)
-      cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
-      print(cmd)
-      os.system(cmd)
-      cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=xx robust=0" % (mir_file,map_name,beam_name)
-      print(cmd)
-      os.system(cmd) 
-      cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=xx out=%s" % (map_name,beam_name,map_name_clean)
-      print(cmd)
-      os.system(cmd) 
-      cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
-      print(cmd)
-      os.system(cmd)      
-      cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
-      print(cmd)
-      os.system(cmd)
-
-
+      for image_pol in ['xx','yy']:
       
+         ##check by image
+         map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,image_pol)
+         beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,image_pol)
+         map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,image_pol)
+         map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,image_pol)
+         map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,image_pol)
+         cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
+         print(cmd)
+         os.system(cmd)
+         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=%s robust=0" % (mir_file,map_name,beam_name,image_pol)
+         print(cmd)
+         os.system(cmd) 
+         cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=%s out=%s" % (map_name,beam_name,image_pol,map_name_clean)
+         print(cmd)
+         os.system(cmd) 
+         cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
+         print(cmd)
+         os.system(cmd)      
+         cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
+         print(cmd)
+         os.system(cmd)
+
       check_uv = a.miriad.UV(mir_file)
       #print(check_uv.items())
       #print(check_uv.vars())
@@ -16597,7 +16618,6 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       print(len(sim_baselines))
       print(np.max(sim_baselines))
       
-      sys.exit()
       
       #what is going on with these baselines
       for baseline_num_index,baseline_num in enumerate(sim_baselines):
@@ -16660,12 +16680,11 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       ms_table.close()
 
       #try imaging the model column of the ms:
-      if pol=='X':
-         wsclean_imsize = '512'
-         wsclean_scale = '900asec'
-         cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         print(cmd)
-         os.system(cmd)
+      wsclean_imsize = '512'
+      wsclean_scale = '900asec'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+      print(cmd)
+      os.system(cmd)
       
       #try calibrate?
       gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
