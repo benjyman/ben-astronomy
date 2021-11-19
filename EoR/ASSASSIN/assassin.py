@@ -16116,7 +16116,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   
                      baseline_number_sub_array = (ant_index_1 * 256) + np.arange(ant_index_1,test_n_ants)
                   
-                     baseline_length_lambda = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2) / wavelength
+                     baseline_length_lambda = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2) #u,v,w already in wavelength units / wavelength
                           
                   #print(baseline_length_array[10])
                   #print(baseline_length_array[68])
@@ -16303,9 +16303,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             print("saved %s" % fig_name)  
-            
-            sys.exit()
-                             
+                            
             #now to extract global sky temp from gsm sim vis by comparing to unity vis - but
             #since we now use the complex beam pattern, we don't expect unity sky response to 
             #be purely real - not sure how to deal with that!
@@ -16452,42 +16450,60 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       
       data_mask = np.zeros(NFFT)
       
-      gsm_cross_visibility_real_array_filename_X = "gsm_cross_visibility_real_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_X = "gsm_cross_visibility_imag_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_X = "zenith_point_source_cross_visibility_real_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_X = "zenith_point_source_cross_visibility_imag_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_real_array_filename_XX = "gsm_cross_visibility_real_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_XX = "gsm_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_XX = "zenith_point_source_cross_visibility_real_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_XX = "zenith_point_source_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
       gsm_auto_array_filename_X = "gsm_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_auto_array_filename_X = "zenith_point_source_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_auto_array_filename_XX = "zenith_point_source_auto_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
 
-      gsm_cross_visibility_real_array_filename_Y = "gsm_cross_visibility_real_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_Y = "gsm_cross_visibility_imag_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_Y = "zenith_point_source_cross_visibility_real_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_Y = "zenith_point_source_cross_visibility_imag_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_real_array_filename_YY = "gsm_cross_visibility_real_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_YY = "gsm_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_YY = "zenith_point_source_cross_visibility_real_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_YY = "zenith_point_source_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
       gsm_auto_array_filename_Y = "gsm_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_auto_array_filename_Y = "zenith_point_source_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      
-              
+      zenith_point_source_auto_array_filename_YY = "zenith_point_source_auto_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+
+      gsm_cross_visibility_real_array_filename_XY= "gsm_cross_visibility_real_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_XY = "gsm_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_XY = "zenith_point_source_cross_visibility_real_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_XY = "zenith_point_source_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+
+      gsm_cross_visibility_real_array_filename_YX = "gsm_cross_visibility_real_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      gsm_cross_visibility_imag_array_filename_YX = "gsm_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_real_array_filename_YX = "zenith_point_source_cross_visibility_real_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      zenith_point_source_cross_visibility_imag_array_filename_YX = "zenith_point_source_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+     
       uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
       vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
       ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
       baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
       
-      gsm_cross_visibility_real_array_X = np.load(gsm_cross_visibility_real_array_filename_X)
-      gsm_cross_visibility_imag_array_X = np.load(gsm_cross_visibility_imag_array_filename_X)        
-      zenith_point_source_cross_visibility_real_array_X = np.load(zenith_point_source_cross_visibility_real_array_filename_X)
-      zenith_point_source_cross_visibility_imag_array_X = np.load(zenith_point_source_cross_visibility_imag_array_filename_X)              
-      zenith_point_source_auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
-      baseline_number_array = np.load(baseline_number_array_filename)
+      if not pt_source:
+         gsm_cross_visibility_real_array_XX = np.load(gsm_cross_visibility_real_array_filename_XX)
+         gsm_cross_visibility_imag_array_XX = np.load(gsm_cross_visibility_imag_array_filename_XX)   
+         gsm_cross_visibility_real_array_YY = np.load(gsm_cross_visibility_real_array_filename_YY)
+         gsm_cross_visibility_imag_array_YY = np.load(gsm_cross_visibility_imag_array_filename_YY)     
+         gsm_cross_visibility_real_array_XY = np.load(gsm_cross_visibility_real_array_filename_XY)
+         gsm_cross_visibility_imag_array_XY = np.load(gsm_cross_visibility_imag_array_filename_XY) 
+         gsm_cross_visibility_real_array_YX = np.load(gsm_cross_visibility_real_array_filename_YX)
+         gsm_cross_visibility_imag_array_YX = np.load(gsm_cross_visibility_imag_array_filename_YX) 
+      else:
+         zenith_point_source_cross_visibility_real_array_XX = np.load(zenith_point_source_cross_visibility_real_array_filename_XX)
+         zenith_point_source_cross_visibility_imag_array_XX = np.load(zenith_point_source_cross_visibility_imag_array_filename_XX)              
+         zenith_point_source_auto_array_XX = np.load(zenith_point_source_auto_array_filename_XX)
+         zenith_point_source_cross_visibility_real_array_YY = np.load(zenith_point_source_cross_visibility_real_array_filename_YY)
+         zenith_point_source_cross_visibility_imag_array_YY = np.load(zenith_point_source_cross_visibility_imag_array_filename_YY)              
+         zenith_point_source_auto_array_YY = np.load(zenith_point_source_auto_array_filename_YY)
+         zenith_point_source_cross_visibility_real_array_XY = np.load(zenith_point_source_cross_visibility_real_array_filename_XY)
+         zenith_point_source_cross_visibility_imag_array_XY = np.load(zenith_point_source_cross_visibility_imag_array_filename_XY)              
+         zenith_point_source_cross_visibility_real_array_YX = np.load(zenith_point_source_cross_visibility_real_array_filename_YX)
+         zenith_point_source_cross_visibility_imag_array_YX = np.load(zenith_point_source_cross_visibility_imag_array_filename_YX)              
       
-      gsm_cross_visibility_real_array_Y = np.load(gsm_cross_visibility_real_array_filename_Y)
-      gsm_cross_visibility_imag_array_Y = np.load(gsm_cross_visibility_imag_array_filename_Y)        
-      zenith_point_source_cross_visibility_real_array_Y = np.load(zenith_point_source_cross_visibility_real_array_filename_Y)
-      zenith_point_source_cross_visibility_imag_array_Y = np.load(zenith_point_source_cross_visibility_imag_array_filename_Y)              
-      zenith_point_source_auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
       baseline_number_array = np.load(baseline_number_array_filename)
 
       #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
-         #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
+      #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
       uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
       vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
       ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
@@ -16504,22 +16520,31 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       ##GSM:
       if not pt_source:
          auto_array_X = np.load(gsm_auto_array_filename_X)
-         cross_visibility_complex_array_X = gsm_cross_visibility_real_array_X + 1j*gsm_cross_visibility_imag_array_X
+         cross_visibility_complex_array_XX = gsm_cross_visibility_real_array_XX + 1j*gsm_cross_visibility_imag_array_XX
          auto_array_Y = np.load(gsm_auto_array_filename_Y)
-         cross_visibility_complex_array_Y = gsm_cross_visibility_real_array_Y + 1j*gsm_cross_visibility_imag_array_Y
+         cross_visibility_complex_array_YY = gsm_cross_visibility_real_array_YY + 1j*gsm_cross_visibility_imag_array_YY
+         cross_visibility_complex_array_XY = gsm_cross_visibility_real_array_XY + 1j*gsm_cross_visibility_imag_array_XY
+         cross_visibility_complex_array_YX = gsm_cross_visibility_real_array_YX + 1j*gsm_cross_visibility_imag_array_YX
       else:
          #Try point source instead
-         auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
-         cross_visibility_complex_array_X = zenith_point_source_cross_visibility_real_array_X + 1j*zenith_point_source_cross_visibility_imag_array_X
-         auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
-         cross_visibility_complex_array_Y = zenith_point_source_cross_visibility_real_array_Y + 1j*zenith_point_source_cross_visibility_imag_array_Y
+         auto_array_XX = np.load(zenith_point_source_auto_array_filename_XX)
+         cross_visibility_complex_array_XX = zenith_point_source_cross_visibility_real_array_XX + 1j*zenith_point_source_cross_visibility_imag_array_XX
+         auto_array_YY = np.load(zenith_point_source_auto_array_filename_YY)
+         cross_visibility_complex_array_YY = zenith_point_source_cross_visibility_real_array_YY + 1j*zenith_point_source_cross_visibility_imag_array_YY
+         cross_visibility_complex_array_XY = zenith_point_source_cross_visibility_real_array_XY + 1j*zenith_point_source_cross_visibility_imag_array_XY
+         cross_visibility_complex_array_YX = zenith_point_source_cross_visibility_real_array_YX + 1j*zenith_point_source_cross_visibility_imag_array_YX
+         
+         
+      cross_visibility_real_array_XX = np.real(cross_visibility_complex_array_XX)
+      cross_visibility_imag_array_XX = np.imag(cross_visibility_complex_array_XX)
+      cross_visibility_real_array_YY = np.real(cross_visibility_complex_array_YY)
+      cross_visibility_imag_array_YY = np.imag(cross_visibility_complex_array_YY) 
+      cross_visibility_real_array_XY = np.real(cross_visibility_complex_array_XY)
+      cross_visibility_imag_array_XY = np.imag(cross_visibility_complex_array_XY)
+      cross_visibility_real_array_YX = np.real(cross_visibility_complex_array_YX)
+      cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
       
-      cross_visibility_real_array_X = np.real(cross_visibility_complex_array_X)
-      cross_visibility_imag_array_X = np.imag(cross_visibility_complex_array_X)
-      cross_visibility_real_array_Y = np.real(cross_visibility_complex_array_Y)
-      cross_visibility_imag_array_Y = np.imag(cross_visibility_complex_array_Y)         
-      
-      
+
       #not needed for zenith?
       #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
       #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
@@ -16541,10 +16566,14 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       #put in cross first then do autos
       #cant do x and y in a loop, can only go through the uvdata file once in order (miriad, am I right?)
       for baseline_number_index, baseline_number in enumerate(baseline_number_array):
-         complex_cross_X = np.asarray([cross_visibility_real_array_X[baseline_number_index] + 1j*cross_visibility_imag_array_X[baseline_number_index]])
-         cross_vis_X = np.ma.array(complex_cross_X, mask=data_mask, dtype=np.complex64)
-         complex_cross_Y = np.asarray([cross_visibility_real_array_Y[baseline_number_index] + 1j*cross_visibility_imag_array_Y[baseline_number_index]])
-         cross_vis_Y = np.ma.array(complex_cross_Y, mask=data_mask, dtype=np.complex64)
+         complex_cross_XX = np.asarray([cross_visibility_real_array_XX[baseline_number_index] + 1j*cross_visibility_imag_array_XX[baseline_number_index]])
+         cross_vis_XX = np.ma.array(complex_cross_XX, mask=data_mask, dtype=np.complex64)
+         complex_cross_YY = np.asarray([cross_visibility_real_array_YY[baseline_number_index] + 1j*cross_visibility_imag_array_YY[baseline_number_index]])
+         cross_vis_YY = np.ma.array(complex_cross_YY, mask=data_mask, dtype=np.complex64)
+         complex_cross_XY = np.asarray([cross_visibility_real_array_XY[baseline_number_index] + 1j*cross_visibility_imag_array_XY[baseline_number_index]])
+         cross_vis_XY = np.ma.array(complex_cross_XY, mask=data_mask, dtype=np.complex64)
+         complex_cross_YX = np.asarray([cross_visibility_real_array_YX[baseline_number_index] + 1j*cross_visibility_imag_array_YX[baseline_number_index]])
+         cross_vis_YX = np.ma.array(complex_cross_YX, mask=data_mask, dtype=np.complex64)
          #print(cross_vis)
          uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
          #print(uvw_array)
@@ -16566,21 +16595,17 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          if ant2<255 and ant1<255:
             print("changing pol to -5 xx")
             uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
-            uv.write(preamble,cross_vis_X)
-            print("changing pol to -7 xy")
-            uv['pol'] = -7
-            uv.write(preamble,cross_vis_X*0.)
-            print("changing pol to -8 yx")
-            uv['pol'] = -8
-            uv.write(preamble,cross_vis_X*0.)
+            uv.write(preamble,cross_vis_XX)
             print("changing pol to -6 yy")
             uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
-            uv.write(preamble,cross_vis_Y)
+            uv.write(preamble,cross_vis_YY)
+            print("changing pol to -7 xy")
+            uv['pol'] = -7
+            uv.write(preamble,cross_vis_XY)
+            print("changing pol to -8 yx")
+            uv['pol'] = -8
+            uv.write(preamble,cross_vis_YX)
 
-                  
-         
-            
-         
       #for auto_index,auto in enumerate(auto_array):
       #   auto_power = np.asarray([auto])
       #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
@@ -16614,6 +16639,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
          print(cmd)
          os.system(cmd)
+
 
       check_uv = a.miriad.UV(mir_file)
       #print(check_uv.items())
@@ -16738,6 +16764,19 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       os.system(cmd)  
       #calibrate
       cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      #plot cal sols
+      cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "applysolutions %s %s  " % (mir_file_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #test image the CORRECTED data'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
       print(cmd)
       os.system(cmd)
       
@@ -17289,8 +17328,8 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
-plot_from_saved = True
-simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+plot_from_saved = False
+#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 pt_source=False
 write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
 sys.exit()
