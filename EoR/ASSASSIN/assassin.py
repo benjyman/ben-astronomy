@@ -16916,6 +16916,37 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       #casacore stuff: https://casacore.github.io/python-casacore/casacore_tables.html#casacore.tables.tablesummary
       #Okay looks good, now lets try to calibrate the corresponding ms from the EDA2
       #eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
+      
+      ##This whole plan is bad:
+      ##need to get rid of ant 255 from eda2 data (to match model)
+      ##export as uvfits with antenna range
+      ##write out the uvfits file
+      #casa_cmd_filename = 'export_cropped_uvfits.sh'
+      #cropped_uvits_filename = eda2_ms_name.split('/')[-1].split('.ms')[0] + "_cropped255.uvfits"
+      #cropped_ms_filename = eda2_ms_name.split('/')[-1].split('.ms')[0] + "_cropped255.ms"
+      #cmd = "rm -rf %s %s %s" % (cropped_uvits_filename,cropped_ms_filename,casa_cmd_filename)
+      #print(cmd)
+      #os.system(cmd)
+      #
+      #ints = np.arange(0,256)
+      #string_ints = [str(int) for int in ints]
+      #antenna_string = ",".join(string_ints)
+      #
+      #cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='data',overwrite=True,writestation=False)" % (eda2_ms_name,cropped_uvits_filename)
+      #print(cmd)
+      #os.system(cmd)
+      #
+      #with open(casa_cmd_filename,'w') as f:
+      #   f.write(cmd)
+      #     
+      #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      #print(cmd)
+      #os.system(cmd)
+      #
+      #now import the cropped one!
+
+      
+      
       eda2_ms_table = table(eda2_ms_name,readonly=False)
       eda2_table_summary = tablesummary(eda2_ms_name)
       #print(eda2_table_summary)
@@ -16928,9 +16959,9 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       #print(eda2_ants[0:300,0])
       #print(eda2_ants[0:300,1])
       #eda2 data is missing some ants, but has autos
-      eda2_flags = get_flags(eda2_ms_table)
-      print(eda2_flags.shape)
-      print(eda2_flags)
+      #eda2_flags = get_flags(eda2_ms_table)
+      #print(eda2_flags.shape)
+      #print(eda2_flags)
       
       model_ms_table = table(model_ms_name,readonly=True)
       model_data = get_data(model_ms_table)
@@ -16965,6 +16996,8 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       model_common_ant2 = model_ant2[model_ms_indices]
       model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
       
+      model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
+      model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
             
       common_eda2_uvw = eda2_uvw[eda2_ms_indices]
       common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
@@ -16982,6 +17015,41 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(common_model_data_sorted.shape)
       print(common_model_data_sorted[0:10,0,0])      
       
+      #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
+      ant2_list=[]
+      for ant2_index,ant2 in enumerate(model_common_ant2_sorted):
+         if ant2==254:
+            ant2_list.append(ant2_index)
+      #print(len(ant2_list))
+      #print(ant2_list)
+      
+      old_model_common_ant2_sorted = model_common_ant2_sorted
+      counter=0
+      for ant2_index in ant2_list:
+         ant2_index+=counter
+         #print(old_array.shape)
+         new_model_common_ant2_sorted = np.insert(old_model_common_ant2_sorted,ant2_index+1,255)
+         #print(new_array[ant2_index+1])
+         old_model_common_ant2_sorted = new_model_common_ant2_sorted
+         counter+=1
+      new_model_common_ant2_sorted = np.append(new_model_common_ant2_sorted,np.array([254,255,255]))
+      
+      old_new_diff = len(new_model_common_ant2_sorted) - len(model_common_ant2_sorted)
+      ant1_append_array = np.zeros(old_new_diff,dtype=np.int8) + 255
+
+      new_model_common_ant1_sorted = np.append(model_common_ant1_sorted,ant1_append_array)
+
+      #print(len(new_model_common_ant2_sorted))
+      #print((new_model_common_ant2_sorted[-200:-1]))
+      #print(eda2_ant2.shape)
+      #print(eda2_ant2[-200:-1])
+      
+      print(len(new_model_common_ant1_sorted))
+      print((new_model_common_ant1_sorted[-200:-1]))
+      print(eda2_ant1.shape)
+      print(eda2_ant1[-200:-1])
+      #wrong!
+      sys.exit()
       #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
       #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
       #arrrgghhhh
