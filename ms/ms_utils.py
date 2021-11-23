@@ -1,3 +1,4 @@
+# From Kariuki: sivio on git
 # Useful MS manipulation functions.
 import numpy as np
 from casacore.tables import table, maketabdesc, makearrcoldesc
@@ -36,6 +37,20 @@ def get_uvw(tbl):
     uvw = tbl.getcol("UVW")
     return uvw
 
+def get_bl_num(tbl):
+    """Grab the baseline number column from a CASA measurement set (MS)
+    Parameters
+    ----------
+    tbl : object
+        Casacore table object
+    Returns
+    -------
+    array
+        baseline number array
+    """
+    bl_num = tbl.getcol("BASELINE")
+    return bl_num
+    
 
 def get_phase_center(tbl):
     """
