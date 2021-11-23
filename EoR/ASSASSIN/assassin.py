@@ -16780,7 +16780,9 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       print(cmd)
       os.system(cmd)
       
-      sys.exit()
+      #check cal
+      #calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name)
+      
       
       #if pol=='X':
       #   wsclean_imsize = '512'
@@ -16853,7 +16855,39 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       #find common indices 
          
 
-         
+def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
+      #Okay looks good, now lets try to calibrate the corresponding ms from the EDA2
+      #eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
+      eda2_ms_table = table(eda2_ms_name,readonly=False)
+      eda2_data = get_data(eda2_ms_table)
+      eda2_uvw = get_uvw(eda2_ms_table)
+      
+      model_ms_table = table(model_ms_name,readonly=True)
+      model_data = get_data(model_ms_table)
+      model_uvw = get_uvw(model_ms_table)    
+      
+      #do it by baseline number instead
+      
+      print(len(eda2_uvw))
+      print(len(model_uvw))
+      
+      #find common indices: https://stackoverflow.com/questions/2333593/return-common-element-indices-between-two-numpy-arrays
+      
+      model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
+      print(len(model_ms_indices))
+      print(model_ms_indices)
+      
+      
+      common_model_uvw = model_uvw[model_ms_indices]
+      common_model_uvw_sorted = np.sorted(common_model_uvw)
+      print(common_model_uvw_sorted[0:10])
+      
+      eda2_uvw_sorted = np.sort(eda2_uvw)
+      print(eda2_uvw_sorted[0:10])
+      
+      #add_col(eda2_ms_table, "MODEL_DATA")
+      #put_col(eda2_ms_table, "MODEL_DATA", model_data)
+      #eda2_ms_table.close()     
 
 
 def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
@@ -17330,8 +17364,11 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 chan_num = 0
 plot_from_saved = False
 #simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
-pt_source=False
-write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
+#pt_source=False
+#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
+model_ms_name= "20200303T133733_50.000.ms"
+eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
+calibrate_with_complex_beam_model(model_ms_name=model_ms_name,eda2_ms_name=eda2_ms_name)
 sys.exit()
 
 #ant_index = 0
