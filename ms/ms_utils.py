@@ -37,6 +37,20 @@ def get_uvw(tbl):
     uvw = tbl.getcol("UVW")
     return uvw
 
+def get_flags(tbl):
+    """Grab the FLAG column from a CASA measurement set (MS)
+    Parameters
+    ----------
+    tbl : object
+        Casacore table object
+    Returns
+    -------
+    array
+        flags
+    """
+    flags = tbl.getcol("FLAG")
+    return flags
+    
 def get_bl_num(tbl):
     """Grab the baseline number column from a CASA measurement set (MS)
     Parameters
