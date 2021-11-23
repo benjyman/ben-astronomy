@@ -70,6 +70,8 @@ from scipy.io import loadmat
 #for making miriad files:
 import aipy as a
 
+from casacore.tables import table, tablesummary
+
 
 
 
@@ -16527,9 +16529,9 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          cross_visibility_complex_array_YX = gsm_cross_visibility_real_array_YX + 1j*gsm_cross_visibility_imag_array_YX
       else:
          #Try point source instead
-         auto_array_XX = np.load(zenith_point_source_auto_array_filename_XX)
+         auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
          cross_visibility_complex_array_XX = zenith_point_source_cross_visibility_real_array_XX + 1j*zenith_point_source_cross_visibility_imag_array_XX
-         auto_array_YY = np.load(zenith_point_source_auto_array_filename_YY)
+         auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
          cross_visibility_complex_array_YY = zenith_point_source_cross_visibility_real_array_YY + 1j*zenith_point_source_cross_visibility_imag_array_YY
          cross_visibility_complex_array_XY = zenith_point_source_cross_visibility_real_array_XY + 1j*zenith_point_source_cross_visibility_imag_array_XY
          cross_visibility_complex_array_YX = zenith_point_source_cross_visibility_real_array_YX + 1j*zenith_point_source_cross_visibility_imag_array_YX
@@ -16587,23 +16589,56 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
          #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
          #I think I can just add one to the antenna indices ... nope
          uvw_12 = np.array(uvw_array, dtype=np.double)
-         if baseline_number_index==0:
-            print('uvw')
-            print(uvw_12)
-            u_in = uvw_12[0]
          preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
+         #real data from 2018 paper is missing antenna 116 (among others) but can't have ant 255 cause it breaks casa
          if ant2<255 and ant1<255:
-            print("changing pol to -5 xx")
+            #print("changing pol to -5 xx")
             uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
+            #put in the auto:
+            if ant2==(ant1+1):
+               auto = auto_array_X[ant1]
+               auto_power = np.asarray([auto])
+               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+               uvw_array = [0,0,0]
+               uvw_11 = np.array(uvw_array, dtype=np.double)
+               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+               uv.write(auto_preamble,auto_vis)
             uv.write(preamble,cross_vis_XX)
-            print("changing pol to -6 yy")
+            #print("changing pol to -6 yy")
             uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
+            #put in the auto:
+            if ant2==(ant1+1):
+               auto = auto_array_Y[ant1]
+               auto_power = np.asarray([auto])
+               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+               uvw_array = [0,0,0]
+               uvw_11 = np.array(uvw_array, dtype=np.double)
+               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+               uv.write(auto_preamble,auto_vis)
             uv.write(preamble,cross_vis_YY)
-            print("changing pol to -7 xy")
+            #print("changing pol to -7 xy")
             uv['pol'] = -7
+            #put in the auto:
+            if ant2==(ant1+1):
+               auto = auto_array_X[ant1] * 0.
+               auto_power = np.asarray([auto])
+               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+               uvw_array = [0,0,0]
+               uvw_11 = np.array(uvw_array, dtype=np.double)
+               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+               uv.write(auto_preamble,auto_vis)
             uv.write(preamble,cross_vis_XY)
-            print("changing pol to -8 yx")
+            #print("changing pol to -8 yx")
             uv['pol'] = -8
+            #put in the auto:
+            if ant2==(ant1+1):
+               auto = auto_array_X[ant1] * 0.
+               auto_power = np.asarray([auto])
+               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+               uvw_array = [0,0,0]
+               uvw_11 = np.array(uvw_array, dtype=np.double)
+               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+               uv.write(auto_preamble,auto_vis)
             uv.write(preamble,cross_vis_YX)
 
       #for auto_index,auto in enumerate(auto_array):
@@ -16823,12 +16858,12 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
 
       #make wsclean image to compare (no need to do twice, just image xx,yy):
       #wsclean does not resore the cleaned image - clean is same as dirty!
-      if pol=='X':
-         wsclean_imsize = '512'
-         wsclean_scale = '900asec'
-         cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-         print(cmd)
-         os.system(cmd) 
+      #if pol=='X':
+      #   wsclean_imsize = '512'
+      #   wsclean_scale = '900asec'
+      #   cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+      #   print(cmd)
+      #   os.system(cmd) 
       
       #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
       #uvfits_vis_name = 'test_eda_actual.vis'
@@ -16853,42 +16888,112 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       #antennas, so this alleviates the problem of the 255 limit for casa/ms
       #Cant work out this baseline number stuff, just look at u,v values
       #find common indices 
+
+#took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
+def asvoid(arr):
+    """
+    Based on http://stackoverflow.com/a/16973510/190597 (Jaime, 2013-06)
+    View the array as dtype np.void (bytes). The items along the last axis are
+    viewed as one value. This allows comparisons to be performed on the entire row.
+    """
+    arr = np.ascontiguousarray(arr)
+    if np.issubdtype(arr.dtype, np.floating):
+        """ Care needs to be taken here since
+        np.array([-0.]).view(np.void) != np.array([0.]).view(np.void)
+        Adding 0. converts -0. to 0.
+        """
+        arr += 0.
+    return arr.view(np.dtype((np.void, arr.dtype.itemsize * arr.shape[-1])))
+
+
+def inNd(a, b, assume_unique=False):
+    a = asvoid(a)
+    b = asvoid(b)
+    return np.in1d(a, b, assume_unique)
          
 
 def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
+      #casacore stuff: https://casacore.github.io/python-casacore/casacore_tables.html#casacore.tables.tablesummary
       #Okay looks good, now lets try to calibrate the corresponding ms from the EDA2
       #eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
       eda2_ms_table = table(eda2_ms_name,readonly=False)
+      eda2_table_summary = tablesummary(eda2_ms_name)
+      #print(eda2_table_summary)
       eda2_data = get_data(eda2_ms_table)
+      print(eda2_data.shape)
       eda2_uvw = get_uvw(eda2_ms_table)
+      eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
+      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+      #print(eda2_ants.shape)
+      #print(eda2_ants[0:300,0])
+      #print(eda2_ants[0:300,1])
+      #eda2 data is missing some ants, but has autos
+      eda2_flags = get_flags(eda2_ms_table)
+      print(eda2_flags.shape)
+      print(eda2_flags)
       
       model_ms_table = table(model_ms_name,readonly=True)
       model_data = get_data(model_ms_table)
       model_uvw = get_uvw(model_ms_table)    
-      
-      #do it by baseline number instead
-      
-      print(len(eda2_uvw))
-      print(len(model_uvw))
+      model_ant1, model_ant2 = get_ant12(model_ms_name)
+      model_ants = np.vstack((model_ant1,model_ant2)).T
+      #print(model_ants.shape)      
+      #print(model_ants[0:300,0])
+      #print(model_ants[0:300,1])
+      #model has no autos and has all ants except 255
+
+      #do it by antenna number instead
       
       #find common indices: https://stackoverflow.com/questions/2333593/return-common-element-indices-between-two-numpy-arrays
+      #This won't work because uvw is multi dimensional
+      #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
+      model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
+      n_common = np.count_nonzero(model_ms_indices) 
+      print(n_common)
+      eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
+      n_common = np.count_nonzero(eda2_ms_indices)
+      print(n_common)
       
-      model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
-      print(len(model_ms_indices))
-      print(model_ms_indices)
+      #ind = np.lexsort((b,a)) # Sort by a, then by b
+      #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
       
+      eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+      eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+      eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+
+      model_common_ant1 = model_ant1[model_ms_indices]
+      model_common_ant2 = model_ant2[model_ms_indices]
+      model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
+      
+            
+      common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+      common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+      
+      common_eda2_data = eda2_data[eda2_ms_indices]
+      common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
+      print(common_eda2_data_sorted.shape)
+      print(common_eda2_data_sorted[0:10,0,0])
       
       common_model_uvw = model_uvw[model_ms_indices]
-      common_model_uvw_sorted = np.sorted(common_model_uvw)
-      print(common_model_uvw_sorted[0:10])
+      common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
+
+      common_model_data = model_data[model_ms_indices]
+      common_model_data_sorted = common_model_data[model_common_sort_inds]
+      print(common_model_data_sorted.shape)
+      print(common_model_data_sorted[0:10,0,0])      
       
-      eda2_uvw_sorted = np.sort(eda2_uvw)
-      print(eda2_uvw_sorted[0:10])
+      #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
+      #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
+      #arrrgghhhh
+      
+      
+      
       
       #add_col(eda2_ms_table, "MODEL_DATA")
       #put_col(eda2_ms_table, "MODEL_DATA", model_data)
       #eda2_ms_table.close()     
 
+    
 
 def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
    #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
@@ -17364,7 +17469,7 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 chan_num = 0
 plot_from_saved = False
 #simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
-#pt_source=False
+pt_source=False
 #write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
 model_ms_name= "20200303T133733_50.000.ms"
 eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
