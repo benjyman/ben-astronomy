@@ -16627,7 +16627,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                uvw_11 = np.array(uvw_array, dtype=np.double)
                auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
                uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_XY)
+            uv.write(preamble,cross_vis_XY*0.)
             #print("changing pol to -8 yx")
             uv['pol'] = -8
             #put in the auto:
@@ -16639,7 +16639,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                uvw_11 = np.array(uvw_array, dtype=np.double)
                auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
                uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_YX)
+            uv.write(preamble,cross_vis_YX*0.)
 
       #for auto_index,auto in enumerate(auto_array):
       #   auto_power = np.asarray([auto])
@@ -16945,8 +16945,6 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       #
       #now import the cropped one!
 
-      
-      
       eda2_ms_table = table(eda2_ms_name,readonly=False)
       eda2_table_summary = tablesummary(eda2_ms_name)
       #print(eda2_table_summary)
@@ -16996,72 +16994,129 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       model_common_ant2 = model_ant2[model_ms_indices]
       model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
       
-      model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
-      model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
+      #don't sort the ant arrays, these are what we use to sort the other arrays!
+      #model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
+      #model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
             
       common_eda2_uvw = eda2_uvw[eda2_ms_indices]
       common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
       
       common_eda2_data = eda2_data[eda2_ms_indices]
       common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
-      print(common_eda2_data_sorted.shape)
-      print(common_eda2_data_sorted[0:10,0,0])
+      #print(common_eda2_data_sorted.shape)
+      #print(common_eda2_data_sorted[0:10,0,0])
       
       common_model_uvw = model_uvw[model_ms_indices]
       common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
 
       common_model_data = model_data[model_ms_indices]
       common_model_data_sorted = common_model_data[model_common_sort_inds]
-      print(common_model_data_sorted.shape)
-      print(common_model_data_sorted[0:10,0,0])      
+      #print(common_model_data_sorted.shape)
+      #print(common_model_data_sorted[0:10,0,0])      
       
       #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
       ant2_list=[]
-      for ant2_index,ant2 in enumerate(model_common_ant2_sorted):
+      for ant2_index,ant2 in enumerate(model_common_ant2):
          if ant2==254:
             ant2_list.append(ant2_index)
       #print(len(ant2_list))
       #print(ant2_list)
       
-      old_model_common_ant2_sorted = model_common_ant2_sorted
+      old_model_common_ant2 = model_common_ant2
+      old_model_common_ant1 = model_common_ant1
+      old_common_model_data_sorted = common_model_data_sorted
       counter=0
+      
+      #a = np.array([[1, 1], [2, 2], [3, 3]])
+      #print(a)
+      #b = np.insert(a, 1, 5, axis=0)
+      #print(b)
+      
+      
       for ant2_index in ant2_list:
          ant2_index+=counter
+         ant1_value = old_model_common_ant1[ant2_index-1]
+         #new_data_value = np.zeros((1,4))
+         #print(new_data_value.shape)
+         #sys.exit()
          #print(old_array.shape)
-         new_model_common_ant2_sorted = np.insert(old_model_common_ant2_sorted,ant2_index+1,255)
+         new_model_common_ant2 = np.insert(old_model_common_ant2,ant2_index+1,255)
+         new_model_common_ant1 = np.insert(old_model_common_ant1,ant2_index+1,ant1_value)
+         new_common_model_data_sorted = np.insert(old_common_model_data_sorted,ant2_index+1,0,axis=0)
+         #print(old_common_model_data_sorted[ant2_index-2:ant2_index+5])
+         #print(new_common_model_data_sorted[ant2_index-2:ant2_index+6])
          #print(new_array[ant2_index+1])
-         old_model_common_ant2_sorted = new_model_common_ant2_sorted
+         old_model_common_ant2 = new_model_common_ant2
+         old_model_common_ant1 = new_model_common_ant1
+         old_common_model_data_sorted = new_common_model_data_sorted
          counter+=1
-      new_model_common_ant2_sorted = np.append(new_model_common_ant2_sorted,np.array([254,255,255]))
+      new_model_common_ant2 = np.append(new_model_common_ant2,np.array([254,255,255]))
+      new_model_common_ant1 = np.append(new_model_common_ant1,np.array([254,254,255]))
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
       
-      old_new_diff = len(new_model_common_ant2_sorted) - len(model_common_ant2_sorted)
-      ant1_append_array = np.zeros(old_new_diff,dtype=np.int8) + 255
-
-      new_model_common_ant1_sorted = np.append(model_common_ant1_sorted,ant1_append_array)
-
+      #print(new_common_model_data_sorted.shape)
+      repetitions = 32
+      new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
+      #print(new_common_model_data_sorted_tile.shape)
+      
       #print(len(new_model_common_ant2_sorted))
       #print((new_model_common_ant2_sorted[-200:-1]))
       #print(eda2_ant2.shape)
       #print(eda2_ant2[-200:-1])
       
-      print(len(new_model_common_ant1_sorted))
-      print((new_model_common_ant1_sorted[-200:-1]))
-      print(eda2_ant1.shape)
-      print(eda2_ant1[-200:-1])
-      #wrong!
-      sys.exit()
+      #print(common_model_data_sorted.shape)
+      #print(common_model_data_sorted[-5:])
+      #print(new_common_model_data_sorted.shape)
+      #print((new_common_model_data_sorted[-5:]))
+
       #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
       #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
       #arrrgghhhh
-      
-      
-      
-      
-      #add_col(eda2_ms_table, "MODEL_DATA")
-      #put_col(eda2_ms_table, "MODEL_DATA", model_data)
-      #eda2_ms_table.close()     
+      try:
+         add_col(eda2_ms_table, "MODEL_DATA")
+      except:
+         pass
+      put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+      eda2_ms_table.close()     
 
-    
+
+      #try imaging the model column of the ms:
+      wsclean_imsize = '512'
+      wsclean_scale = '900asec'
+      test_image_name = "complex_beam_test"
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #need to flag ant 255 .... also flux scale is about half (not treating polarisation correctly?)
+      #use uv cutoff at half wavelength?
+      #try cal with -ch 32
+      
+      #try calibrate?
+      gain_solutions_name = 'complex_beam_test_calibrate_sols.bin' 
+      calibrate_options = ''
+      cmd = "rm -rf %s" % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)  
+      #calibrate
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      #plot cal sols
+      cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #test image the CORRECTED data'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      print(cmd)
+      os.system(cmd)
 
 def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
    #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
@@ -17538,7 +17593,10 @@ chan_num = 0
 plot_from_saved = False
 #simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 pt_source=False
-#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
+#currently hacked so xy and yx are zero ... gives correct flux scale, if they are non zero, corrected image is roughly twice as bright
+#need to read stara paper comments and refs from refereee on polarisation!
+#try different baseline length cuts for calibration and see how that affects the flux scale ...
+write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
 model_ms_name= "20200303T133733_50.000.ms"
 eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
 calibrate_with_complex_beam_model(model_ms_name=model_ms_name,eda2_ms_name=eda2_ms_name)
