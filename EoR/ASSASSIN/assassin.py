@@ -273,6 +273,21 @@ z = np.polyfit(Aeff_freqs, Aeff_list, 3)
 p = np.poly1d(z)
 Aeff_for_freq_MHz_list = p(freq_MHz_list)
 
+def print_eda2_systemp(chan_num):
+   freq_MHz = freq_MHz_list[chan_num]
+   print(freq_MHz)
+   systemp = T_180*(freq_MHz/180.0)**beta
+   print('systemp %s K' % systemp)
+   A_eff = Aeff_for_freq_MHz_list[chan_num]
+   print('A_eff %s K' % A_eff)
+   JperK = (2.0*k*10**26)/(eta*A_eff)
+   print('JperK %s ' % JperK)
+   SEFD = systemp * JperK
+   print('SEFD %s ' % SEFD)
+   
+#print_eda2_systemp(0)
+#sys.exit() 
+
 #def get_eda2_lst(eda_time_string="20151202T171727"):
 #   ###Change this to use ephem instead of astropy
 #   #Hack to get LST! use old time (2015) astropy.utils.iers.iers.IERSRangeError: (some) times are outside of range covered by IERS table.
@@ -15386,7 +15401,31 @@ def convert_matlab_EEPs_by_freq(freq_MHz_list,freq_MHz_list_index,nside,method='
       cmd = 'ffmpeg -framerate 2 -pattern_type glob -i "rotated_sim_beam_ant_index_*_%s_%0.3f_MHz.png" -c:v libx264 -r 30 -pix_fmt yuv420p -nostdin -y %s' % (pol,freq_MHz,movie_name)
       print(cmd)
       os.system(cmd)
-      
+
+
+def calc_LNA_impedance_eda2(freq_MHz):
+   #See Daniel email from 18/09/2018 on normalisation factor, updated email 25 Nov for EDA2 normalisation calculation
+   #For EDA2 the LNA impedance is actually based on RLC lumped circuit model:
+   #Series component
+   Ls = 2.e-9 #nH
+   #Parallel component
+   Rp = 914. #ohms
+   Lp = 450.e-9 #nH
+   Cp = 3.2e-12 #pF
+   #So the full impedance is calculated as follows:
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+
+   Z = 1j*w*Ls + (1./Rp + (1j*w*Cp) + 1./(1j*w*Lp))**(-1)
+   #You can double check your impedance calculation with Marcin’s paper (pg 4)
+   return(Z)
+
+def calc_beam_normalisation(freq_MHz,LNA_impedance):
+   mu_0 = 4.*np.pi*10**(-7)
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+   normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
+   return(normalisation_factor)
+   
+                     
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
    test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
@@ -15713,7 +15752,17 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
 
                E_phi_cube2 = beam_data2['Ephi'][:,:,0:test_n_ants]
                E_theta_cube2 = beam_data2['Etheta'][:,:,0:test_n_ants]
-                              
+               
+               #maybe this is not right, if the sims were done to normalise a zenith-pointed staion beam of 256 antenna (as for eda-1) then maybe we just need to normalise by sqrt(256)?
+               #lna_impedance = calc_LNA_impedance_eda2(freq_MHz)
+               #beam_norm = calc_beam_normalisation(freq_MHz,lna_impedance)
+               beam_norm = np.sqrt(256)
+               print("normalising beam by %0.5f %0.5fj " % (beam_norm.real,beam_norm.imag))
+               E_phi_cube1 = E_phi_cube1 * beam_norm
+               E_theta_cube1 = E_theta_cube1 * beam_norm
+               E_phi_cube2 = E_phi_cube2 * beam_norm
+               E_theta_cube2 = E_theta_cube2 * beam_norm               
+                   
                #This is code from plotting the AAVS1 antennas phases, they need to be referenced to some antenna or location
                #We need to add in the geometric phase wrt to a single location for all antennas
                #done outside of pol loop
@@ -15976,9 +16025,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   power_pattern_cube = np.einsum('ij,ij...->i...', complex_beam_cube1[:,:,ant_index_1], np.conj(complex_beam_cube2[:,:,ant_index_1:test_n_ants]))
                   power_pattern_cube = np.nan_to_num(power_pattern_cube)
                   
-                  #this mkaes no difference since we normalise by the sum later on?
-                  power_pattern_cube = power_pattern_cube / np.max(np.abs(power_pattern_cube))
-                  
+                  #We cant normalise the beams like this as the cross pol (xy yx) beams will have different magnitude to the xx yy
+                  #power_pattern_cube = power_pattern_cube / np.max(np.abs(power_pattern_cube))
                   
                   ################
                   ##add in the phase delta to ant index 1
@@ -16627,7 +16675,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                uvw_11 = np.array(uvw_array, dtype=np.double)
                auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
                uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_XY*0.)
+            uv.write(preamble,cross_vis_XY)
             #print("changing pol to -8 yx")
             uv['pol'] = -8
             #put in the auto:
@@ -16639,7 +16687,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
                uvw_11 = np.array(uvw_array, dtype=np.double)
                auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
                uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_YX*0.)
+            uv.write(preamble,cross_vis_YX)
 
       #for auto_index,auto in enumerate(auto_array):
       #   auto_power = np.asarray([auto])
@@ -17282,7 +17330,9 @@ def cross_match_eda2_ant_pos_with_sims(ant_pos_on_ground_filename,ant_pos_sim_fi
    plt.title(antenna_position_plot_title)
    plt.savefig(antenna_position_plot_figname,dpi = 300)
    print('save %s ' % antenna_position_plot_figname)
-         
+
+
+
          
 #antenna_positions_filename_1 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_255_NEU.ant"  
 #antenna_positions_filename_2 = "/md0/code/git/ben-astronomy/AAVS-1/AAVS1_loc_uvgen_NEU.ant"        
@@ -17591,7 +17641,7 @@ combined_ant_pos_name_filename = '/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_p
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
 plot_from_saved = False
-#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 pt_source=False
 #currently hacked so xy and yx are zero ... gives correct flux scale, if they are non zero, corrected image is roughly twice as bright
 #need to read stara paper comments and refs from refereee on polarisation!
@@ -17913,5 +17963,57 @@ sys.exit()
 
 #Actually - this is pretty helpful for cure fitting:
 #http://keflavich.github.io/astr2600_notebooks/Lecture23_DataFitting.html#/10
+
+#beam normalisation
+freq_MHz_list = np.arange(50,300)
+LNA_impedance_list =[]
+beam_norm_list = []
+for freq_MHz in freq_MHz_list:
+   LNA_impedance = calc_LNA_impedance_eda2(freq_MHz)
+   LNA_impedance_list.append(LNA_impedance)
+   beam_norm = calc_beam_normalisation(freq_MHz,LNA_impedance)
+   beam_norm_list.append(beam_norm)
+   #print(LNA_impedance)
+
+LNA_impedance_list = np.asarray(LNA_impedance_list,dtype=complex)
+beam_norm_list = np.asarray(beam_norm_list,dtype=complex)
+
+plt.clf()
+map_title=""
+#######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+plt.plot(freq_MHz_list,beam_norm_list.real)
+fig_name="beam_norm_real.png" 
+figmap = plt.gcf()
+figmap.savefig(fig_name)
+print("saved %s" % fig_name) 
+
+plt.clf()
+map_title=""
+#######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+plt.plot(freq_MHz_list,beam_norm_list.imag)
+fig_name="beam_norm_imag.png" 
+figmap = plt.gcf()
+figmap.savefig(fig_name)
+print("saved %s" % fig_name) 
+
+#compare to Sokolowski et al 2017 MWA beam paper
+plt.clf()
+map_title=""
+#######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+plt.plot(freq_MHz_list,LNA_impedance_list.real)
+fig_name="lna_impedance_real.png" 
+figmap = plt.gcf()
+figmap.savefig(fig_name)
+print("saved %s" % fig_name) 
+
+plt.clf()
+map_title=""
+#######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+plt.plot(freq_MHz_list,LNA_impedance_list.imag)
+fig_name="lna_impedance_imag.png" 
+figmap = plt.gcf()
+figmap.savefig(fig_name)
+print("saved %s" % fig_name) 
+
 
 
