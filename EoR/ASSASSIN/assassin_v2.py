@@ -20,25 +20,116 @@ from pygdsm import GlobalSkyModel
 from pygdsm import GlobalSkyModel2016
 from datetime import datetime, date
 import time
+import ephem
+from scipy.io import loadmat
+import aipy as a  #for making miriad files
+from scipy.interpolate import interp2d,griddata,interp1d
+from astropy.io import fits 
+from casacore.tables import table, tablesummary
+sys.path.append("/md0/code/git/ben-astronomy/ms")
+from ms_utils import *
 
+k = 1.38065e-23
+c = 299792458.
+fine_chan_width_Hz =  28935 #Hz should be:(400./512.)*1.0e6 
 
+mwa_latitude_ephem = '-26.7'
+mwa_longitude_ephem = '116.67'
+mwa_latitude_deg = -26.70331940
+mwa_longitude_deg = 116.670575
+mwa_latitude_rad = float(mwa_latitude_deg/180.*np.pi)
+mwa_longitude_rad = float(mwa_longitude_deg/180.*np.pi)
+mwa_latitude_astropy = '-26.7d'
+mwa_longitude_astropy = '116.67d'
 
 EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
 EDA2_chan_list = range(64,127)  #20200303:
 
+def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
+   obs_time_list_each_chan = []
+   temp_txt_filename = 'uvfits_time_list.txt'
+   for eda2_chan in eda2_chan_list:
+      chan_obs_time_list = []
+      chan_dir = "%s%s/" % (base_dir,eda2_chan)
+      cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
+      os.system(cmd)
+      with open(temp_txt_filename) as f:
+         lines=f.readlines()
+      for line in lines[1:-1]:
+         obs_time = line.split('.uvfits')[0].split()[-1].split('_')[-1]
+         chan_obs_time_list.append(obs_time)
+      #there might be no obs, if so just put in a zero
+      if len(chan_obs_time_list)!=0:
+         obs_time_list_each_chan.append(chan_obs_time_list)
+      else:
+         obs_time_list_each_chan.append([0])
+   return obs_time_list_each_chan
+   
 def get_eda2_lst(eda_time_string):
    year, month, day, hour, minute, second = eda_time_string[0:4], eda_time_string[4:6],eda_time_string[6:8], eda_time_string[9:11],eda_time_string[11:13],eda_time_string[13:15]
-
    eda2_observer = ephem.Observer()
    eda2_observer.lon, eda2_observer.lat = mwa_longitude_ephem, mwa_latitude_ephem
    eda2_observer.date = '%s/%s/%s %s:%s:%s' % (year,month,day,hour,minute,second)
    eda2_obs_lst = (eda2_observer.sidereal_time()) 
-   print("LST is")
-   print(eda2_obs_lst)
+   #print("LST is")
+   #print(eda2_obs_lst)
    eda2_obs_lst_hrs = eda2_obs_lst / 2 / np.pi * 24.
    
    return(eda2_obs_lst_hrs)
 
+def calc_x_y_z_diff_from_E_N_U(E_pos_ant1,E_pos_ant2,N_pos_ant1,N_pos_ant2,U_pos_ant1,U_pos_ant2):
+   #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
+   
+   E_diff = E_pos_ant2 - E_pos_ant1
+   N_diff = N_pos_ant2 - N_pos_ant1
+   U_diff = U_pos_ant2 - U_pos_ant1
+   
+   x_diff = -1*N_diff*np.sin(mwa_latitude_rad) + U_diff*np.cos(mwa_latitude_rad)
+   y_diff = E_diff 
+   z_diff = N_diff*np.cos(mwa_latitude_rad) + U_diff*np.sin(mwa_latitude_rad)
+                 
+   #x_pos_ant2 = -1*N_pos_ant2*np.sin(mwa_latitude_rad) + U_pos_ant2*np.cos(mwa_latitude_rad)
+   #y_pos_ant2 = E_pos_ant2
+   #z_pos_ant2 = N_pos_ant2*np.cos(mwa_latitude_rad) + U_pos_ant2*np.sin(mwa_latitude_rad)
+
+   return(x_diff,y_diff,z_diff)
+
+def calc_x_y_z_pos_from_E_N_U(E_pos_ant,N_pos_ant,U_pos_ant):
+   #Look at instruction to go from E,N,U to u,v,w (https://web.njit.edu/~gary/728/Lecture6.html
+   x_pos_ant = -1*N_pos_ant*np.sin(mwa_latitude_rad) + U_pos_ant*np.cos(mwa_latitude_rad)
+   y_pos_ant = E_pos_ant
+   z_pos_ant = N_pos_ant*np.cos(mwa_latitude_rad) + U_pos_ant*np.sin(mwa_latitude_rad)
+                 
+   return(x_pos_ant,y_pos_ant,z_pos_ant)
+
+def decode_baseline(baseline_code):
+   blcode = int(baseline_code)
+   if baseline_code > 65536:
+       baseline_code -= 65536
+       a2 = int(baseline_code % 2048)
+       a1 = int((baseline_code - a2) / 2048)
+   else:
+       a2 = int(baseline_code % 256)
+       a1 = int((baseline_code - a2) / 256)
+   return a1,a2
+   
+def calc_uvw(x_diff,y_diff,z_diff,freq_MHz,hourangle=0.,declination=mwa_latitude_rad):
+   #https://web.njit.edu/~gary/728/Lecture6.html
+   print("calculating uvws")
+   wavelength = 300./freq_MHz
+   x_diff_lambda = x_diff/wavelength
+   y_diff_lambda = y_diff/wavelength
+   z_diff_lambda = z_diff/wavelength
+   
+   uu_array = (np.sin(hourangle)*x_diff_lambda + np.cos(hourangle)*y_diff_lambda + 0.*z_diff_lambda) #* (1./wavelength)
+   vv_array = (-np.sin(declination)*np.cos(hourangle)*x_diff_lambda + np.sin(declination)*np.sin(hourangle)*y_diff_lambda + np.cos(declination)*z_diff_lambda) #* (1./wavelength)
+   ww_array = (np.cos(declination)*np.cos(hourangle)*x_diff_lambda - np.cos(declination)*np.sin(hourangle)*y_diff_lambda + np.sin(declination)*z_diff_lambda) #* (1./wavelength)
+   return(uu_array,vv_array,ww_array)
+   
+def cal_standard_baseline_number(ant1,ant2):
+   baseline_number = (ant1 * 256) + ant2
+   return baseline_number
+    
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
    test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
@@ -1577,35 +1668,6 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       #casacore stuff: https://casacore.github.io/python-casacore/casacore_tables.html#casacore.tables.tablesummary
       #Okay looks good, now lets try to calibrate the corresponding ms from the EDA2
       #eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
-      
-      ##This whole plan is bad:
-      ##need to get rid of ant 255 from eda2 data (to match model)
-      ##export as uvfits with antenna range
-      ##write out the uvfits file
-      #casa_cmd_filename = 'export_cropped_uvfits.sh'
-      #cropped_uvits_filename = eda2_ms_name.split('/')[-1].split('.ms')[0] + "_cropped255.uvfits"
-      #cropped_ms_filename = eda2_ms_name.split('/')[-1].split('.ms')[0] + "_cropped255.ms"
-      #cmd = "rm -rf %s %s %s" % (cropped_uvits_filename,cropped_ms_filename,casa_cmd_filename)
-      #print(cmd)
-      #os.system(cmd)
-      #
-      #ints = np.arange(0,256)
-      #string_ints = [str(int) for int in ints]
-      #antenna_string = ",".join(string_ints)
-      #
-      #cmd = "exportuvfits(vis='%s',fitsfile='%s',datacolumn='data',overwrite=True,writestation=False)" % (eda2_ms_name,cropped_uvits_filename)
-      #print(cmd)
-      #os.system(cmd)
-      #
-      #with open(casa_cmd_filename,'w') as f:
-      #   f.write(cmd)
-      #     
-      #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-      #print(cmd)
-      #os.system(cmd)
-      #
-      #now import the cropped one!
-
       eda2_ms_table = table(eda2_ms_name,readonly=False)
       eda2_table_summary = tablesummary(eda2_ms_name)
       #print(eda2_table_summary)
@@ -1779,6 +1841,207 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(cmd)
       os.system(cmd)
 
+def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_concat_list=[],plot_cal=False,uv_cutoff=0,per_chan_cal=False,EDA2_data=True,sim_only_EDA2=[]):
+   if len(sim_only_EDA2)!=0:
+      sim_only=True
+   #think about how to use coherence:
+   #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
+   print("averaging EDA2 obs in time before calibration")
+   #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
+   #pol = pol_list[0]
+   gsm  = GlobalSkyModel()
+   wsclean_imsize = '512'
+   wsclean_scale = '900asec'  
+   
+   #if not sim_only:
+     
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+      if len(n_obs_concat_list) > 0:
+         if len(EDA2_chan_list)==1:
+            n_obs_concat = n_obs_concat_list[chan_num]
+         else:
+            n_obs_concat = n_obs_concat_list[EDA2_chan_index]
+      else:
+         n_obs_concat = 1
+      #freq_MHz = np.round(400./512.*float(EDA2_chan))
+      freq_MHz = 400./512.*float(EDA2_chan)
+      wavelength = 300./freq_MHz
+      centre_freq = float(freq_MHz)
+      fine_chan_width_MHz = fine_chan_width_Hz/1000000.  
+      if uv_cutoff!=0:
+         uv_cutoff_m = uv_cutoff * wavelength
+      lst = lst_list[EDA2_chan_index]
+      lst_deg = (float(lst)/24)*360.
+      if len(EDA2_chan_list)==1:
+         obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      else:
+         obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      first_obstime = obs_time_list[0]
+      
+      #guard against cases where there are no data for that channel
+      if first_obstime==0:
+         continue
+      else:
+         pass
+
+      eda2_ms_table = table(eda2_ms_name,readonly=False)
+      eda2_table_summary = tablesummary(eda2_ms_name)
+      #print(eda2_table_summary)
+      eda2_data = get_data(eda2_ms_table)
+      print(eda2_data.shape)
+      eda2_uvw = get_uvw(eda2_ms_table)
+      eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
+      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+
+      model_ms_table = table(model_ms_name,readonly=True)
+      model_data = get_data(model_ms_table)
+      model_uvw = get_uvw(model_ms_table)    
+      model_ant1, model_ant2 = get_ant12(model_ms_name)
+      model_ants = np.vstack((model_ant1,model_ant2)).T
+
+      #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
+      model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
+      n_common = np.count_nonzero(model_ms_indices) 
+      print(n_common)
+      eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
+      n_common = np.count_nonzero(eda2_ms_indices)
+      print(n_common)
+      
+      #ind = np.lexsort((b,a)) # Sort by a, then by b
+      #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
+      
+      eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+      eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+      eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+
+      model_common_ant1 = model_ant1[model_ms_indices]
+      model_common_ant2 = model_ant2[model_ms_indices]
+      model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
+      
+      #don't sort the ant arrays, these are what we use to sort the other arrays!
+      #model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
+      #model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
+            
+      common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+      common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+      
+      common_eda2_data = eda2_data[eda2_ms_indices]
+      common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
+      #print(common_eda2_data_sorted.shape)
+      #print(common_eda2_data_sorted[0:10,0,0])
+      
+      common_model_uvw = model_uvw[model_ms_indices]
+      common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
+
+      common_model_data = model_data[model_ms_indices]
+      common_model_data_sorted = common_model_data[model_common_sort_inds]
+      #print(common_model_data_sorted.shape)
+      #print(common_model_data_sorted[0:10,0,0])      
+      
+      #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
+      ant2_list=[]
+      for ant2_index,ant2 in enumerate(model_common_ant2):
+         if ant2==254:
+            ant2_list.append(ant2_index)
+      #print(len(ant2_list))
+      #print(ant2_list)
+      
+      old_model_common_ant2 = model_common_ant2
+      old_model_common_ant1 = model_common_ant1
+      old_common_model_data_sorted = common_model_data_sorted
+      counter=0
+      
+      #a = np.array([[1, 1], [2, 2], [3, 3]])
+      #print(a)
+      #b = np.insert(a, 1, 5, axis=0)
+      #print(b)
+      
+      
+      for ant2_index in ant2_list:
+         ant2_index+=counter
+         ant1_value = old_model_common_ant1[ant2_index-1]
+         #new_data_value = np.zeros((1,4))
+         #print(new_data_value.shape)
+         #sys.exit()
+         #print(old_array.shape)
+         new_model_common_ant2 = np.insert(old_model_common_ant2,ant2_index+1,255)
+         new_model_common_ant1 = np.insert(old_model_common_ant1,ant2_index+1,ant1_value)
+         new_common_model_data_sorted = np.insert(old_common_model_data_sorted,ant2_index+1,0,axis=0)
+         #print(old_common_model_data_sorted[ant2_index-2:ant2_index+5])
+         #print(new_common_model_data_sorted[ant2_index-2:ant2_index+6])
+         #print(new_array[ant2_index+1])
+         old_model_common_ant2 = new_model_common_ant2
+         old_model_common_ant1 = new_model_common_ant1
+         old_common_model_data_sorted = new_common_model_data_sorted
+         counter+=1
+      new_model_common_ant2 = np.append(new_model_common_ant2,np.array([254,255,255]))
+      new_model_common_ant1 = np.append(new_model_common_ant1,np.array([254,254,255]))
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      
+      #print(new_common_model_data_sorted.shape)
+      repetitions = 32
+      new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
+      #print(new_common_model_data_sorted_tile.shape)
+      
+      #print(len(new_model_common_ant2_sorted))
+      #print((new_model_common_ant2_sorted[-200:-1]))
+      #print(eda2_ant2.shape)
+      #print(eda2_ant2[-200:-1])
+      
+      #print(common_model_data_sorted.shape)
+      #print(common_model_data_sorted[-5:])
+      #print(new_common_model_data_sorted.shape)
+      #print((new_common_model_data_sorted[-5:]))
+
+      #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
+      #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
+      #arrrgghhhh
+      try:
+         add_col(eda2_ms_table, "MODEL_DATA")
+      except:
+         pass
+      put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+      eda2_ms_table.close()     
+
+
+      #try imaging the model column of the ms:
+      wsclean_imsize = '512'
+      wsclean_scale = '900asec'
+      test_image_name = "complex_beam_test"
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #need to flag ant 255 .... also flux scale is about half (not treating polarisation correctly?)
+      #use uv cutoff at half wavelength?
+      #try cal with -ch 32
+      
+      #try calibrate?
+      gain_solutions_name = 'complex_beam_test_calibrate_sols.bin' 
+      calibrate_options = ''
+      cmd = "rm -rf %s" % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)  
+      #calibrate
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      #plot cal sols
+      cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #test image the CORRECTED data'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      print(cmd)
+      os.system(cmd)
+
 
 
 #times
@@ -1798,17 +2061,36 @@ lst_hrs_list = []
 for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
    #there might have been no obs:
    if EDA2_obs_time!=0:
-      print(EDA2_obs_time)
+      #print(EDA2_obs_time)
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time)
       lst_hrs_list.append(lst_eda2_hrs)
    else:
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       lst_hrs_list.append(lst_eda2_hrs)
       
+#print("lst_hrs_list")
+#print(lst_hrs_list)
       
       
-      
-      
+##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
+chan_num = 0
+plot_from_saved = False
+#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
+pt_source=False
+#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
+#model_ms_name= "20200303T133733_50.000.ms"
+#eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
+#calibrate_with_complex_beam_model(model_ms_name=model_ms_name,eda2_ms_name=eda2_ms_name)
+plot_cal = True
+per_chan_cal = False
+calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+
+
+
+
+
+
+
       
       
       
