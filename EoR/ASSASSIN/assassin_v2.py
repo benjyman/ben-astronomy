@@ -2034,11 +2034,11 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
      
          cmd = "rm -rf %s" % (gain_solutions_name)
          print(cmd)
-         os.system(cmd)  
+         #os.system(cmd)  
          #calibrate
          cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
          print(cmd)
-         os.system(cmd)
+         #os.system(cmd)
          #plot cal sols
          
          #plot the sols and 
@@ -2049,20 +2049,62 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
                #Plot the cal solutions
                cmd = "aocal_plot.py  %s " % (gain_solutions_name)
                print(cmd)
-               os.system(cmd)
+               #os.system(cmd)
                 
             cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
             print(cmd)
-            os.system(cmd)
+            #os.system(cmd)
          
             #test image the CORRECTED data'
             #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
             #print(cmd)
             #os.system(cmd)
       
-      print(wsclean_cal_ms_name_list)
+      number_of_good_obs = len(wsclean_cal_ms_name_list)
+      print("number of good obs used in chan %s is %s" % (EDA2_chan,number_of_good_obs)) 
+       
+      #print(wsclean_cal_ms_name_list)
+      #now average
+      av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
 
-
+      for ms_name_index,ms_name in enumerate(wsclean_cal_ms_name_list):    
+         #need to use kariukes ms_utils instead (better anyway!)
+         
+         #if this is the first observation create a copy of the ms to be the sum ms
+         if(ms_name_index==0):
+            cmd = 'rm -rf %s' % (av_ms_name)
+            print(cmd)
+            os.system(cmd)
+            
+            cmd = 'cp -r %s %s' % (ms_name,av_ms_name)
+            print(cmd)
+            os.system(cmd)
+            
+            sum_ms_table = table(ms_name,readonly=True)
+            sum_ms_data = get_data(sum_ms_table, col="DATA")
+            #print(sum_ms_data.shape)
+            sum_ms_table.close()
+            
+         #update the sum ms by adding the current ms data
+         if(ms_name_index!=0):
+            ms_table = table(ms_name,readonly=True)
+            new_data = get_data(ms_table, col="DATA")
+            sum_ms_data += new_data
+            ms_table.close()
+            
+      #print(sum_ms_data.shape)
+      av_ms_data = sum_ms_data / number_of_good_obs
+      av_ms_table = table(av_ms_name,readonly=False)
+      put_col(av_ms_table, col="DATA", dat=av_ms_data)
+      #print("we have an averaged ms")
+      av_ms_table.close()
+      
+      #calibrate av ms
+      #image to check
+      
+      #freq av to one chan?
+      
+      
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
