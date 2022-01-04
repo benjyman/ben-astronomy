@@ -129,7 +129,29 @@ def calc_uvw(x_diff,y_diff,z_diff,freq_MHz,hourangle=0.,declination=mwa_latitude
 def cal_standard_baseline_number(ant1,ant2):
    baseline_number = (ant1 * 256) + ant2
    return baseline_number
-    
+
+def calc_LNA_impedance_eda2(freq_MHz):
+   #See Daniel email from 18/09/2018 on normalisation factor, updated email 25 Nov for EDA2 normalisation calculation
+   #For EDA2 the LNA impedance is actually based on RLC lumped circuit model:
+   #Series component
+   Ls = 2.e-9 #nH
+   #Parallel component
+   Rp = 914. #ohms
+   Lp = 450.e-9 #nH
+   Cp = 3.2e-12 #pF
+   #So the full impedance is calculated as follows:
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+
+   Z = 1j*w*Ls + (1./Rp + (1j*w*Cp) + 1./(1j*w*Lp))**(-1)
+   #You can double check your impedance calculation with Marcin’s paper (pg 4)
+   return(Z)
+
+def calc_beam_normalisation(freq_MHz,LNA_impedance):
+   mu_0 = 4.*np.pi*10**(-7)
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+   normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
+   return(normalisation_factor)
+   
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None'):
    test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
@@ -457,11 +479,18 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                E_phi_cube2 = beam_data2['Ephi'][:,:,0:test_n_ants]
                E_theta_cube2 = beam_data2['Etheta'][:,:,0:test_n_ants]
                
-               #maybe this is not right, if the sims were done to normalise a zenith-pointed staion beam of 256 antenna (as for eda-1) then maybe we just need to normalise by sqrt(256)?
-               #lna_impedance = calc_LNA_impedance_eda2(freq_MHz)
-               #beam_norm = calc_beam_normalisation(freq_MHz,lna_impedance)
-               beam_norm = np.sqrt(256)
+               
+               #Daniels version of normalising the beam i.e. getting in correct unitless form  by getting rid on m squared
+               #Doesn't have to be 1 at zenith, just need to make sure use same normalised beam for signal extraction
+               
+               lna_impedance = calc_LNA_impedance_eda2(freq_MHz)
+               beam_norm = calc_beam_normalisation(freq_MHz,lna_impedance)
                print("normalising beam by %0.5f %0.5fj " % (beam_norm.real,beam_norm.imag))
+               
+               #find where the total power (Ephi*Ephi + E_theta*Etheta) is maximum and divide both E_phi and E_theta by their
+               #values at that position (squared). This gives you a power pattern with max 1 for each beam map and retains the
+               #relative vlaues between E_phi and E_theta and the ss,yy,xy,yx beams...
+               
                E_phi_cube1 = E_phi_cube1 * beam_norm
                E_theta_cube1 = E_theta_cube1 * beam_norm
                E_phi_cube2 = E_phi_cube2 * beam_norm
@@ -2015,7 +2044,7 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
          ##try imaging the model column of the ms:
          #wsclean_imsize = '512'
          #wsclean_scale = '900asec'
-         #test_image_name = "complex_beam_test"
+         test_image_name = "complex_beam_test"
          #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
          #print(cmd)
          #os.system(cmd)
@@ -2034,11 +2063,11 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
      
          cmd = "rm -rf %s" % (gain_solutions_name)
          print(cmd)
-         #os.system(cmd)  
+         os.system(cmd)  
          #calibrate
          cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
          print(cmd)
-         #os.system(cmd)
+         os.system(cmd)
          #plot cal sols
          
          #plot the sols and 
@@ -2053,7 +2082,7 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
                 
             cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
             print(cmd)
-            #os.system(cmd)
+            os.system(cmd)
          
             #test image the CORRECTED data'
             #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
@@ -2100,8 +2129,38 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
       av_ms_table.close()
       
       #calibrate av ms
-      #image to check
+      if uv_cutoff==0:
+         gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols_av.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+         calibrate_options = ''
+      else:
+         gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols_%0.3f_m_av.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15],uv_cutoff_m)
+         calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
+     
+      cmd = "rm -rf %s" % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)  
+      #calibrate
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
       
+      #plot cal sols
+      if plot_cal:
+         #Plot the cal solutions
+         cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+         print(cmd)
+         os.system(cmd)
+          
+      cmd = "applysolutions %s %s  " % (av_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #test image the CORRECTED data'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected_av",wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
+      print(cmd)
+      os.system(cmd)
+         
+
       #freq av to one chan?
       
       
@@ -2139,13 +2198,18 @@ plot_from_saved = False
 #simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
 pt_source=False
 #write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],pt_source=pt_source)
+#######
+#just for initial testing of calibration
 #model_ms_name= "20200303T133733_50.000.ms"
 #eda2_ms_name = "/md0/EoR/EDA2/20200303_data/64/20200303_133733_eda2_ch32_ant256_midday_avg8140.ms" 
 #calibrate_with_complex_beam_model(model_ms_name=model_ms_name,eda2_ms_name=eda2_ms_name)
+#######
+#now with time averaging
 plot_cal = True
 per_chan_cal = False
-calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 
+#now need to extract the global signal using the complex beams
 
 
 
