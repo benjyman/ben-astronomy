@@ -1880,8 +1880,10 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
    wsclean_imsize = '512'
    wsclean_scale = '900asec'  
    
+   number_of_good_obs_list = []
+   number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
    #if not sim_only:
-     
+    
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       if len(n_obs_concat_list) > 0:
          if len(EDA2_chan_list)==1:
@@ -2091,6 +2093,7 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
       
       number_of_good_obs = len(wsclean_cal_ms_name_list)
       print("number of good obs used in chan %s is %s" % (EDA2_chan,number_of_good_obs)) 
+      number_of_good_obs_list.append(str(number_of_good_obs))
        
       #print(wsclean_cal_ms_name_list)
       #now average
@@ -2160,9 +2163,47 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
       print(cmd)
       os.system(cmd)
          
+   number_of_good_obs_list_string = ",".join(number_of_good_obs_list)
+   with open(number_of_good_obs_list_filename, "w") as f:
+      f.write(number_of_good_obs_list_string)
+   
+   #freq av to one chan?
 
-      #freq av to one chan?
+def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[]):
+   number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
+   with open(number_of_good_obs_list_filename) as f:
+      number_of_good_obs_list = f.read()
+   
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+      number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
+      lst = lst_list[EDA2_chan_index]
+      lst_deg = (float(lst)/24)*360.
       
+      if len(EDA2_chan_list)==1:
+         obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      else:
+         obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      first_obstime = obs_time_list[0]
+         
+      av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+      print("getting data from %s" % av_ms_name)
+      
+      eda2_ms_table = table(av_ms_name,readonly=True)
+      eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
+      
+      #for now, average 32 (central 28) chans to 1, look at only x pol and real
+      eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
+      eda2_data_complex_freq_av_x = eda2_data_complex_freq_av[:,0]
+      eda2_data_complex_freq_av_x_real=eda2_data_complex_freq_av_x.real
+
+      #now get expected unity response ms
+      
+      
+      
+         
+
+
+
       
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
@@ -2210,7 +2251,8 @@ per_chan_cal = False
 #calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 
 #now need to extract the global signal using the complex beams
-
+global_signal_K = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
+#print(global_signal_K)
 
 
 
