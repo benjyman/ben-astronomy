@@ -28,6 +28,7 @@ from astropy.io import fits
 from casacore.tables import table, tablesummary
 sys.path.append("/md0/code/git/ben-astronomy/ms")
 from ms_utils import *
+import statsmodels.api as sm
 
 k = 1.38065e-23
 c = 299792458.
@@ -267,14 +268,26 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       #point_source_at_zenith_sky_512 = gsm_map_512 * 0.
       
       gsm_auto_array = np.empty(test_n_ants)
+      baseline_length_lambda_array = np.empty(n_baselines_test)
       gsm_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
       gsm_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
-      baseline_length_lambda_array = np.empty(n_baselines_test)
-      if sum_unity:
+      
+      #do all the rotation stuff on the full res maps ()
+      zenith_dec = mwa_latitude_deg
+      zenith_ra = lst_deg
+      dec_rotate_gsm = zenith_dec-90. 
+      ra_rotate_gsm = zenith_ra
+      r_gsm_C = hp.Rotator(coord=['G','C'])
+      #r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], deg=True) #, coord=['C', 'C']
+      #r_gsm_ra = hp.Rotator(rot=[ra_rotate_gsm,0], deg=True)
+      r_gsm_C_ra_dec = hp.Rotator(coord=['G','C'],rot=[ra_rotate_gsm,dec_rotate_gsm], deg=True)
+      r_beam = hp.Rotator(rot=[-90,0], deg=True)
+         
+      if sim_unity:
          unity_auto_array = np.empty(test_n_ants)
          unity_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
          unity_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0])
-      if zenith_pt_source:
+      if sim_pt_source:
          zenith_point_source_cross_visibility_real_array =  np.empty(baseline_length_lambda_array.shape[0])
          zenith_point_source_cross_visibility_imag_array =  np.empty(baseline_length_lambda_array.shape[0]) 
          zenith_point_source_auto_array = np.empty(test_n_ants)
@@ -282,9 +295,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          #follow Jacks advice - 1 K (Jy?) point source at zenith
          #going to rotate sky not beam. Beam is in spherical coords, not RA/dec, but they are the same if you do 90 deg - dec for theta
          #SO beam centre 'zenith' is actually ra=0,dec=90-mwa_lat
-         #see here: http://faraday.uwyo.edu/~admyers/ASTR5160/handouts/51609.pdf
-         zenith_dec = mwa_latitude_deg
-         zenith_ra = lst_deg 
+         #see here: http://faraday.uwyo.edu/~admyers/ASTR5160/handouts/51609.pdf 
          
          #zenith_pixel = hp.ang2pix(512,np.radians(90.-(zenith_dec)),np.radians(zenith_ra))
          #point_source_at_zenith_sky_512[zenith_pixel] = 1.
@@ -303,19 +314,10 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          figmap.savefig(fig_name)
          print("saved %s" % fig_name) 
       
-      
-         #do all the rotation stuff on the full res maps ()
-         dec_rotate_gsm = zenith_dec-90. 
-         ra_rotate_gsm = zenith_ra
-         
          #i've got my coord system messed up here a bit - dec (theta) should go first in the rotation ...
          #https://zonca.dev/2021/03/rotate-maps-healpy.html
-         r_gsm_C = hp.Rotator(coord=['G','C'])
-         #r_gsm_dec = hp.Rotator(rot=[0,dec_rotate_gsm], deg=True) #, coord=['C', 'C']
-         #r_gsm_ra = hp.Rotator(rot=[ra_rotate_gsm,0], deg=True)
-         r_gsm_C_ra_dec = hp.Rotator(coord=['G','C'],rot=[ra_rotate_gsm,dec_rotate_gsm], deg=True)
+
          r_pt_src_ra_dec = hp.Rotator(coord=['C'],rot=[ra_rotate_gsm,dec_rotate_gsm], deg=True)
-         r_beam = hp.Rotator(rot=[-90,0], deg=True)
          #jishnu uses this rotator for the beam:
          #r_beam    = hp.Rotator(rot=[90, -90.0], coord=['C', 'C'], deg=True)
          
@@ -1235,99 +1237,62 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       
       data_mask = np.zeros(NFFT)
       
-      gsm_cross_visibility_real_array_filename_XX = "gsm_cross_visibility_real_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_XX = "gsm_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_XX = "zenith_point_source_cross_visibility_real_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_XX = "zenith_point_source_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
+      if input_sky=="unity":
+         cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_YX_%0.3f.npy" % (input_sky,freq_MHz)
+         cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_YX_%0.3f.npy" % (input_sky,freq_MHz)      
+         auto_array_filename_X = "%s_auto_array_X_%0.3f.npy" % (input_sky,freq_MHz)
+         auto_array_filename_Y = "%s_auto_array_Y_%0.3f.npy" % (input_sky,freq_MHz)
+      else:
+         cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         auto_array_filename_X = "%s_auto_array_%s_X_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         auto_array_filename_Y = "%s_auto_array_%s_Y_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
       
-      gsm_auto_array_filename_X = "gsm_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_auto_array_filename_Y = "gsm_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      unity_auto_array_filename_X = "unity_auto_array_%s_X_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      unity_auto_array_filename_Y = "unity_auto_array_%s_Y_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_auto_array_filename_XX = "zenith_point_source_auto_array_%s_XX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_auto_array_filename_YY = "zenith_point_source_auto_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-
-      gsm_cross_visibility_real_array_filename_YY = "gsm_cross_visibility_real_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_YY = "gsm_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_YY = "zenith_point_source_cross_visibility_real_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_YY = "zenith_point_source_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-
-      gsm_cross_visibility_real_array_filename_XY= "gsm_cross_visibility_real_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_XY = "gsm_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_XY = "zenith_point_source_cross_visibility_real_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_XY = "zenith_point_source_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-
-      gsm_cross_visibility_real_array_filename_YX = "gsm_cross_visibility_real_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      gsm_cross_visibility_imag_array_filename_YX = "gsm_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_real_array_filename_YX = "zenith_point_source_cross_visibility_real_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-      zenith_point_source_cross_visibility_imag_array_filename_YX = "zenith_point_source_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (EDA2_obs_time,freq_MHz)
-     
       uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
       vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
       ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
       baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
       
-      if input_sky=="gsm":
-         gsm_cross_visibility_real_array_XX = np.load(gsm_cross_visibility_real_array_filename_XX)
-         gsm_cross_visibility_imag_array_XX = np.load(gsm_cross_visibility_imag_array_filename_XX)   
-         gsm_cross_visibility_real_array_YY = np.load(gsm_cross_visibility_real_array_filename_YY)
-         gsm_cross_visibility_imag_array_YY = np.load(gsm_cross_visibility_imag_array_filename_YY)     
-         gsm_cross_visibility_real_array_XY = np.load(gsm_cross_visibility_real_array_filename_XY)
-         gsm_cross_visibility_imag_array_XY = np.load(gsm_cross_visibility_imag_array_filename_XY) 
-         gsm_cross_visibility_real_array_YX = np.load(gsm_cross_visibility_real_array_filename_YX)
-         gsm_cross_visibility_imag_array_YX = np.load(gsm_cross_visibility_imag_array_filename_YX) 
-         
-         auto_array_X = np.load(gsm_auto_array_filename_X)
-         auto_array_Y = np.load(gsm_auto_array_filename_Y)
-         
-         cross_visibility_complex_array_XX = gsm_cross_visibility_real_array_XX + 1j*gsm_cross_visibility_imag_array_XX
-         cross_visibility_complex_array_YY = gsm_cross_visibility_real_array_YY + 1j*gsm_cross_visibility_imag_array_YY
-         cross_visibility_complex_array_XY = gsm_cross_visibility_real_array_XY + 1j*gsm_cross_visibility_imag_array_XY
-         cross_visibility_complex_array_YX = gsm_cross_visibility_real_array_YX + 1j*gsm_cross_visibility_imag_array_YX
-           
-      elif input_sky=="pt_source":
-         zenith_point_source_cross_visibility_real_array_XX = np.load(zenith_point_source_cross_visibility_real_array_filename_XX)
-         zenith_point_source_cross_visibility_imag_array_XX = np.load(zenith_point_source_cross_visibility_imag_array_filename_XX)              
-         zenith_point_source_auto_array_XX = np.load(zenith_point_source_auto_array_filename_XX)
-         zenith_point_source_cross_visibility_real_array_YY = np.load(zenith_point_source_cross_visibility_real_array_filename_YY)
-         zenith_point_source_cross_visibility_imag_array_YY = np.load(zenith_point_source_cross_visibility_imag_array_filename_YY)              
-         zenith_point_source_auto_array_YY = np.load(zenith_point_source_auto_array_filename_YY)
-         zenith_point_source_cross_visibility_real_array_XY = np.load(zenith_point_source_cross_visibility_real_array_filename_XY)
-         zenith_point_source_cross_visibility_imag_array_XY = np.load(zenith_point_source_cross_visibility_imag_array_filename_XY)              
-         zenith_point_source_cross_visibility_real_array_YX = np.load(zenith_point_source_cross_visibility_real_array_filename_YX)
-         zenith_point_source_cross_visibility_imag_array_YX = np.load(zenith_point_source_cross_visibility_imag_array_filename_YX)              
+
+      cross_visibility_real_array_XX = np.load(cross_visibility_real_array_filename_XX)
+      cross_visibility_imag_array_XX = np.load(cross_visibility_imag_array_filename_XX)   
+      cross_visibility_real_array_YY = np.load(cross_visibility_real_array_filename_YY)
+      cross_visibility_imag_array_YY = np.load(cross_visibility_imag_array_filename_YY)     
+      cross_visibility_real_array_XY = np.load(cross_visibility_real_array_filename_XY)
+      cross_visibility_imag_array_XY = np.load(cross_visibility_imag_array_filename_XY) 
+      cross_visibility_real_array_YX = np.load(cross_visibility_real_array_filename_YX)
+      cross_visibility_imag_array_YX = np.load(cross_visibility_imag_array_filename_YX) 
       
-         auto_array_X = np.load(zenith_point_source_auto_array_filename_X)
-         auto_array_Y = np.load(zenith_point_source_auto_array_filename_Y)
-         
-         cross_visibility_complex_array_XX = zenith_point_source_cross_visibility_real_array_XX + 1j*zenith_point_source_cross_visibility_imag_array_XX
-         cross_visibility_complex_array_YY = zenith_point_source_cross_visibility_real_array_YY + 1j*zenith_point_source_cross_visibility_imag_array_YY
-         cross_visibility_complex_array_XY = zenith_point_source_cross_visibility_real_array_XY + 1j*zenith_point_source_cross_visibility_imag_array_XY
-         cross_visibility_complex_array_YX = zenith_point_source_cross_visibility_real_array_YX + 1j*zenith_point_source_cross_visibility_imag_array_YX
-         
-      elif input_sky=="unity":
-         unity_cross_visibility_real_array_XX = np.load(unity_cross_visibility_real_array_filename_XX)
-         unity_cross_visibility_imag_array_XX = np.load(unity_cross_visibility_imag_array_filename_XX)   
-         unity_cross_visibility_real_array_YY = np.load(unity_cross_visibility_real_array_filename_YY)
-         unity_cross_visibility_imag_array_YY = np.load(unity_cross_visibility_imag_array_filename_YY)     
-         unity_cross_visibility_real_array_XY = np.load(unity_cross_visibility_real_array_filename_XY)
-         unity_cross_visibility_imag_array_XY = np.load(unity_cross_visibility_imag_array_filename_XY) 
-         unity_cross_visibility_real_array_YX = np.load(unity_cross_visibility_real_array_filename_YX)
-         unity_cross_visibility_imag_array_YX = np.load(unity_cross_visibility_imag_array_filename_YX)
-         
-         auto_array_X = np.load(unity_auto_array_filename_X)
-         auto_array_Y = np.load(unity_auto_array_filename_Y)
-         
-         cross_visibility_complex_array_XX = unity_cross_visibility_real_array_XX + 1j*unity_cross_visibility_imag_array_XX
-         cross_visibility_complex_array_YY = unity_cross_visibility_real_array_YY + 1j*unity_cross_visibility_imag_array_YY
-         cross_visibility_complex_array_XY = unity_cross_visibility_real_array_XY + 1j*unity_cross_visibility_imag_array_XY
-         cross_visibility_complex_array_YX = unity_cross_visibility_real_array_YX + 1j*unity_cross_visibility_imag_array_YX
-         
-      else:
-         print("input_sky %s not recognised" % input_sky)
-         sys.exit()
+      auto_array_X = np.load(auto_array_filename_X)
+      auto_array_Y = np.load(auto_array_filename_Y)
       
-      
+      #why did I do this?
+      #cross_visibility_complex_array_XX = cross_visibility_real_array_XX + 1j*cross_visibility_imag_array_XX
+      #cross_visibility_complex_array_YY = cross_visibility_real_array_YY + 1j*cross_visibility_imag_array_YY
+      #cross_visibility_complex_array_XY = cross_visibility_real_array_XY + 1j*cross_visibility_imag_array_XY
+      #cross_visibility_complex_array_YX = cross_visibility_real_array_YX + 1j*cross_visibility_imag_array_YX
+
+      #cross_visibility_real_array_XX = np.real(cross_visibility_complex_array_XX)
+      #cross_visibility_imag_array_XX = np.imag(cross_visibility_complex_array_XX)
+      #cross_visibility_real_array_YY = np.real(cross_visibility_complex_array_YY)
+      #cross_visibility_imag_array_YY = np.imag(cross_visibility_complex_array_YY) 
+      #cross_visibility_real_array_XY = np.real(cross_visibility_complex_array_XY)
+      #cross_visibility_imag_array_XY = np.imag(cross_visibility_complex_array_XY)
+      #cross_visibility_real_array_YX = np.real(cross_visibility_complex_array_YX)
+      #cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
+             
       baseline_number_array = np.load(baseline_number_array_filename)
 
       #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
@@ -1345,16 +1310,6 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       #print(gsm_cross_visibility_real_array[0:10])
       #print(gsm_cross_visibility_imag_array[0:10])
       
-      cross_visibility_real_array_XX = np.real(cross_visibility_complex_array_XX)
-      cross_visibility_imag_array_XX = np.imag(cross_visibility_complex_array_XX)
-      cross_visibility_real_array_YY = np.real(cross_visibility_complex_array_YY)
-      cross_visibility_imag_array_YY = np.imag(cross_visibility_complex_array_YY) 
-      cross_visibility_real_array_XY = np.real(cross_visibility_complex_array_XY)
-      cross_visibility_imag_array_XY = np.imag(cross_visibility_complex_array_XY)
-      cross_visibility_real_array_YX = np.real(cross_visibility_complex_array_YX)
-      cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
-      
-
       #not needed for zenith?
       #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
       #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
@@ -1575,15 +1530,13 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       os.system(cmd)
       
       
-      #####verification stuff not needed
-      #test_image_name = mir_file_ms_name.split('.ms')[0]
-      #try imaging the ms:
-      #if pol=='X':
-      #   wsclean_imsize = '512'
-      #   wsclean_scale = '900asec'
-      #   cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-      #   print(cmd)
-      #   os.system(cmd) 
+      #####verification stuff 
+      test_image_name = mir_file_ms_name.split('.ms')[0]
+      wsclean_imsize = '512'
+      wsclean_scale = '900asec'
+      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+      print(cmd)
+      os.system(cmd) 
       
       ##try adding a model column
       #use kariukis ms_utils
@@ -1758,11 +1711,11 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       #This won't work because uvw is multi dimensional
       #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
       model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
-      n_common = np.count_nonzero(model_ms_indices) 
-      print(n_common)
+      #n_common = np.count_nonzero(model_ms_indices) 
+      #print(n_common)
       eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
-      n_common = np.count_nonzero(eda2_ms_indices)
-      print(n_common)
+      #n_common = np.count_nonzero(eda2_ms_indices)
+      #print(n_common)
       
       #ind = np.lexsort((b,a)) # Sort by a, then by b
       #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
@@ -1969,10 +1922,10 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
    
          #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
          model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
-         n_common = np.count_nonzero(model_ms_indices) 
+         #n_common = np.count_nonzero(model_ms_indices) 
          #print(n_common)
          eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
-         n_common = np.count_nonzero(eda2_ms_indices)
+         #n_common = np.count_nonzero(eda2_ms_indices)
          #print(n_common)
          
          #ind = np.lexsort((b,a)) # Sort by a, then by b
@@ -2199,12 +2152,16 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
    
    #freq av to one chan?
 
-def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[]):
+def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5):
    number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
    with open(number_of_good_obs_list_filename) as f:
       number_of_good_obs_list = f.read()
    
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+      freq_MHz = 400./512.*float(EDA2_chan)
+      wavelength = c / (freq_MHz*1e6)
+      jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+      
       number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
       lst = lst_list[EDA2_chan_index]
       lst_deg = (float(lst)/24)*360.
@@ -2217,21 +2174,154 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[]):
          
       av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
       print("getting data from %s" % av_ms_name)
+      unity_ms_name = "unity_%0.3f.ms" % (freq_MHz)
+      print("and unity response from %s" % unity_ms_name)
       
       eda2_ms_table = table(av_ms_name,readonly=True)
       eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
-      
+      #do this later on common data
       #for now, average 32 (central 28) chans to 1, look at only x pol and real
-      eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
-      eda2_data_complex_freq_av_x = eda2_data_complex_freq_av[:,0]
-      eda2_data_complex_freq_av_x_real=eda2_data_complex_freq_av_x.real
+      #eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
+      #eda2_data_complex_freq_av_x = eda2_data_complex_freq_av[:,0]
+      #eda2_data_complex_freq_av_x_real=eda2_data_complex_freq_av_x.real
+      #print(eda2_data_complex_freq_av_x.shape)
+      #print(eda2_data_complex_freq_av_x_real[1])
+      #sys.exit()
 
       #now get expected unity response ms
+      unity_ms_table = table(unity_ms_name,readonly=True)
+      unity_data_complex = get_data(unity_ms_table, col="DATA")
+      #do this later
+      #unity_data_complex_freq_av_x = unity_data_complex[:,0,1]
+      #unity_data_complex_freq_av_x_real=unity_data_complex_freq_av_x.real      
       
+      #sort out common baselines just like in calibrate_with_complex_beams
+      eda2_uvw = get_uvw(eda2_ms_table)
+      eda2_ant1, eda2_ant2 = get_ant12(av_ms_name)
+      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+
+      unity_uvw = get_uvw(unity_ms_table)    
+      unity_ant1, unity_ant2 = get_ant12(unity_ms_name)
+      unity_ants = np.vstack((unity_ant1,unity_ant2)).T
+
+      unity_ms_indices = inNd(unity_ants, eda2_ants, assume_unique=False)
+      #n_common = np.count_nonzero(unity_ms_indices) 
+      #print(n_common)
+      eda2_ms_indices = inNd(eda2_ants, unity_ants, assume_unique=False)
+      #n_common = np.count_nonzero(eda2_ms_indices)
+      #print(n_common)
+
+      eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+      eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+      eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+
+      unity_common_ant1 = unity_ant1[unity_ms_indices]
+      unity_common_ant2 = unity_ant2[unity_ms_indices]
+      unity_common_sort_inds = np.lexsort((unity_common_ant2,unity_common_ant1)) # Sort by a, then by b
+
+      common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+      common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+      #print(common_eda2_uvw_sorted.shape)
+      #print(common_eda2_uvw_sorted[0:10])
+      common_eda2_data = eda2_data_complex[eda2_ms_indices]
+      common_eda2_data_sorted = eda2_data_complex[eda2_common_sort_inds]
+      #print(common_eda2_data_sorted.shape)
+      #print(common_eda2_data_sorted[0:10,0,0])
       
+      common_unity_uvw = unity_uvw[unity_ms_indices]
+      common_unity_uvw_sorted = common_unity_uvw[unity_common_sort_inds]
+      #print(common_unity_uvw_sorted.shape)
+      #print(common_unity_uvw_sorted[0:10])
+      common_unity_data = unity_data_complex[unity_ms_indices]
+      common_unity_data_sorted = common_unity_data[unity_common_sort_inds]
+      #print(common_unity_data_sorted.shape)
+      #print(common_unity_data_sorted[0:10,0,0])   
       
+      #in calibrate_with_complex_beams I had to go through a convoluted process to add in ant 255 to the model (unity in this case) and to add in the autos...
+      #but I think this is fine now? maybe because I am adding autos in the sims, not sure whats going on with 255
       
-         
+      #freq av and only use real for now
+      common_eda2_data_complex_freq_av = np.mean(common_eda2_data_sorted[:,2:30,:],axis=1)
+      common_eda2_data_complex_freq_av_x = common_eda2_data_complex_freq_av[:,0]
+      common_eda2_data_complex_freq_av_x_real=common_eda2_data_complex_freq_av_x.real
+      
+      common_unity_data_complex_freq_av_x = common_unity_data_sorted[:,0,0]
+      common_unity_data_complex_freq_av_x_real=common_unity_data_complex_freq_av_x.real
+      
+      #Need to sort by baseline length (then only use short baselines)
+      uvdist_array_eda2_m = np.sqrt(common_eda2_uvw_sorted[:,0]**2 + common_eda2_uvw_sorted[:,1]**2 + common_eda2_uvw_sorted[:,2]**2)
+      uvdist_array_eda2_lambda = uvdist_array_eda2_m / wavelength
+      uvdist_array_eda2_inds = uvdist_array_eda2_lambda.argsort()
+      uvdist_array_eda2_lambda_sorted = uvdist_array_eda2_lambda[uvdist_array_eda2_inds]
+      uvdist_array_eda2_lambda_sorted_no_zero = uvdist_array_eda2_lambda_sorted[uvdist_array_eda2_lambda_sorted>0]
+      #print(uvdist_array_eda2_lambda_sorted_no_zero[615:630])
+      uvdist_array_eda2_lambda_sorted_cut = uvdist_array_eda2_lambda_sorted_no_zero[uvdist_array_eda2_lambda_sorted_no_zero < uvdist_thresh_lambda]
+        
+      n_baselines_included_eda2 = len(uvdist_array_eda2_lambda_sorted_cut)
+      print("number of baselines included eda2 %s" % n_baselines_included_eda2)
+
+      common_eda2_data_complex_freq_av_x_real_sorted = common_eda2_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
+      common_eda2_data_complex_freq_av_x_real_sorted_cut = common_eda2_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
+      
+      #same again for unity (should be same baselines, but just to check)
+      uvdist_array_unity_m = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
+      uvdist_array_unity_lambda = uvdist_array_unity_m / wavelength
+      uvdist_array_unity_inds = uvdist_array_unity_lambda.argsort()
+      uvdist_array_unity_lambda_sorted = uvdist_array_unity_lambda[uvdist_array_unity_inds]
+      uvdist_array_unity_lambda_sorted_no_zero = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted>0]
+      #print(uvdist_array_unity_lambda_sorted_no_zero[615:630])
+      uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted_no_zero[uvdist_array_unity_lambda_sorted_no_zero < uvdist_thresh_lambda]
+        
+      n_baselines_included_unity = len(uvdist_array_unity_lambda_sorted_cut)
+      print("number of baselines included unity %s" % n_baselines_included_unity)
+
+      #they differ by two - I am probably not calculating the uvw accurately enough in sims
+      #just use the eda2 data uvdist cutoff
+
+      common_eda2_data_complex_freq_av_x_real_sorted = common_eda2_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
+      common_eda2_data_complex_freq_av_x_real_sorted_cut = common_eda2_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
+
+      common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
+      common_unity_data_complex_freq_av_x_real_sorted_cut = common_unity_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
+      
+
+      
+            
+            
+      #if model_type=='OLS_fixed_intercept':
+      model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut, common_unity_data_complex_freq_av_x_real_sorted_cut) #,missing='drop')
+      results = model.fit()
+      parameters = results.params
+      #print parameters
+      t_sky_jy = parameters[0]
+      t_sky_error_jy = results.bse[0]
+      
+      t_sky_K = jy_to_K * t_sky_jy
+      t_sky_error_K = jy_to_K * t_sky_error_jy
+      print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+      fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+      print(fit_string)
+      
+      #t_sky_K_list.append(t_sky_K)
+      #t_sky_error_K_list.append(t_sky_error_K)
+
+      plt.clf()
+      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut, common_eda2_data_complex_freq_av_x_real_sorted_cut,linestyle='None',marker='.')
+      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      map_title="Data and fit" 
+      plt.xlabel("Expected global-signal response")
+      plt.ylabel("Real component of visibility X pol (Jy)")
+      plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz,"x",EDA2_obs_time)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+      
+        
+      sys.exit()
 
 
 
@@ -2267,12 +2357,13 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
 plot_from_saved = False
-#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num])
-#input_sky = "gsm"   #pt_source  # unity
+sim_unity=True
+sim_pt_source=False
+#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],sim_unity=sim_unity,sim_pt_source=sim_pt_source)
+#input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
-input_sky = "unity"
-write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
-
+#input_sky = "unity"
+#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
 #######
 #just for initial testing of calibration
 #model_ms_name= "20200303T133733_50.000.ms"
@@ -2285,8 +2376,8 @@ per_chan_cal = False
 #calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 
 #now need to extract the global signal using the complex beams
-#global_signal_K = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
-#print(global_signal_K)
+global_signal_K = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
+print(global_signal_K)
 
 
 
