@@ -1913,7 +1913,8 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
          eda2_uvw = get_uvw(eda2_ms_table)
          eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
          eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
-   
+
+        
          model_ms_table = table(model_ms_name,readonly=True)
          model_data = get_data(model_ms_table)
          model_uvw = get_uvw(model_ms_table)    
@@ -1928,13 +1929,15 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
          #n_common = np.count_nonzero(eda2_ms_indices)
          #print(n_common)
          
+         
          #ind = np.lexsort((b,a)) # Sort by a, then by b
          #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
          
          eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
          eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
          eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
-   
+
+         
          model_common_ant1 = model_ant1[model_ms_indices]
          model_common_ant2 = model_ant2[model_ms_indices]
          model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
@@ -2160,7 +2163,11 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       freq_MHz = 400./512.*float(EDA2_chan)
       wavelength = c / (freq_MHz*1e6)
+      print(wavelength)
+      
       jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+      
+      print(jy_to_K)
       
       number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
       lst = lst_list[EDA2_chan_index]
@@ -2203,6 +2210,29 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       unity_uvw = get_uvw(unity_ms_table)    
       unity_ant1, unity_ant2 = get_ant12(unity_ms_name)
       unity_ants = np.vstack((unity_ant1,unity_ant2)).T
+      
+      ##lets just plot unity unity real vs unity uv dist without any sorting or cutting
+      #unity_uvw_dist = np.sqrt(unity_uvw[:,0]**2 + unity_uvw[:,1]**2 + unity_uvw[:,2]**2)
+      #print(unity_uvw_dist.shape)
+      #unity_data_complex_x = unity_data_complex[:,0,0]
+      #unity_data_complex_x_real = unity_data_complex_x.real
+      #print(unity_data_complex_x_real.shape)
+
+      ##plot the expected unity response vs baseline length
+      #plt.clf()
+      #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
+      #map_title="Unity_response_vs_uvdist" 
+      #plt.xlabel("UV distance (wavelengths)")
+      #plt.ylabel("Real component of visibility X pol (Jy)")
+      #plt.legend(loc=1)
+      ##plt.text(x_pos, y_pos, fit_string)
+      ##plt.ylim([0, 3.5])
+      #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #plt.close()
+      #print("saved %s" % fig_name)
+      #sys.exit()
 
       unity_ms_indices = inNd(unity_ants, eda2_ants, assume_unique=False)
       #n_common = np.count_nonzero(unity_ms_indices) 
@@ -2211,31 +2241,64 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #n_common = np.count_nonzero(eda2_ms_indices)
       #print(n_common)
 
+      #print_index_end = 256
       eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
       eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+      #print(eda2_common_ant1[0:print_index_end])
+      #print(eda2_common_ant2[0:print_index_end])
       eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
 
       unity_common_ant1 = unity_ant1[unity_ms_indices]
       unity_common_ant2 = unity_ant2[unity_ms_indices]
+      #print(unity_common_ant1[0:print_index_end])
+      #print(unity_common_ant2[0:print_index_end])
       unity_common_sort_inds = np.lexsort((unity_common_ant2,unity_common_ant1)) # Sort by a, then by b
-
+      
       common_eda2_uvw = eda2_uvw[eda2_ms_indices]
       common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+      #print(common_eda2_uvw_sorted[0:10])
       #print(common_eda2_uvw_sorted.shape)
       #print(common_eda2_uvw_sorted[0:10])
       common_eda2_data = eda2_data_complex[eda2_ms_indices]
-      common_eda2_data_sorted = eda2_data_complex[eda2_common_sort_inds]
+      common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
+      #print(common_eda2_data_sorted[0:10])
       #print(common_eda2_data_sorted.shape)
       #print(common_eda2_data_sorted[0:10,0,0])
       
       common_unity_uvw = unity_uvw[unity_ms_indices]
       common_unity_uvw_sorted = common_unity_uvw[unity_common_sort_inds]
+      #print(common_unity_uvw_sorted[0:10])
       #print(common_unity_uvw_sorted.shape)
       #print(common_unity_uvw_sorted[0:10])
       common_unity_data = unity_data_complex[unity_ms_indices]
       common_unity_data_sorted = common_unity_data[unity_common_sort_inds]
+      #print(common_unity_data_sorted[0:10])
       #print(common_unity_data_sorted.shape)
       #print(common_unity_data_sorted[0:10,0,0])   
+
+      ###lets just plot unity unity real vs unity uv dist of the matched data 
+      #unity_uvw_dist = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
+      #print(unity_uvw_dist.shape)
+      #unity_data_complex_x = common_unity_data_sorted[:,0,0]
+      #unity_data_complex_x_real = unity_data_complex_x.real
+      #print(unity_data_complex_x_real.shape)
+
+      ##plot the expected unity response vs baseline length
+      #plt.clf()
+      #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
+      #map_title="Unity_response_vs_uvdist" 
+      #plt.xlabel("UV distance (wavelengths)")
+      #plt.ylabel("Real component of visibility X pol (Jy)")
+      #plt.legend(loc=1)
+      ##plt.text(x_pos, y_pos, fit_string)
+      ##plt.ylim([0, 3.5])
+      #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      #figmap = plt.gcf()
+      #figmap.savefig(fig_name)
+      #plt.close()
+      #print("saved %s" % fig_name)
+  
+
       
       #in calibrate_with_complex_beams I had to go through a convoluted process to add in ant 255 to the model (unity in this case) and to add in the autos...
       #but I think this is fine now? maybe because I am adding autos in the sims, not sure whats going on with 255
@@ -2251,43 +2314,79 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #Need to sort by baseline length (then only use short baselines)
       uvdist_array_eda2_m = np.sqrt(common_eda2_uvw_sorted[:,0]**2 + common_eda2_uvw_sorted[:,1]**2 + common_eda2_uvw_sorted[:,2]**2)
       uvdist_array_eda2_lambda = uvdist_array_eda2_m / wavelength
-      uvdist_array_eda2_inds = uvdist_array_eda2_lambda.argsort()
-      uvdist_array_eda2_lambda_sorted = uvdist_array_eda2_lambda[uvdist_array_eda2_inds]
-      uvdist_array_eda2_lambda_sorted_no_zero = uvdist_array_eda2_lambda_sorted[uvdist_array_eda2_lambda_sorted>0]
+      #we don't want the auto included here
+      uvdist_array_eda2_lambda_no_zero = uvdist_array_eda2_lambda[uvdist_array_eda2_lambda>0.]
+      uvdist_array_eda2_inds = uvdist_array_eda2_lambda_no_zero.argsort()
+      uvdist_array_eda2_lambda_sorted = uvdist_array_eda2_lambda_no_zero[uvdist_array_eda2_inds]
+      #print(uvdist_array_eda2_lambda_sorted[0:300])
+
+      #uvdist_array_eda2_lambda_sorted_no_zero = uvdist_array_eda2_lambda_sorted[uvdist_array_eda2_lambda_sorted>0]
       #print(uvdist_array_eda2_lambda_sorted_no_zero[615:630])
-      uvdist_array_eda2_lambda_sorted_cut = uvdist_array_eda2_lambda_sorted_no_zero[uvdist_array_eda2_lambda_sorted_no_zero < uvdist_thresh_lambda]
-        
+      uvdist_array_eda2_lambda_sorted_cut = uvdist_array_eda2_lambda_sorted[uvdist_array_eda2_lambda_sorted < uvdist_thresh_lambda]
+      #print(uvdist_array_eda2_lambda_sorted_cut[0:300])
       n_baselines_included_eda2 = len(uvdist_array_eda2_lambda_sorted_cut)
       print("number of baselines included eda2 %s" % n_baselines_included_eda2)
-
-      common_eda2_data_complex_freq_av_x_real_sorted = common_eda2_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
+      
+      #remove the autos:
+      common_eda2_data_complex_freq_av_x_real_sorted_no_auto = common_eda2_data_complex_freq_av_x_real[uvdist_array_eda2_lambda>0]
+      common_eda2_data_complex_freq_av_x_real_sorted = common_eda2_data_complex_freq_av_x_real_sorted_no_auto[uvdist_array_eda2_inds]
       common_eda2_data_complex_freq_av_x_real_sorted_cut = common_eda2_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
       
       #same again for unity (should be same baselines, but just to check)
       uvdist_array_unity_m = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
       uvdist_array_unity_lambda = uvdist_array_unity_m / wavelength
-      uvdist_array_unity_inds = uvdist_array_unity_lambda.argsort()
-      uvdist_array_unity_lambda_sorted = uvdist_array_unity_lambda[uvdist_array_unity_inds]
-      uvdist_array_unity_lambda_sorted_no_zero = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted>0]
+      #we don't want the auto included here
+      uvdist_array_unity_lambda_no_zero = uvdist_array_unity_lambda[uvdist_array_unity_lambda>0.]
+      uvdist_array_unity_inds = uvdist_array_unity_lambda_no_zero.argsort()
+      uvdist_array_unity_lambda_sorted = uvdist_array_unity_lambda_no_zero[uvdist_array_unity_inds]
+
+      #uvdist_array_unity_lambda_sorted_no_zero = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted>0]
       #print(uvdist_array_unity_lambda_sorted_no_zero[615:630])
-      uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted_no_zero[uvdist_array_unity_lambda_sorted_no_zero < uvdist_thresh_lambda]
+      uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted < uvdist_thresh_lambda]
         
       n_baselines_included_unity = len(uvdist_array_unity_lambda_sorted_cut)
       print("number of baselines included unity %s" % n_baselines_included_unity)
 
       #they differ by two - I am probably not calculating the uvw accurately enough in sims
       #just use the eda2 data uvdist cutoff
-
-      common_eda2_data_complex_freq_av_x_real_sorted = common_eda2_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
-      common_eda2_data_complex_freq_av_x_real_sorted_cut = common_eda2_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
-
-      common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real[uvdist_array_eda2_inds]
+      uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted[0:n_baselines_included_eda2]
+ 
+      #remove the autos
+      common_unity_data_complex_freq_av_x_real_sorted_no_auto = common_unity_data_complex_freq_av_x_real[uvdist_array_unity_lambda>0]
+      common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real_sorted_no_auto[uvdist_array_unity_inds]
       common_unity_data_complex_freq_av_x_real_sorted_cut = common_unity_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
       
 
-      
-            
-            
+      #plot the expected unity response vs baseline length
+      plt.clf()
+      plt.scatter(uvdist_array_eda2_lambda_sorted_cut,common_eda2_data_complex_freq_av_x_real_sorted_cut)            
+      map_title="Unity_response_vs_uvdist" 
+      plt.xlabel("UV distance (wavelengths)")
+      plt.ylabel("Real component of visibility X pol (Jy)")
+      plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+
+      #plot the expected unity response vs baseline length
+      plt.clf()
+      plt.scatter(uvdist_array_unity_lambda_sorted_cut,common_unity_data_complex_freq_av_x_real_sorted_cut)            
+      map_title="Unity_response_vs_uvdist" 
+      plt.xlabel("UV distance (wavelengths)")
+      plt.ylabel("Real component of visibility X pol (Jy)")
+      plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+          
       #if model_type=='OLS_fixed_intercept':
       model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut, common_unity_data_complex_freq_av_x_real_sorted_cut) #,missing='drop')
       results = model.fit()
