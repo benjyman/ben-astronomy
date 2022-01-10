@@ -153,7 +153,7 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
    return(normalisation_factor)
    
-def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',sim_unity=True,sim_pt_source=False):
+def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False):
    test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
@@ -161,16 +161,16 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    print("n_baselines from test %s ants with autos: %s" % (test_n_ants, n_baselines_test_with_autos))
    
    npix = hp.nside2npix(nside)
-   lst_hrs = float(lst_hrs)
-   lst_deg = lst_hrs * 15.
+
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
       n_ants = len(lines) 
    n_baselines = n_ants*(n_ants-1) / 2.
    print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
 
+   #don't convert to Jy, leave as K
    #Jy per pix conversion
-   healpix_pixel_area_sr = 4*np.pi/npix
+   #healpix_pixel_area_sr = 4*np.pi/npix
    #antenna coord stuff (for calculating UVWs)
    
    #need to put x,y,z transformations in here too
@@ -231,14 +231,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    #k_y_phi = k_0 * az_ang_repeats_array_rad_transpose_sin
    #k_y_theta = k_0 * zenith_ang_repeats_array_rad_sin
 
-   #hpx rotate stuff, rotate the complex beams to zenith at the required LST
-   dec_rotate = 90. - float(mwa_latitude_ephem)
-   ra_rotate = lst_deg
-   r_beam_dec = hp.Rotator(rot=[0,dec_rotate], coord=['C', 'C'], deg=True) 
-   r_beam_ra = hp.Rotator(rot=[ra_rotate,0], coord=['C', 'C'], deg=True)    
-   #see Jishnu's SITARA paper 1, appendix B
-   #first get it working for a single baseline, ant index 0 and 1
-   #Get the right beams (EEPs from Daniel) and convert (interpolate) to healpix
+
 
    uu_array = np.empty(n_baselines_test)
    vv_array = np.empty(n_baselines_test)
@@ -253,12 +246,27 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       #adding in geometric delay
       phase_delta = k_0 * (np.einsum('i,jk->jki', delta_x_array, k_x) + np.einsum('i,jk->jki', delta_y_array, k_y))
       
-      unity_sky_value = 1. 
-      
-      #need to either generate gsm map in MJy.sr and convert to Jy/pix, or convert manually:
-      scale = (2. * k * 1.0e26 * healpix_pixel_area_sr) / (wavelength**2)
-      print("scale map by %s to get to Jy/pix" % scale)
+      lst_hrs = float(lst_hrs_list[freq_MHz_index])
+      lst_deg = lst_hrs * 15.
 
+      #hpx rotate stuff, rotate the complex beams to zenith at the required LST
+      dec_rotate = 90. - float(mwa_latitude_ephem)
+      ra_rotate = lst_deg
+      r_beam_dec = hp.Rotator(rot=[0,dec_rotate], coord=['C', 'C'], deg=True) 
+      r_beam_ra = hp.Rotator(rot=[ra_rotate,0], coord=['C', 'C'], deg=True)    
+      #see Jishnu's SITARA paper 1, appendix B
+      #first get it working for a single baseline, ant index 0 and 1
+      #Get the right beams (EEPs from Daniel) and convert (interpolate) to healpix
+   
+      EDA2_obs_time = EDA2_obs_time_list[freq_MHz_index]
+   
+      #don't convert to Jy, leave as K
+      #need to either generate gsm map in MJy.sr and convert to Jy/pix, or convert manually:
+      #scale = (2. * k * 1.0e26 * healpix_pixel_area_sr) / (wavelength**2)
+      #print("scale map by %s to get to Jy/pix" % scale)
+      
+      unity_sky_value = 1.
+      
       #Do all the gsm sky stuff outside the pol loop
       #Now we have beams, need a sky!
       gsm = GlobalSkyModel(freq_unit='MHz')
@@ -419,8 +427,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       figmap.savefig(fig_name)
       print("saved %s" % fig_name) 
       
-      #downgrade res and scale
-      gsm_map = hp.ud_grade(rotated_gsm_C_ra_dec_512_extra_90,nside) * scale
+      #downgrade res and scale (dont scale - leave as K)
+      gsm_map = hp.ud_grade(rotated_gsm_C_ra_dec_512_extra_90,nside) #* scale
       
       plt.clf()
       map_title=""
@@ -1902,7 +1910,9 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
       for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
          eda2_ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
          print(eda2_ms_name)
-         model_ms_name = "/md0/EoR/EDA2/EEPs/new_20210616/%s_%0.3f.ms" % (first_obstime,freq_MHz) 
+         #model_ms_name = "/md0/EoR/EDA2/EEPs/new_20210616/%s_%0.3f.ms" % (first_obstime,freq_MHz) 
+         #now just in same directory as unity ms
+         model_ms_name = "%s_%0.3f.ms" % (first_obstime,freq_MHz) 
          print(model_ms_name)
          
          eda2_ms_table = table(eda2_ms_name,readonly=False)
@@ -2165,9 +2175,9 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       wavelength = c / (freq_MHz*1e6)
       print(wavelength)
       
-      jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-      
-      print(jy_to_K)
+      #This Jy to K has to be wrong, there is no solid angle ... I think just need to leave all the sims etc in units of K?
+      #jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
+      #print(jy_to_K)
       
       number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
       lst = lst_list[EDA2_chan_index]
@@ -2392,13 +2402,19 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       results = model.fit()
       parameters = results.params
       #print parameters
-      t_sky_jy = parameters[0]
-      t_sky_error_jy = results.bse[0]
+      #t_sky_jy = parameters[0]
+      #t_sky_error_jy = results.bse[0]
+      #t_sky_K = jy_to_K * t_sky_jy
+      #t_sky_error_K = jy_to_K * t_sky_error_jy
       
-      t_sky_K = jy_to_K * t_sky_jy
-      t_sky_error_K = jy_to_K * t_sky_error_jy
+      
+      t_sky_K = parameters[0]
+      t_sky_error_K = results.bse[0]    
+
+            
+
       print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
-      fit_string = "y=%0.1fx" % t_sky_jy         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+      fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
       print(fit_string)
       
       #t_sky_K_list.append(t_sky_K)
@@ -2420,7 +2436,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       print("saved %s" % fig_name)
       
         
-      sys.exit()
+      return(t_sky_K,t_sky_error_K)
 
 
 
@@ -2454,11 +2470,14 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
-chan_num = 0
+#chan_num = 0
+freq_MHz_list = freq_MHz_list[0:3]
+lst_hrs_list = lst_hrs_list[0:3]
+EDA2_obs_time_list = EDA2_obs_time_list[0:3]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
-#simulate_eda2_with_complex_beams([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],nside=32,plot_from_saved=plot_from_saved,EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],sim_unity=sim_unity,sim_pt_source=sim_pt_source)
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source)
 #input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
 #input_sky = "unity"
@@ -2472,10 +2491,10 @@ sim_pt_source=False
 #now with time averaging
 plot_cal = True
 per_chan_cal = False
-#calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 
 #now need to extract the global signal using the complex beams
-global_signal_K = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
+global_signal_K, global_signal_K_error  = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
 print(global_signal_K)
 
 
