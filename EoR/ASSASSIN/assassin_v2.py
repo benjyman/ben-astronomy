@@ -153,7 +153,7 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
    return(normalisation_factor)
    
-def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False):
+def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False):
    test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
@@ -313,14 +313,15 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          zenith_pixel = hp.ang2pix(nside,np.radians(90.-(zenith_dec)),np.radians(zenith_ra))
          point_source_at_zenith_sky_nside[zenith_pixel] = 1.0
          
-         plt.clf()
-         map_title=""
-         #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         hp.mollview(map=point_source_at_zenith_sky_nside,rot=(0,90,0),title=map_title)
-         fig_name="check1_pt_src_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name) 
+         if check_figs:
+            plt.clf()
+            map_title=""
+            #######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            hp.mollview(map=point_source_at_zenith_sky_nside,rot=(0,90,0),title=map_title)
+            fig_name="check1_pt_src_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print("saved %s" % fig_name) 
       
          #i've got my coord system messed up here a bit - dec (theta) should go first in the rotation ...
          #https://zonca.dev/2021/03/rotate-maps-healpy.html
@@ -344,39 +345,41 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          # b_1 = r_beam.rotate_map_alms(beam_1, use_pixel_weights=False)
          rotated_point_source_at_zenith_sky_ra_dec = r_pt_src_ra_dec.rotate_map_alms(point_source_at_zenith_sky_nside,use_pixel_weights=False)
          
-         plt.clf()
-         map_title=""
-         ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         hp.mollview(map=rotated_point_source_at_zenith_sky_ra_dec,rot=(0,90,0),title=map_title)
-         fig_name="check3ra_dec_pt_src_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)         
+         if check_figs:
+            plt.clf()
+            map_title=""
+            ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            hp.mollview(map=rotated_point_source_at_zenith_sky_ra_dec,rot=(0,90,0),title=map_title)
+            fig_name="check3ra_dec_pt_src_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print("saved %s" % fig_name)         
          
          #point_source_at_zenith_sky = hp.ud_grade(rotated_point_source_at_zenith_sky_ra_dec,nside)
          point_source_at_zenith_sky = rotated_point_source_at_zenith_sky_ra_dec
       
-         plt.clf()
-         map_title=""
-         ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-         hp.mollview(map=point_source_at_zenith_sky,rot=(0,90,0),title=map_title)
-         fig_name="check4ra_dec_pt_src_dgrade_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         print("saved %s" % fig_name)    
+         if check_figs:
+            plt.clf()
+            map_title=""
+            ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+            hp.mollview(map=point_source_at_zenith_sky,rot=(0,90,0),title=map_title)
+            fig_name="check4ra_dec_pt_src_dgrade_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+            figmap = plt.gcf()
+            figmap.savefig(fig_name)
+            print("saved %s" % fig_name)    
         
          zenith_point_source_repeats_array = np.tile(point_source_at_zenith_sky, (test_n_ants,1))
          zenith_point_source_repeats_array = np.transpose(zenith_point_source_repeats_array)
    
-      
-      plt.clf()
-      map_title=""
-      ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
-      hp.mollview(map=gsm_map_512,coord="G",rot=(0,90,0),title=map_title)
-      fig_name="check1_gsm.png" 
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)  
+      if check_figs:
+         plt.clf()
+         map_title=""
+         ######hp.orthview(map=rotated_power_pattern,half_sky=True,rot=(0,float(mwa_latitude_ephem),0),title=map_title)
+         hp.mollview(map=gsm_map_512,coord="G",rot=(0,90,0),title=map_title)
+         fig_name="check1_gsm.png" 
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)  
       
       
       ##convert to celestial coords
@@ -407,37 +410,40 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       #rotated_gsm_C_ra_dec_512 = r_gsm_dec.rotate_map_alms(rotated_gsm_C_ra_512,use_pixel_weights=False)
       rotated_gsm_C_ra_dec_512 = r_gsm_C_ra_dec.rotate_map_alms(gsm_map_512,use_pixel_weights=False)
    
-      plt.clf()
-      map_title=""
-      hp.orthview(map=rotated_gsm_C_ra_dec_512,half_sky=False,rot=(0,90,0),title=map_title)
-      #hp.mollview(map=hp.ud_grade(rotated_gsm_C_ra_dec_512,nside),rot=(0,90,0),title=map_title)
-      fig_name="check4_gsm_rot_ra_decLST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
+      if check_figs:
+         plt.clf()
+         map_title=""
+         hp.orthview(map=rotated_gsm_C_ra_dec_512,half_sky=False,rot=(0,90,0),title=map_title)
+         #hp.mollview(map=hp.ud_grade(rotated_gsm_C_ra_dec_512,nside),rot=(0,90,0),title=map_title)
+         fig_name="check4_gsm_rot_ra_decLST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
       
       rotated_gsm_C_ra_dec_512_extra_90 = r_beam.rotate_map_alms(rotated_gsm_C_ra_dec_512,use_pixel_weights=False)
       
-      plt.clf()
-      map_title=""
-      hp.orthview(map=hp.ud_grade(rotated_gsm_C_ra_dec_512_extra_90,nside),half_sky=False,rot=(0,90,0),title=map_title)
-      ##hp.mollview(map=rotated_gsm_C_ra_dec_512_extra_90,rot=(0,90,0),title=map_title)
-      fig_name="check4a_extra_gsm_rot_ra_decLST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name) 
-      
+      if check_figs:
+         plt.clf()
+         map_title=""
+         hp.orthview(map=hp.ud_grade(rotated_gsm_C_ra_dec_512_extra_90,nside),half_sky=False,rot=(0,90,0),title=map_title)
+         ##hp.mollview(map=rotated_gsm_C_ra_dec_512_extra_90,rot=(0,90,0),title=map_title)
+         fig_name="check4a_extra_gsm_rot_ra_decLST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name) 
+         
       #downgrade res and scale (dont scale - leave as K)
       gsm_map = hp.ud_grade(rotated_gsm_C_ra_dec_512_extra_90,nside) #* scale
       
-      plt.clf()
-      map_title=""
-      hp.orthview(map=gsm_map,half_sky=False,rot=(0,90,0),title=map_title)
-      #hp.mollview(map=gsm_map,rot=(0,90,0),title=map_title)
-      fig_name="check_gsm_dgrade_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      print("saved %s" % fig_name)
+      if check_figs:
+         plt.clf()
+         map_title=""
+         hp.orthview(map=gsm_map,half_sky=False,rot=(0,90,0),title=map_title)
+         #hp.mollview(map=gsm_map,rot=(0,90,0),title=map_title)
+         fig_name="check_gsm_dgrade_LST_%0.1f_%0.3f_MHz.png" % (lst_deg,freq_MHz)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         print("saved %s" % fig_name)
       
       
       #make a cube with copies of tsky, dimensions (npix,test_n_ants)
@@ -806,15 +812,16 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                      zenith_point_source_sky_beam_cube = np.einsum('ij,ij->ij',zenith_point_source_repeats_array[:,ant_index_1:test_n_ants], power_pattern_cube)
                      zenith_point_source_sky_beam_sum_array = np.einsum('ij->j',zenith_point_source_sky_beam_cube)
                      zenith_point_source_visibility_array = zenith_point_source_sky_beam_sum_array #/ power_pattern_cube_mag_sum_array
-   
-                     plt.clf()
-                     map_title=""
-                     hp.orthview(map=zenith_point_source_sky_beam_cube[:,0],half_sky=False,rot=(0,90,0),title=map_title)
-                     #hp.mollview(map=gsm_sky_beam_cube[:,0],rot=(0,90,0),title=map_title)
-                     fig_name="check6_pt_source_sky_beam_%s_%s_%s%s_%0.3f_MHz.png" % (ant_index_1,'0',pol1,pol2,freq_MHz)
-                     figmap = plt.gcf()
-                     figmap.savefig(fig_name)
-                     print("saved %s" % fig_name) 
+                     
+                     if check_figs:
+                        plt.clf()
+                        map_title=""
+                        hp.orthview(map=zenith_point_source_sky_beam_cube[:,0],half_sky=False,rot=(0,90,0),title=map_title)
+                        #hp.mollview(map=gsm_sky_beam_cube[:,0],rot=(0,90,0),title=map_title)
+                        fig_name="check6_pt_source_sky_beam_%s_%s_%s%s_%0.3f_MHz.png" % (ant_index_1,'0',pol1,pol2,freq_MHz)
+                        figmap = plt.gcf()
+                        figmap.savefig(fig_name)
+                        print("saved %s" % fig_name) 
                   
                      zenith_point_source_visibility_real_array = np.real(zenith_point_source_visibility_array)
                      zenith_point_source_visibility_imag_array = np.imag(zenith_point_source_visibility_array)
@@ -846,16 +853,17 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #sum_unity_sky_beam = np.nansum(unity_sky_beam)
                   #sum_mag_beam = np.nansum(np.abs(rotated_power_pattern))
                   #visibility = sum_unity_sky_beam / sum_mag_beam
-   
-                  #####sanity check:
-                  plt.clf()
-                  map_title=""
-                  hp.orthview(map=power_pattern_cube_mag[:,0],half_sky=False,rot=(0,90,0),title=map_title)
-                  #hp.mollview(map=power_pattern_cube_mag[:,0],rot=(0,90,0),title=map_title)
-                  fig_name="check4_complex_power_pattern_mag_%s_%s_%s%s_%0.3f_MHz.png" % (ant_index_1,'0',pol1,pol2,freq_MHz)
-                  figmap = plt.gcf()
-                  figmap.savefig(fig_name)
-                  print("saved %s" % fig_name)
+                 
+                  if check_figs:
+                     #####sanity check:
+                     plt.clf()
+                     map_title=""
+                     hp.orthview(map=power_pattern_cube_mag[:,0],half_sky=False,rot=(0,90,0),title=map_title)
+                     #hp.mollview(map=power_pattern_cube_mag[:,0],rot=(0,90,0),title=map_title)
+                     fig_name="check4_complex_power_pattern_mag_%s_%s_%s%s_%0.3f_MHz.png" % (ant_index_1,'0',pol1,pol2,freq_MHz)
+                     figmap = plt.gcf()
+                     figmap.savefig(fig_name)
+                     print("saved %s" % fig_name)
                   
 
                   #rotated_beam = r_beam.rotate_map_alms(power_pattern_cube_mag[:,0],use_pixel_weights=False)
@@ -869,16 +877,16 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #figmap.savefig(fig_name)
                   #print("saved %s" % fig_name)
                                  
-   
-                  #####sanity check:
-                  plt.clf()
-                  map_title=""
-                  hp.orthview(map=gsm_sky_beam_cube[:,0],half_sky=False,rot=(0,90,0),title=map_title)
-                  #hp.mollview(map=gsm_sky_beam_cube[:,0],rot=(0,90,0),title=map_title)
-                  fig_name="check5_gsm_sky_beam_%0.1f_%s_%s_%s%s_%0.3f_MHz.png" % (lst_deg,ant_index_1,'0',pol1,pol2,freq_MHz)
-                  figmap = plt.gcf()
-                  figmap.savefig(fig_name)
-                  print("saved %s" % fig_name)               
+                  if check_figs:
+                     #####sanity check:
+                     plt.clf()
+                     map_title=""
+                     hp.orthview(map=gsm_sky_beam_cube[:,0],half_sky=False,rot=(0,90,0),title=map_title)
+                     #hp.mollview(map=gsm_sky_beam_cube[:,0],rot=(0,90,0),title=map_title)
+                     fig_name="check5_gsm_sky_beam_%0.1f_%s_%s_%s%s_%0.3f_MHz.png" % (lst_deg,ant_index_1,'0',pol1,pol2,freq_MHz)
+                     figmap = plt.gcf()
+                     figmap.savefig(fig_name)
+                     print("saved %s" % fig_name)               
    
                   ##phase sanity check?
                   #power_pattern_cube_phase = np.angle(power_pattern_cube)
@@ -970,7 +978,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                 
                np.save(baseline_length_lambda_array_filename,baseline_length_lambda_array)
                
-               if (pol_index1==0 and pol_index2==0 and freq_MHz_index==0):
+               if (pol_index1==0 and pol_index2==0):
                   #print(uu_array)
                   #print(vv_array)
                   #print(ww_array)
@@ -998,124 +1006,123 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                vv_array = np.load(vv_array_filename)
                ww_array = np.load(ww_array_filename)
             
-            if sim_unity:
-               ##plot the real part of the visibilty - unity
+            if check_figs:
+               if sim_unity:
+                  ##plot the real part of the visibilty - unity
+                  plt.clf()
+                  map_title="uniform response"
+                  plt.scatter(baseline_length_lambda_array,unity_cross_visibility_real_array,s=1)
+                  plt.xlim(0.0, 1)
+                  plt.ylabel("Real part of vis")
+                  plt.xlabel("Baseline length (wavelengths)")
+                  fig_name="unity_response_from_complex_beams_%s%s_%0.3f.png" % (pol1,pol2,freq_MHz)
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  print("saved %s" % fig_name)
+         
+                  ##plot the imaginary part of the visibilty - unity
+                  plt.clf()
+                  map_title="uniform response"
+                  plt.scatter(baseline_length_lambda_array,unity_cross_visibility_imag_array,s=1)
+                  plt.xlim(0.2, 2)
+                  plt.ylabel("Imag. part of vis")
+                  plt.xlabel("Baseline length (wavelengths)")
+                  fig_name="unity_response_from_complex_beams_imag_%s%s_%0.3f.png" % (pol1,pol2,freq_MHz)
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  print("saved %s" % fig_name)      
+                  
+                  #Autos!
+                  ant_index_array = range(0,test_n_ants)
+                  plt.clf()
+                  map_title="uniform auto response"
+                  plt.scatter(ant_index_array,unity_auto_array,s=1)
+                  #plt.xlim(0.2, 2)
+                  plt.ylabel("Auto vis")
+                  plt.xlabel("Antenna index")
+                  fig_name="unity_auto_response_from_complex_beams_%s_%0.3f.png" % (pol1,freq_MHz)
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  print("saved %s" % fig_name)
+                    
+      
+               if sim_pt_source:
+                  ##plot the real part of the visibilty - point_source
+                  plt.clf()
+                  map_title="zenith point source response"
+                  plt.scatter(baseline_length_lambda_array,zenith_point_source_cross_visibility_real_array,s=1)
+                  plt.xlim(0.2, 2)
+                  plt.ylabel("Real part of vis")
+                  plt.xlabel("Baseline length (wavelengths)")
+                  fig_name="zenith_point_source_response_from_complex_beams_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  print("saved %s" % fig_name)
+         
+                  plt.clf()
+                  map_title="zenith point source response"
+                  plt.scatter(baseline_length_lambda_array,zenith_point_source_cross_visibility_imag_array,s=1)
+                  plt.xlim(0.2, 2)
+                  plt.ylabel("Imag part of vis")
+                  plt.xlabel("Baseline length (wavelengths)")
+                  fig_name="zenith_point_source_response_from_complex_beams_imag_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  print("saved %s" % fig_name)
+            
+               ##plot the real part of the visibilty 
                plt.clf()
-               map_title="uniform response"
-               plt.scatter(baseline_length_lambda_array,unity_cross_visibility_real_array,s=1)
-               plt.xlim(0.0, 1)
+               map_title="gsm response"
+               plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_real_array,s=1)
+               plt.xlim(0.2, 2)
                plt.ylabel("Real part of vis")
                plt.xlabel("Baseline length (wavelengths)")
-               fig_name="unity_response_from_complex_beams_%s%s_%0.3f.png" % (pol1,pol2,freq_MHz)
+               fig_name="gsm_response_from_complex_beams_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
                print("saved %s" % fig_name)
-      
-               ##plot the imaginary part of the visibilty - unity
+       
                plt.clf()
-               map_title="uniform response"
-               plt.scatter(baseline_length_lambda_array,unity_cross_visibility_imag_array,s=1)
-               plt.xlim(0.2, 2)
-               plt.ylabel("Imag. part of vis")
-               plt.xlabel("Baseline length (wavelengths)")
-               fig_name="unity_response_from_complex_beams_imag_%s%s_%0.3f.png" % (pol1,pol2,freq_MHz)
-               figmap = plt.gcf()
-               figmap.savefig(fig_name)
-               print("saved %s" % fig_name)      
-               
-               #Autos!
-               ant_index_array = range(0,test_n_ants)
-               plt.clf()
-               map_title="uniform auto response"
-               plt.scatter(ant_index_array,unity_auto_array,s=1)
-               #plt.xlim(0.2, 2)
-               plt.ylabel("Auto vis")
-               plt.xlabel("Antenna index")
-               fig_name="unity_auto_response_from_complex_beams_%s_%0.3f.png" % (pol1,freq_MHz)
-               figmap = plt.gcf()
-               figmap.savefig(fig_name)
-               print("saved %s" % fig_name)
-                 
-   
-            if sim_pt_source:
-               ##plot the real part of the visibilty - point_source
-               plt.clf()
-               map_title="zenith point source response"
-               plt.scatter(baseline_length_lambda_array,zenith_point_source_cross_visibility_real_array,s=1)
-               plt.xlim(0.2, 2)
-               plt.ylabel("Real part of vis")
-               plt.xlabel("Baseline length (wavelengths)")
-               fig_name="zenith_point_source_response_from_complex_beams_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
-               figmap = plt.gcf()
-               figmap.savefig(fig_name)
-               print("saved %s" % fig_name)
-      
-               plt.clf()
-               map_title="zenith point source response"
-               plt.scatter(baseline_length_lambda_array,zenith_point_source_cross_visibility_imag_array,s=1)
+               map_title="gsm response"
+               plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_imag_array,s=1)
                plt.xlim(0.2, 2)
                plt.ylabel("Imag part of vis")
                plt.xlabel("Baseline length (wavelengths)")
-               fig_name="zenith_point_source_response_from_complex_beams_imag_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
+               fig_name="gsm_response_from_complex_beams_imag_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
                print("saved %s" % fig_name)
-            
-            ##plot the real part of the visibilty 
-            plt.clf()
-            map_title="gsm response"
-            plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_real_array,s=1)
-            plt.xlim(0.2, 2)
-            plt.ylabel("Real part of vis")
-            plt.xlabel("Baseline length (wavelengths)")
-            fig_name="gsm_response_from_complex_beams_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)
-   
-            plt.clf()
-            map_title="gsm response"
-            plt.scatter(baseline_length_lambda_array,gsm_cross_visibility_imag_array,s=1)
-            plt.xlim(0.2, 2)
-            plt.ylabel("Imag part of vis")
-            plt.xlabel("Baseline length (wavelengths)")
-            fig_name="gsm_response_from_complex_beams_imag_%s_%s%s_%0.3f.png" % (EDA2_obs_time,pol1,pol2,freq_MHz)
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)
-   
-            ##
-            plt.clf()
-            map_title="gsm auto response"
-            plt.scatter(ant_index_array,gsm_auto_array,s=1)
-            #plt.xlim(0.2, 2)
-            plt.ylabel("Auto vis (K)")
-            plt.xlabel("Intenna index")
-            fig_name="gsm_auto_response_from_complex_beams_%s_%s_%0.3f.png" % (EDA2_obs_time,pol1,freq_MHz)
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            print("saved %s" % fig_name)  
+       
+               ##
+               plt.clf()
+               map_title="gsm auto response"
+               plt.scatter(ant_index_array,gsm_auto_array,s=1)
+               #plt.xlim(0.2, 2)
+               plt.ylabel("Auto vis (K)")
+               plt.xlabel("Intenna index")
+               fig_name="gsm_auto_response_from_complex_beams_%s_%s_%0.3f.png" % (EDA2_obs_time,pol1,freq_MHz)
+               figmap = plt.gcf()
+               figmap.savefig(fig_name)
+               print("saved %s" % fig_name)  
                             
-            #now to extract global sky temp from gsm sim vis by comparing to unity vis - but
-            #since we now use the complex beam pattern, we don't expect unity sky response to 
-            #be purely real - not sure how to deal with that!
-            #Then to making these vis into uvfits/miriad format, or at least phased properly (to zenith?)
-            
-            ##Lets look at some data at the same LST
-            #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-            #print("%s" % uvfits_filename)
-            #hdulist = fits.open(uvfits_filename)
-            #uvtable = hdulist[0].data
-            #uvtable_header = hdulist[0].header
-            #hdulist.close()
-            #visibilities = uvtable['DATA']
-            #visibilities_shape = visibilities.shape
-            #print("visibilities_shape")
-            #print(visibilities_shape)
+               #now to extract global sky temp from gsm sim vis by comparing to unity vis - but
+               #since we now use the complex beam pattern, we don't expect unity sky response to 
+               #be purely real - not sure how to deal with that!
+               #Then to making these vis into uvfits/miriad format, or at least phased properly (to zenith?)
+               
+               ##Lets look at some data at the same LST
+               #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+               #print("%s" % uvfits_filename)
+               #hdulist = fits.open(uvfits_filename)
+               #uvtable = hdulist[0].data
+               #uvtable_header = hdulist[0].header
+               #hdulist.close()
+               #visibilities = uvtable['DATA']
+               #visibilities_shape = visibilities.shape
+               #print("visibilities_shape")
+               #print(visibilities_shape)
 
-def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='None',n_obs_concat='None',antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm"):
-   lst_hrs = float(lst_hrs)
-   lst_deg = lst_hrs * 15.
+def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False):
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
       n_ants = len(lines) 
@@ -1123,15 +1130,18 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
    print("read %s" % antenna_layout_filename)
    print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
    
-   #time stuff
-   year, month, day, hour, minute, second = EDA2_obs_time[0:4], EDA2_obs_time[4:6],EDA2_obs_time[6:8], EDA2_obs_time[9:11],EDA2_obs_time[11:13],EDA2_obs_time[13:15]
-   eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
-   print(eda2_astropy_time_string)
-   eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
+   for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
+      #time stuff
+      EDA2_obs_time = EDA2_obs_time_list[freq_MHz_index]
+      year, month, day, hour, minute, second = EDA2_obs_time[0:4], EDA2_obs_time[4:6],EDA2_obs_time[6:8], EDA2_obs_time[9:11],EDA2_obs_time[11:13],EDA2_obs_time[13:15]
+      eda2_astropy_time_string = '%4d-%02d-%02d %02d:%02d:%02.1d' % (float(year), float(month), float(day), float(hour), float(minute), float(second))
+      print(eda2_astropy_time_string)
+      eda2_astropy_time = Time(eda2_astropy_time_string, scale='utc', location=(mwa_longitude_astropy, mwa_latitude_astropy))
   
-   for freq_MHz in freq_MHz_list:
-      wavelength = 300./freq_MHz
+      lst_hrs = float(lst_hrs_list[freq_MHz_index])
+      lst_deg = lst_hrs * 15.
       
+      wavelength = 300./freq_MHz
       #initiate the miriad uv file outside the pol loop
       print("initiate the miriad uv file outside the pol loop")
       print("writing to miriad file")
@@ -1422,102 +1432,101 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       
       del(uv)
       
-      for image_pol in ['xx','yy']:
-      
-         ##check by image
-         map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,image_pol)
-         beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,image_pol)
-         map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,image_pol)
-         map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,image_pol)
-         map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,image_pol)
-         cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
+      if check_figs:
+         for image_pol in ['xx','yy']:
+         
+            ##check by image
+            map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,image_pol)
+            beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,image_pol)
+            map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,image_pol)
+            map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,image_pol)
+            map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,image_pol)
+            cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
+            print(cmd)
+            os.system(cmd)
+            cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=%s robust=0" % (mir_file,map_name,beam_name,image_pol)
+            print(cmd)
+            os.system(cmd) 
+            cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=%s out=%s" % (map_name,beam_name,image_pol,map_name_clean)
+            print(cmd)
+            os.system(cmd) 
+            cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
+            print(cmd)
+            os.system(cmd)      
+            cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
+            print(cmd)
+            os.system(cmd)
+   
+   
+         check_uv = a.miriad.UV(mir_file)
+         #print(check_uv.items())
+         #print(check_uv.vars())
+         #print(check_uv['nchan'])
+         #print(check_uv['antpos'])
+         print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
+   
+         
+         ##export uvfits
+         cmd = "rm -rf %s" % (mir_file_uvfits_name)
          print(cmd)
          os.system(cmd)
-         cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=%s robust=0" % (mir_file,map_name,beam_name,image_pol)
-         print(cmd)
-         os.system(cmd) 
-         cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=%s out=%s" % (map_name,beam_name,image_pol,map_name_clean)
-         print(cmd)
-         os.system(cmd) 
-         cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
-         print(cmd)
-         os.system(cmd)      
-         cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
+         cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
          print(cmd)
          os.system(cmd)
-
-
-      check_uv = a.miriad.UV(mir_file)
-      #print(check_uv.items())
-      #print(check_uv.vars())
-      #print(check_uv['nchan'])
-      #print(check_uv['antpos'])
-      print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
-
+         
+         #look at the uvfits file
+         uvfits_filename = mir_file_uvfits_name
+         print("%s" % uvfits_filename)
+         hdulist = fits.open(uvfits_filename)
+         #hdulist.info()
+         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+         #print(info_string)
+         uvtable = hdulist[0].data
+         uvtable_header = hdulist[0].header
+         hdulist.close()
+         sim_UU_s_array = uvtable['UU']
+         sim_VV_s_array = uvtable['VV']
+         sim_WW_s_array = uvtable['WW']
+         sim_baselines = uvtable['baseline']
+         sim_visibilities = uvtable['DATA']
+         sim_visibilities_shape = sim_visibilities.shape
+         #print('sim_UU_s_array')
+         #print(sim_UU_s_array)
+         #sim_UU_m_array = sim_UU_s_array * c
+         #print('sim_UU_m_array')
+         #print(sim_UU_m_array)
+         #u_in_miriad = sim_UU_s_array[0]
+         #ratio_u_in = u_in/u_in_miriad
+         #print('ratio_u_in')
+         #print(ratio_u_in)
+         print("sim visibilities_shape")
+         print(sim_visibilities_shape)
+         print('sim_baselines')
+         print(len(sim_baselines))
+         print(np.max(sim_baselines))
       
-      ##export uvfits
-      cmd = "rm -rf %s" % (mir_file_uvfits_name)
-      print(cmd)
-      os.system(cmd)
-      cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
-      print(cmd)
-      os.system(cmd)
-      
-      #look at the uvfits file
-      uvfits_filename = mir_file_uvfits_name
-      print("%s" % uvfits_filename)
-      hdulist = fits.open(uvfits_filename)
-      #hdulist.info()
-      info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-      #print(info_string)
-      uvtable = hdulist[0].data
-      uvtable_header = hdulist[0].header
-      hdulist.close()
-      sim_UU_s_array = uvtable['UU']
-      sim_VV_s_array = uvtable['VV']
-      sim_WW_s_array = uvtable['WW']
-      sim_baselines = uvtable['baseline']
-      sim_visibilities = uvtable['DATA']
-      sim_visibilities_shape = sim_visibilities.shape
-      #print('sim_UU_s_array')
-      #print(sim_UU_s_array)
-      #sim_UU_m_array = sim_UU_s_array * c
-      #print('sim_UU_m_array')
-      #print(sim_UU_m_array)
-      #u_in_miriad = sim_UU_s_array[0]
-      #ratio_u_in = u_in/u_in_miriad
-      #print('ratio_u_in')
-      #print(ratio_u_in)
-      print("sim visibilities_shape")
-      print(sim_visibilities_shape)
-      print('sim_baselines')
-      print(len(sim_baselines))
-      print(np.max(sim_baselines))
-      
-      #what is going on with these baselines
-      for baseline_num_index,baseline_num in enumerate(sim_baselines):
-         #print(sim_baselines[index])
-         if baseline_num > (2**16):
-            print(baseline_num)
-            ant1,ant2 = decode_baseline(baseline_num)
-            print(ant1,ant2)
-      
-      #got it to work by not adding the last antenna i.e above:
-      #if ant2<255 and ant1<255:
-            #uv.write(preamble,cross_vis)
-      #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
-      
-      
-      
-      #print(len(sim_baseline))
-      #print(len(sim_UU_s_array))
-      #convert from miriad baseline numbers
-      #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
-      converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
-      converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
-      converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
-      #print(converted_sim_baselines)
-
+         #what is going on with these baselines
+         for baseline_num_index,baseline_num in enumerate(sim_baselines):
+            #print(sim_baselines[index])
+            if baseline_num > (2**16):
+               print(baseline_num)
+               ant1,ant2 = decode_baseline(baseline_num)
+               print(ant1,ant2)
+         
+         #got it to work by not adding the last antenna i.e above:
+         #if ant2<255 and ant1<255:
+               #uv.write(preamble,cross_vis)
+         #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
+   
+         #print(len(sim_baseline))
+         #print(len(sim_UU_s_array))
+         #convert from miriad baseline numbers
+         #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
+         converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
+         converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
+         converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
+         #print(converted_sim_baselines)
+   
       #try to read the data in to casa as a ms
       #verify with wsclean - too many antennas - 255 max?
       #read in the uvfits file
@@ -1537,128 +1546,128 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs,EDA2_chan='None',EDA2_obs_time='No
       print(cmd)
       os.system(cmd)
       
-      
-      #####verification stuff 
-      test_image_name = mir_file_ms_name.split('.ms')[0]
-      wsclean_imsize = '512'
-      wsclean_scale = '900asec'
-      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-      print(cmd)
-      os.system(cmd) 
-      
-      ##try adding a model column
-      #use kariukis ms_utils
-      #ms_table = table(mir_file_ms_name,readonly=False)
-      #model_data = get_data(ms_table, col="DATA")
-      #add_col(ms_table, "MODEL_DATA")
-      #put_col(ms_table, "MODEL_DATA", model_data)
-      #ms_table.close()
-
-      ##try imaging the model column of the ms:
-      #wsclean_imsize = '512'
-      #wsclean_scale = '900asec'
-      #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-      #print(cmd)
-      #os.system(cmd)
-      
-      ##try calibrate?
-      #gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
-      #calibrate_options = ''
-      #cmd = "rm -rf %s" % (gain_solutions_name)
-      #print(cmd)
-      #os.system(cmd)  
-      ##calibrate
-      #cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
-      #print(cmd)
-      #os.system(cmd)
-      ##plot cal sols
-      #cmd = "aocal_plot.py %s  " % (gain_solutions_name)
-      #print(cmd)
-      #os.system(cmd)
-      
-      #cmd = "applysolutions %s %s  " % (mir_file_ms_name,gain_solutions_name)
-      #print(cmd)
-      #os.system(cmd)
-      
-      #test image the CORRECTED data'
-      #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-      #print(cmd)
-      #os.system(cmd)
-      
-      #check cal
-      #calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name)
-      
-      
-      #if pol=='X':
-      #   wsclean_imsize = '512'
-      #   wsclean_scale = '900asec'
-      #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-      #   print(cmd)
-      #   os.system(cmd) 
-      #   
-
-      ##Lets look at some data at the same LST
-      #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-      #ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-      #print("%s" % uvfits_filename)
-      #hdulist = fits.open(uvfits_filename)
-      ##hdulist.info()
-      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-      ##print(info_string)
-      #uvtable = hdulist[0].data
-      #uvtable_header = hdulist[0].header
-      #hdulist.close()
-      #data_UU_s_array = uvtable['UU']
-      #data_VV_s_array = uvtable['VV']
-      #data_WW_s_array = uvtable['WW']
-      #data_baselines = uvtable['baseline']
-      #data_visibilities = uvtable['DATA']
-      #data_visibilities_shape = data_visibilities.shape
-      #print("data visibilities_shape")
-      #print(data_visibilities_shape)
-      ##print(len(data_baseline))
-      #print('data_UU_s_array')
-      #print(data_UU_s_array)
-      #data_UU_m_array = data_UU_s_array * c
-      #print('data_UU_m_array')
-      #print(data_UU_m_array)
-      ##print(np.max(data_baselines))
-      ##print(np.min(data_baselines))
-
-      #make wsclean image to compare (no need to do twice, just image xx,yy):
-      #wsclean does not resore the cleaned image - clean is same as dirty!
-      #if pol=='X':
-      #   wsclean_imsize = '512'
-      #   wsclean_scale = '900asec'
-      #   cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-      #   print(cmd)
-      #   os.system(cmd) 
-      
-      #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
-      #uvfits_vis_name = 'test_eda_actual.vis'
-      #cmd = "rm -rf %s" % (uvfits_vis_name)
-      #print(cmd)
-      #os.system(cmd)
-      #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
-      #print(cmd)
-      #os.system(cmd)
-      ###check by image
-      #map_name = 'test_eda_actual.image'
-      #beam_name = 'test_eda_actual.beam'
-      #cmd = "rm -rf %s %s" % (map_name,beam_name)
-      #print(cmd)
-      #os.system(cmd)
-      #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
-      #print(cmd)
-      #os.system(cmd)
-
-
-      #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
-      #antennas, so this alleviates the problem of the 255 limit for casa/ms
-      #Cant work out this baseline number stuff, just look at u,v values
-      #find common indices 
-
-      #took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
+      if check_figs:
+         #####verification stuff 
+         test_image_name = mir_file_ms_name.split('.ms')[0]
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         print(cmd)
+         os.system(cmd) 
+         
+         ##try adding a model column
+         #use kariukis ms_utils
+         #ms_table = table(mir_file_ms_name,readonly=False)
+         #model_data = get_data(ms_table, col="DATA")
+         #add_col(ms_table, "MODEL_DATA")
+         #put_col(ms_table, "MODEL_DATA", model_data)
+         #ms_table.close()
+   
+         ##try imaging the model column of the ms:
+         #wsclean_imsize = '512'
+         #wsclean_scale = '900asec'
+         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         #print(cmd)
+         #os.system(cmd)
+         
+         ##try calibrate?
+         #gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+         #calibrate_options = ''
+         #cmd = "rm -rf %s" % (gain_solutions_name)
+         #print(cmd)
+         #os.system(cmd)  
+         ##calibrate
+         #cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
+         #print(cmd)
+         #os.system(cmd)
+         ##plot cal sols
+         #cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+         #print(cmd)
+         #os.system(cmd)
+         
+         #cmd = "applysolutions %s %s  " % (mir_file_ms_name,gain_solutions_name)
+         #print(cmd)
+         #os.system(cmd)
+         
+         #test image the CORRECTED data'
+         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         #print(cmd)
+         #os.system(cmd)
+         
+         #check cal
+         #calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name)
+         
+         
+         #if pol=='X':
+         #   wsclean_imsize = '512'
+         #   wsclean_scale = '900asec'
+         #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         #   print(cmd)
+         #   os.system(cmd) 
+         #   
+   
+         ##Lets look at some data at the same LST
+         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         #ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         #print("%s" % uvfits_filename)
+         #hdulist = fits.open(uvfits_filename)
+         ##hdulist.info()
+         #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+         ##print(info_string)
+         #uvtable = hdulist[0].data
+         #uvtable_header = hdulist[0].header
+         #hdulist.close()
+         #data_UU_s_array = uvtable['UU']
+         #data_VV_s_array = uvtable['VV']
+         #data_WW_s_array = uvtable['WW']
+         #data_baselines = uvtable['baseline']
+         #data_visibilities = uvtable['DATA']
+         #data_visibilities_shape = data_visibilities.shape
+         #print("data visibilities_shape")
+         #print(data_visibilities_shape)
+         ##print(len(data_baseline))
+         #print('data_UU_s_array')
+         #print(data_UU_s_array)
+         #data_UU_m_array = data_UU_s_array * c
+         #print('data_UU_m_array')
+         #print(data_UU_m_array)
+         ##print(np.max(data_baselines))
+         ##print(np.min(data_baselines))
+   
+         #make wsclean image to compare (no need to do twice, just image xx,yy):
+         #wsclean does not resore the cleaned image - clean is same as dirty!
+         #if pol=='X':
+         #   wsclean_imsize = '512'
+         #   wsclean_scale = '900asec'
+         #   cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+         #   print(cmd)
+         #   os.system(cmd) 
+         
+         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
+         #uvfits_vis_name = 'test_eda_actual.vis'
+         #cmd = "rm -rf %s" % (uvfits_vis_name)
+         #print(cmd)
+         #os.system(cmd)
+         #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
+         #print(cmd)
+         #os.system(cmd)
+         ###check by image
+         #map_name = 'test_eda_actual.image'
+         #beam_name = 'test_eda_actual.beam'
+         #cmd = "rm -rf %s %s" % (map_name,beam_name)
+         #print(cmd)
+         #os.system(cmd)
+         #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
+         #print(cmd)
+         #os.system(cmd)
+   
+   
+         #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
+         #antennas, so this alleviates the problem of the 255 limit for casa/ms
+         #Cant work out this baseline number stuff, just look at u,v values
+         #find common indices 
+   
+         #took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
       
       
 def asvoid(arr):
@@ -1859,7 +1868,7 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(cmd)
       os.system(cmd)
 
-def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_concat_list=[],plot_cal=False,uv_cutoff=0,per_chan_cal=False,EDA2_data=True,sim_only_EDA2=[]):
+def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,per_chan_cal=False,EDA2_data=True,sim_only_EDA2=[]):
    if len(sim_only_EDA2)!=0:
       sim_only=True
    #think about how to use coherence:
@@ -1876,13 +1885,6 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
    #if not sim_only:
     
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
-      if len(n_obs_concat_list) > 0:
-         if len(EDA2_chan_list)==1:
-            n_obs_concat = n_obs_concat_list[chan_num]
-         else:
-            n_obs_concat = n_obs_concat_list[EDA2_chan_index]
-      else:
-         n_obs_concat = 1
       #freq_MHz = np.round(400./512.*float(EDA2_chan))
       freq_MHz = 400./512.*float(EDA2_chan)
       wavelength = 300./freq_MHz
@@ -2166,9 +2168,17 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],n_obs_c
    #freq av to one chan?
 
 def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5):
+   t_sky_K_array = np.zeros(len(EDA2_chan_list))
+   t_sky_error_K_array = np.zeros(len(EDA2_chan_list))
+   
+   t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
+   t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
+   
    number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
    with open(number_of_good_obs_list_filename) as f:
-      number_of_good_obs_list = f.read()
+      number_of_good_obs_list_string = f.read()
+   
+   number_of_good_obs_list = number_of_good_obs_list_string.split(',')
    
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       freq_MHz = 400./512.*float(EDA2_chan)
@@ -2435,8 +2445,14 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       plt.close()
       print("saved %s" % fig_name)
       
-        
-      return(t_sky_K,t_sky_error_K)
+      t_sky_K_array[EDA2_chan_index] = t_sky_K
+      t_sky_error_K_array[EDA2_chan_index] = t_sky_error_K
+   
+   np.save(t_sky_K_array_filename,t_sky_K_array)     
+   np.save(t_sky_error_K_array_filename,t_sky_error_K_array)  
+   print("saved %s" % t_sky_K_array_filename)
+   print("saved %s" % t_sky_error_K_array_filename)
+   return(t_sky_K_array,t_sky_error_K_array)
 
 
 
@@ -2444,7 +2460,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
-n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
+#n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
 EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan] 
 
 #chans
@@ -2471,17 +2487,19 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
-freq_MHz_list = freq_MHz_list[0:3]
-lst_hrs_list = lst_hrs_list[0:3]
-EDA2_obs_time_list = EDA2_obs_time_list[0:3]
+#freq_MHz_list = freq_MHz_list[0:3]
+#lst_hrs_list = lst_hrs_list[0:3]
+#EDA2_obs_time_list = EDA2_obs_time_list[0:3]
+#EDA2_chan_list = EDA2_chan_list[0:3]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source)
-#input_sky = "gsm"   #zenith_point_source  #unity
-#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
-#input_sky = "unity"
-#write_to_miriad_vis([freq_MHz_list[chan_num]],lst_hrs_list[chan_num],EDA2_chan=EDA2_chan_list[chan_num],EDA2_obs_time=EDA2_obs_time_list[chan_num],n_obs_concat=n_obs_concat_list[chan_num],input_sky=input_sky)
+check_figs=False
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
+input_sky = "gsm"   #zenith_point_source  #unity
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
+input_sky = "unity"
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
 #######
 #just for initial testing of calibration
 #model_ms_name= "20200303T133733_50.000.ms"
@@ -2491,12 +2509,11 @@ simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_s
 #now with time averaging
 plot_cal = True
 per_chan_cal = False
-calibrate_with_complex_beam_model_time_av(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num],n_obs_concat_list=n_obs_concat_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-
+calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #now need to extract the global signal using the complex beams
-global_signal_K, global_signal_K_error  = extract_global_signal_from_ms_complex(EDA2_chan_list=[EDA2_chan_list[chan_num]],lst_list=lst_hrs_list[chan_num])
-print(global_signal_K)
-
+global_signal_K_array, global_signal_K_error_array  = extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
+print(global_signal_K_array)
+print(global_signal_K_error_array)
 
 
 
