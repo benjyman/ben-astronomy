@@ -1466,66 +1466,66 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
          print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
    
          
-         ##export uvfits
-         cmd = "rm -rf %s" % (mir_file_uvfits_name)
-         print(cmd)
-         os.system(cmd)
-         cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
-         print(cmd)
-         os.system(cmd)
-         
-         #look at the uvfits file
-         uvfits_filename = mir_file_uvfits_name
-         print("%s" % uvfits_filename)
-         hdulist = fits.open(uvfits_filename)
-         #hdulist.info()
-         info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-         #print(info_string)
-         uvtable = hdulist[0].data
-         uvtable_header = hdulist[0].header
-         hdulist.close()
-         sim_UU_s_array = uvtable['UU']
-         sim_VV_s_array = uvtable['VV']
-         sim_WW_s_array = uvtable['WW']
-         sim_baselines = uvtable['baseline']
-         sim_visibilities = uvtable['DATA']
-         sim_visibilities_shape = sim_visibilities.shape
-         #print('sim_UU_s_array')
-         #print(sim_UU_s_array)
-         #sim_UU_m_array = sim_UU_s_array * c
-         #print('sim_UU_m_array')
-         #print(sim_UU_m_array)
-         #u_in_miriad = sim_UU_s_array[0]
-         #ratio_u_in = u_in/u_in_miriad
-         #print('ratio_u_in')
-         #print(ratio_u_in)
-         print("sim visibilities_shape")
-         print(sim_visibilities_shape)
-         print('sim_baselines')
-         print(len(sim_baselines))
-         print(np.max(sim_baselines))
+      ##export uvfits
+      cmd = "rm -rf %s" % (mir_file_uvfits_name)
+      print(cmd)
+      os.system(cmd)
+      cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
+      print(cmd)
+      os.system(cmd)
       
-         #what is going on with these baselines
-         for baseline_num_index,baseline_num in enumerate(sim_baselines):
-            #print(sim_baselines[index])
-            if baseline_num > (2**16):
-               print(baseline_num)
-               ant1,ant2 = decode_baseline(baseline_num)
-               print(ant1,ant2)
-         
-         #got it to work by not adding the last antenna i.e above:
-         #if ant2<255 and ant1<255:
-               #uv.write(preamble,cross_vis)
-         #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
+      ##look at the uvfits file
+      #uvfits_filename = mir_file_uvfits_name
+      #print("%s" % uvfits_filename)
+      #hdulist = fits.open(uvfits_filename)
+      ##hdulist.info()
+      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+      ##print(info_string)
+      #uvtable = hdulist[0].data
+      #uvtable_header = hdulist[0].header
+      #hdulist.close()
+      #sim_UU_s_array = uvtable['UU']
+      #sim_VV_s_array = uvtable['VV']
+      #sim_WW_s_array = uvtable['WW']
+      #sim_baselines = uvtable['baseline']
+      #sim_visibilities = uvtable['DATA']
+      #sim_visibilities_shape = sim_visibilities.shape
+      #print('sim_UU_s_array')
+      #print(sim_UU_s_array)
+      #sim_UU_m_array = sim_UU_s_array * c
+      #print('sim_UU_m_array')
+      #print(sim_UU_m_array)
+      #u_in_miriad = sim_UU_s_array[0]
+      #ratio_u_in = u_in/u_in_miriad
+      #print('ratio_u_in')
+      #print(ratio_u_in)
+      #print("sim visibilities_shape")
+      #print(sim_visibilities_shape)
+      #print('sim_baselines')
+      #print(len(sim_baselines))
+      #print(np.max(sim_baselines))
+      
+      ##what is going on with these baselines
+      #for baseline_num_index,baseline_num in enumerate(sim_baselines):
+      #   #print(sim_baselines[index])
+      #   if baseline_num > (2**16):
+      #      print(baseline_num)
+      #      ant1,ant2 = decode_baseline(baseline_num)
+      #      print(ant1,ant2)
+      
+      #got it to work by not adding the last antenna i.e above:
+      #if ant2<255 and ant1<255:
+            #uv.write(preamble,cross_vis)
+      #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
    
-         #print(len(sim_baseline))
-         #print(len(sim_UU_s_array))
-         #convert from miriad baseline numbers
-         #converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
-         converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
-         converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
-         converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
-         #print(converted_sim_baselines)
+      #print(len(sim_baseline))
+      #print(len(sim_UU_s_array))
+      ##convert from miriad baseline numbers
+      ##converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
+      ##converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
+      #converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
+      #converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
+      ##print(converted_sim_baselines)
    
       #try to read the data in to casa as a ms
       #verify with wsclean - too many antennas - 255 max?
@@ -2452,8 +2452,27 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    np.save(t_sky_error_K_array_filename,t_sky_error_K_array)  
    print("saved %s" % t_sky_K_array_filename)
    print("saved %s" % t_sky_error_K_array_filename)
-   return(t_sky_K_array,t_sky_error_K_array)
+   
+   #return(t_sky_K_array,t_sky_error_K_array)
 
+def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename):
+   t_sky_K_array = np.load(t_sky_K_array_filename)
+   t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
+   
+   plt.clf()
+   plt.errorbar(freq_MHz_list,t_sky_K_array,yerr=t_sky_error_K_array)
+   map_title="Global Tsky" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("EDA2 global Tsky (K)")
+   #plt.legend(loc=1)
+   #plt.text(x_pos, y_pos, fit_string)
+   #plt.ylim([0, 3.5])
+   fig_name= "t_sky_measured_eda2_complex_beam_cal.png" 
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name)
+      
 
 
       
@@ -2483,7 +2502,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 #print("lst_hrs_list")
 #print(lst_hrs_list)
-      
+       
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
@@ -2495,11 +2514,11 @@ plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
 check_figs=False
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
-input_sky = "gsm"   #zenith_point_source  #unity
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
-input_sky = "unity"
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
+#input_sky = "gsm"   #zenith_point_source  #unity
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
+#input_sky = "unity"
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
 #######
 #just for initial testing of calibration
 #model_ms_name= "20200303T133733_50.000.ms"
@@ -2509,11 +2528,12 @@ write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_
 #now with time averaging
 plot_cal = True
 per_chan_cal = False
-calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+#calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
 #now need to extract the global signal using the complex beams
-global_signal_K_array, global_signal_K_error_array  = extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
-print(global_signal_K_array)
-print(global_signal_K_error_array)
+#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
+t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
+t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
+plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
 
 
 
