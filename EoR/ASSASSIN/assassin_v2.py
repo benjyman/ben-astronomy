@@ -1536,9 +1536,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
       os.system(cmd)
             
       cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
-      print(cmd)
-      os.system(cmd)
-      
+ 
       with open(casa_cmd_filename,'w') as f:
          f.write(cmd)
            
@@ -1873,107 +1871,72 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
       sim_only=True
    #think about how to use coherence:
    #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
-   print("averaging EDA2 obs in time before calibration")
-   #specify uv_cutoff in wavelengths, convert to m for 'calibrate'
-   #pol = pol_list[0]
-   gsm  = GlobalSkyModel()
-   wsclean_imsize = '512'
-   wsclean_scale = '900asec'  
    
-   number_of_good_obs_list = []
-   number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
-   #if not sim_only:
-    
+   print("concatenate and flag EDA2 obs before calibration")
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       #freq_MHz = np.round(400./512.*float(EDA2_chan))
       freq_MHz = 400./512.*float(EDA2_chan)
       wavelength = 300./freq_MHz
-      centre_freq = float(freq_MHz)
-      fine_chan_width_MHz = fine_chan_width_Hz/1000000.  
-      if uv_cutoff!=0:
-         uv_cutoff_m = uv_cutoff * wavelength
-      lst = lst_list[EDA2_chan_index]
-      lst_deg = (float(lst)/24)*360.
       if len(EDA2_chan_list)==1:
          obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
       else:
          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
       first_obstime = obs_time_list[0]
-      
-      #guard against cases where there are no data for that channel
-      if first_obstime==0:
-         continue
-      else:
-         pass
-
-      #Don't do the time averaging yet, try calibrating each obs individually so you can weed out the bad ones
-      #No need for a multi-freq model cube for each obs, just use centre freq 
-      wsclean_cal_ms_name_list = []
+      n_obs_concat = len(obs_time_list)
+      concat_ms_name = "%s/%s_plus_%s_obs_%0.3f_MHz_concat.ms" % (EDA2_chan,first_obstime,n_obs_concat,freq_MHz)
+      obs_concat_list = []
       for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
          eda2_ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
          print(eda2_ms_name)
-         #model_ms_name = "/md0/EoR/EDA2/EEPs/new_20210616/%s_%0.3f.ms" % (first_obstime,freq_MHz) 
-         #now just in same directory as unity ms
+         obs_concat_list.append(eda2_ms_name)
+         
+         #add in the model column to each ms
          model_ms_name = "%s_%0.3f.ms" % (first_obstime,freq_MHz) 
          print(model_ms_name)
-         
+   
          eda2_ms_table = table(eda2_ms_name,readonly=False)
-         #eda2_table_summary = tablesummary(eda2_ms_name)
-         #print(eda2_table_summary)
          eda2_data = get_data(eda2_ms_table)
-         #print(eda2_data.shape)
          eda2_uvw = get_uvw(eda2_ms_table)
          eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
          eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
-
-        
+      
          model_ms_table = table(model_ms_name,readonly=True)
          model_data = get_data(model_ms_table)
          model_uvw = get_uvw(model_ms_table)    
          model_ant1, model_ant2 = get_ant12(model_ms_name)
          model_ants = np.vstack((model_ant1,model_ant2)).T
    
-         #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
          model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
          #n_common = np.count_nonzero(model_ms_indices) 
          #print(n_common)
          eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
          #n_common = np.count_nonzero(eda2_ms_indices)
          #print(n_common)
-         
-         
-         #ind = np.lexsort((b,a)) # Sort by a, then by b
-         #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
-         
+              
          eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
          eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
          eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
-
-         
+   
          model_common_ant1 = model_ant1[model_ms_indices]
          model_common_ant2 = model_ant2[model_ms_indices]
          model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
-         
-         #don't sort the ant arrays, these are what we use to sort the other arrays!
-         #model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
-         #model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
                
          common_eda2_uvw = eda2_uvw[eda2_ms_indices]
          common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
-         
+            
          common_eda2_data = eda2_data[eda2_ms_indices]
          common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
          #print(common_eda2_data_sorted.shape)
          #print(common_eda2_data_sorted[0:10,0,0])
-         
+            
          common_model_uvw = model_uvw[model_ms_indices]
          common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
-   
+      
          common_model_data = model_data[model_ms_indices]
          common_model_data_sorted = common_model_data[model_common_sort_inds]
          #print(common_model_data_sorted.shape)
          #print(common_model_data_sorted[0:10,0,0])      
-         
+
          #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
          ant2_list=[]
          for ant2_index,ant2 in enumerate(model_common_ant2):
@@ -1981,18 +1944,18 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
                ant2_list.append(ant2_index)
          #print(len(ant2_list))
          #print(ant2_list)
-         
+            
          old_model_common_ant2 = model_common_ant2
          old_model_common_ant1 = model_common_ant1
          old_common_model_data_sorted = common_model_data_sorted
          counter=0
-         
+            
          #a = np.array([[1, 1], [2, 2], [3, 3]])
          #print(a)
          #b = np.insert(a, 1, 5, axis=0)
          #print(b)
-         
-         
+            
+            
          for ant2_index in ant2_list:
             ant2_index+=counter
             ant1_value = old_model_common_ant1[ant2_index-1]
@@ -2014,122 +1977,42 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
          new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
          new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
          new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
-         
-         #print(new_common_model_data_sorted.shape)
+         ###print(new_common_model_data_sorted.shape)
          repetitions = 32
          new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
          #print(new_common_model_data_sorted_tile.shape)
-         
-         #print(len(new_model_common_ant2_sorted))
-         #print((new_model_common_ant2_sorted[-200:-1]))
-         #print(eda2_ant2.shape)
-         #print(eda2_ant2[-200:-1])
-         
-         #print(common_model_data_sorted.shape)
-         #print(common_model_data_sorted[-5:])
-         #print(new_common_model_data_sorted.shape)
-         #print((new_common_model_data_sorted[-5:]))
-   
-         #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
-         #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
-         #arrrgghhhh
+      
+        
          try:
             add_col(eda2_ms_table, "MODEL_DATA")
          except:
             pass
          put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
-         eda2_ms_table.close()     
-   
-   
-         ##try imaging the model column of the ms:
-         #wsclean_imsize = '512'
-         #wsclean_scale = '900asec'
-         test_image_name = "complex_beam_test"
-         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
-         #print(cmd)
-         #os.system(cmd)
+         eda2_ms_table.close() 
          
-         #need to flag ant 255 .... also flux scale is about half (not treating polarisation correctly?)
-         #use uv cutoff at half wavelength?
-         #try cal with -ch 32
-         
-         #try calibrate
-         if uv_cutoff==0:
-            gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
-            calibrate_options = ''
-         else:
-            gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols_%0.3f_m.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15],uv_cutoff_m)
-            calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
-     
-         cmd = "rm -rf %s" % (gain_solutions_name)
-         print(cmd)
-         os.system(cmd)  
-         #calibrate
-         cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
-         print(cmd)
-         os.system(cmd)
-         #plot cal sols
-         
-         #plot the sols and 
-         if (os.path.isfile(gain_solutions_name)):
-            wsclean_cal_ms_name_list.append(eda2_ms_name)
-          
-            if plot_cal:
-               #Plot the cal solutions
-               cmd = "aocal_plot.py  %s " % (gain_solutions_name)
-               print(cmd)
-               #os.system(cmd)
-                
-            cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
-            print(cmd)
-            os.system(cmd)
-         
-            #test image the CORRECTED data'
-            #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
-            #print(cmd)
-            #os.system(cmd)
+      obs_concat_list_string = "','".join(obs_concat_list)
       
-      number_of_good_obs = len(wsclean_cal_ms_name_list)
-      print("number of good obs used in chan %s is %s" % (EDA2_chan,number_of_good_obs)) 
-      number_of_good_obs_list.append(str(number_of_good_obs))
-       
-      #print(wsclean_cal_ms_name_list)
-      #now average
-      av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
-
-      for ms_name_index,ms_name in enumerate(wsclean_cal_ms_name_list):    
-         #need to use kariukes ms_utils instead (better anyway!)
-         
-         #if this is the first observation create a copy of the ms to be the sum ms
-         if(ms_name_index==0):
-            cmd = 'rm -rf %s' % (av_ms_name)
-            print(cmd)
-            os.system(cmd)
-            
-            cmd = 'cp -r %s %s' % (ms_name,av_ms_name)
-            print(cmd)
-            os.system(cmd)
-            
-            sum_ms_table = table(ms_name,readonly=True)
-            sum_ms_data = get_data(sum_ms_table, col="DATA")
-            #print(sum_ms_data.shape)
-            sum_ms_table.close()
-            
-         #update the sum ms by adding the current ms data
-         if(ms_name_index!=0):
-            ms_table = table(ms_name,readonly=True)
-            new_data = get_data(ms_table, col="DATA")
-            sum_ms_data += new_data
-            ms_table.close()
-            
-      #print(sum_ms_data.shape)
-      av_ms_data = sum_ms_data / number_of_good_obs
-      av_ms_table = table(av_ms_name,readonly=False)
-      put_col(av_ms_table, col="DATA", dat=av_ms_data)
-      #print("we have an averaged ms")
-      av_ms_table.close()
+      casa_cmd_filename = '%s/concat_ms.sh' % EDA2_chan
       
-      #calibrate av ms
+      cmd = "rm -rf %s %s" % (concat_ms_name,casa_cmd_filename)
+      print(cmd)
+      os.system(cmd)
+            
+      cmd = "concat(vis=['%s'],concatvis='%s',dirtol='5arcmin')" % (obs_concat_list_string,concat_ms_name)
+      
+      with open(casa_cmd_filename,'w') as f:
+         f.write(cmd)
+           
+      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      print(cmd)
+      os.system(cmd)
+   
+      #flag data with aoflagger
+      cmd = "aoflagger -column DATA %s" % concat_ms_name
+      print(cmd)
+      os.system(cmd)
+   
+      #calibrate
       if uv_cutoff==0:
          gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols_av.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
          calibrate_options = ''
@@ -2141,7 +2024,7 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
       print(cmd)
       os.system(cmd)  
       #calibrate
-      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,av_ms_name,gain_solutions_name)
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,concat_ms_name,gain_solutions_name)
       print(cmd)
       os.system(cmd)
       
@@ -2152,33 +2035,301 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
          print(cmd)
          os.system(cmd)
           
-      cmd = "applysolutions %s %s  " % (av_ms_name,gain_solutions_name)
+      cmd = "applysolutions %s %s  " % (concat_ms_name,gain_solutions_name)
       print(cmd)
       os.system(cmd)
       
-      #test image the CORRECTED data'
-      cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected_av",wsclean_imsize,wsclean_imsize,wsclean_scale,av_ms_name)
+      ##test image the CORRECTED data'
+      #wsclean_imsize = '512'
+      #wsclean_scale = '900asec' 
+      #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected_av",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
+      #print(cmd)
+      #os.system(cmd)
+   
+      #flag corrected data?
+      cmd = "aoflagger -column CORRECTED_DATA %s" % concat_ms_name
       print(cmd)
       os.system(cmd)
-         
-   number_of_good_obs_list_string = ",".join(number_of_good_obs_list)
-   with open(number_of_good_obs_list_filename, "w") as f:
-      f.write(number_of_good_obs_list_string)
+      
+      #average with CASA mstransform (or split?)
+      av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+      
+      casa_cmd_filename = '%s/av_ms.sh' % EDA2_chan
+      
+      cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
+      print(cmd)
+      os.system(cmd)
+            
+      cmd = "mstransform(vis='%s',outputvis='%s',timeaverage=True,timebin='10s')" % (concat_ms_name,av_ms_name)
+      
+      with open(casa_cmd_filename,'w') as f:
+         f.write(cmd)
+           
+      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      print(cmd)
+      os.system(cmd)
+
+      sys.exit()
+      
+def old_calibrate():
+      ##run calibrate on flagged but not averaged data.   
+      print("averaging EDA2 obs in time before calibration")
+      ##specify uv_cutoff in wavelengths, convert to m for 'calibrate'
+      ##pol = pol_list[0]
+      #gsm  = GlobalSkyModel()
+      #wsclean_imsize = '512'
+      #wsclean_scale = '900asec'  
+      # 
+      #number_of_good_obs_list = []
+      #number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
+      ##if not sim_only:
+       
+      #for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+      #   #freq_MHz = np.round(400./512.*float(EDA2_chan))
+      #   freq_MHz = 400./512.*float(EDA2_chan)
+      #   wavelength = 300./freq_MHz
+      #   centre_freq = float(freq_MHz)
+      #   fine_chan_width_MHz = fine_chan_width_Hz/1000000.  
+      #   if uv_cutoff!=0:
+      #      uv_cutoff_m = uv_cutoff * wavelength
+      #   lst = lst_list[EDA2_chan_index]
+      #   lst_deg = (float(lst)/24)*360.
+      #   if len(EDA2_chan_list)==1:
+      #      obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      #   else:
+      #      obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      #   first_obstime = obs_time_list[0]
+      #   
+      #   #guard against cases where there are no data for that channel
+      #   if first_obstime==0:
+      #      continue
+      #   else:
+      #      pass
    
-   #freq av to one chan?
+      #   #Don't do the time averaging yet, try calibrating each obs individually so you can weed out the bad ones
+      #   #No need for a multi-freq model cube for each obs, just use centre freq 
+      #   wsclean_cal_ms_name_list = []
+      #   for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
+      #      eda2_ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+      #      print(eda2_ms_name)
+      #      #model_ms_name = "/md0/EoR/EDA2/EEPs/new_20210616/%s_%0.3f.ms" % (first_obstime,freq_MHz) 
+      #      #now just in same directory as unity ms
+      #      model_ms_name = "%s_%0.3f.ms" % (first_obstime,freq_MHz) 
+      #      print(model_ms_name)
+      #      
+      #      eda2_ms_table = table(eda2_ms_name,readonly=False)
+      #      #eda2_table_summary = tablesummary(eda2_ms_name)
+      #      #print(eda2_table_summary)
+      #      eda2_data = get_data(eda2_ms_table)
+      #      #print(eda2_data.shape)
+      #      eda2_uvw = get_uvw(eda2_ms_table)
+      #      eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
+      #      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+   
+      #    
+      #     model_ms_table = table(model_ms_name,readonly=True)
+      #      model_data = get_data(model_ms_table)
+      #      model_uvw = get_uvw(model_ms_table)    
+      #      model_ant1, model_ant2 = get_ant12(model_ms_name)
+      #      model_ants = np.vstack((model_ant1,model_ant2)).T
+      #
+      #      #model_ms_indices = np.nonzero(np.in1d(model_uvw, eda2_uvw))[0]
+      #      model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
+      #      #n_common = np.count_nonzero(model_ms_indices) 
+      #      #print(n_common)
+      #      eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
+      #      #n_common = np.count_nonzero(eda2_ms_indices)
+      #      #print(n_common)
+      #      
+      #      
+      #      #ind = np.lexsort((b,a)) # Sort by a, then by b
+      #      #common_eda2_uvw_sorted = np.sort(common_eda2_uvw,axis=0)
+      #      
+      #      eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+      #      eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+      #      eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+   
+            
+      #      model_common_ant1 = model_ant1[model_ms_indices]
+      #      model_common_ant2 = model_ant2[model_ms_indices]
+      #      model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
+            
+      #      #don't sort the ant arrays, these are what we use to sort the other arrays!
+      #      #model_common_ant1_sorted = model_common_ant1[model_common_sort_inds]
+      #      #model_common_ant2_sorted = model_common_ant2[model_common_sort_inds]
+                  
+      #      common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+      #      common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+            
+      #      common_eda2_data = eda2_data[eda2_ms_indices]
+      #      common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
+      #      #print(common_eda2_data_sorted.shape)
+      #      #print(common_eda2_data_sorted[0:10,0,0])
+            
+      #      common_model_uvw = model_uvw[model_ms_indices]
+      #      common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
+      
+      #      common_model_data = model_data[model_ms_indices]
+      #      common_model_data_sorted = common_model_data[model_common_sort_inds]
+      #      #print(common_model_data_sorted.shape)
+      #      #print(common_model_data_sorted[0:10,0,0])      
+            
+      #      #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
+      #      ant2_list=[]
+      #      for ant2_index,ant2 in enumerate(model_common_ant2):
+      #         if ant2==254:
+      #            ant2_list.append(ant2_index)
+      #      #print(len(ant2_list))
+      #      #print(ant2_list)
+            
+      #      old_model_common_ant2 = model_common_ant2
+      #      old_model_common_ant1 = model_common_ant1
+      #      old_common_model_data_sorted = common_model_data_sorted
+      #      counter=0
+            
+      #      #a = np.array([[1, 1], [2, 2], [3, 3]])
+      #      #print(a)
+      #      #b = np.insert(a, 1, 5, axis=0)
+      #      #print(b)
+            
+            
+      #      for ant2_index in ant2_list:
+      #         ant2_index+=counter
+      #         ant1_value = old_model_common_ant1[ant2_index-1]
+      #         #new_data_value = np.zeros((1,4))
+      #         #print(new_data_value.shape)
+      #         #print(old_array.shape)
+      #         new_model_common_ant2 = np.insert(old_model_common_ant2,ant2_index+1,255)
+      #         new_model_common_ant1 = np.insert(old_model_common_ant1,ant2_index+1,ant1_value)
+      #         new_common_model_data_sorted = np.insert(old_common_model_data_sorted,ant2_index+1,0,axis=0)
+      #         #print(old_common_model_data_sorted[ant2_index-2:ant2_index+5])
+      #         #print(new_common_model_data_sorted[ant2_index-2:ant2_index+6])
+      #         #print(new_array[ant2_index+1])
+      #         old_model_common_ant2 = new_model_common_ant2
+      #         old_model_common_ant1 = new_model_common_ant1
+      #         old_common_model_data_sorted = new_common_model_data_sorted
+      #          counter+=1
+      #      new_model_common_ant2 = np.append(new_model_common_ant2,np.array([254,255,255]))
+      #      new_model_common_ant1 = np.append(new_model_common_ant1,np.array([254,254,255]))
+      #      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      #      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      #      new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+      #      ###print(new_common_model_data_sorted.shape)
+      #      repetitions = 32
+      #      new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
+      #      #print(new_common_model_data_sorted_tile.shape)
+            
+      #      #print(len(new_model_common_ant2_sorted))
+      #      #print((new_model_common_ant2_sorted[-200:-1]))
+      #      #print(eda2_ant2.shape)
+      #      #print(eda2_ant2[-200:-1])
+            
+      #      #print(common_model_data_sorted.shape)
+      #      #print(common_model_data_sorted[-5:])
+      #      #print(new_common_model_data_sorted.shape)
+      #      #print((new_common_model_data_sorted[-5:]))
+      
+      #      #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
+      #      #going to need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
+      #      #arrrgghhhh
+      #      try:
+      #         add_col(eda2_ms_table, "MODEL_DATA")
+      #      except:
+      #         pass
+      #      put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+      #      eda2_ms_table.close()     
+      
+      #
+      #      ##try imaging the model column of the ms:
+      #      #wsclean_imsize = '512'
+      #      #wsclean_scale = '900asec'
+      #      test_image_name = "complex_beam_test"
+      #      #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      #      #print(cmd)
+      #      #os.system(cmd)
+            
+      #      #need to flag ant 255 .... also flux scale is about half (not treating polarisation correctly?)
+      #      #use uv cutoff at half wavelength?
+      #      #try cal with -ch 32
+            
+      #      #try calibrate
+      #      if uv_cutoff==0:
+      #         gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+      #         calibrate_options = ''
+      #      else:
+      #         gain_solutions_name = '%s/%s_%s_complex_beam_cal_sols_%0.3f_m.bin' % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15],uv_cutoff_m)
+      #         calibrate_options = '-minuv %0.3f ' % uv_cutoff_m
+      #  
+      #      cmd = "rm -rf %s" % (gain_solutions_name)
+      #      print(cmd)
+      #      os.system(cmd)  
+      #      #calibrate
+      #      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+      #      print(cmd)
+      #      os.system(cmd)
+      #      #plot cal sols
+            
+      #      #plot the sols and 
+      #      if (os.path.isfile(gain_solutions_name)):
+      #         wsclean_cal_ms_name_list.append(eda2_ms_name)
+      #       
+      #         if plot_cal:
+      #            #Plot the cal solutions
+      #            cmd = "aocal_plot.py  %s " % (gain_solutions_name)
+      #            print(cmd)
+      #            #os.system(cmd)
+      #             
+      #         cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+      #         print(cmd)
+      #         os.system(cmd)
+      #      
+      #         #test image the CORRECTED data'
+      #         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      #         #print(cmd)
+      #         #os.system(cmd)
+      #   
+      #   number_of_good_obs = len(wsclean_cal_ms_name_list)
+      #   print("number of good obs used in chan %s is %s" % (EDA2_chan,number_of_good_obs)) 
+      #   number_of_good_obs_list.append(str(number_of_good_obs))
+      #    
+      #   #print(wsclean_cal_ms_name_list)
+      #   #now average
+      #   av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+      #
+      #   for ms_name_index,ms_name in enumerate(wsclean_cal_ms_name_list):    
+      #      #need to use kariukes ms_utils instead (better anyway!)
+      #      
+      #      #if this is the first observation create a copy of the ms to be the sum ms
+      #      if(ms_name_index==0):
+      #         cmd = 'rm -rf %s' % (av_ms_name)
+      #         print(cmd)
+      #         os.system(cmd)
+      #         
+      #         cmd = 'cp -r %s %s' % (ms_name,av_ms_name)
+      #         print(cmd)
+      #         os.system(cmd)
+      #         
+      #         sum_ms_table = table(ms_name,readonly=True)
+      #         sum_ms_data = get_data(sum_ms_table, col="DATA")
+      #         #print(sum_ms_data.shape)
+      #         sum_ms_table.close()
+   
 
 def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5):
    t_sky_K_array = np.zeros(len(EDA2_chan_list))
    t_sky_error_K_array = np.zeros(len(EDA2_chan_list))
+   t_sky_K_array_flagged = np.zeros(len(EDA2_chan_list))
+   t_sky_error_K_array_flagged = np.zeros(len(EDA2_chan_list))
    
    t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
    t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
+   t_sky_K_array_filename_flagged = "t_sky_K_array_eda2_flagged.npy"
+   t_sky_error_K_array_filename_flagged = "t_sky_error_K_array_eda2_flagged.npy"   
    
-   number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
-   with open(number_of_good_obs_list_filename) as f:
-      number_of_good_obs_list_string = f.read()
-   
-   number_of_good_obs_list = number_of_good_obs_list_string.split(',')
+   #number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
+   #with open(number_of_good_obs_list_filename) as f:
+   #   number_of_good_obs_list_string = f.read()
+   #number_of_good_obs_list = number_of_good_obs_list_string.split(',')
    
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       freq_MHz = 400./512.*float(EDA2_chan)
@@ -2189,7 +2340,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
       #print(jy_to_K)
       
-      number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
+      #number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
       lst = lst_list[EDA2_chan_index]
       lst_deg = (float(lst)/24)*360.
       
@@ -2199,7 +2350,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
       first_obstime = obs_time_list[0]
          
-      av_ms_name = "%s/av_chan_%s_%s_plus_%s_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime,number_of_good_obs)
+      av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
       print("getting data from %s" % av_ms_name)
       unity_ms_name = "unity_%0.3f.ms" % (freq_MHz)
       print("and unity response from %s" % unity_ms_name)
@@ -2416,12 +2567,8 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #t_sky_error_jy = results.bse[0]
       #t_sky_K = jy_to_K * t_sky_jy
       #t_sky_error_K = jy_to_K * t_sky_error_jy
-      
-      
       t_sky_K = parameters[0]
       t_sky_error_K = results.bse[0]    
-
-            
 
       print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
       fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
@@ -2447,18 +2594,69 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       
       t_sky_K_array[EDA2_chan_index] = t_sky_K
       t_sky_error_K_array[EDA2_chan_index] = t_sky_error_K
-   
+      
+      #FLAGGING bit
+      #now use the fit to identify outliers probably due to rfi
+      max_deviations = 5.
+      common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev = np.nanstd(common_eda2_data_complex_freq_av_x_real_sorted_cut)
+      max_distance_from_model = max_deviations * common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev
+      distance_from_model = np.abs(common_eda2_data_complex_freq_av_x_real_sorted_cut - results.fittedvalues)
+      common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged = np.copy(common_eda2_data_complex_freq_av_x_real_sorted_cut)
+      common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
+      common_unity_data_complex_freq_av_x_real_sorted_cut_flagged = common_unity_data_complex_freq_av_x_real_sorted_cut[[distance_from_model < max_distance_from_model]]
+      
+      model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged, common_unity_data_complex_freq_av_x_real_sorted_cut,missing='drop')
+      results = model.fit()
+      parameters = results.params
+      #print parameters
+      #t_sky_jy = parameters[0]
+      #t_sky_error_jy = results.bse[0]
+      #t_sky_K = jy_to_K * t_sky_jy
+      #t_sky_error_K = jy_to_K * t_sky_error_jy
+      t_sky_K_flagged = parameters[0]
+      t_sky_error_K_flagged = results.bse[0]    
+
+      print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+      fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+      print(fit_string)
+      
+      plt.clf()
+      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut, common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged,linestyle='None',marker='.')
+      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_flagged, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      map_title="Data and fit flagged" 
+      plt.xlabel("Expected global-signal response")
+      plt.ylabel("Real component of visibility X pol (Jy)")
+      plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_flagged.png" % (freq_MHz,"x",EDA2_obs_time)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+
+      t_sky_K_array_flagged[EDA2_chan_index] = t_sky_K_flagged
+      t_sky_error_K_array_flagged[EDA2_chan_index] = t_sky_error_K_flagged
+
    np.save(t_sky_K_array_filename,t_sky_K_array)     
    np.save(t_sky_error_K_array_filename,t_sky_error_K_array)  
+   np.save(t_sky_K_array_filename_flagged,t_sky_K_array_flagged)     
+   np.save(t_sky_error_K_array_filename_flagged,t_sky_error_K_array_flagged) 
    print("saved %s" % t_sky_K_array_filename)
    print("saved %s" % t_sky_error_K_array_filename)
+   print("saved %s" % t_sky_K_array_filename_flagged)
+   print("saved %s" % t_sky_error_K_array_filename_flagged)
    
    #return(t_sky_K_array,t_sky_error_K_array)
 
 def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename):
+   base_name = t_sky_K_array_filename.split(".npy")[0]
    t_sky_K_array = np.load(t_sky_K_array_filename)
    t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
    
+   print(freq_MHz_list)
+   print(t_sky_K_array)
+   print(t_sky_error_K_array)
    plt.clf()
    plt.errorbar(freq_MHz_list,t_sky_K_array,yerr=t_sky_error_K_array)
    map_title="Global Tsky" 
@@ -2467,7 +2665,7 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    #plt.legend(loc=1)
    #plt.text(x_pos, y_pos, fit_string)
    #plt.ylim([0, 3.5])
-   fig_name= "t_sky_measured_eda2_complex_beam_cal.png" 
+   fig_name= "%s.png"  % base_name
    figmap = plt.gcf()
    figmap.savefig(fig_name)
    plt.close()
@@ -2528,13 +2726,16 @@ check_figs=False
 #now with time averaging
 plot_cal = True
 per_chan_cal = False
-#calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
+sys.exit()
 #now need to extract the global signal using the complex beams
-#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
+extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
 t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
 plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
-
+t_sky_K_array_filename = "t_sky_K_array_eda2_flagged.npy"
+t_sky_error_K_array_filename = "t_sky_error_K_array_eda2_flagged.npy"
+plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
 
 
 
