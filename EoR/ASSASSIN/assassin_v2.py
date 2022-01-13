@@ -1883,7 +1883,8 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
       first_obstime = obs_time_list[0]
       n_obs_concat = len(obs_time_list)
-      concat_ms_name = "%s/%s_plus_%s_obs_%0.3f_MHz_concat.ms" % (EDA2_chan,first_obstime,n_obs_concat,freq_MHz)
+      #concat_ms_name = "%s/%s_plus_%s_obs_%0.3f_MHz_concat.ms" % (EDA2_chan,first_obstime,n_obs_concat,freq_MHz)
+      concat_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
       obs_concat_list = []
       for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
          eda2_ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
@@ -2051,25 +2052,27 @@ def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_ca
       print(cmd)
       os.system(cmd)
       
-      #average with CASA mstransform (or split?)
-      av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
-      
-      casa_cmd_filename = '%s/av_ms.sh' % EDA2_chan
-      
-      cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
-      print(cmd)
-      os.system(cmd)
-            
-      cmd = "mstransform(vis='%s',outputvis='%s',timeaverage=True,timebin='10s')" % (concat_ms_name,av_ms_name)
-      
-      with open(casa_cmd_filename,'w') as f:
-         f.write(cmd)
-           
-      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-      print(cmd)
-      os.system(cmd)
+      #Forget this averaging stuff - can't work out how to average over different obsids with CASA
+      #just use concat ms and average in extract_tsky...
+      ##average with CASA mstransform (or split?)
+      #av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+      #
+      #casa_cmd_filename = '%s/av_ms.sh' % EDA2_chan
+      #
+      #cmd = "rm -rf %s %s" % (av_ms_name,casa_cmd_filename)
+      #print(cmd)
+      #os.system(cmd)
+      #      
+      ##cmd = "mstransform(vis='%s',outputvis='%s',timeaverage=True,timebin='10s',datacolumn='all')" % (concat_ms_name,av_ms_name)
+      #
+      # 
+      #with open(casa_cmd_filename,'w') as f:
+      #   f.write(cmd)
+      #     
+      #cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      #print(cmd)
+      #os.system(cmd)
 
-      sys.exit()
       
 def old_calibrate():
       ##run calibrate on flagged but not averaged data.   
@@ -2350,13 +2353,18 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
       first_obstime = obs_time_list[0]
          
-      av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+      #av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+      av_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+      #concat_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+      #av_ms_name = "%s/av_chan_%s_%s_plus_5_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+      
       print("getting data from %s" % av_ms_name)
       unity_ms_name = "unity_%0.3f.ms" % (freq_MHz)
       print("and unity response from %s" % unity_ms_name)
       
       eda2_ms_table = table(av_ms_name,readonly=True)
       eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
+      n_vis_eda2 = eda2_data_complex.shape[0]
       #do this later on common data
       #for now, average 32 (central 28) chans to 1, look at only x pol and real
       #eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
@@ -2369,19 +2377,56 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #now get expected unity response ms
       unity_ms_table = table(unity_ms_name,readonly=True)
       unity_data_complex = get_data(unity_ms_table, col="DATA")
+      n_vis_1_timestep = unity_data_complex.shape[0]
       #do this later
       #unity_data_complex_freq_av_x = unity_data_complex[:,0,1]
       #unity_data_complex_freq_av_x_real=unity_data_complex_freq_av_x.real      
       
+      #start_index = n_vis_1_timestep
+      #end_index = n_vis_1_timestep*2
+      #eda2_data_complex = eda2_data_complex[start_index:end_index,:,:]
+      
       #sort out common baselines just like in calibrate_with_complex_beams
       eda2_uvw = get_uvw(eda2_ms_table)
+      #eda2_uvw = eda2_uvw[start_index:end_index]
       eda2_ant1, eda2_ant2 = get_ant12(av_ms_name)
-      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+      #eda2_ant1 = eda2_ant1[start_index:end_index]
+      #eda2_ant2 = eda2_ant2[start_index:end_index]
+      
+      #count number of ants in eda2
+      n_ant_eda2 = 0
+      for ant_num_index, ant_num in enumerate(eda2_ant1):
+         n_ant_eda2 += 1
+         if (eda2_ant1[ant_num_index] != eda2_ant1[ant_num_index+1]):
+            break
+      n_baselines_eda2 = int((n_ant_eda2*(n_ant_eda2-1) / 2) + n_ant_eda2)
 
+      n_timesteps_eda2 = int(n_vis_eda2/n_baselines_eda2)
+      print("n_timesteps_eda2 %s" % (n_timesteps_eda2))
+
+      #average the eda2 timesteps
+      sum_data_eda2 = np.zeros([n_baselines_eda2,32,4],dtype='complex')
+      start_index = 0
+      end_index = n_baselines_eda2
+      for timestep in range(n_timesteps_eda2):
+         timestep_data = eda2_data_complex[start_index:end_index,:,:]
+         sum_data_eda2 += timestep_data
+         start_index += n_baselines_eda2
+         end_index += n_baselines_eda2
+      
+      av_eda2_data = sum_data_eda2 / n_timesteps_eda2
+      eda2_data_complex = av_eda2_data
+      
+      eda2_ant1 = eda2_ant1[0:n_baselines_eda2]
+      eda2_ant2 = eda2_ant2[0:n_baselines_eda2]
+      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+      eda2_uvw = eda2_uvw[0:n_baselines_eda2]
+      
+      
       unity_uvw = get_uvw(unity_ms_table)    
       unity_ant1, unity_ant2 = get_ant12(unity_ms_name)
       unity_ants = np.vstack((unity_ant1,unity_ant2)).T
-      
+
       ##lets just plot unity unity real vs unity uv dist without any sorting or cutting
       #unity_uvw_dist = np.sqrt(unity_uvw[:,0]**2 + unity_uvw[:,1]**2 + unity_uvw[:,2]**2)
       #print(unity_uvw_dist.shape)
@@ -2704,10 +2749,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
-#freq_MHz_list = freq_MHz_list[0:3]
-#lst_hrs_list = lst_hrs_list[0:3]
-#EDA2_obs_time_list = EDA2_obs_time_list[0:3]
-#EDA2_chan_list = EDA2_chan_list[0:3]
+freq_MHz_list = freq_MHz_list[0:3]
+lst_hrs_list = lst_hrs_list[0:3]
+EDA2_obs_time_list = EDA2_obs_time_list[0:3]
+EDA2_chan_list = EDA2_chan_list[0:3]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -2727,7 +2772,7 @@ check_figs=False
 plot_cal = True
 per_chan_cal = False
 calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal)
-sys.exit()
+#sys.exit()
 #now need to extract the global signal using the complex beams
 extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
