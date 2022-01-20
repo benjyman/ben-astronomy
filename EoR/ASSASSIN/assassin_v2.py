@@ -2635,38 +2635,46 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             plt.close()
             print("saved %s" % fig_name)
       
-            model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut, common_unity_data_complex_x_real_sorted_cut,missing='drop')
-            results = model.fit()
-            parameters = results.params
-            #print parameters
-            t_sky_K = parameters[0]
-            t_sky_error_K = results.bse[0]    
+            print(len(common_eda2_data_complex_x_real_sorted_cut))
+            print(len(common_unity_data_complex_x_real_sorted_cut))
       
-            print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
-            fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-            print(fit_string)
+            if (len(common_eda2_data_complex_x_real_sorted_cut)>2 and len(common_unity_data_complex_x_real_sorted_cut)>2):
+               model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut, common_unity_data_complex_x_real_sorted_cut,missing='drop')
+               results = model.fit()
+               parameters = results.params
+               #print parameters
+               t_sky_K = parameters[0]
+               t_sky_error_K = results.bse[0]    
+         
+               print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+               fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+               print(fit_string)
+               
+               #t_sky_K_list.append(t_sky_K)
+               #t_sky_error_K_list.append(t_sky_error_K)
+         
+               plt.clf()
+               plt.plot(common_unity_data_complex_x_real_sorted_cut, common_eda2_data_complex_x_real_sorted_cut,linestyle='None',marker='.')
+               #deal with the missing values in the fit
+               common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))[:,0]
+               #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
+               common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_missing_indices]
+               plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+               map_title="Data and fit" 
+               plt.xlabel("Expected global-signal response")
+               plt.ylabel("Real component of visibility X pol (Jy)")
+               plt.legend(loc=1)
+               #plt.text(x_pos, y_pos, fit_string)
+               #plt.ylim([0, 3.5])
+               fig_name= "x_y_OLS_%s_%s_pol.png" % (base_name,"x")
+               figmap = plt.gcf()
+               figmap.savefig(fig_name)
+               plt.close()
+               print("saved %s" % fig_name)
             
-            #t_sky_K_list.append(t_sky_K)
-            #t_sky_error_K_list.append(t_sky_error_K)
-      
-            plt.clf()
-            plt.plot(common_unity_data_complex_x_real_sorted_cut, common_eda2_data_complex_x_real_sorted_cut,linestyle='None',marker='.')
-            #deal with the missing values in the fit
-            common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))[:,0]
-            #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
-            common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_missing_indices]
-            plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-            map_title="Data and fit" 
-            plt.xlabel("Expected global-signal response")
-            plt.ylabel("Real component of visibility X pol (Jy)")
-            plt.legend(loc=1)
-            #plt.text(x_pos, y_pos, fit_string)
-            #plt.ylim([0, 3.5])
-            fig_name= "x_y_OLS_%s_%s_pol.png" % (base_name,"x")
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            plt.close()
-            print("saved %s" % fig_name)
+            else:
+               t_sky_K = np.nan
+               t_sky_error_K = np.nan
             
             #save to arrays
             t_sky_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K
@@ -2686,38 +2694,45 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             #print(common_eda2_data_complex_x_real_sorted_cut_flagged.shape)
             #print(common_unity_data_complex_x_real_sorted_cut_missing.shape)
       
-            model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut_flagged, common_unity_data_complex_x_real_sorted_cut_missing,missing='drop')
-            results = model.fit()
-            parameters = results.params
-            #print parameters
-            t_sky_K_flagged = parameters[0]
-            t_sky_error_K_flagged = results.bse[0]    
+            print(len(common_eda2_data_complex_x_real_sorted_cut_flagged))
+            print(len(common_unity_data_complex_x_real_sorted_cut_missing))
             
-            print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-            fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-            print(fit_string)
-            
-            plt.clf()
-            plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, common_eda2_data_complex_x_real_sorted_cut_flagged,linestyle='None',marker='.')
-            #deal with the missing values in the fit
-            common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))[:,0]
-            #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
-            common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut_missing[common_unity_data_complex_x_real_sorted_cut_missing_indices]
-            
-            
-            plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-            map_title="Data and fit flagged" 
-            plt.xlabel("Expected global-signal response")
-            plt.ylabel("Real component of visibility X pol (Jy)")
-            plt.legend(loc=1)
-            #plt.text(x_pos, y_pos, fit_string)
-            #plt.ylim([0, 3.5])
-            fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"x")
-            figmap = plt.gcf()
-            figmap.savefig(fig_name)
-            plt.close()
-            print("saved %s" % fig_name)
-      
+            if (len(common_eda2_data_complex_x_real_sorted_cut_flagged)>2 and len(common_unity_data_complex_x_real_sorted_cut_missing)>2):
+               model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut_flagged, common_unity_data_complex_x_real_sorted_cut_missing,missing='drop')
+               results = model.fit()
+               parameters = results.params
+               #print parameters
+               t_sky_K_flagged = parameters[0]
+               t_sky_error_K_flagged = results.bse[0]    
+               
+               print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+               fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+               print(fit_string)
+               
+               plt.clf()
+               plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, common_eda2_data_complex_x_real_sorted_cut_flagged,linestyle='None',marker='.')
+               #deal with the missing values in the fit
+               common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))[:,0]
+               #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
+               common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut_missing[common_unity_data_complex_x_real_sorted_cut_missing_indices]
+               
+               
+               plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+               map_title="Data and fit flagged" 
+               plt.xlabel("Expected global-signal response")
+               plt.ylabel("Real component of visibility X pol (Jy)")
+               plt.legend(loc=1)
+               #plt.text(x_pos, y_pos, fit_string)
+               #plt.ylim([0, 3.5])
+               fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"x")
+               figmap = plt.gcf()
+               figmap.savefig(fig_name)
+               plt.close()
+               print("saved %s" % fig_name)
+            else:
+               t_sky_K_flagged = np.nan
+               t_sky_error_K_flagged = np.nan  
+               
             t_sky_K_array_flagged_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K_flagged
             t_sky_error_K_array_flagged_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_error_K_flagged
       
@@ -2823,43 +2838,47 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       plt.close()
       print("saved %s" % fig_name)
 
-      model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut, common_unity_data_complex_freq_av_x_real_sorted_cut,missing='drop')
-      results = model.fit()
-      parameters = results.params
-      #print parameters
-      #t_sky_jy = parameters[0]
-      #t_sky_error_jy = results.bse[0]
-      #t_sky_K = jy_to_K * t_sky_jy
-      #t_sky_error_K = jy_to_K * t_sky_error_jy
-      t_sky_K = parameters[0]
-      t_sky_error_K = results.bse[0]    
-
-      print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
-      fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-      print(fit_string)
-      
-      #t_sky_K_list.append(t_sky_K)
-      #t_sky_error_K_list.append(t_sky_error_K)
-
-      plt.clf()
-      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut, common_eda2_data_complex_freq_av_x_real_sorted_cut,linestyle='None',marker='.')
-      #deal with the missing values in the fit
-      common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut))[:,0]
-      #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
-      common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
-      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-      map_title="Data and fit" 
-      plt.xlabel("Expected global-signal response")
-      plt.ylabel("Real component of visibility X pol (Jy)")
-      plt.legend(loc=1)
-      #plt.text(x_pos, y_pos, fit_string)
-      #plt.ylim([0, 3.5])
-      fig_name= "x_y_OLS_plot_%0.3f_MHz_all_%s_pol.png" % (freq_MHz,"x")
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      plt.close()
-      print("saved %s" % fig_name)
-      
+      if (len(common_eda2_data_complex_freq_av_x_real_sorted_cut)>2 and len(common_unity_data_complex_freq_av_x_real_sorted_cut)>2):
+         model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut, common_unity_data_complex_freq_av_x_real_sorted_cut,missing='drop')
+         results = model.fit()
+         parameters = results.params
+         #print parameters
+         #t_sky_jy = parameters[0]
+         #t_sky_error_jy = results.bse[0]
+         #t_sky_K = jy_to_K * t_sky_jy
+         #t_sky_error_K = jy_to_K * t_sky_error_jy
+         t_sky_K = parameters[0]
+         t_sky_error_K = results.bse[0]    
+   
+         print("t_sky_K is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+         fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+         print(fit_string)
+         
+         #t_sky_K_list.append(t_sky_K)
+         #t_sky_error_K_list.append(t_sky_error_K)
+   
+         plt.clf()
+         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut, common_eda2_data_complex_freq_av_x_real_sorted_cut,linestyle='None',marker='.')
+         #deal with the missing values in the fit
+         common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut))[:,0]
+         #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
+         common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
+         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         map_title="Data and fit" 
+         plt.xlabel("Expected global-signal response")
+         plt.ylabel("Real component of visibility X pol (Jy)")
+         plt.legend(loc=1)
+         #plt.text(x_pos, y_pos, fit_string)
+         #plt.ylim([0, 3.5])
+         fig_name= "x_y_OLS_plot_%0.3f_MHz_all_%s_pol.png" % (freq_MHz,"x")
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         plt.close()
+         print("saved %s" % fig_name)
+      else:
+         t_sky_K = np.nan
+         t_sky_error_K = np.nan
+               
       t_sky_K_array[EDA2_chan_index] = t_sky_K
       t_sky_error_K_array[EDA2_chan_index] = t_sky_error_K
       
@@ -2879,43 +2898,46 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing.shape)
 
       #common_unity_data_complex_freq_av_x_real_sorted_cut_flagged = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[[distance_from_model < max_distance_from_model]]
-      
-      model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged, common_unity_data_complex_freq_av_x_real_sorted_cut_missing,missing='drop')
-      results = model.fit()
-      parameters = results.params
-      #print parameters
-      #t_sky_jy = parameters[0]
-      #t_sky_error_jy = results.bse[0]
-      #t_sky_K = jy_to_K * t_sky_jy
-      #t_sky_error_K = jy_to_K * t_sky_error_jy
-      t_sky_K_flagged = parameters[0]
-      t_sky_error_K_flagged = results.bse[0]    
-      
-      print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-      fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-      print(fit_string)
-      
-      plt.clf()
-      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged,linestyle='None',marker='.')
-      #deal with the missing values in the fit
-      common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged))[:,0]
-      #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
-      common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
-      
-      
-      plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-      map_title="Data and fit flagged" 
-      plt.xlabel("Expected global-signal response")
-      plt.ylabel("Real component of visibility X pol (Jy)")
-      plt.legend(loc=1)
-      #plt.text(x_pos, y_pos, fit_string)
-      #plt.ylim([0, 3.5])
-      fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_flagged.png" % (freq_MHz,"x",EDA2_obs_time)
-      figmap = plt.gcf()
-      figmap.savefig(fig_name)
-      plt.close()
-      print("saved %s" % fig_name)
-
+      if (len(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged)>0 and len(common_unity_data_complex_freq_av_x_real_sorted_cut_missing)>0):
+         model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged, common_unity_data_complex_freq_av_x_real_sorted_cut_missing,missing='drop')
+         results = model.fit()
+         parameters = results.params
+         #print parameters
+         #t_sky_jy = parameters[0]
+         #t_sky_error_jy = results.bse[0]
+         #t_sky_K = jy_to_K * t_sky_jy
+         #t_sky_error_K = jy_to_K * t_sky_error_jy
+         t_sky_K_flagged = parameters[0]
+         t_sky_error_K_flagged = results.bse[0]    
+         
+         print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+         fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+         print(fit_string)
+         
+         plt.clf()
+         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged,linestyle='None',marker='.')
+         #deal with the missing values in the fit
+         common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged))[:,0]
+         #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
+         common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
+         
+         
+         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+         map_title="Data and fit flagged" 
+         plt.xlabel("Expected global-signal response")
+         plt.ylabel("Real component of visibility X pol (Jy)")
+         plt.legend(loc=1)
+         #plt.text(x_pos, y_pos, fit_string)
+         #plt.ylim([0, 3.5])
+         fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_flagged.png" % (freq_MHz,"x",EDA2_obs_time)
+         figmap = plt.gcf()
+         figmap.savefig(fig_name)
+         plt.close()
+         print("saved %s" % fig_name)
+      else:
+         t_sky_K_flagged = np.nan
+         t_sky_error_K_flagged = np.nan 
+         
       t_sky_K_array_flagged[EDA2_chan_index] = t_sky_K_flagged
       t_sky_error_K_array_flagged[EDA2_chan_index] = t_sky_error_K_flagged
 
@@ -2998,14 +3020,108 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    print("saved %s" % fig_name)
    plt.close()    
 
-def plot_t_sky_and_fit_foregrounds_timestep_finechan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
+def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
+   freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
    base_name = t_sky_K_array_filename_fine_chan.split(".npy")[0]
    t_sky_K_array_timestep_finechan = np.load(t_sky_K_array_filename_fine_chan)
    t_sky_error_K_array_timestep_finechan = np.load(t_sky_error_K_array_filename_fine_chan)
    print(t_sky_K_array_timestep_finechan.shape)
    print(t_sky_error_K_array_timestep_finechan.shape)
+   print(freq_MHz_array.shape)
+   #make waterfall plots of T_skay and Tsky_error for each coarse chan
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
+      t_sky_K_array_EDA2_chan = t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:]
+      t_sky_error_K_array_EDA2_chan = t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:]
+      plt.clf()
+      map_title="Tsky waterfall EDA2 chan %s" % EDA2_chan
+      plt.imshow(t_sky_K_array_EDA2_chan)
+      plt.title(map_title)
+      bar=plt.colorbar()
+      plt.xlabel('timestep')
+      plt.ylabel('fine chan')
+      bar.set_label('Tsky K')
+      fig_name= "%s_waterfall_EDA2_chan_%03d.png" % (base_name,EDA2_chan)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
    
+      plt.clf()
+      map_title="Tsky error waterfall EDA2 chan %s" % EDA2_chan
+      plt.imshow(t_sky_error_K_array_EDA2_chan)
+      plt.title(map_title)
+      bar=plt.colorbar()
+      plt.xlabel('timestep')
+      plt.ylabel('finechan')
+      bar.set_label('Tsky error K')
+      fig_name= "%s_error_waterfall_EDA2_chan_%03d.png" % (base_name,EDA2_chan)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+
+def manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
+   #just visually inspect each waterfall and manually flag bad fine chans and time steps here
+   freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
+   base_name = t_sky_K_array_filename_fine_chan.split(".npy")[0]
+   t_sky_K_array_manual_flagged_averaged_filename = "t_sky_K_array_manual_flagged_averaged.npy"
+   t_sky_K_array_manual_flagged_averaged_error_filename = "t_sky_K_array_manual_flagged_averaged_error.npy"
+   t_sky_K_array_manual_flagged_averaged = np.empty(len(EDA2_chan_list))
+   t_sky_K_array_manual_flagged_averaged[:] = np.nan
+   t_sky_K_array_manual_flagged_averaged_error = np.empty(len(EDA2_chan_list))
+   t_sky_K_array_manual_flagged_averaged_error[:] = np.nan
+      
+   t_sky_K_array_timestep_finechan = np.load(t_sky_K_array_filename_fine_chan)
+   t_sky_error_K_array_timestep_finechan = np.load(t_sky_error_K_array_filename_fine_chan)
+   print(t_sky_K_array_timestep_finechan.shape)
+   print(t_sky_error_K_array_timestep_finechan.shape)
+   print(freq_MHz_array.shape)
+   #flag then make new waterfall plots of T_skay and Tsky_error for each coarse chan
+   #indexing goes: EDA2_chan,fine_chan,timestep
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
+      #manual flagging here
+      if EDA2_chan==71:
+         bad_timestep_list = [0]
+         bad_fine_chan_list = [13,14,18,19,20,21,22,23,24,25]
+         for bad_timestep in bad_timestep_list:
+            t_sky_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
+            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
+         for bad_fine_chan in bad_fine_chan_list:
+            t_sky_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan
+            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan         
+      
+      plt.clf()
+      map_title="Tsky waterfall EDA2 chan %s" % EDA2_chan
+      plt.imshow(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      plt.title(map_title)
+      bar=plt.colorbar()
+      plt.xlabel('timestep')
+      plt.ylabel('fine chan')
+      bar.set_label('Tsky K')
+      fig_name= "%s_waterfall_EDA2_chan_%03d_manual_flag.png" % (base_name,EDA2_chan)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
    
+      plt.clf()
+      map_title="Tsky error waterfall EDA2 chan %s" % EDA2_chan
+      plt.imshow(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      plt.title(map_title)
+      bar=plt.colorbar()
+      plt.xlabel('timestep')
+      plt.ylabel('finechan')
+      bar.set_label('Tsky error K')
+      fig_name= "%s_error_waterfall_EDA2_chan_%03d_manual_flag.png" % (base_name,EDA2_chan)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      
+      t_sky_K_array_manual_flagged_averaged[EDA2_chan_index] = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      t_sky_K_array_manual_flagged_averaged_error[EDA2_chan_index] = np.nanstd(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+   
+   np.save(t_sky_K_array_manual_flagged_averaged_filename,t_sky_K_array_manual_flagged_averaged)
+   np.save(t_sky_K_array_manual_flagged_averaged_error_filename,t_sky_K_array_manual_flagged_averaged_error)
+   print("saved %s" % t_sky_K_array_manual_flagged_averaged_filename)
+   print("saved %s" % t_sky_K_array_manual_flagged_averaged_error_filename)
+      
       
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
@@ -3037,10 +3153,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
-#freq_MHz_list = freq_MHz_list[0:10]
-#lst_hrs_list = lst_hrs_list[0:10]
-#EDA2_obs_time_list = EDA2_obs_time_list[0:10]
-#EDA2_chan_list = EDA2_chan_list[0:10]
+freq_MHz_list = freq_MHz_list[0:10]
+lst_hrs_list = lst_hrs_list[0:10]
+EDA2_obs_time_list = EDA2_obs_time_list[0:10]
+EDA2_chan_list = EDA2_chan_list[0:10]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3063,18 +3179,22 @@ run_aoflagger=True
 #calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,per_chan_cal=per_chan_cal,run_aoflagger=run_aoflagger)
 #sys.exit()
 #now need to extract the global signal using the complex beams
-extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
+#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 #t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
 #t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
 #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
 #t_sky_K_array_filename = "t_sky_K_array_eda2_flagged.npy"
 #t_sky_error_K_array_filename = "t_sky_error_K_array_eda2_flagged.npy"
 #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
-t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
-t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
-plot_t_sky_and_fit_foregrounds_timestep_finechan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
-
-
-      
+#t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
+#t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
+#plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
+t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"
+#plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+t_sky_K_array_filename = "t_sky_K_array_manual_flagged_averaged.npy"
+t_sky_error_K_array_filename = "t_sky_K_array_manual_flagged_averaged_error.npy"
+plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
       
       
