@@ -34,6 +34,7 @@ import numpy.polynomial.polynomial as poly
 k = 1.38065e-23
 c = 299792458.
 fine_chan_width_Hz =  28935 #Hz should be:(400./512.)*1.0e6 
+fine_chan_width_MHz = fine_chan_width_Hz / 1.e6
 
 mwa_latitude_ephem = '-26.7'
 mwa_longitude_ephem = '116.67'
@@ -2969,6 +2970,7 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    #print(freq_MHz_list)
    #print(t_sky_K_array)
    #print(t_sky_error_K_array)
+   
    plt.clf()
    plt.errorbar(freq_MHz_list,t_sky_K_array,yerr=t_sky_error_K_array)
    map_title="Global Tsky" 
@@ -3020,6 +3022,73 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    print("saved %s" % fig_name)
    plt.close()    
 
+def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename,poly_order=5,fine_chans_per_EDA2_chan=27):
+   freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+   base_name = t_sky_K_array_filename.split(".npy")[0]
+   t_sky_K_array = np.load(t_sky_K_array_filename)
+   t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
+   print(t_sky_K_array.shape)
+   print(t_sky_error_K_array.shape)
+   base_name = t_sky_K_array_filename.split(".npy")[0]
+   t_sky_K_array = np.load(t_sky_K_array_filename)
+   t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
+   
+   #print(freq_MHz_list)
+   #print(t_sky_K_array)
+   #print(t_sky_error_K_array)
+   
+   plt.clf()
+   plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array,yerr=t_sky_error_K_array)
+   map_title="Global Tsky" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("EDA2 global Tsky (K)")
+   #plt.legend(loc=1)
+   #plt.text(x_pos, y_pos, fit_string)
+   #plt.ylim([0, 3.5])
+   fig_name= "%s.png"  % base_name
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name)
+      
+   #log fit and subtract
+   log_sky_array = np.log10(t_sky_K_array)
+   log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
+   coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+   ffit = poly.polyval(log_freq_MHz_array, coefs)
+   ffit_linear = 10**ffit
+   
+   #log_residual = log_signal_array_short_baselines - log_ffit
+   residual_of_log_fit = ffit_linear - t_sky_K_array
+   
+   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+   print("rms_of_residuals is %0.3f K" % rms_of_residuals)
+   
+   max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+   y_max = 1.5 * max_abs_residuals
+   y_min = 1.5 * -max_abs_residuals
+   
+   #print(freq_array_cut)
+   #print(residual_of_log_fit)
+   
+   plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
+   plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
+   
+    
+   map_title="Residual for log polynomial order %s fit " % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("Frequency (MHz)")
+   #if len(model_type_list)>1:
+   plt.legend(loc=1)
+   #plt.legend(loc=1)
+   plt.ylim([y_min, y_max])
+   fig_name= "%s_log_fit_residual_poly_order_%s.png" % (base_name,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   plt.close()
+   
 def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
    freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
    base_name = t_sky_K_array_filename_fine_chan.split(".npy")[0]
@@ -3028,7 +3097,7 @@ def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filenam
    print(t_sky_K_array_timestep_finechan.shape)
    print(t_sky_error_K_array_timestep_finechan.shape)
    print(freq_MHz_array.shape)
-   #make waterfall plots of T_skay and Tsky_error for each coarse chan
+   #make waterfall plots of T_sky and Tsky_error for each coarse chan
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
       t_sky_K_array_EDA2_chan = t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:]
       t_sky_error_K_array_EDA2_chan = t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:]
@@ -3058,35 +3127,90 @@ def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filenam
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)
 
-def manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
+def manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,threshold_sigma=2):
    #just visually inspect each waterfall and manually flag bad fine chans and time steps here
    freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
    base_name = t_sky_K_array_filename_fine_chan.split(".npy")[0]
    t_sky_K_array_manual_flagged_averaged_filename = "t_sky_K_array_manual_flagged_averaged.npy"
    t_sky_K_array_manual_flagged_averaged_error_filename = "t_sky_K_array_manual_flagged_averaged_error.npy"
-   t_sky_K_array_manual_flagged_averaged = np.empty(len(EDA2_chan_list))
-   t_sky_K_array_manual_flagged_averaged[:] = np.nan
-   t_sky_K_array_manual_flagged_averaged_error = np.empty(len(EDA2_chan_list))
-   t_sky_K_array_manual_flagged_averaged_error[:] = np.nan
+   t_sky_K_array_manual_flagged_averaged_filename_fine_chan = "t_sky_K_array_manual_flagged_averaged_fine_chan.npy"
+   t_sky_K_array_manual_flagged_averaged_error_filename_fine_chan = "t_sky_K_array_manual_flagged_averaged_error_fine_chan.npy"   
+   t_sky_K_array_manual_flagged_averaged_array = np.empty(len(EDA2_chan_list))
+   t_sky_K_array_manual_flagged_averaged_array[:] = np.nan
+   t_sky_K_array_manual_flagged_averaged_error_array = np.empty(len(EDA2_chan_list))
+   t_sky_K_array_manual_flagged_averaged_error_array[:] = np.nan
       
    t_sky_K_array_timestep_finechan = np.load(t_sky_K_array_filename_fine_chan)
    t_sky_error_K_array_timestep_finechan = np.load(t_sky_error_K_array_filename_fine_chan)
    print(t_sky_K_array_timestep_finechan.shape)
    print(t_sky_error_K_array_timestep_finechan.shape)
    print(freq_MHz_array.shape)
+   n_fine_chans = t_sky_K_array_timestep_finechan[0,:,:].shape[0]
+   n_timesteps = t_sky_K_array_timestep_finechan[0,:,:].shape[1]
    #flag then make new waterfall plots of T_skay and Tsky_error for each coarse chan
    #indexing goes: EDA2_chan,fine_chan,timestep
+   t_sky_fine_chan_array = np.empty(int(len(EDA2_chan_list)*n_fine_chans))
+   t_sky_fine_chan_array[:] = np.nan
+   t_sky_error_fine_chan_array = np.empty(int(len(EDA2_chan_list)*n_fine_chans))
+   t_sky_error_fine_chan_array[:] = np.nan
+   fine_chan_start_index = 0
+   fine_chan_end_index = fine_chan_start_index + n_fine_chans
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
-      #manual flagging here
-      if EDA2_chan==71:
-         bad_timestep_list = [0]
-         bad_fine_chan_list = [13,14,18,19,20,21,22,23,24,25]
-         for bad_timestep in bad_timestep_list:
-            t_sky_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
-            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
-         for bad_fine_chan in bad_fine_chan_list:
-            t_sky_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan
-            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan         
+      ##manual flagging here
+      #if EDA2_chan==71:
+      #   bad_timestep_list = [0]
+      #   bad_fine_chan_list = [13,14,18,19,20,21,22,23,24,25]
+      #   for bad_timestep in bad_timestep_list:
+      #      t_sky_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
+      #      t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,bad_timestep] = np.nan
+      #   for bad_fine_chan in bad_fine_chan_list:
+      #      t_sky_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan
+      #      t_sky_error_K_array_timestep_finechan[EDA2_chan_index,bad_fine_chan,:] = np.nan         
+      
+      #do a very simple custom flagging strategy (do this for t_sky and t_sky_error, record flags)
+      mean_of_chan_data = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      #print(mean_of_chan_data)
+      stddev_of_chan_data = np.nanstd(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      #print(stddev_of_chan_data)
+      mean_of_chan_error_data = np.nanmean(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      stddev_of_chan_error_data = np.nanstd(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:])      
+      threshold = threshold_sigma * stddev_of_chan_data
+      #print(threshold)
+      #go through each fine chan first and look for anything more than threshold sigma above the mean
+
+      bad_fine_chan_list = []
+      bad_timestep_list = []
+      for fine_chan in range(n_fine_chans):
+         #fine_chan_mean = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:])
+         #print(fine_chan_mean)
+         distance_from_mean = np.abs(t_sky_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:] - mean_of_chan_data)
+         #print(distance_from_mean)
+         if np.nanmax(distance_from_mean)>threshold:
+            t_sky_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:] = np.nan
+            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:] = np.nan
+            bad_fine_chan_list.append(fine_chan)
+      print(bad_fine_chan_list)
+      for time_step in range(n_timesteps):
+         #timestep_mean = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,time_step])
+         distance_from_mean = np.abs(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,time_step] - mean_of_chan_data)
+         if np.nanmax(distance_from_mean)>threshold:
+            t_sky_K_array_timestep_finechan[EDA2_chan_index,:,timestep] = np.nan
+            t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,timestep] = np.nan
+            bad_timestep_list.append(fine_chan)            
+      ##also flag where tsky error is very large - dont, this makes it worse, instead do a weighted average using the errors
+      #for fine_chan in range(n_fine_chans):
+      #   #fine_chan_mean = np.nanmean(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:])
+      #   distance_from_mean = np.abs(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:] - mean_of_chan_error_data)
+      #   if np.nanmax(distance_from_mean)>threshold:
+      #      t_sky_K_array_timestep_finechan[EDA2_chan_index,fine_chan,:] = np.nan
+      #      bad_fine_chan_list.append(fine_chan)
+      #for time_step in range(n_timesteps):
+      #   #timestep_mean = np.nanmean(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,time_step])
+      #   distance_from_mean = np.abs(t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,time_step] - mean_of_chan_error_data)
+      #   if np.nanmax(distance_from_mean)>threshold:
+      #      t_sky_K_array_timestep_finechan[EDA2_chan_index,:,time_step] = np.nan
+      #      bad_timestep_list.append(fine_chan)        
+      
       
       plt.clf()
       map_title="Tsky waterfall EDA2 chan %s" % EDA2_chan
@@ -3114,11 +3238,59 @@ def manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)
       
-      t_sky_K_array_manual_flagged_averaged[EDA2_chan_index] = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
-      t_sky_K_array_manual_flagged_averaged_error[EDA2_chan_index] = np.nanstd(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      #do weighted average in time to get fine chan tskys
+      weights = (1. / (t_sky_error_K_array_timestep_finechan[EDA2_chan_index,:,:]**2))
+      masked_weights = np.ma.MaskedArray(weights, mask=np.isnan(weights))
+      sum_of_weights = np.sum(weights,axis=1)
+      non_zero_sum_of_weights = np.count_nonzero(sum_of_weights)
+      
+      ma = np.ma.MaskedArray(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:], mask=np.isnan(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:]))
+      t_sky_K_array_manual_flagged_time_averaged = np.ma.average(ma, weights=masked_weights,axis=1)
+      t_sky_K_array_manual_flagged_time_averaged_tile = np.tile(t_sky_K_array_manual_flagged_time_averaged,(8,1)).T
+      
+      #print(ma.shape)
+      #print(t_sky_K_array_manual_flagged_time_averaged.shape)
+      t_sky_K_array_manual_flagged_time_averaged_variance = np.average((ma-t_sky_K_array_manual_flagged_time_averaged_tile)**2, weights=masked_weights,axis=1)
+
+
+      t_sky_K_array_manual_flagged_time_averaged_std = np.sqrt(t_sky_K_array_manual_flagged_time_averaged_variance)
+      t_sky_K_array_manual_flagged_time_averaged = t_sky_K_array_manual_flagged_time_averaged.filled(np.nan)
+      t_sky_K_array_manual_flagged_time_averaged_std = t_sky_K_array_manual_flagged_time_averaged_std.filled(np.nan)
+      #print(t_sky_K_array_manual_flagged_time_averaged)
+      #print(t_sky_K_array_manual_flagged_time_averaged_std)
+    
+      t_sky_fine_chan_array[fine_chan_start_index:fine_chan_end_index] = t_sky_K_array_manual_flagged_time_averaged
+      t_sky_error_fine_chan_array[fine_chan_start_index:fine_chan_end_index] = t_sky_K_array_manual_flagged_time_averaged_std
    
-   np.save(t_sky_K_array_manual_flagged_averaged_filename,t_sky_K_array_manual_flagged_averaged)
-   np.save(t_sky_K_array_manual_flagged_averaged_error_filename,t_sky_K_array_manual_flagged_averaged_error)
+      #then do a weighted mean in freq!
+      weights = np.nan_to_num(1. / (t_sky_K_array_manual_flagged_time_averaged_std**2))
+      masked_weights = np.ma.MaskedArray(weights, mask=np.isnan(weights))
+      ma = np.ma.MaskedArray(t_sky_K_array_manual_flagged_time_averaged, mask=np.isnan(t_sky_K_array_manual_flagged_time_averaged))
+      t_sky_K_array_manual_flagged_averaged = np.ma.average(ma, weights=masked_weights)
+      t_sky_K_array_manual_flagged_averaged_variance = np.average((ma-t_sky_K_array_manual_flagged_averaged)**2, weights=masked_weights)
+      t_sky_K_array_manual_flagged_averaged_std = np.sqrt(t_sky_K_array_manual_flagged_averaged_variance)
+      #t_sky_K_array_manual_flagged_averaged_array[EDA2_chan_index] = np.nanmean(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      #t_sky_K_array_manual_flagged_averaged_error_array[EDA2_chan_index] = np.nanstd(t_sky_K_array_timestep_finechan[EDA2_chan_index,:,:])
+      #print(t_sky_K_array_manual_flagged_averaged)
+      #print(t_sky_K_array_manual_flagged_averaged_std)
+      t_sky_K_array_manual_flagged_averaged_array[EDA2_chan_index]= t_sky_K_array_manual_flagged_averaged
+      t_sky_K_array_manual_flagged_averaged_error_array[EDA2_chan_index]= t_sky_K_array_manual_flagged_averaged_std
+      
+      fine_chan_start_index += n_fine_chans
+      fine_chan_end_index += n_fine_chans
+    
+
+ 
+   #print(t_sky_fine_chan_list)
+   #print(t_sky_error_fine_chan_list)
+   #print(t_sky_K_array_manual_flagged_averaged_array)
+   #print(t_sky_K_array_manual_flagged_averaged_error_array)
+   np.save(t_sky_K_array_manual_flagged_averaged_filename_fine_chan,t_sky_fine_chan_array)
+   np.save(t_sky_K_array_manual_flagged_averaged_error_filename_fine_chan,t_sky_error_fine_chan_array)
+   print("saved %s" % t_sky_K_array_manual_flagged_averaged_filename_fine_chan)
+   print("saved %s" % t_sky_K_array_manual_flagged_averaged_error_filename_fine_chan)      
+   np.save(t_sky_K_array_manual_flagged_averaged_filename,t_sky_K_array_manual_flagged_averaged_array)
+   np.save(t_sky_K_array_manual_flagged_averaged_error_filename,t_sky_K_array_manual_flagged_averaged_error_array)
    print("saved %s" % t_sky_K_array_manual_flagged_averaged_filename)
    print("saved %s" % t_sky_K_array_manual_flagged_averaged_error_filename)
       
@@ -3153,10 +3325,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
-freq_MHz_list = freq_MHz_list[0:10]
-lst_hrs_list = lst_hrs_list[0:10]
-EDA2_obs_time_list = EDA2_obs_time_list[0:10]
-EDA2_chan_list = EDA2_chan_list[0:10]
+#freq_MHz_list = freq_MHz_list[0:10]
+#lst_hrs_list = lst_hrs_list[0:10]
+#EDA2_obs_time_list = EDA2_obs_time_list[0:10]
+#EDA2_chan_list = EDA2_chan_list[0:10]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3192,9 +3364,11 @@ run_aoflagger=True
 t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
 t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"
 #plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
-manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+#manual_flag_and_average_tsky(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
 t_sky_K_array_filename = "t_sky_K_array_manual_flagged_averaged.npy"
 t_sky_error_K_array_filename = "t_sky_K_array_manual_flagged_averaged_error.npy"
-plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
-      
+#plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
+t_sky_K_array_filename = "t_sky_K_array_manual_flagged_averaged_fine_chan.npy"
+t_sky_error_K_array_filename = "t_sky_K_array_manual_flagged_averaged_error_fine_chan.npy"
+plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
       
