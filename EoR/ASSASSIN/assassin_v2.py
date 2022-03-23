@@ -31,6 +31,8 @@ from ms_utils import *
 import statsmodels.api as sm
 import numpy.polynomial.polynomial as poly
 import h5py
+import mat73
+
 
 k = 1.38065e-23
 c = 299792458.
@@ -157,16 +159,25 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False):
    fine_chans_per_EDA2_chan = 27
+   freq_MHz_fine_chan_array_filename = "freq_MHz_fine_chan_array.npy"
+   freq_MHz_fine_chan_array_text_filename = "freq_MHz_fine_chan_array.txt"
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
       freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+      #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+      np.save(freq_MHz_fine_chan_array_filename,freq_MHz_fine_chan_array)
+      print("saved %s" % freq_MHz_fine_chan_array_filename)
+      np. savetxt(freq_MHz_fine_chan_array_text_filename,freq_MHz_fine_chan_array,fmt='%3.6f')
+      print("saved %s" % freq_MHz_fine_chan_array_text_filename)
    else:
       freq_MHz_fine_chan_array = np.asarray(freq_MHz_list)
-   test_n_ants = 256
+   test_n_ants = 10
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
    n_baselines_test_with_autos = int(test_n_ants*(test_n_ants-1) / 2. + test_n_ants)
    print("n_baselines from test %s ants with autos: %s" % (test_n_ants, n_baselines_test_with_autos))
+   
    
    npix = hp.nside2npix(nside)
 
@@ -251,12 +262,15 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
          fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
          freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         if freq_MHz_index==0:
+            freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
       else:
          freq_MHz_fine_chan_subarray = np.asarray([freq_MHz])
       for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
          #freq_MHz = float(freq_MHz)
          freq_MHz = freq_MHz_fine_chan
-         freq_Hz_string = "%d" % (freq_MHz*1000000)
+         freq_Hz_string = "%d" % np.round(freq_MHz*1000000)
+         
          wavelength = 300./freq_MHz
          k_0=2.*np.pi / wavelength 
          #adding in geometric delay
@@ -468,12 +482,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          
          unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
    
-         for pol_index1,pol1 in enumerate(['X','Y']):  #,'Y'
+         for pol_index1,pol1 in enumerate(['Y','Y']):  #,'Y'
             if pol1=='X':
                daniel_pol1 = 'Y'
             else:
                daniel_pol1 = 'X'
-            for pol_index2,pol2 in enumerate(['X','Y']):
+            for pol_index2,pol2 in enumerate(['Y','Y']):
                if pol2=='X':
                   daniel_pol2 = 'Y'
                else:
@@ -498,18 +512,31 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       
                if not plot_from_saved:
                   if fine_chan:
-                     for fine_freq_ant_index in range(0,test_n_ants):
-                        #dont want to read in all of these big files - are they hdf5 compliant?
-                        #https://stackoverflow.com/questions/39153427/how-to-load-large-mat-files-in-python
-                        #https://stackoverflow.com/questions/33451926/read-hdf5-file-to-pandas-dataframe-with-conditions
-                        EEP_name1 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_50ohm_Dipole%s_Xpol.mat' % (fine_freq_ant_index+1)
-                        EEP_name2 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_50ohm_Dipole%s_Xpol.mat' % (fine_freq_ant_index+1)
-                        print(EEP_name1)
-                        #beam_data1 = loadmat(EEP_name1)
-                        #print("loaded %s " % EEP_name1)
-                        #beam_data2 = loadmat(EEP_name2)
-                        #print("loaded %s " % EEP_name2)
-                     sys.exit()
+                     EEP_name1 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol1)
+                     EEP_name2 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol2)
+                     #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
+                     #beam_data1 = mat73.loadmat(EEP_name1)
+                     beam_data1 = h5py.File(EEP_name1, 'r')
+                      
+                     #keys = beam_data1_file.keys()
+                     #print(keys)
+                     print("loaded %s " % EEP_name1)
+                     
+                  
+                     beam_data2 = h5py.File(EEP_name2, 'r')
+                     print("loaded %s " % EEP_name2)
+
+                     E_phi_cube1 = np.transpose(np.array(beam_data1['Ephi']))[:,:,0:test_n_ants]
+                     E_theta_cube1 = np.transpose(np.array(beam_data1['Etheta']))[:,:,0:test_n_ants]
+   
+                     E_phi_cube2 = np.transpose(np.array(beam_data2['Ephi']))[:,:,0:test_n_ants]
+                     E_theta_cube2 = np.transpose(np.array(beam_data2['Etheta']))[:,:,0:test_n_ants]              
+
+                     E_phi_cube1 = E_phi_cube1['real']+E_phi_cube1['imag']*1j
+                     E_theta_cube1 = E_theta_cube1['real']+E_theta_cube1['imag']*1j
+                     E_phi_cube2 = E_phi_cube2['real']+E_phi_cube2['imag']*1j
+                     E_theta_cube2 = E_theta_cube2['real']+E_theta_cube2['imag']*1j
+                     
                   else:
                      EEP_name1 = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol1)
                      EEP_name2 = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol2)
@@ -518,13 +545,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                      print("loaded %s " % EEP_name1)
                      beam_data2 = loadmat(EEP_name2)
                      print("loaded %s " % EEP_name2)
-                  
+                     
                      E_phi_cube1 = beam_data1['Ephi'][:,:,0:test_n_ants]
                      E_theta_cube1 = beam_data1['Etheta'][:,:,0:test_n_ants]
    
                      E_phi_cube2 = beam_data2['Ephi'][:,:,0:test_n_ants]
                      E_theta_cube2 = beam_data2['Etheta'][:,:,0:test_n_ants]
-                  
                   
                   #Daniels version of normalising the beam i.e. getting in correct unitless form  by getting rid on m squared
                   #Doesn't have to be 1 at zenith, just need to make sure use same normalised beam for signal extraction
@@ -537,6 +563,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #values at that position (squared). This gives you a power pattern with max 1 for each beam map and retains the
                   #relative vlaues between E_phi and E_theta and the ss,yy,xy,yx beams...
                   
+                     
                   E_phi_cube1 = E_phi_cube1 * beam_norm
                   E_theta_cube1 = E_theta_cube1 * beam_norm
                   E_phi_cube2 = E_phi_cube2 * beam_norm
@@ -3372,8 +3399,8 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       lst_hrs_list.append(lst_eda2_hrs)
       
-convert_matlab_to_hdf5(256)  
-sys.exit()  
+#convert_matlab_to_hdf5(256)  
+#sys.exit()  
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 #chan_num = 0
@@ -3439,7 +3466,7 @@ simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_s
 #plot_cal = True
 #run_aoflagger=True
 #
-calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
+#calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
 
 
 
