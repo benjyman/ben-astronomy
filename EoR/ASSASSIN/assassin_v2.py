@@ -38,6 +38,7 @@ k = 1.38065e-23
 c = 299792458.
 fine_chan_width_Hz =  28935 #Hz should be:(400./512.)*1.0e6 
 fine_chan_width_MHz = fine_chan_width_Hz / 1.e6
+fine_chans_per_EDA2_chan = 27
 
 mwa_latitude_ephem = '-26.7'
 mwa_longitude_ephem = '116.67'
@@ -158,7 +159,6 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    return(normalisation_factor)
    
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False):
-   fine_chans_per_EDA2_chan = 27
    freq_MHz_fine_chan_array_filename = "freq_MHz_fine_chan_array.npy"
    freq_MHz_fine_chan_array_text_filename = "freq_MHz_fine_chan_array.txt"
    if fine_chan:
@@ -172,7 +172,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
       print("saved %s" % freq_MHz_fine_chan_array_text_filename)
    else:
       freq_MHz_fine_chan_array = np.asarray(freq_MHz_list)
-   test_n_ants = 10
+   test_n_ants = 256
    n_baselines_test = int(test_n_ants*(test_n_ants-1) / 2.)
    print("n_baselines from test %s ants: %s" % (test_n_ants, n_baselines_test))
    n_baselines_test_with_autos = int(test_n_ants*(test_n_ants-1) / 2. + test_n_ants)
@@ -482,12 +482,12 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          
          unity_sky_repeats_array = gsm_repeats_array * 0 + unity_sky_value
    
-         for pol_index1,pol1 in enumerate(['Y','Y']):  #,'Y'
+         for pol_index1,pol1 in enumerate(['X','Y']):  #,'Y'
             if pol1=='X':
                daniel_pol1 = 'Y'
             else:
                daniel_pol1 = 'X'
-            for pol_index2,pol2 in enumerate(['Y','Y']):
+            for pol_index2,pol2 in enumerate(['X','Y']):
                if pol2=='X':
                   daniel_pol2 = 'Y'
                else:
@@ -1179,13 +1179,21 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #print("visibilities_shape")
                   #print(visibilities_shape)
 
-def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False):
+def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False):
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
       n_ants = len(lines) 
    n_baselines = n_ants*(n_ants-1) / 2.
    print("read %s" % antenna_layout_filename)
    print("n_baselines from %s ants: %s" % (n_ants, n_baselines))
+   
+   if fine_chan:
+      freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+      #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+   else:
+      freq_MHz_fine_chan_array = np.asarray(freq_MHz_list)
    
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       #time stuff
@@ -1198,472 +1206,353 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
       lst_hrs = float(lst_hrs_list[freq_MHz_index])
       lst_deg = lst_hrs * 15.
       
-      wavelength = 300./freq_MHz
-      #initiate the miriad uv file outside the pol loop
-      print("initiate the miriad uv file outside the pol loop")
-      print("writing to miriad file")
-      NFFT = 1
-      SITE_LON = 116.670575
-      FREQ_GHz = np.array([freq_MHz/1000.])#np.linspace(0.000, 0.250, NFFT);
-      
-      #timestr = time.strftime("%Y%m%d-%H%M%S")
-      if input_sky=="gsm":
-         mir_file = "%s_%0.3f.vis" % (EDA2_obs_time,freq_MHz)
-         mir_file_uvfits_name = "%s_%0.3f.uvfits" % (EDA2_obs_time,freq_MHz)
-         mir_file_ms_name = "%s_%0.3f.ms" % (EDA2_obs_time,freq_MHz)
+      if fine_chan:
+         fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
+         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         if freq_MHz_index==0:
+            freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
       else:
-         mir_file = "%s_%0.3f.vis" % (input_sky,freq_MHz)
-         mir_file_uvfits_name = "%s_%0.3f.uvfits" % (input_sky,freq_MHz)
-         mir_file_ms_name = "%s_%0.3f.ms" % (input_sky,freq_MHz)     
-      # mir_file = "test.vis"
-      cmd = "rm -rf %s" % mir_file
-      print(cmd)
-      os.system(cmd)
+         freq_MHz_fine_chan_subarray = np.asarray([freq_MHz])
       
-      print ("Writing out "+ mir_file)
-      uv = a.miriad.UV(mir_file, 'new')
-      uv['history'] = 'test file\n'
-      
-      uv.add_var('latitud','d')
-      uv.add_var('npol','i')
-      uv.add_var('nspect', 'i')
-      uv.add_var('obsdec', 'd')
-      uv.add_var('vsource', 'r')
-      uv.add_var('ischan', 'i')
-      uv.add_var('operator', 'a')
-      uv.add_var('nants', 'i')
-      uv.add_var('baseline', 'r')
-      uv.add_var('sfreq', 'd')
-      uv.add_var('inttime', 'r')
-      uv.add_var('source', 'a')
-      uv.add_var('epoch', 'r')
-      uv.add_var('version', 'a')
-      uv.add_var('ra', 'd')
-      uv.add_var('restfreq', 'd')
-      uv.add_var('nschan', 'i')
-      uv.add_var('sdf', 'd')
-      uv.add_var('corr', 'r')
-      uv.add_var('freq', 'd')
-      uv.add_var('longitu', 'd')
-      uv.add_var('nchan', 'i')
-      uv.add_var('tscale', 'r')
-      uv.add_var('antpos', 'd')
-      uv.add_var('telescop', 'a')
-      uv.add_var('pol', 'i')
-      uv.add_var('coord', 'd')
-      uv.add_var('veldop', 'r')
-      uv.add_var('lst', 'd')
-      uv.add_var('time', 'd')
-      uv.add_var('dec', 'd')
-      uv.add_var('obsra', 'd')
-      uv.add_var('jyperk', 'r')
-      uv.add_var('systemp', 'r')
-      
-      uv['latitud'] = mwa_latitude_deg*np.pi/180.0
-      uv['npol'] = 4
-      uv['nspect'] = 1
-      uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
-      uv['vsource'] = 0.0
-      uv['ischan'] = 0
-      uv['operator'] = 'J'
-      uv['nants'] = 256
-      uv['baseline'] = 0.0
-      uv['sfreq'] = FREQ_GHz[0]
-      uv['inttime'] = 1.0
-      uv['source'] = 'zenith'
-      uv['epoch'] = 2000.0
-      uv['version'] = 'A'
-      uv['ra'] = lst_deg*np.pi/180.0
-      uv['restfreq'] = 0.0
-      uv['nschan'] = NFFT
-      uv['sdf'] = 28/1000000. #FREQ_GHz[1]-FREQ_GHz[0]
-      uv['corr'] = 0.0 
-      uv['freq'] = FREQ_GHz[0]
-      uv['longitu'] = mwa_longitude_deg*np.pi/180.0
-      uv['nchan'] = NFFT
-      uv['tscale'] = 0.0
-      uv['antpos'] = 0.0
-      uv['telescop'] = 'EDA2_sim'
-      uv['pol'] = np.array([-5,-6,-7,-8])   #-5 is xx, -6 yy, -7 xy 8 yx
-      uv['coord'] = 0.0
-      uv['veldop'] = 0.0
-      uv['lst'] = 0.0
-      uv['time'] = 0.0
-      uv['dec'] = mwa_latitude_deg*np.pi/180.0
-      uv['obsra'] = lst_deg*np.pi/180.0
-      uv['jyperk'] = 1.0
-      uv['systemp'] = 1.0
-      
-      
-      #need to set the x,y,z positions of the antennas properly and then use the generate uvw to get the uvws to write.
-      beam = a.phs.Beam(FREQ_GHz)
-      ants = []
-      for ant_string in lines:
-         E_pos = float(ant_string.split()[4])
-         N_pos = float(ant_string.split()[5])
-         U_pos = 0.
-         x_pos,y_pos,z_pos = calc_x_y_z_pos_from_E_N_U(E_pos,N_pos,U_pos)
-         ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
-      
-      aa = a.phs.AntennaArray(ants=ants,location=("116:40:14.07","-26:42:11.23"))
-      aa.set_jultime(eda2_astropy_time.jd)
-      uv['lst'] = float(aa.sidereal_time())
-      uv['antpos'] = np.arange(256*3,dtype='d')
-      
-      data_mask = np.zeros(NFFT)
-      
-      if input_sky=="unity":
-         cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_YX_%0.3f.npy" % (input_sky,freq_MHz)
-         cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_YX_%0.3f.npy" % (input_sky,freq_MHz)      
-         auto_array_filename_X = "%s_auto_array_X_%0.3f.npy" % (input_sky,freq_MHz)
-         auto_array_filename_Y = "%s_auto_array_Y_%0.3f.npy" % (input_sky,freq_MHz)
-      else:
-         cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         auto_array_filename_X = "%s_auto_array_%s_X_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-         auto_array_filename_Y = "%s_auto_array_%s_Y_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
-      
-      uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
-      vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
-      ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
-      baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
-      
-
-      cross_visibility_real_array_XX = np.load(cross_visibility_real_array_filename_XX)
-      cross_visibility_imag_array_XX = np.load(cross_visibility_imag_array_filename_XX)   
-      cross_visibility_real_array_YY = np.load(cross_visibility_real_array_filename_YY)
-      cross_visibility_imag_array_YY = np.load(cross_visibility_imag_array_filename_YY)     
-      cross_visibility_real_array_XY = np.load(cross_visibility_real_array_filename_XY)
-      cross_visibility_imag_array_XY = np.load(cross_visibility_imag_array_filename_XY) 
-      cross_visibility_real_array_YX = np.load(cross_visibility_real_array_filename_YX)
-      cross_visibility_imag_array_YX = np.load(cross_visibility_imag_array_filename_YX) 
-      
-      auto_array_X = np.load(auto_array_filename_X)
-      auto_array_Y = np.load(auto_array_filename_Y)
-      
-      #why did I do this?
-      #cross_visibility_complex_array_XX = cross_visibility_real_array_XX + 1j*cross_visibility_imag_array_XX
-      #cross_visibility_complex_array_YY = cross_visibility_real_array_YY + 1j*cross_visibility_imag_array_YY
-      #cross_visibility_complex_array_XY = cross_visibility_real_array_XY + 1j*cross_visibility_imag_array_XY
-      #cross_visibility_complex_array_YX = cross_visibility_real_array_YX + 1j*cross_visibility_imag_array_YX
-
-      #cross_visibility_real_array_XX = np.real(cross_visibility_complex_array_XX)
-      #cross_visibility_imag_array_XX = np.imag(cross_visibility_complex_array_XX)
-      #cross_visibility_real_array_YY = np.real(cross_visibility_complex_array_YY)
-      #cross_visibility_imag_array_YY = np.imag(cross_visibility_complex_array_YY) 
-      #cross_visibility_real_array_XY = np.real(cross_visibility_complex_array_XY)
-      #cross_visibility_imag_array_XY = np.imag(cross_visibility_complex_array_XY)
-      #cross_visibility_real_array_YX = np.real(cross_visibility_complex_array_YX)
-      #cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
-             
-      baseline_number_array = np.load(baseline_number_array_filename)
-
-      #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
-      #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
-      uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
-      vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
-      ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
-      
-      #print(uu_array_m)
-      #print(vv_array_m)
-      #print(ww_array_m)
-      
-      #phase centre zenith
-      #print(np.max(ww_array_m))
-      #print(gsm_cross_visibility_real_array[0:10])
-      #print(gsm_cross_visibility_imag_array[0:10])
-      
-      #not needed for zenith?
-      #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
-      #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
-      #cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
-      
-      #miriad wants u.v.w in units of seconds, but it divides by c itself! (does it also divide by wavelength?) ... nanosecs?
-      #i am lost, but maybe there is hope here: https://github.com/HERA-Team/aipy/blob/main/doc/source/tutorial.rst
-
-      #print(c)
-      #print(uu_array)
-      #print(vv_array)
-      #print(ww_array)
-
-      #from AIPY doco:write(preamble, data, flags=None)
-      #Write the next data record. data must be a complex, masked array. preamble must be (uvw, t, (i,j)), where
-      #uvw is an array of u,v,w, t is the Julian date, and (i,j) is an antenna pair.
-      #add data
-      
-      #put in cross first then do autos
-      #cant do x and y in a loop, can only go through the uvdata file once in order (miriad, am I right?)
-      for baseline_number_index, baseline_number in enumerate(baseline_number_array):
-         complex_cross_XX = np.asarray([cross_visibility_real_array_XX[baseline_number_index] + 1j*cross_visibility_imag_array_XX[baseline_number_index]])
-         cross_vis_XX = np.ma.array(complex_cross_XX, mask=data_mask, dtype=np.complex64)
-         complex_cross_YY = np.asarray([cross_visibility_real_array_YY[baseline_number_index] + 1j*cross_visibility_imag_array_YY[baseline_number_index]])
-         cross_vis_YY = np.ma.array(complex_cross_YY, mask=data_mask, dtype=np.complex64)
-         complex_cross_XY = np.asarray([cross_visibility_real_array_XY[baseline_number_index] + 1j*cross_visibility_imag_array_XY[baseline_number_index]])
-         cross_vis_XY = np.ma.array(complex_cross_XY, mask=data_mask, dtype=np.complex64)
-         complex_cross_YX = np.asarray([cross_visibility_real_array_YX[baseline_number_index] + 1j*cross_visibility_imag_array_YX[baseline_number_index]])
-         cross_vis_YX = np.ma.array(complex_cross_YX, mask=data_mask, dtype=np.complex64)
-         #print(cross_vis)
-         uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
-         #print(uvw_array)
-         ant1,ant2 = decode_baseline(baseline_number)
-         #uvw = aa.gen_uvw(ant1,ant2)
-         #print(uvw.shape)
-         #print(uvw)
-         #uvw_array = [uvw[0,0,0],uvw[1,0,0],uvw[2,0,0]]
-         #print(baseline_number)
-         #print(ant1,ant2)
-         #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
-         #I think I can just add one to the antenna indices ... nope
-         uvw_12 = np.array(uvw_array, dtype=np.double)
-         preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
-         #real data from 2018 paper is missing antenna 116 (among others) but can't have ant 255 cause it breaks casa
-         if ant2<255 and ant1<255:
-            #print("changing pol to -5 xx")
-            uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
-            #put in the auto:
-            if ant2==(ant1+1):
-               auto = auto_array_X[ant1]
-               auto_power = np.asarray([auto])
-               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-               uvw_array = [0,0,0]
-               uvw_11 = np.array(uvw_array, dtype=np.double)
-               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
-               uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_XX)
-            #print("changing pol to -6 yy")
-            uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
-            #put in the auto:
-            if ant2==(ant1+1):
-               auto = auto_array_Y[ant1]
-               auto_power = np.asarray([auto])
-               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-               uvw_array = [0,0,0]
-               uvw_11 = np.array(uvw_array, dtype=np.double)
-               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
-               uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_YY)
-            #print("changing pol to -7 xy")
-            uv['pol'] = -7
-            #put in the auto:
-            if ant2==(ant1+1):
-               auto = auto_array_X[ant1] * 0.
-               auto_power = np.asarray([auto])
-               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-               uvw_array = [0,0,0]
-               uvw_11 = np.array(uvw_array, dtype=np.double)
-               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
-               uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_XY)
-            #print("changing pol to -8 yx")
-            uv['pol'] = -8
-            #put in the auto:
-            if ant2==(ant1+1):
-               auto = auto_array_X[ant1] * 0.
-               auto_power = np.asarray([auto])
-               auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-               uvw_array = [0,0,0]
-               uvw_11 = np.array(uvw_array, dtype=np.double)
-               auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
-               uv.write(auto_preamble,auto_vis)
-            uv.write(preamble,cross_vis_YX)
-
-      #for auto_index,auto in enumerate(auto_array):
-      #   auto_power = np.asarray([auto])
-      #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
-      #   uvw_array = [0,0,0]
-      #   uvw_11 = np.array(uvw_array, dtype=np.double)
-      #   preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
-      #   uv.write(preamble,auto_vis)
-      
-      del(uv)
-      
-      if check_figs:
-         for image_pol in ['xx','yy']:
+      for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
+         freq_MHz = freq_MHz_fine_chan
          
-            ##check by image
-            map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,image_pol)
-            beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,image_pol)
-            map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,image_pol)
-            map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,image_pol)
-            map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,image_pol)
-            cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
-            print(cmd)
-            os.system(cmd)
-            cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=%s robust=0" % (mir_file,map_name,beam_name,image_pol)
-            print(cmd)
-            os.system(cmd) 
-            cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=%s out=%s" % (map_name,beam_name,image_pol,map_name_clean)
-            print(cmd)
-            os.system(cmd) 
-            cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
-            print(cmd)
-            os.system(cmd)      
-            cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
-            print(cmd)
-            os.system(cmd)
-   
-   
-         check_uv = a.miriad.UV(mir_file)
-         #print(check_uv.items())
-         #print(check_uv.vars())
-         #print(check_uv['nchan'])
-         #print(check_uv['antpos'])
-         print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
-   
+         wavelength = 300./freq_MHz
+         #initiate the miriad uv file outside the pol loop
+         print("initiate the miriad uv file outside the pol loop")
+         print("writing to miriad file")
+         NFFT = 1
+         SITE_LON = 116.670575
+         FREQ_GHz = np.array([freq_MHz/1000.])#np.linspace(0.000, 0.250, NFFT);
          
-      ##export uvfits
-      cmd = "rm -rf %s" % (mir_file_uvfits_name)
-      print(cmd)
-      os.system(cmd)
-      cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
-      print(cmd)
-      os.system(cmd)
-      
-      ##look at the uvfits file
-      #uvfits_filename = mir_file_uvfits_name
-      #print("%s" % uvfits_filename)
-      #hdulist = fits.open(uvfits_filename)
-      ##hdulist.info()
-      #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
-      ##print(info_string)
-      #uvtable = hdulist[0].data
-      #uvtable_header = hdulist[0].header
-      #hdulist.close()
-      #sim_UU_s_array = uvtable['UU']
-      #sim_VV_s_array = uvtable['VV']
-      #sim_WW_s_array = uvtable['WW']
-      #sim_baselines = uvtable['baseline']
-      #sim_visibilities = uvtable['DATA']
-      #sim_visibilities_shape = sim_visibilities.shape
-      #print('sim_UU_s_array')
-      #print(sim_UU_s_array)
-      #sim_UU_m_array = sim_UU_s_array * c
-      #print('sim_UU_m_array')
-      #print(sim_UU_m_array)
-      #u_in_miriad = sim_UU_s_array[0]
-      #ratio_u_in = u_in/u_in_miriad
-      #print('ratio_u_in')
-      #print(ratio_u_in)
-      #print("sim visibilities_shape")
-      #print(sim_visibilities_shape)
-      #print('sim_baselines')
-      #print(len(sim_baselines))
-      #print(np.max(sim_baselines))
-      
-      ##what is going on with these baselines
-      #for baseline_num_index,baseline_num in enumerate(sim_baselines):
-      #   #print(sim_baselines[index])
-      #   if baseline_num > (2**16):
-      #      print(baseline_num)
-      #      ant1,ant2 = decode_baseline(baseline_num)
-      #      print(ant1,ant2)
-      
-      #got it to work by not adding the last antenna i.e above:
-      #if ant2<255 and ant1<255:
-            #uv.write(preamble,cross_vis)
-      #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
-   
-      #print(len(sim_baseline))
-      #print(len(sim_UU_s_array))
-      ##convert from miriad baseline numbers
-      ##converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
-      ##converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
-      #converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
-      #converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
-      ##print(converted_sim_baselines)
-   
-      #try to read the data in to casa as a ms
-      #verify with wsclean - too many antennas - 255 max?
-      #read in the uvfits file
-      casa_cmd_filename = 'import_uvfits.sh'
-      cmd = "rm -rf %s" % (mir_file_ms_name)
-      print(cmd)
-      os.system(cmd)
-            
-      cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
- 
-      with open(casa_cmd_filename,'w') as f:
-         f.write(cmd)
-           
-      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
-      print(cmd)
-      os.system(cmd)
-      
-      if check_figs:
-         #####verification stuff 
-         test_image_name = mir_file_ms_name.split('.ms')[0]
-         wsclean_imsize = '512'
-         wsclean_scale = '900asec'
-         cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+         #timestr = time.strftime("%Y%m%d-%H%M%S")
+         if input_sky=="gsm":
+            mir_file = "%s_%0.3f.vis" % (EDA2_obs_time,freq_MHz)
+            mir_file_uvfits_name = "%s_%0.3f.uvfits" % (EDA2_obs_time,freq_MHz)
+            mir_file_ms_name = "%s_%0.3f.ms" % (EDA2_obs_time,freq_MHz)
+         else:
+            mir_file = "%s_%0.3f.vis" % (input_sky,freq_MHz)
+            mir_file_uvfits_name = "%s_%0.3f.uvfits" % (input_sky,freq_MHz)
+            mir_file_ms_name = "%s_%0.3f.ms" % (input_sky,freq_MHz)     
+         # mir_file = "test.vis"
+         cmd = "rm -rf %s" % mir_file
          print(cmd)
-         os.system(cmd) 
+         os.system(cmd)
          
-         ##try adding a model column
-         #use kariukis ms_utils
-         #ms_table = table(mir_file_ms_name,readonly=False)
-         #model_data = get_data(ms_table, col="DATA")
-         #add_col(ms_table, "MODEL_DATA")
-         #put_col(ms_table, "MODEL_DATA", model_data)
-         #ms_table.close()
+         print ("Writing out "+ mir_file)
+         uv = a.miriad.UV(mir_file, 'new')
+         uv['history'] = 'test file\n'
+         
+         uv.add_var('latitud','d')
+         uv.add_var('npol','i')
+         uv.add_var('nspect', 'i')
+         uv.add_var('obsdec', 'd')
+         uv.add_var('vsource', 'r')
+         uv.add_var('ischan', 'i')
+         uv.add_var('operator', 'a')
+         uv.add_var('nants', 'i')
+         uv.add_var('baseline', 'r')
+         uv.add_var('sfreq', 'd')
+         uv.add_var('inttime', 'r')
+         uv.add_var('source', 'a')
+         uv.add_var('epoch', 'r')
+         uv.add_var('version', 'a')
+         uv.add_var('ra', 'd')
+         uv.add_var('restfreq', 'd')
+         uv.add_var('nschan', 'i')
+         uv.add_var('sdf', 'd')
+         uv.add_var('corr', 'r')
+         uv.add_var('freq', 'd')
+         uv.add_var('longitu', 'd')
+         uv.add_var('nchan', 'i')
+         uv.add_var('tscale', 'r')
+         uv.add_var('antpos', 'd')
+         uv.add_var('telescop', 'a')
+         uv.add_var('pol', 'i')
+         uv.add_var('coord', 'd')
+         uv.add_var('veldop', 'r')
+         uv.add_var('lst', 'd')
+         uv.add_var('time', 'd')
+         uv.add_var('dec', 'd')
+         uv.add_var('obsra', 'd')
+         uv.add_var('jyperk', 'r')
+         uv.add_var('systemp', 'r')
+         
+         uv['latitud'] = mwa_latitude_deg*np.pi/180.0
+         uv['npol'] = 4
+         uv['nspect'] = 1
+         uv['obsdec'] = mwa_latitude_deg*np.pi/180.0 
+         uv['vsource'] = 0.0
+         uv['ischan'] = 0
+         uv['operator'] = 'J'
+         uv['nants'] = 256
+         uv['baseline'] = 0.0
+         uv['sfreq'] = FREQ_GHz[0]
+         uv['inttime'] = 1.0
+         uv['source'] = 'zenith'
+         uv['epoch'] = 2000.0
+         uv['version'] = 'A'
+         uv['ra'] = lst_deg*np.pi/180.0
+         uv['restfreq'] = 0.0
+         uv['nschan'] = NFFT
+         uv['sdf'] = 28/1000000. #FREQ_GHz[1]-FREQ_GHz[0]
+         uv['corr'] = 0.0 
+         uv['freq'] = FREQ_GHz[0]
+         uv['longitu'] = mwa_longitude_deg*np.pi/180.0
+         uv['nchan'] = NFFT
+         uv['tscale'] = 0.0
+         uv['antpos'] = 0.0
+         uv['telescop'] = 'EDA2_sim'
+         uv['pol'] = np.array([-5,-6,-7,-8])   #-5 is xx, -6 yy, -7 xy 8 yx
+         uv['coord'] = 0.0
+         uv['veldop'] = 0.0
+         uv['lst'] = 0.0
+         uv['time'] = 0.0
+         uv['dec'] = mwa_latitude_deg*np.pi/180.0
+         uv['obsra'] = lst_deg*np.pi/180.0
+         uv['jyperk'] = 1.0
+         uv['systemp'] = 1.0
+         
+         
+         #need to set the x,y,z positions of the antennas properly and then use the generate uvw to get the uvws to write.
+         beam = a.phs.Beam(FREQ_GHz)
+         ants = []
+         for ant_string in lines:
+            E_pos = float(ant_string.split()[4])
+            N_pos = float(ant_string.split()[5])
+            U_pos = 0.
+            x_pos,y_pos,z_pos = calc_x_y_z_pos_from_E_N_U(E_pos,N_pos,U_pos)
+            ants.append(a.phs.Antenna(x_pos,y_pos,z_pos,beam,delay=0,offset=0))
+         
+         aa = a.phs.AntennaArray(ants=ants,location=("116:40:14.07","-26:42:11.23"))
+         aa.set_jultime(eda2_astropy_time.jd)
+         uv['lst'] = float(aa.sidereal_time())
+         uv['antpos'] = np.arange(256*3,dtype='d')
+         
+         data_mask = np.zeros(NFFT)
+         
+         if input_sky=="unity":
+            cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_XX_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_YY_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_XY_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_YX_%0.3f.npy" % (input_sky,freq_MHz)
+            cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_YX_%0.3f.npy" % (input_sky,freq_MHz)      
+            auto_array_filename_X = "%s_auto_array_X_%0.3f.npy" % (input_sky,freq_MHz)
+            auto_array_filename_Y = "%s_auto_array_Y_%0.3f.npy" % (input_sky,freq_MHz)
+         else:
+            cross_visibility_real_array_filename_XX = "%s_cross_visibility_real_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_imag_array_filename_XX = "%s_cross_visibility_imag_array_%s_XX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_real_array_filename_YY = "%s_cross_visibility_real_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_imag_array_filename_YY = "%s_cross_visibility_imag_array_%s_YY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_real_array_filename_XY=  "%s_cross_visibility_real_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_imag_array_filename_XY = "%s_cross_visibility_imag_array_%s_XY_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_real_array_filename_YX = "%s_cross_visibility_real_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            cross_visibility_imag_array_filename_YX = "%s_cross_visibility_imag_array_%s_YX_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            auto_array_filename_X = "%s_auto_array_%s_X_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+            auto_array_filename_Y = "%s_auto_array_%s_Y_%0.3f.npy" % (input_sky,EDA2_obs_time,freq_MHz)
+         
+         uu_array_filename = "uu_array_%0.3f.npy" % (freq_MHz) 
+         vv_array_filename = "vv_array_%0.3f.npy" % (freq_MHz) 
+         ww_array_filename = "ww_array_%0.3f.npy" % (freq_MHz) 
+         baseline_number_array_filename = "baseline_number_array_%0.3f.npy" % (freq_MHz) 
+         
    
-         ##try imaging the model column of the ms:
-         #wsclean_imsize = '512'
-         #wsclean_scale = '900asec'
-         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         #print(cmd)
-         #os.system(cmd)
+         cross_visibility_real_array_XX = np.load(cross_visibility_real_array_filename_XX)
+         cross_visibility_imag_array_XX = np.load(cross_visibility_imag_array_filename_XX)   
+         cross_visibility_real_array_YY = np.load(cross_visibility_real_array_filename_YY)
+         cross_visibility_imag_array_YY = np.load(cross_visibility_imag_array_filename_YY)     
+         cross_visibility_real_array_XY = np.load(cross_visibility_real_array_filename_XY)
+         cross_visibility_imag_array_XY = np.load(cross_visibility_imag_array_filename_XY) 
+         cross_visibility_real_array_YX = np.load(cross_visibility_real_array_filename_YX)
+         cross_visibility_imag_array_YX = np.load(cross_visibility_imag_array_filename_YX) 
          
-         ##try calibrate?
-         #gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
-         #calibrate_options = ''
-         #cmd = "rm -rf %s" % (gain_solutions_name)
-         #print(cmd)
-         #os.system(cmd)  
-         ##calibrate
-         #cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
-         #print(cmd)
-         #os.system(cmd)
-         ##plot cal sols
-         #cmd = "aocal_plot.py %s  " % (gain_solutions_name)
-         #print(cmd)
-         #os.system(cmd)
+         auto_array_X = np.load(auto_array_filename_X)
+         auto_array_Y = np.load(auto_array_filename_Y)
          
-         #cmd = "applysolutions %s %s  " % (mir_file_ms_name,gain_solutions_name)
-         #print(cmd)
-         #os.system(cmd)
-         
-         #test image the CORRECTED data'
-         #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         #print(cmd)
-         #os.system(cmd)
-         
-         #check cal
-         #calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name)
-         
-         
-         #if pol=='X':
-         #   wsclean_imsize = '512'
-         #   wsclean_scale = '900asec'
-         #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
-         #   print(cmd)
-         #   os.system(cmd) 
-         #   
+         #why did I do this?
+         #cross_visibility_complex_array_XX = cross_visibility_real_array_XX + 1j*cross_visibility_imag_array_XX
+         #cross_visibility_complex_array_YY = cross_visibility_real_array_YY + 1j*cross_visibility_imag_array_YY
+         #cross_visibility_complex_array_XY = cross_visibility_real_array_XY + 1j*cross_visibility_imag_array_XY
+         #cross_visibility_complex_array_YX = cross_visibility_real_array_YX + 1j*cross_visibility_imag_array_YX
    
-         ##Lets look at some data at the same LST
-         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
-         #ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+         #cross_visibility_real_array_XX = np.real(cross_visibility_complex_array_XX)
+         #cross_visibility_imag_array_XX = np.imag(cross_visibility_complex_array_XX)
+         #cross_visibility_real_array_YY = np.real(cross_visibility_complex_array_YY)
+         #cross_visibility_imag_array_YY = np.imag(cross_visibility_complex_array_YY) 
+         #cross_visibility_real_array_XY = np.real(cross_visibility_complex_array_XY)
+         #cross_visibility_imag_array_XY = np.imag(cross_visibility_complex_array_XY)
+         #cross_visibility_real_array_YX = np.real(cross_visibility_complex_array_YX)
+         #cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
+                
+         baseline_number_array = np.load(baseline_number_array_filename)
+   
+         #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
+         #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
+         uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
+         vv_array = np.load(vv_array_filename) * wavelength * 1.0e9 / c
+         ww_array = np.load(ww_array_filename) * wavelength * 1.0e9 / c
+         
+         #print(uu_array_m)
+         #print(vv_array_m)
+         #print(ww_array_m)
+         
+         #phase centre zenith
+         #print(np.max(ww_array_m))
+         #print(gsm_cross_visibility_real_array[0:10])
+         #print(gsm_cross_visibility_imag_array[0:10])
+         
+         #not needed for zenith?
+         #cross_visibility_complex_array_add_phase = cross_visibility_complex_array * np.exp(1j*ww_array_m)
+         #cross_visibility_real_array = np.real(cross_visibility_complex_array_add_phase)
+         #cross_visibility_imag_array = np.imag(cross_visibility_complex_array_add_phase)
+         
+         #miriad wants u.v.w in units of seconds, but it divides by c itself! (does it also divide by wavelength?) ... nanosecs?
+         #i am lost, but maybe there is hope here: https://github.com/HERA-Team/aipy/blob/main/doc/source/tutorial.rst
+   
+         #print(c)
+         #print(uu_array)
+         #print(vv_array)
+         #print(ww_array)
+   
+         #from AIPY doco:write(preamble, data, flags=None)
+         #Write the next data record. data must be a complex, masked array. preamble must be (uvw, t, (i,j)), where
+         #uvw is an array of u,v,w, t is the Julian date, and (i,j) is an antenna pair.
+         #add data
+         
+         #put in cross first then do autos
+         #cant do x and y in a loop, can only go through the uvdata file once in order (miriad, am I right?)
+         for baseline_number_index, baseline_number in enumerate(baseline_number_array):
+            complex_cross_XX = np.asarray([cross_visibility_real_array_XX[baseline_number_index] + 1j*cross_visibility_imag_array_XX[baseline_number_index]])
+            cross_vis_XX = np.ma.array(complex_cross_XX, mask=data_mask, dtype=np.complex64)
+            complex_cross_YY = np.asarray([cross_visibility_real_array_YY[baseline_number_index] + 1j*cross_visibility_imag_array_YY[baseline_number_index]])
+            cross_vis_YY = np.ma.array(complex_cross_YY, mask=data_mask, dtype=np.complex64)
+            complex_cross_XY = np.asarray([cross_visibility_real_array_XY[baseline_number_index] + 1j*cross_visibility_imag_array_XY[baseline_number_index]])
+            cross_vis_XY = np.ma.array(complex_cross_XY, mask=data_mask, dtype=np.complex64)
+            complex_cross_YX = np.asarray([cross_visibility_real_array_YX[baseline_number_index] + 1j*cross_visibility_imag_array_YX[baseline_number_index]])
+            cross_vis_YX = np.ma.array(complex_cross_YX, mask=data_mask, dtype=np.complex64)
+            #print(cross_vis)
+            uvw_array = [uu_array[baseline_number_index],vv_array[baseline_number_index],ww_array[baseline_number_index]]
+            #print(uvw_array)
+            ant1,ant2 = decode_baseline(baseline_number)
+            #uvw = aa.gen_uvw(ant1,ant2)
+            #print(uvw.shape)
+            #print(uvw)
+            #uvw_array = [uvw[0,0,0],uvw[1,0,0],uvw[2,0,0]]
+            #print(baseline_number)
+            #print(ant1,ant2)
+            #LOOK AT AIPY DOCS, MIRIAD USES A DIFFERENT BASELINE INDEXING SCHEME! (no zero index antenna) this could be the problem function: ij2bl
+            #I think I can just add one to the antenna indices ... nope
+            uvw_12 = np.array(uvw_array, dtype=np.double)
+            preamble = (uvw_12, eda2_astropy_time.jd, (ant1,ant2)) 
+            #real data from 2018 paper is missing antenna 116 (among others) but can't have ant 255 cause it breaks casa
+            if ant2<255 and ant1<255:
+               #print("changing pol to -5 xx")
+               uv['pol'] = -5   #-5 is xx, -6 yy, -7 xy 8 yx
+               #put in the auto:
+               if ant2==(ant1+1):
+                  auto = auto_array_X[ant1]
+                  auto_power = np.asarray([auto])
+                  auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+                  uvw_array = [0,0,0]
+                  uvw_11 = np.array(uvw_array, dtype=np.double)
+                  auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+                  uv.write(auto_preamble,auto_vis)
+               uv.write(preamble,cross_vis_XX)
+               #print("changing pol to -6 yy")
+               uv['pol'] = -6   #-5 is xx, -6 yy, -7 xy 8 yx
+               #put in the auto:
+               if ant2==(ant1+1):
+                  auto = auto_array_Y[ant1]
+                  auto_power = np.asarray([auto])
+                  auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+                  uvw_array = [0,0,0]
+                  uvw_11 = np.array(uvw_array, dtype=np.double)
+                  auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+                  uv.write(auto_preamble,auto_vis)
+               uv.write(preamble,cross_vis_YY)
+               #print("changing pol to -7 xy")
+               uv['pol'] = -7
+               #put in the auto:
+               if ant2==(ant1+1):
+                  auto = auto_array_X[ant1] * 0.
+                  auto_power = np.asarray([auto])
+                  auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+                  uvw_array = [0,0,0]
+                  uvw_11 = np.array(uvw_array, dtype=np.double)
+                  auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+                  uv.write(auto_preamble,auto_vis)
+               uv.write(preamble,cross_vis_XY)
+               #print("changing pol to -8 yx")
+               uv['pol'] = -8
+               #put in the auto:
+               if ant2==(ant1+1):
+                  auto = auto_array_X[ant1] * 0.
+                  auto_power = np.asarray([auto])
+                  auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+                  uvw_array = [0,0,0]
+                  uvw_11 = np.array(uvw_array, dtype=np.double)
+                  auto_preamble = (uvw_11, eda2_astropy_time.jd, (ant1,ant1)) 
+                  uv.write(auto_preamble,auto_vis)
+               uv.write(preamble,cross_vis_YX)
+   
+         #for auto_index,auto in enumerate(auto_array):
+         #   auto_power = np.asarray([auto])
+         #   auto_vis = np.ma.array(auto_power, mask=data_mask, dtype=np.complex64)
+         #   uvw_array = [0,0,0]
+         #   uvw_11 = np.array(uvw_array, dtype=np.double)
+         #   preamble = (uvw_11, eda2_astropy_time.jd, (auto_index,auto_index)) 
+         #   uv.write(preamble,auto_vis)
+         
+         del(uv)
+         
+         if check_figs:
+            for image_pol in ['xx','yy']:
+            
+               ##check by image
+               map_name = 'test_eda_%0.3f_%s.image' % (freq_MHz,image_pol)
+               beam_name = 'test_eda_%0.3f_%s.beam' % (freq_MHz,image_pol)
+               map_name_clean = 'test_eda_%0.3f_%s_clean.image' % (freq_MHz,image_pol)
+               map_name_restor = 'test_eda_%0.3f_%s_restor.image' % (freq_MHz,image_pol)
+               map_name_fits = 'test_eda_%0.3f_%s.fits' % (freq_MHz,image_pol)
+               cmd = "rm -rf %s %s %s %s %s" % (map_name,beam_name,map_name_fits,map_name_clean,map_name_restor)
+               print(cmd)
+               os.system(cmd)
+               cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=900 stokes=%s robust=0" % (mir_file,map_name,beam_name,image_pol)
+               print(cmd)
+               os.system(cmd) 
+               cmd = "clean map=%s beam=%s niters=50 imsize=512 cell=900 stokes=%s out=%s" % (map_name,beam_name,image_pol,map_name_clean)
+               print(cmd)
+               os.system(cmd) 
+               cmd = "restor map=%s beam=%s model=%s out=%s" % (map_name,beam_name,map_name_clean,map_name_restor)
+               print(cmd)
+               os.system(cmd)      
+               cmd = "fits op=xyout in=%s out=%s" % (map_name_restor,map_name_fits)
+               print(cmd)
+               os.system(cmd)
+      
+      
+            check_uv = a.miriad.UV(mir_file)
+            #print(check_uv.items())
+            #print(check_uv.vars())
+            #print(check_uv['nchan'])
+            #print(check_uv['antpos'])
+            print(check_uv['pol'], a.miriad.pol2str[check_uv['pol']])
+      
+            
+         ##export uvfits
+         cmd = "rm -rf %s" % (mir_file_uvfits_name)
+         print(cmd)
+         os.system(cmd)
+         cmd = "fits op=uvout in=%s out=%s" % (mir_file,mir_file_uvfits_name)
+         print(cmd)
+         os.system(cmd)
+         
+         ##look at the uvfits file
+         #uvfits_filename = mir_file_uvfits_name
          #print("%s" % uvfits_filename)
          #hdulist = fits.open(uvfits_filename)
          ##hdulist.info()
@@ -1672,57 +1561,188 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
          #uvtable = hdulist[0].data
          #uvtable_header = hdulist[0].header
          #hdulist.close()
-         #data_UU_s_array = uvtable['UU']
-         #data_VV_s_array = uvtable['VV']
-         #data_WW_s_array = uvtable['WW']
-         #data_baselines = uvtable['baseline']
-         #data_visibilities = uvtable['DATA']
-         #data_visibilities_shape = data_visibilities.shape
-         #print("data visibilities_shape")
-         #print(data_visibilities_shape)
-         ##print(len(data_baseline))
-         #print('data_UU_s_array')
-         #print(data_UU_s_array)
-         #data_UU_m_array = data_UU_s_array * c
-         #print('data_UU_m_array')
-         #print(data_UU_m_array)
-         ##print(np.max(data_baselines))
-         ##print(np.min(data_baselines))
-   
-         #make wsclean image to compare (no need to do twice, just image xx,yy):
-         #wsclean does not resore the cleaned image - clean is same as dirty!
-         #if pol=='X':
-         #   wsclean_imsize = '512'
-         #   wsclean_scale = '900asec'
-         #   cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
-         #   print(cmd)
-         #   os.system(cmd) 
+         #sim_UU_s_array = uvtable['UU']
+         #sim_VV_s_array = uvtable['VV']
+         #sim_WW_s_array = uvtable['WW']
+         #sim_baselines = uvtable['baseline']
+         #sim_visibilities = uvtable['DATA']
+         #sim_visibilities_shape = sim_visibilities.shape
+         #print('sim_UU_s_array')
+         #print(sim_UU_s_array)
+         #sim_UU_m_array = sim_UU_s_array * c
+         #print('sim_UU_m_array')
+         #print(sim_UU_m_array)
+         #u_in_miriad = sim_UU_s_array[0]
+         #ratio_u_in = u_in/u_in_miriad
+         #print('ratio_u_in')
+         #print(ratio_u_in)
+         #print("sim visibilities_shape")
+         #print(sim_visibilities_shape)
+         #print('sim_baselines')
+         #print(len(sim_baselines))
+         #print(np.max(sim_baselines))
          
-         #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
-         #uvfits_vis_name = 'test_eda_actual.vis'
-         #cmd = "rm -rf %s" % (uvfits_vis_name)
-         #print(cmd)
-         #os.system(cmd)
-         #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
-         #print(cmd)
-         #os.system(cmd)
-         ###check by image
-         #map_name = 'test_eda_actual.image'
-         #beam_name = 'test_eda_actual.beam'
-         #cmd = "rm -rf %s %s" % (map_name,beam_name)
-         #print(cmd)
-         #os.system(cmd)
-         #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
-         #print(cmd)
-         #os.system(cmd)
-   
-   
-         #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
-         #antennas, so this alleviates the problem of the 255 limit for casa/ms
-         #Cant work out this baseline number stuff, just look at u,v values
-         #find common indices 
-   
-         #took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
+         ##what is going on with these baselines
+         #for baseline_num_index,baseline_num in enumerate(sim_baselines):
+         #   #print(sim_baselines[index])
+         #   if baseline_num > (2**16):
+         #      print(baseline_num)
+         #      ant1,ant2 = decode_baseline(baseline_num)
+         #      print(ant1,ant2)
+         
+         #got it to work by not adding the last antenna i.e above:
+         #if ant2<255 and ant1<255:
+               #uv.write(preamble,cross_vis)
+         #need a better solution! but will be interesting to see if ms calibrates/images or if proper antenna coords are needed (I think yes for calibrate .. but wsclean might be okay ....)
+      
+         #print(len(sim_baseline))
+         #print(len(sim_UU_s_array))
+         ##convert from miriad baseline numbers
+         ##converted_sim_baseline_ant_nums = [aa.bl2ij(bl) for bl in sim_baselines]
+         ##converted_sim_baseline_ant_nums = [decode_baseline(bl) for bl in sim_baselines]
+         #converted_sim_baselines = [(cal_standard_baseline_number(ant1,ant2)) for ant1,ant2 in converted_sim_baseline_ant_nums]
+         #converted_sim_baselines = np.asarray(converted_sim_baselines,dtype='f')
+         ##print(converted_sim_baselines)
+      
+         #try to read the data in to casa as a ms
+         #verify with wsclean - too many antennas - 255 max?
+         #read in the uvfits file
+         casa_cmd_filename = 'import_uvfits.sh'
+         cmd = "rm -rf %s" % (mir_file_ms_name)
+         print(cmd)
+         os.system(cmd)
+               
+         cmd = "importuvfits(fitsfile='%s',vis='%s')" % (mir_file_uvfits_name,mir_file_ms_name)
+    
+         with open(casa_cmd_filename,'w') as f:
+            f.write(cmd)
+              
+         cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+         print(cmd)
+         os.system(cmd)
+         
+         if check_figs:
+            #####verification stuff 
+            test_image_name = mir_file_ms_name.split('.ms')[0]
+            wsclean_imsize = '512'
+            wsclean_scale = '900asec'
+            cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column DATA  %s " % (test_image_name,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+            print(cmd)
+            os.system(cmd) 
+            
+            ##try adding a model column
+            #use kariukis ms_utils
+            #ms_table = table(mir_file_ms_name,readonly=False)
+            #model_data = get_data(ms_table, col="DATA")
+            #add_col(ms_table, "MODEL_DATA")
+            #put_col(ms_table, "MODEL_DATA", model_data)
+            #ms_table.close()
+      
+            ##try imaging the model column of the ms:
+            #wsclean_imsize = '512'
+            #wsclean_scale = '900asec'
+            #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+            #print(cmd)
+            #os.system(cmd)
+            
+            ##try calibrate?
+            #gain_solutions_name = 'test_cal_%s_%s_calibrate_sols.bin' % (EDA2_chan,EDA2_obs_time)
+            #calibrate_options = ''
+            #cmd = "rm -rf %s" % (gain_solutions_name)
+            #print(cmd)
+            #os.system(cmd)  
+            ##calibrate
+            #cmd = "calibrate %s %s %s " % (calibrate_options,mir_file_ms_name,gain_solutions_name)
+            #print(cmd)
+            #os.system(cmd)
+            ##plot cal sols
+            #cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+            #print(cmd)
+            #os.system(cmd)
+            
+            #cmd = "applysolutions %s %s  " % (mir_file_ms_name,gain_solutions_name)
+            #print(cmd)
+            #os.system(cmd)
+            
+            #test image the CORRECTED data'
+            #cmd = "wsclean -name %s -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+            #print(cmd)
+            #os.system(cmd)
+            
+            #check cal
+            #calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name)
+            
+            
+            #if pol=='X':
+            #   wsclean_imsize = '512'
+            #   wsclean_scale = '900asec'
+            #   cmd = "wsclean -name test_eda_%0.3f_%s_wsclean -size %s %s -multiscale -niter 1000 -scale %s -pol xx  %s " % (freq_MHz,pol,wsclean_imsize,wsclean_imsize,wsclean_scale,mir_file_ms_name)
+            #   print(cmd)
+            #   os.system(cmd) 
+            #   
+      
+            ##Lets look at some data at the same LST
+            #uvfits_filename = "/md0/EoR/EDA2/20200303_data/%s/cal_av_chan_%s_%s_plus_%s_obs.uvfits" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #ms_name = "/md0/EoR/EDA2/20200303_data/%s/av_chan_%s_%s_plus_%s_obs.ms" % (EDA2_chan,EDA2_chan,EDA2_obs_time,n_obs_concat)
+            #print("%s" % uvfits_filename)
+            #hdulist = fits.open(uvfits_filename)
+            ##hdulist.info()
+            #info_string = [(x,x.data.shape,x.data.dtype.names) for x in hdulist]
+            ##print(info_string)
+            #uvtable = hdulist[0].data
+            #uvtable_header = hdulist[0].header
+            #hdulist.close()
+            #data_UU_s_array = uvtable['UU']
+            #data_VV_s_array = uvtable['VV']
+            #data_WW_s_array = uvtable['WW']
+            #data_baselines = uvtable['baseline']
+            #data_visibilities = uvtable['DATA']
+            #data_visibilities_shape = data_visibilities.shape
+            #print("data visibilities_shape")
+            #print(data_visibilities_shape)
+            ##print(len(data_baseline))
+            #print('data_UU_s_array')
+            #print(data_UU_s_array)
+            #data_UU_m_array = data_UU_s_array * c
+            #print('data_UU_m_array')
+            #print(data_UU_m_array)
+            ##print(np.max(data_baselines))
+            ##print(np.min(data_baselines))
+      
+            #make wsclean image to compare (no need to do twice, just image xx,yy):
+            #wsclean does not resore the cleaned image - clean is same as dirty!
+            #if pol=='X':
+            #   wsclean_imsize = '512'
+            #   wsclean_scale = '900asec'
+            #   cmd = "wsclean -name cal_chan_%s_%s_ms -size %s %s -multiscale -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (EDA2_chan,EDA2_obs_time,wsclean_imsize,wsclean_imsize,wsclean_scale,ms_name)
+            #   print(cmd)
+            #   os.system(cmd) 
+            
+            #uvfits_filename = "/md0/EoR/EDA2/20200303_data/64/cal_chan_64_20200303T133741.uvfits" 
+            #uvfits_vis_name = 'test_eda_actual.vis'
+            #cmd = "rm -rf %s" % (uvfits_vis_name)
+            #print(cmd)
+            #os.system(cmd)
+            #cmd = "fits op=uvin in=%s out=%s" % (uvfits_filename,uvfits_vis_name)
+            #print(cmd)
+            #os.system(cmd)
+            ###check by image
+            #map_name = 'test_eda_actual.image'
+            #beam_name = 'test_eda_actual.beam'
+            #cmd = "rm -rf %s %s" % (map_name,beam_name)
+            #print(cmd)
+            #os.system(cmd)
+            #cmd = "invert vis=%s map=%s beam=%s imsize=512 cell=600 stokes=xx" % (uvfits_vis_name,map_name,beam_name)
+            #print(cmd)
+            #os.system(cmd)
+      
+      
+            #make a sim uv file that only has baselines that match the data file. Usually data will have some flagged
+            #antennas, so this alleviates the problem of the 255 limit for casa/ms
+            #Cant work out this baseline number stuff, just look at u,v values
+            #find common indices 
+      
+            #took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
       
       
 def asvoid(arr):
@@ -1923,6 +1943,61 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(cmd)
       os.system(cmd)
 
+def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
+   model_dir = "/md0/EoR/EDA2/EEPs/freq_interp/"
+   if len(sim_only_EDA2)!=0:
+      sim_only=True
+   #think about how to use coherence:
+   #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
+   
+   freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
+   #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+    
+   print("concatenate and flag EDA2 obs before calibration")
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+      fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
+      fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+      if EDA2_chan_index==0:
+         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
+
+      if len(EDA2_chan_list)==1:
+         obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      else:
+         obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      first_obstime = obs_time_list[0]
+      n_obs_concat = len(obs_time_list)
+      #concat_ms_name = "%s/%s_plus_%s_obs_%0.3f_MHz_concat.ms" % (EDA2_chan,first_obstime,n_obs_concat,freq_MHz)
+      concat_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+      obs_concat_list = []
+      for EDA2_obs_time_index,EDA2_obs_time in enumerate(obs_time_list):
+         eda2_ms_name = "%s/%s_%s_eda2_ch32_ant256_midday_avg8140.ms" % (EDA2_chan,EDA2_obs_time[0:8],EDA2_obs_time[9:15])
+         print(eda2_ms_name)
+         obs_concat_list.append(eda2_ms_name)
+
+         #only need to open the data once as it contains all 32 fine chans
+         eda2_ms_table = table(eda2_ms_name,readonly=False)
+         eda2_data = get_data(eda2_ms_table)
+         eda2_uvw = get_uvw(eda2_ms_table)
+         eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
+         eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+         
+                  
+         for freq_MHz_fine_chan in freq_MHz_fine_chan_subarray:
+            #add in the model column to each ms
+            model_ms_name = "%s%s_%0.3f.ms" % (model_dir,EDA2_obs_time,freq_MHz_fine_chan) 
+            print(model_ms_name)
+            
+            model_ms_table = table(model_ms_name,readonly=True)
+            model_data = get_data(model_ms_table)
+            model_uvw = get_uvw(model_ms_table)    
+            model_ant1, model_ant2 = get_ant12(model_ms_name)
+            model_ants = np.vstack((model_ant1,model_ant2)).T
+         
+            
+#am I always using the first obstime model to calibrate? check??         
 def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
    if len(sim_only_EDA2)!=0:
       sim_only=True
@@ -3403,11 +3478,11 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #sys.exit()  
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
-#chan_num = 0
-#freq_MHz_list = freq_MHz_list[0:10]
-#lst_hrs_list = lst_hrs_list[0:10]
-#EDA2_obs_time_list = EDA2_obs_time_list[0:10]
-#EDA2_chan_list = EDA2_chan_list[0:10]
+chan_num = 0
+freq_MHz_list = freq_MHz_list[0:3]
+lst_hrs_list = lst_hrs_list[0:3]
+EDA2_obs_time_list = EDA2_obs_time_list[0:3]
+EDA2_chan_list = EDA2_chan_list[0:3]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3457,11 +3532,11 @@ sim_unity=True
 sim_pt_source=False
 check_figs=False
 fine_chan=True
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
-#input_sky = "gsm"   #zenith_point_source  #unity
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
-#input_sky = "unity"
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+input_sky = "gsm"   #zenith_point_source  #unity
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+input_sky = "unity"
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
 #######
 #plot_cal = True
 #run_aoflagger=True
