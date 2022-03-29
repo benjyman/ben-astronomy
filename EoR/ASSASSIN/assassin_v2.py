@@ -1983,11 +1983,13 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          eda2_uvw = get_uvw(eda2_ms_table)
          eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
          eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
-         
-                  
-         for freq_MHz_fine_chan in freq_MHz_fine_chan_subarray:
+          
+         all_baselines = eda2_ants.shape[0]
+         new_common_model_data_sorted_tile = np.empty([all_baselines,32,4])       
+                
+         for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
             #add in the model column to each ms
-            model_ms_name = "%s%s_%0.3f.ms" % (model_dir,EDA2_obs_time,freq_MHz_fine_chan) 
+            model_ms_name = "%s%s_%0.3f.ms" % (model_dir,first_obstime,freq_MHz_fine_chan) 
             print(model_ms_name)
             
             model_ms_table = table(model_ms_name,readonly=True)
@@ -1995,8 +1997,89 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             model_uvw = get_uvw(model_ms_table)    
             model_ant1, model_ant2 = get_ant12(model_ms_name)
             model_ants = np.vstack((model_ant1,model_ant2)).T
-         
             
+            
+            model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
+            #n_common = np.count_nonzero(model_ms_indices) 
+            #print(n_common)
+            eda2_ms_indices = inNd(eda2_ants, model_ants, assume_unique=False)
+            #n_common = np.count_nonzero(eda2_ms_indices)
+            #print(n_common)
+
+            eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+            eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+            eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+      
+            model_common_ant1 = model_ant1[model_ms_indices]
+            model_common_ant2 = model_ant2[model_ms_indices]
+            model_common_sort_inds = np.lexsort((model_common_ant2,model_common_ant1)) # Sort by a, then by b
+                  
+            common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+            common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+               
+            common_eda2_data = eda2_data[eda2_ms_indices]
+            common_eda2_data_sorted = common_eda2_data[eda2_common_sort_inds]
+            #print(common_eda2_data_sorted.shape)
+            #print(common_eda2_data_sorted[0:10,0,0])
+               
+            common_model_uvw = model_uvw[model_ms_indices]
+            common_model_uvw_sorted = common_model_uvw[model_common_sort_inds]
+         
+            common_model_data = model_data[model_ms_indices]
+            common_model_data_sorted = common_model_data[model_common_sort_inds]
+            #print(common_model_data_sorted.shape)
+            #print(common_model_data_sorted[0:10,0,0])      
+   
+            #for model go through ant2 array and data array and uvw array, insert zeros after wherever ant==254
+            ant2_list=[]
+            for ant2_index,ant2 in enumerate(model_common_ant2):
+               if ant2==254:
+                  ant2_list.append(ant2_index)
+            #print(len(ant2_list))
+            #print(ant2_list)
+               
+            old_model_common_ant2 = model_common_ant2
+            old_model_common_ant1 = model_common_ant1
+            old_common_model_data_sorted = common_model_data_sorted
+            counter=0
+               
+            #a = np.array([[1, 1], [2, 2], [3, 3]])
+            #print(a)
+            #b = np.insert(a, 1, 5, axis=0)
+            #print(b)
+               
+               
+            for ant2_index in ant2_list:
+               ant2_index+=counter
+               ant1_value = old_model_common_ant1[ant2_index-1]
+               #new_data_value = np.zeros((1,4))
+               #print(new_data_value.shape)
+               #print(old_array.shape)
+               new_model_common_ant2 = np.insert(old_model_common_ant2,ant2_index+1,255)
+               new_model_common_ant1 = np.insert(old_model_common_ant1,ant2_index+1,ant1_value)
+               new_common_model_data_sorted = np.insert(old_common_model_data_sorted,ant2_index+1,0,axis=0)
+               #print(old_common_model_data_sorted[ant2_index-2:ant2_index+5])
+               #print(new_common_model_data_sorted[ant2_index-2:ant2_index+6])
+               #print(new_array[ant2_index+1])
+               old_model_common_ant2 = new_model_common_ant2
+               old_model_common_ant1 = new_model_common_ant1
+               old_common_model_data_sorted = new_common_model_data_sorted
+               counter+=1
+            new_model_common_ant2 = np.append(new_model_common_ant2,np.array([254,255,255]))
+            new_model_common_ant1 = np.append(new_model_common_ant1,np.array([254,254,255]))
+            new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+            new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+            new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
+  
+            common_baselines = new_common_model_data_sorted.shape[0]
+            #repeating
+            #repetitions = 32
+            #new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
+            new_common_model_data_sorted_tile[0:common_baselines,freq_MHz_fine_chan_index+2,:] = new_common_model_data_sorted
+            print(new_common_model_data_sorted.shape)
+            print(new_common_model_data_sorted_tile.shape)
+            sys.exit()
+
 #am I always using the first obstime model to calibrate? check??         
 def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
    if len(sim_only_EDA2)!=0:
@@ -3533,15 +3616,15 @@ sim_pt_source=False
 check_figs=False
 fine_chan=True
 #simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
-input_sky = "gsm"   #zenith_point_source  #unity
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-input_sky = "unity"
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+#input_sky = "gsm"   #zenith_point_source  #unity
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+#input_sky = "unity"
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
 #######
 #plot_cal = True
 #run_aoflagger=True
 #
-#calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
+calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
 
 
 
