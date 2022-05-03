@@ -1960,8 +1960,8 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
       fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
       freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
-      print(freq_MHz_fine_chan_array)
-      print(freq_MHz_fine_chan_subarray)
+      #print(freq_MHz_fine_chan_array)
+      #print(freq_MHz_fine_chan_subarray)
       #need to get this fine cha array thing working - check if they are contiguous
       if EDA2_chan_index==0:
          #miss 2 fine chans at start and 3 fine chans at end of each coarse chan so...
@@ -1994,8 +1994,8 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
             if EDA2_chan_index==0:
                freq_MHz_fine_chan_index+=14
-            print(freq_MHz_fine_chan_subarray.shape)
-            print(freq_MHz_fine_chan_subarray)
+            #print(freq_MHz_fine_chan_subarray.shape)
+            #print(freq_MHz_fine_chan_subarray)
             #add in the model column to each ms
             model_ms_name = "%s%s_%0.3f.ms" % (model_dir,first_obstime,freq_MHz_fine_chan) 
             print(model_ms_name)
@@ -2098,58 +2098,88 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             pass
          put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
          eda2_ms_table.close()  
- 
-         #flag ant 255
-         cmd = "flagantennae %s 255" % (eda2_ms_name)
-         print(cmd)
-         os.system(cmd)
-        
-         #flag the start and end chans
-         #flagsubbands <ms> <subband count> <list of subbands>
-         cmd = "flagsubbands %s 32 0 1 29 30 31" % (eda2_ms_name)
-         print(cmd)
-         os.system(cmd)
-         if EDA2_chan_index==0:
-            cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 0 11 12 13 14 15" % (eda2_ms_name) #flag the first 16 chans as well as edge ones
-            print(cmd)
-            os.system(cmd)            
- 
-         #for test images
-         wsclean_imsize = '512'
-         wsclean_scale = '900asec'
-         test_image_name = "complex_beam_test_%s" % EDA2_obs_time
-         
-         #test image model column
-         #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
-         #print(cmd)
-         #os.system(cmd)
+      
 
-         #try cal with default (-ch 1) and -ch 32 for more SNR         
-         #try calibrate?
-         gain_solutions_name = 'complex_beam_test_calibrate_sols_%s.bin' % EDA2_obs_time
-         calibrate_options = ''
-         cmd = "rm -rf %s" % (gain_solutions_name)
-         print(cmd)
-         os.system(cmd)  
-         #calibrate
-         cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
-         print(cmd)
-         os.system(cmd)
-         #plot cal sols
-         cmd = "aocal_plot.py %s  " % (gain_solutions_name)
-         print(cmd)
-         os.system(cmd)
-         
-         cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
-         print(cmd)
-         os.system(cmd)
-         
-         #test image the CORRECTED data'
-         cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
-         print(cmd)
-         os.system(cmd)     
+        
+      #concat (mainly to allow/improve RFI flagging with AOflagger)
+      #This does not average the data, that must be done in plot_tsky_for_multiple_freqs()
+
+      obs_concat_list_string = "','".join(obs_concat_list)
+      
+      casa_cmd_filename = '%s/concat_ms.sh' % EDA2_chan
+      
+      cmd = "rm -rf %s %s" % (concat_ms_name,casa_cmd_filename)
+      print(cmd)
+      os.system(cmd)
+            
+      cmd = "concat(vis=['%s'],concatvis='%s',dirtol='5arcmin')" % (obs_concat_list_string,concat_ms_name)
+      
+      with open(casa_cmd_filename,'w') as f:
+         f.write(cmd)
            
-         sys.exit()
+      cmd = "casa --nohead --nogui --nocrashreport -c %s" % casa_cmd_filename
+      print(cmd)
+      os.system(cmd)
+      
+      #change to flag concat ms
+      #flag ant 255
+      cmd = "flagantennae %s 255" % (concat_ms_name)
+      print(cmd)
+      os.system(cmd)
+             
+      #flag the start and end chans
+      #flagsubbands <ms> <subband count> <list of subbands>
+      cmd = "flagsubbands %s 32 0 1 29 30 31" % (concat_ms_name)
+      print(cmd)
+      os.system(cmd)
+      if EDA2_chan_index==0:
+         cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 10 11 12 13 14 15" % (concat_ms_name) #flag the first 16 chans as well as edge ones
+         print(cmd)
+         os.system(cmd)            
+ 
+      if run_aoflagger:
+         #flag data with aoflagger
+         cmd = "aoflagger -strategy %s -column DATA %s" % (rfi_strategy_name,concat_ms_name)
+         print(cmd)
+         os.system(cmd)
+      
+        
+      #for test images
+      wsclean_imsize = '512'
+      wsclean_scale = '900asec'
+      test_image_name = "complex_beam_test_chan_%03d" % EDA2_chan
+      
+      #test image model column
+      #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      #print(cmd)
+      #os.system(cmd)
+
+      #try cal with default (-ch 1) and -ch 32 for more SNR         
+      #try calibrate?
+      gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d.bin' % EDA2_chan
+      calibrate_options = ''
+      cmd = "rm -rf %s" % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)  
+      #calibrate
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      #plot cal sols
+      cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+      print(cmd)
+      os.system(cmd)
+      
+      #test image the CORRECTED data'
+      cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      print(cmd)
+      #os.system(cmd)     
+        
+      sys.exit()
 
 
 #am I always using the first obstime model to calibrate? check??         
@@ -3605,6 +3635,15 @@ def convert_matlab_to_hdf5(n_ants):
    #         dset_theta = f['Etheta']
    #         print(dset_theta.shape)
 
+def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,baseline_length_thresh_lambda,poly_order,plot_only=False,EDA2_data=True,EDA2_chan_list='None',no_modelling=False,noise_coupling=False):
+   #for plot_expected_rms_noise_eda2 below
+   int_time = 4.*60. #0.28 * 5.
+   bw_Hz = 1000000 #27. * fine_chan_width_Hz
+
+   #pol = pol_list[0]
+   freq_MHz_array = np.asarray(freq_MHz_list)
+   print(freq_MHz_array)
+
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -3698,8 +3737,14 @@ fine_chan=True
 #
 calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
 
+baseline_length_thresh_lambda = 0.5
+poly_order = 7
+plot_only = False
+EDA2_data = True
+no_modelling = False
+noise_coupling = False
 
-
+#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,no_modelling=no_modelling,noise_coupling=noise_coupling)
 
 
 
