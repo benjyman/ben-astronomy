@@ -2114,10 +2114,12 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             print(cmd)
             os.system(cmd)            
  
+         #for test images
+         wsclean_imsize = '512'
+         wsclean_scale = '900asec'
+         test_image_name = "complex_beam_test_%s" % EDA2_obs_time
+         
          #test image model column
-         #wsclean_imsize = '512'
-         #wsclean_scale = '900asec'
-         #test_image_name = "complex_beam_test_%s" % EDA2_obs_time
          #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
          #print(cmd)
          #os.system(cmd)
