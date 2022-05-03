@@ -1960,8 +1960,12 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
       fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
       freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+      print(freq_MHz_fine_chan_array)
+      print(freq_MHz_fine_chan_subarray)
+      #need to get this fine cha array thing working - check if they are contiguous
       if EDA2_chan_index==0:
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
+         #miss 2 fine chans at start and 3 fine chans at end of each coarse chan so...
+         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:13]
 
       if len(EDA2_chan_list)==1:
          obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
@@ -1985,9 +1989,13 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
           
          all_baselines = eda2_ants.shape[0]
-         new_common_model_data_sorted_tile = np.empty([all_baselines,32,4])       
+         new_common_model_data_sorted_tile = np.empty([all_baselines,32,4],dtype=complex)       
                 
          for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
+            if EDA2_chan_index==0:
+               freq_MHz_fine_chan_index+=14
+            print(freq_MHz_fine_chan_subarray.shape)
+            print(freq_MHz_fine_chan_subarray)
             #add in the model column to each ms
             model_ms_name = "%s%s_%0.3f.ms" % (model_dir,first_obstime,freq_MHz_fine_chan) 
             print(model_ms_name)
@@ -2047,8 +2055,10 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             #print(a)
             #b = np.insert(a, 1, 5, axis=0)
             #print(b)
-               
-               
+            
+            #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
+            #need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
+        
             for ant2_index in ant2_list:
                ant2_index+=counter
                ant1_value = old_model_common_ant1[ant2_index-1]
@@ -2075,10 +2085,70 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             #repeating
             #repetitions = 32
             #new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
-            new_common_model_data_sorted_tile[0:common_baselines,freq_MHz_fine_chan_index+2,:] = new_common_model_data_sorted
-            print(new_common_model_data_sorted.shape)
-            print(new_common_model_data_sorted_tile.shape)
-            sys.exit()
+            #print(new_common_model_data_sorted.shape)
+            #print(new_common_model_data_sorted_tile.shape)
+            new_common_model_data_sorted_squeeze = np.squeeze(new_common_model_data_sorted, axis=1)
+            #print(new_common_model_data_sorted_squeeze.shape)
+            new_common_model_data_sorted_tile[0:common_baselines,freq_MHz_fine_chan_index+2,:] = new_common_model_data_sorted_squeeze
+
+
+         try:
+            add_col(eda2_ms_table, "MODEL_DATA")
+         except:
+            pass
+         put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+         eda2_ms_table.close()  
+ 
+         #flag ant 255
+         cmd = "flagantennae %s 255" % (eda2_ms_name)
+         print(cmd)
+         os.system(cmd)
+        
+         #flag the start and end chans
+         #flagsubbands <ms> <subband count> <list of subbands>
+         cmd = "flagsubbands %s 32 0 1 29 30 31" % (eda2_ms_name)
+         print(cmd)
+         os.system(cmd)
+         if EDA2_chan_index==0:
+            cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 0 11 12 13 14 15" % (eda2_ms_name) #flag the first 16 chans as well as edge ones
+            print(cmd)
+            os.system(cmd)            
+ 
+         #test image model column
+         #wsclean_imsize = '512'
+         #wsclean_scale = '900asec'
+         #test_image_name = "complex_beam_test_%s" % EDA2_obs_time
+         #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+         #print(cmd)
+         #os.system(cmd)
+
+         #try cal with default (-ch 1) and -ch 32 for more SNR         
+         #try calibrate?
+         gain_solutions_name = 'complex_beam_test_calibrate_sols_%s.bin' % EDA2_obs_time
+         calibrate_options = ''
+         cmd = "rm -rf %s" % (gain_solutions_name)
+         print(cmd)
+         os.system(cmd)  
+         #calibrate
+         cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+         print(cmd)
+         os.system(cmd)
+         #plot cal sols
+         cmd = "aocal_plot.py %s  " % (gain_solutions_name)
+         print(cmd)
+         os.system(cmd)
+         
+         cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+         print(cmd)
+         os.system(cmd)
+         
+         #test image the CORRECTED data'
+         cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+         print(cmd)
+         os.system(cmd)     
+           
+         sys.exit()
+
 
 #am I always using the first obstime model to calibrate? check??         
 def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
