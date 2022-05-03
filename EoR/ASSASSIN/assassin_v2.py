@@ -2102,7 +2102,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
 
         
       #concat (mainly to allow/improve RFI flagging with AOflagger)
-      #This does not average the data, that must be done in plot_tsky_for_multiple_freqs()
+      #This does not average the data
 
       obs_concat_list_string = "','".join(obs_concat_list)
       
@@ -2121,28 +2121,28 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       print(cmd)
       os.system(cmd)
       
-      #change to flag concat ms
-      #flag ant 255
-      cmd = "flagantennae %s 255" % (concat_ms_name)
-      print(cmd)
-      os.system(cmd)
-             
-      #flag the start and end chans
-      #flagsubbands <ms> <subband count> <list of subbands>
-      cmd = "flagsubbands %s 32 0 1 29 30 31" % (concat_ms_name)
-      print(cmd)
-      os.system(cmd)
-      if EDA2_chan_index==0:
-         cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 10 11 12 13 14 15" % (concat_ms_name) #flag the first 16 chans as well as edge ones
-         print(cmd)
-         os.system(cmd)            
- 
       if run_aoflagger:
          #flag data with aoflagger
          cmd = "aoflagger -strategy %s -column DATA %s" % (rfi_strategy_name,concat_ms_name)
          print(cmd)
          os.system(cmd)
       
+      #change to flag concat ms
+      #flag ant 255
+      cmd = "flagantennae %s 255" % (concat_ms_name)
+      print(cmd)
+      os.system(cmd)      
+             
+      #flag the start and end chans
+      #flagsubbands <ms> <subband count> <list of subbands>
+      cmd = "flagsubbands %s 32 0 1 29 30 31" % (concat_ms_name)
+      print(cmd)
+      os.system(cmd)
+      
+      if EDA2_chan_index==0:
+         cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 10 11 12 13 14 15" % (concat_ms_name) #flag the first 16 chans as well as edge ones
+         print(cmd)
+         os.system(cmd)            
         
       #for test images
       wsclean_imsize = '512'
@@ -2150,7 +2150,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       test_image_name = "complex_beam_test_chan_%03d" % EDA2_chan
       
       #test image model column
-      #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
       #print(cmd)
       #os.system(cmd)
 
@@ -2162,7 +2162,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       print(cmd)
       os.system(cmd)  
       #calibrate
-      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,eda2_ms_name,gain_solutions_name)
+      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,concat_ms_name,gain_solutions_name)
       print(cmd)
       os.system(cmd)
       #plot cal sols
@@ -2170,16 +2170,15 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       print(cmd)
       os.system(cmd)
       
-      cmd = "applysolutions %s %s  " % (eda2_ms_name,gain_solutions_name)
+      cmd = "applysolutions %s %s  " % (concat_ms_name,gain_solutions_name)
       print(cmd)
       os.system(cmd)
       
       #test image the CORRECTED data'
-      cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,eda2_ms_name)
+      cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
       print(cmd)
-      #os.system(cmd)     
+      os.system(cmd)     
         
-      sys.exit()
 
 
 #am I always using the first obstime model to calibrate? check??         
@@ -2641,7 +2640,7 @@ def old_calibrate():
       #         sum_ms_table.close()
    
 
-def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,n_fine_chans_included=27):
+def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,n_fine_chans_included=27,unity_vis_dir="/md0/EoR/EDA2/EEPs/freq_interp/"):
    #max umber of timesteps is set to eight 
    max_n_timesteps = 8
    n_fine_chans = int(n_fine_chans_included*len(EDA2_chan_list))
@@ -2677,17 +2676,19 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    #with open(number_of_good_obs_list_filename) as f:
    #   number_of_good_obs_list_string = f.read()
    #number_of_good_obs_list = number_of_good_obs_list_string.split(',')
-   
-   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
+
+   freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
+   #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+       
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
       freq_MHz = 400./512.*float(EDA2_chan)
-      wavelength = c / (freq_MHz*1e6)
-      print(wavelength)
+
+      fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
+      fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
       
-      #This Jy to K has to be wrong, there is no solid angle ... I think just need to leave all the sims etc in units of K?
-      #jy_to_K = (wavelength**2) / (2. * k * 1.0e26) 
-      #print(jy_to_K)
-      
-      #number_of_good_obs = number_of_good_obs_list[EDA2_chan_index]
       lst = lst_list[EDA2_chan_index]
       lst_deg = (float(lst)/24)*360.
       
@@ -2696,16 +2697,10 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       else:
          obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
       first_obstime = obs_time_list[0]
-         
-      #av_ms_name = "%s/av_chan_%s_%s_plus_concat.ms" % (EDA2_chan,EDA2_chan,first_obstime)
+
       av_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
-      #concat_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
-      #av_ms_name = "%s/av_chan_%s_%s_plus_5_obs_complex.ms" % (EDA2_chan,EDA2_chan,first_obstime)
-      
       print("getting data from %s" % av_ms_name)
-      unity_ms_name = "unity_%0.3f.ms" % (freq_MHz)
-      print("and unity response from %s" % unity_ms_name)
-      
+
       eda2_ms_table = table(av_ms_name,readonly=True)
       eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
       n_vis_eda2 = eda2_data_complex.shape[0]
@@ -2716,27 +2711,6 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       eda2_data_complex_flagged = np.copy(eda2_data_complex)
       eda2_data_complex_flagged[flagged_indices] = np.nan
       eda2_data_complex = eda2_data_complex_flagged
-      
-      #do this later on common data
-      #for now, average 32 (central 28) chans to 1, look at only x pol and real
-      #eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
-      #eda2_data_complex_freq_av_x = eda2_data_complex_freq_av[:,0]
-      #eda2_data_complex_freq_av_x_real=eda2_data_complex_freq_av_x.real
-      #print(eda2_data_complex_freq_av_x.shape)
-      #print(eda2_data_complex_freq_av_x_real[1])
-      #sys.exit()
-
-      #now get expected unity response ms
-      unity_ms_table = table(unity_ms_name,readonly=True)
-      unity_data_complex = get_data(unity_ms_table, col="DATA")
-      n_vis_1_timestep = unity_data_complex.shape[0]
-      #do this later
-      #unity_data_complex_freq_av_x = unity_data_complex[:,0,1]
-      #unity_data_complex_freq_av_x_real=unity_data_complex_freq_av_x.real      
-      
-      #start_index = n_vis_1_timestep
-      #end_index = n_vis_1_timestep*2
-      #eda2_data_complex = eda2_data_complex[start_index:end_index,:,:]
       
       #sort out common baselines just like in calibrate_with_complex_beams
       eda2_uvw = get_uvw(eda2_ms_table)
@@ -2761,117 +2735,9 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       eda2_ant2 = eda2_ant2[0:n_baselines_eda2]
       eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
       eda2_uvw = eda2_uvw[0:n_baselines_eda2]
-      
-      unity_uvw = get_uvw(unity_ms_table)    
-      unity_ant1, unity_ant2 = get_ant12(unity_ms_name)
-      unity_ants = np.vstack((unity_ant1,unity_ant2)).T
-      
-      ##lets just plot unity unity real vs unity uv dist without any sorting or cutting
-      #unity_uvw_dist = np.sqrt(unity_uvw[:,0]**2 + unity_uvw[:,1]**2 + unity_uvw[:,2]**2)
-      #print(unity_uvw_dist.shape)
-      #unity_data_complex_x = unity_data_complex[:,0,0]
-      #unity_data_complex_x_real = unity_data_complex_x.real
-      #print(unity_data_complex_x_real.shape)
-
-      ##plot the expected unity response vs baseline length
-      #plt.clf()
-      #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
-      #map_title="Unity_response_vs_uvdist" 
-      #plt.xlabel("UV distance (wavelengths)")
-      #plt.ylabel("Real component of visibility X pol (Jy)")
-      #plt.legend(loc=1)
-      ##plt.text(x_pos, y_pos, fit_string)
-      ##plt.ylim([0, 3.5])
-      #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #plt.close()
-      #print("saved %s" % fig_name)
-      #sys.exit()
-
-      unity_ms_indices = inNd(unity_ants, eda2_ants, assume_unique=False)
-      #n_common = np.count_nonzero(unity_ms_indices) 
-      #print(n_common)
-      eda2_ms_indices = inNd(eda2_ants, unity_ants, assume_unique=False)
-      #n_common = np.count_nonzero(eda2_ms_indices)
-      #print(n_common)
-
-      #print_index_end = 256
-      eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
-      eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
-      #print(eda2_common_ant1[0:print_index_end])
-      #print(eda2_common_ant2[0:print_index_end])
-      eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
-
-      unity_common_ant1 = unity_ant1[unity_ms_indices]
-      unity_common_ant2 = unity_ant2[unity_ms_indices]
-      #print(unity_common_ant1[0:print_index_end])
-      #print(unity_common_ant2[0:print_index_end])
-      unity_common_sort_inds = np.lexsort((unity_common_ant2,unity_common_ant1)) # Sort by a, then by b
-      
-      common_eda2_uvw = eda2_uvw[eda2_ms_indices]
-      common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
-      #print(common_eda2_uvw_sorted[0:10])
-      #print(common_eda2_uvw_sorted.shape)
-      #print(common_eda2_uvw_sorted[0:10])
 
       
-      common_unity_uvw = unity_uvw[unity_ms_indices]
-      common_unity_uvw_sorted = common_unity_uvw[unity_common_sort_inds]
-      #print(common_unity_uvw_sorted[0:10])
-      #print(common_unity_uvw_sorted.shape)
-      #print(common_unity_uvw_sorted[0:10])
-      common_unity_data = unity_data_complex[unity_ms_indices]
-      common_unity_data_sorted = common_unity_data[unity_common_sort_inds]
-      #print(common_unity_data_sorted[0:10])
-      #print(common_unity_data_sorted.shape)
-      #print(common_unity_data_sorted[0:10,0,0])   
-
-      ###lets just plot unity unity real vs unity uv dist of the matched data 
-      #unity_uvw_dist = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
-      #print(unity_uvw_dist.shape)
-      #unity_data_complex_x = common_unity_data_sorted[:,0,0]
-      #unity_data_complex_x_real = unity_data_complex_x.real
-      #print(unity_data_complex_x_real.shape)
-
-      ##plot the expected unity response vs baseline length
-      #plt.clf()
-      #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
-      #map_title="Unity_response_vs_uvdist" 
-      #plt.xlabel("UV distance (wavelengths)")
-      #plt.ylabel("Real component of visibility X pol (Jy)")
-      #plt.legend(loc=1)
-      ##plt.text(x_pos, y_pos, fit_string)
-      ##plt.ylim([0, 3.5])
-      #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
-      #figmap = plt.gcf()
-      #figmap.savefig(fig_name)
-      #plt.close()
-      #print("saved %s" % fig_name)
- 
- 
-      uvdist_array_unity_m = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
-      uvdist_array_unity_lambda = uvdist_array_unity_m / wavelength
-      #we don't want the auto included here
-      uvdist_array_unity_lambda_no_zero = uvdist_array_unity_lambda[uvdist_array_unity_lambda>0.]
-      uvdist_array_unity_inds = uvdist_array_unity_lambda_no_zero.argsort()
-      uvdist_array_unity_lambda_sorted = uvdist_array_unity_lambda_no_zero[uvdist_array_unity_inds]
-
-      #uvdist_array_unity_lambda_sorted_no_zero = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted>0]
-      #print(uvdist_array_unity_lambda_sorted_no_zero[615:630])
-      uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted < uvdist_thresh_lambda]
-        
-      n_baselines_included_unity = len(uvdist_array_unity_lambda_sorted_cut)
-      print("number of baselines included unity %s" % n_baselines_included_unity)
-
-      #just looking at real,x for now
-      common_unity_data_complex_freq_av_x = common_unity_data_sorted[:,0,0]
-      common_unity_data_complex_freq_av_x_real=common_unity_data_complex_freq_av_x.real
-      
-      #remove the autos
-      common_unity_data_complex_freq_av_x_real_sorted_no_auto = common_unity_data_complex_freq_av_x_real[uvdist_array_unity_lambda>0]
-      common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real_sorted_no_auto[uvdist_array_unity_inds]
-      
+      #Moving all the stuff below inside the fine chan loop since we have a separate unity file for each fine chan
       #Instead of averaging in time and frequency, do all times and freqs separately to look for bad times/chans in x_y_plots
       start_index = 0
       end_index = n_baselines_eda2
@@ -2879,8 +2745,154 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          timestep_data = eda2_data_complex[start_index:end_index,:,:]
          start_index += n_baselines_eda2
          end_index += n_baselines_eda2
+         if EDA2_chan_index==0:
+            n_fine_chans_included = 13
          for fine_chan_included in range(n_fine_chans_included):
-            fine_chan_index = fine_chan_included+2
+            
+            print(fine_chan_included)
+            freq_MHz_fine_chan = freq_MHz_fine_chan_subarray[fine_chan_included]
+            print(freq_MHz_fine_chan)
+            
+            wavelength = c / (freq_MHz_fine_chan*1e6)
+            print(wavelength)
+               
+            unity_ms_name = "%sunity_%0.3f.ms" % (unity_vis_dir,freq_MHz)
+            print("and unity response from %s" % unity_ms_name)
+            
+            #do this later on common data
+            #for now, average 32 (central 28) chans to 1, look at only x pol and real
+            #eda2_data_complex_freq_av = np.mean(eda2_data_complex[:,2:30,:],axis=1)
+            #eda2_data_complex_freq_av_x = eda2_data_complex_freq_av[:,0]
+            #eda2_data_complex_freq_av_x_real=eda2_data_complex_freq_av_x.real
+            #print(eda2_data_complex_freq_av_x.shape)
+            #print(eda2_data_complex_freq_av_x_real[1])
+            #sys.exit()
+      
+            #now get expected unity response ms
+            unity_ms_table = table(unity_ms_name,readonly=True)
+            unity_data_complex = get_data(unity_ms_table, col="DATA")
+            n_vis_1_timestep = unity_data_complex.shape[0]
+            #do this later
+            #unity_data_complex_freq_av_x = unity_data_complex[:,0,1]
+            #unity_data_complex_freq_av_x_real=unity_data_complex_freq_av_x.real      
+            
+            #start_index = n_vis_1_timestep
+            #end_index = n_vis_1_timestep*2
+            #eda2_data_complex = eda2_data_complex[start_index:end_index,:,:]
+            
+            unity_uvw = get_uvw(unity_ms_table)    
+            unity_ant1, unity_ant2 = get_ant12(unity_ms_name)
+            unity_ants = np.vstack((unity_ant1,unity_ant2)).T
+            
+            ##lets just plot unity unity real vs unity uv dist without any sorting or cutting
+            #unity_uvw_dist = np.sqrt(unity_uvw[:,0]**2 + unity_uvw[:,1]**2 + unity_uvw[:,2]**2)
+            #print(unity_uvw_dist.shape)
+            #unity_data_complex_x = unity_data_complex[:,0,0]
+            #unity_data_complex_x_real = unity_data_complex_x.real
+            #print(unity_data_complex_x_real.shape)
+      
+            ##plot the expected unity response vs baseline length
+            #plt.clf()
+            #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
+            #map_title="Unity_response_vs_uvdist" 
+            #plt.xlabel("UV distance (wavelengths)")
+            #plt.ylabel("Real component of visibility X pol (Jy)")
+            #plt.legend(loc=1)
+            ##plt.text(x_pos, y_pos, fit_string)
+            ##plt.ylim([0, 3.5])
+            #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #plt.close()
+            #print("saved %s" % fig_name)
+            #sys.exit()
+      
+            unity_ms_indices = inNd(unity_ants, eda2_ants, assume_unique=False)
+            #n_common = np.count_nonzero(unity_ms_indices) 
+            #print(n_common)
+            eda2_ms_indices = inNd(eda2_ants, unity_ants, assume_unique=False)
+            #n_common = np.count_nonzero(eda2_ms_indices)
+            #print(n_common)
+      
+            #print_index_end = 256
+            eda2_common_ant1 = eda2_ant1[eda2_ms_indices]
+            eda2_common_ant2 = eda2_ant2[eda2_ms_indices]
+            #print(eda2_common_ant1[0:print_index_end])
+            #print(eda2_common_ant2[0:print_index_end])
+            eda2_common_sort_inds = np.lexsort((eda2_common_ant2,eda2_common_ant1)) # Sort by a, then by b
+      
+            unity_common_ant1 = unity_ant1[unity_ms_indices]
+            unity_common_ant2 = unity_ant2[unity_ms_indices]
+            #print(unity_common_ant1[0:print_index_end])
+            #print(unity_common_ant2[0:print_index_end])
+            unity_common_sort_inds = np.lexsort((unity_common_ant2,unity_common_ant1)) # Sort by a, then by b
+            
+            common_eda2_uvw = eda2_uvw[eda2_ms_indices]
+            common_eda2_uvw_sorted = common_eda2_uvw[eda2_common_sort_inds]
+            #print(common_eda2_uvw_sorted[0:10])
+            #print(common_eda2_uvw_sorted.shape)
+            #print(common_eda2_uvw_sorted[0:10])
+      
+            common_unity_uvw = unity_uvw[unity_ms_indices]
+            common_unity_uvw_sorted = common_unity_uvw[unity_common_sort_inds]
+            #print(common_unity_uvw_sorted[0:10])
+            #print(common_unity_uvw_sorted.shape)
+            #print(common_unity_uvw_sorted[0:10])
+            common_unity_data = unity_data_complex[unity_ms_indices]
+            common_unity_data_sorted = common_unity_data[unity_common_sort_inds]
+            #print(common_unity_data_sorted[0:10])
+            #print(common_unity_data_sorted.shape)
+            #print(common_unity_data_sorted[0:10,0,0])   
+      
+            ###lets just plot unity unity real vs unity uv dist of the matched data 
+            #unity_uvw_dist = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
+            #print(unity_uvw_dist.shape)
+            #unity_data_complex_x = common_unity_data_sorted[:,0,0]
+            #unity_data_complex_x_real = unity_data_complex_x.real
+            #print(unity_data_complex_x_real.shape)
+      
+            ##plot the expected unity response vs baseline length
+            #plt.clf()
+            #plt.scatter(unity_uvw_dist,unity_data_complex_x_real)            
+            #map_title="Unity_response_vs_uvdist" 
+            #plt.xlabel("UV distance (wavelengths)")
+            #plt.ylabel("Real component of visibility X pol (Jy)")
+            #plt.legend(loc=1)
+            ##plt.text(x_pos, y_pos, fit_string)
+            ##plt.ylim([0, 3.5])
+            #fig_name= "test_unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
+            #figmap = plt.gcf()
+            #figmap.savefig(fig_name)
+            #plt.close()
+            #print("saved %s" % fig_name)
+       
+       
+            uvdist_array_unity_m = np.sqrt(common_unity_uvw_sorted[:,0]**2 + common_unity_uvw_sorted[:,1]**2 + common_unity_uvw_sorted[:,2]**2)
+            uvdist_array_unity_lambda = uvdist_array_unity_m / wavelength
+            #we don't want the auto included here
+            uvdist_array_unity_lambda_no_zero = uvdist_array_unity_lambda[uvdist_array_unity_lambda>0.]
+            uvdist_array_unity_inds = uvdist_array_unity_lambda_no_zero.argsort()
+            uvdist_array_unity_lambda_sorted = uvdist_array_unity_lambda_no_zero[uvdist_array_unity_inds]
+      
+            #uvdist_array_unity_lambda_sorted_no_zero = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted>0]
+            #print(uvdist_array_unity_lambda_sorted_no_zero[615:630])
+            uvdist_array_unity_lambda_sorted_cut = uvdist_array_unity_lambda_sorted[uvdist_array_unity_lambda_sorted < uvdist_thresh_lambda]
+              
+            n_baselines_included_unity = len(uvdist_array_unity_lambda_sorted_cut)
+            print("number of baselines included unity %s" % n_baselines_included_unity)
+      
+            #just looking at real,x for now
+            common_unity_data_complex_freq_av_x = common_unity_data_sorted[:,0,0]
+            common_unity_data_complex_freq_av_x_real=common_unity_data_complex_freq_av_x.real
+            
+            #remove the autos
+            common_unity_data_complex_freq_av_x_real_sorted_no_auto = common_unity_data_complex_freq_av_x_real[uvdist_array_unity_lambda>0]
+            common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real_sorted_no_auto[uvdist_array_unity_inds]
+      
+            if EDA2_chan_index==0:
+               fine_chan_index = fine_chan_included+16
+            else:
+               fine_chan_index = fine_chan_included+2
             timestep_data_fine_chan = timestep_data[:,fine_chan_index,:]
             base_name = "%s_timestep_%s_chan_%03d_fine_%02d" % (first_obstime,timestep,EDA2_chan,fine_chan_index)
             common_eda2_data = timestep_data_fine_chan[eda2_ms_indices]
@@ -2930,7 +2942,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             plt.legend(loc=1)
             #plt.text(x_pos, y_pos, fit_string)
             #plt.ylim([0, 3.5])
-            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             plt.close()
@@ -2945,7 +2957,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             plt.legend(loc=1)
             #plt.text(x_pos, y_pos, fit_string)
             #plt.ylim([0, 3.5])
-            fig_name= "unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+            fig_name= "unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             plt.close()
@@ -3133,7 +3145,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       plt.legend(loc=1)
       #plt.text(x_pos, y_pos, fit_string)
       #plt.ylim([0, 3.5])
-      fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       plt.close()
@@ -3148,13 +3160,15 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       plt.legend(loc=1)
       #plt.text(x_pos, y_pos, fit_string)
       #plt.ylim([0, 3.5])
-      fig_name= "unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz,"x")
+      fig_name= "unity_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
       figmap = plt.gcf()
       figmap.savefig(fig_name)
       plt.close()
       print("saved %s" % fig_name)
 
-      if (len(common_eda2_data_complex_freq_av_x_real_sorted_cut)>2 and len(common_unity_data_complex_freq_av_x_real_sorted_cut)>2):
+      #need to guard against having too much flagged data
+      number_non_nan = np.count_nonzero(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut)) 
+      if (number_non_nan>2 and len(common_eda2_data_complex_freq_av_x_real_sorted_cut)>2 and len(common_unity_data_complex_freq_av_x_real_sorted_cut)>2):
          model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut, common_unity_data_complex_freq_av_x_real_sorted_cut,missing='drop')
          results = model.fit()
          parameters = results.params
@@ -3186,7 +3200,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          plt.legend(loc=1)
          #plt.text(x_pos, y_pos, fit_string)
          #plt.ylim([0, 3.5])
-         fig_name= "x_y_OLS_plot_%0.3f_MHz_all_%s_pol.png" % (freq_MHz,"x")
+         fig_name= "x_y_OLS_plot_%0.3f_MHz_all_%s_pol.png" % (freq_MHz_fine_chan,"x")
          figmap = plt.gcf()
          figmap.savefig(fig_name)
          plt.close()
@@ -3198,64 +3212,64 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       t_sky_K_array[EDA2_chan_index] = t_sky_K
       t_sky_error_K_array[EDA2_chan_index] = t_sky_error_K
       
-      ##FLAGGING bit - shouldn't need this anymore now that rfi flagging is being done properly...
-      ##now use the fit to identify outliers probably due to rfi
-      max_deviations = 5
-      common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev = np.nanstd(common_eda2_data_complex_freq_av_x_real_sorted_cut)
-      max_distance_from_model = max_deviations * common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev
-      
-      #need to deal with missing values from fit
-      common_eda2_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut))[:,0]
-      common_eda2_data_complex_freq_av_x_real_sorted_cut_missing = common_eda2_data_complex_freq_av_x_real_sorted_cut[common_eda2_data_complex_freq_av_x_real_sorted_cut_missing_indices]
-      distance_from_model = np.abs(common_eda2_data_complex_freq_av_x_real_sorted_cut_missing - results.fittedvalues)
-      common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged = np.copy(common_eda2_data_complex_freq_av_x_real_sorted_cut_missing)
-      common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
-      print(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged.shape)
-      print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing.shape)
-
-      #common_unity_data_complex_freq_av_x_real_sorted_cut_flagged = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[[distance_from_model < max_distance_from_model]]
-      if (len(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged)>0 and len(common_unity_data_complex_freq_av_x_real_sorted_cut_missing)>0):
-         model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged, common_unity_data_complex_freq_av_x_real_sorted_cut_missing,missing='drop')
-         results = model.fit()
-         parameters = results.params
-         #print parameters
-         #t_sky_jy = parameters[0]
-         #t_sky_error_jy = results.bse[0]
-         #t_sky_K = jy_to_K * t_sky_jy
-         #t_sky_error_K = jy_to_K * t_sky_error_jy
-         t_sky_K_flagged = parameters[0]
-         t_sky_error_K_flagged = results.bse[0]    
+      ###FLAGGING bit - shouldn't need this anymore now that rfi flagging is being done properly...
+      ###now use the fit to identify outliers probably due to rfi
+      #max_deviations = 5
+      #common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev = np.nanstd(common_eda2_data_complex_freq_av_x_real_sorted_cut)
+      #max_distance_from_model = max_deviations * common_eda2_data_complex_freq_av_x_real_sorted_cut_std_dev
+      #
+      ##need to deal with missing values from fit
+      #common_eda2_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut))[:,0]
+      #common_eda2_data_complex_freq_av_x_real_sorted_cut_missing = common_eda2_data_complex_freq_av_x_real_sorted_cut[common_eda2_data_complex_freq_av_x_real_sorted_cut_missing_indices]
+      #distance_from_model = np.abs(common_eda2_data_complex_freq_av_x_real_sorted_cut_missing - results.fittedvalues)
+      #common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged = np.copy(common_eda2_data_complex_freq_av_x_real_sorted_cut_missing)
+      #common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
+      #print(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged.shape)
+      #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing.shape)
+      #
+      ##common_unity_data_complex_freq_av_x_real_sorted_cut_flagged = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[[distance_from_model < max_distance_from_model]]
+      #if (len(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged)>0 and len(common_unity_data_complex_freq_av_x_real_sorted_cut_missing)>0):
+      #   model = sm.OLS(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged, common_unity_data_complex_freq_av_x_real_sorted_cut_missing,missing='drop')
+      #   results = model.fit()
+      #   parameters = results.params
+      #   #print parameters
+      #   #t_sky_jy = parameters[0]
+      #   #t_sky_error_jy = results.bse[0]
+      #   #t_sky_K = jy_to_K * t_sky_jy
+      #   #t_sky_error_K = jy_to_K * t_sky_error_jy
+      #   t_sky_K_flagged = parameters[0]
+      #   t_sky_error_K_flagged = results.bse[0]    
+      #   
+      #   print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+      #   fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+      #   print(fit_string)
+      #   
+      #   plt.clf()
+      #   plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged,linestyle='None',marker='.')
+      #   #deal with the missing values in the fit
+      #   common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged))[:,0]
+      #   #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
+      #   common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
          
-         print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-         fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-         print(fit_string)
          
-         plt.clf()
-         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged,linestyle='None',marker='.')
-         #deal with the missing values in the fit
-         common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_freq_av_x_real_sorted_cut_flagged))[:,0]
-         #print(common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices.shape)
-         common_unity_data_complex_freq_av_x_real_sorted_cut_missing = common_unity_data_complex_freq_av_x_real_sorted_cut_missing[common_unity_data_complex_freq_av_x_real_sorted_cut_missing_indices]
-         
-         
-         plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-         map_title="Data and fit flagged" 
-         plt.xlabel("Expected global-signal response")
-         plt.ylabel("Real component of visibility X pol (Jy)")
-         plt.legend(loc=1)
-         #plt.text(x_pos, y_pos, fit_string)
-         #plt.ylim([0, 3.5])
-         fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_flagged.png" % (freq_MHz,"x",EDA2_obs_time)
-         figmap = plt.gcf()
-         figmap.savefig(fig_name)
-         plt.close()
-         print("saved %s" % fig_name)
-      else:
-         t_sky_K_flagged = np.nan
-         t_sky_error_K_flagged = np.nan 
-         
-      t_sky_K_array_flagged[EDA2_chan_index] = t_sky_K_flagged
-      t_sky_error_K_array_flagged[EDA2_chan_index] = t_sky_error_K_flagged
+      #   plt.plot(common_unity_data_complex_freq_av_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+      #   map_title="Data and fit flagged" 
+      #   plt.xlabel("Expected global-signal response")
+      #   plt.ylabel("Real component of visibility X pol (Jy)")
+      #   plt.legend(loc=1)
+      #   #plt.text(x_pos, y_pos, fit_string)
+      #   #plt.ylim([0, 3.5])
+      #   fig_name= "x_y_OLS_plot_%0.3f_MHz_%s_pol_%s_flagged.png" % (freq_MHz_fine_chan,"x",EDA2_obs_time)
+      #   figmap = plt.gcf()
+      #   figmap.savefig(fig_name)
+      #   plt.close()
+      #   print("saved %s" % fig_name)
+      #else:
+      #   t_sky_K_flagged = np.nan
+      #   t_sky_error_K_flagged = np.nan 
+      #   
+      #t_sky_K_array_flagged[EDA2_chan_index] = t_sky_K_flagged
+      #t_sky_error_K_array_flagged[EDA2_chan_index] = t_sky_error_K_flagged
 
    np.save(t_sky_K_array_filename,t_sky_K_array)     
    np.save(t_sky_error_K_array_filename,t_sky_error_K_array)  
@@ -3635,15 +3649,6 @@ def convert_matlab_to_hdf5(n_ants):
    #         dset_theta = f['Etheta']
    #         print(dset_theta.shape)
 
-def plot_tsky_for_multiple_freqs(lst_hrs_list,freq_MHz_list,baseline_length_thresh_lambda,poly_order,plot_only=False,EDA2_data=True,EDA2_chan_list='None',no_modelling=False,noise_coupling=False):
-   #for plot_expected_rms_noise_eda2 below
-   int_time = 4.*60. #0.28 * 5.
-   bw_Hz = 1000000 #27. * fine_chan_width_Hz
-
-   #pol = pol_list[0]
-   freq_MHz_array = np.asarray(freq_MHz_list)
-   print(freq_MHz_array)
-
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -3693,9 +3698,9 @@ check_figs=False
 #calibrate_with_complex_beam_model(model_ms_name=model_ms_name,eda2_ms_name=eda2_ms_name)
 #######
 #now with time averaging
-plot_cal = True
-run_aoflagger=True
-fine_chan=False
+#plot_cal = True
+#run_aoflagger=True
+#fine_chan=False
 #calibrate_with_complex_beam_model_time_av(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,fine_chan=fine_chan)
 #sys.exit()
 #now need to extract the global signal using the complex beams
@@ -3726,6 +3731,8 @@ sim_unity=True
 sim_pt_source=False
 check_figs=False
 fine_chan=True
+run_aoflagger=True
+plot_cal = True
 #simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
 #input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
@@ -3735,16 +3742,8 @@ fine_chan=True
 #plot_cal = True
 #run_aoflagger=True
 #
-calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
-
-baseline_length_thresh_lambda = 0.5
-poly_order = 7
-plot_only = False
-EDA2_data = True
-no_modelling = False
-noise_coupling = False
-
-#plot_tsky_for_multiple_freqs(lst_hrs_list=lst_hrs_list,freq_MHz_list=freq_MHz_list,baseline_length_thresh_lambda=baseline_length_thresh_lambda,poly_order=poly_order,plot_only=plot_only, EDA2_data=EDA2_data,EDA2_chan_list=EDA2_chan_list,no_modelling=no_modelling,noise_coupling=noise_coupling)
+#calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
+extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 
 
 
