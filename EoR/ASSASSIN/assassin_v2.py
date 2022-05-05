@@ -159,13 +159,15 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    return(normalisation_factor)
    
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False):
+   fine_chans_per_EDA2_chan = 27
    freq_MHz_fine_chan_array_filename = "freq_MHz_fine_chan_array.npy"
    freq_MHz_fine_chan_array_text_filename = "freq_MHz_fine_chan_array.txt"
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
-      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+      #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
       #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
-      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
       np.save(freq_MHz_fine_chan_array_filename,freq_MHz_fine_chan_array)
       print("saved %s" % freq_MHz_fine_chan_array_filename)
       np. savetxt(freq_MHz_fine_chan_array_text_filename,freq_MHz_fine_chan_array,fmt='%3.6f')
@@ -259,11 +261,22 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       if fine_chan:
-         fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
-         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         #fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
+         #fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+         #freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         #if freq_MHz_index==0:
+         #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
          if freq_MHz_index==0:
-            freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
+            fine_chans_per_EDA2_chan = 13
+            fine_chan_start_index = 0
+            fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+         else:
+            fine_chans_per_EDA2_chan = 27
+            fine_chan_start_index = fine_chan_end_index
+            fine_chan_end_index += fine_chans_per_EDA2_chan
+
+         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+
       else:
          freq_MHz_fine_chan_subarray = np.asarray([freq_MHz])
       for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
@@ -1180,6 +1193,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #print(visibilities_shape)
 
 def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False):
+   fine_chans_per_EDA2_chan = 27
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
       n_ants = len(lines) 
@@ -1189,9 +1203,10 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
    
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
-      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
-      #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
-      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+      #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+      #dont use the first 14 fine chans (not including 2 flagged at beginning) because beams havent been made  below 50 MHz and we dont want to extrapolate
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
    else:
       freq_MHz_fine_chan_array = np.asarray(freq_MHz_list)
    
@@ -1206,12 +1221,24 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
       lst_hrs = float(lst_hrs_list[freq_MHz_index])
       lst_deg = lst_hrs * 15.
       
+      #up to here
       if fine_chan:
-         fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
-         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
          if freq_MHz_index==0:
-            freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
+            fine_chans_per_EDA2_chan = 13
+            fine_chan_start_index = 0
+            fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+         else:
+            fine_chans_per_EDA2_chan = 27
+            fine_chan_start_index = fine_chan_end_index
+            fine_chan_end_index += fine_chans_per_EDA2_chan
+   
+         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         #old
+         #fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
+         #fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+         #freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+         #if freq_MHz_index==0:
+         #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
       else:
          freq_MHz_fine_chan_subarray = np.asarray([freq_MHz])
       
@@ -1944,6 +1971,7 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       os.system(cmd)
 
 def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
+   fine_chans_per_EDA2_chan = 27
    model_dir = "/md0/EoR/EDA2/EEPs/freq_interp/"
    if len(sim_only_EDA2)!=0:
       sim_only=True
@@ -1951,21 +1979,38 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
    #coherence = cross12_avg/(np.sqrt(auto11_avg*auto22_avg))
    
    freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
-   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
-   #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
-   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+   #dont use the first 14 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
     
    print("concatenate and flag EDA2 obs before calibration")
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
-      fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
-      fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
-      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+      #fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
+      #fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      #freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
       #print(freq_MHz_fine_chan_array)
       #print(freq_MHz_fine_chan_subarray)
       #need to get this fine cha array thing working - check if they are contiguous
+      #if EDA2_chan_index==0:
+      #   #miss 2 fine chans at start and 3 fine chans at end of each coarse chan so...
+      #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:13]
       if EDA2_chan_index==0:
-         #miss 2 fine chans at start and 3 fine chans at end of each coarse chan so...
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:13]
+         fine_chans_per_EDA2_chan = 13
+         fine_chan_start_index = 0
+         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      else:
+         fine_chans_per_EDA2_chan = 27
+         fine_chan_start_index = fine_chan_end_index
+         fine_chan_end_index += fine_chans_per_EDA2_chan
+
+
+      #fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
+      #fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      #print(fine_chan_start_index)
+      #print(fine_chan_end_index)
+      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+
 
       if len(EDA2_chan_list)==1:
          obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
@@ -2153,7 +2198,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column MODEL_DATA  %s " % (test_image_name+"_model",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
       #print(cmd)
       #os.system(cmd)
-
+      
       #try cal with default (-ch 1) and -ch 32 for more SNR         
       #try calibrate?
       gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d.bin' % EDA2_chan
@@ -2178,8 +2223,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
       print(cmd)
       os.system(cmd)     
-        
-
+    
 
 #am I always using the first obstime model to calibrate? check??         
 def calibrate_with_complex_beam_model_time_av(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
@@ -2641,6 +2685,7 @@ def old_calibrate():
    
 
 def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,n_fine_chans_included=27,unity_vis_dir="/md0/EoR/EDA2/EEPs/freq_interp/"):
+   fine_chans_per_EDA2_chan = 27
    #max umber of timesteps is set to eight 
    max_n_timesteps = 8
    n_fine_chans = int(n_fine_chans_included*len(EDA2_chan_list))
@@ -2678,16 +2723,34 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    #number_of_good_obs_list = number_of_good_obs_list_string.split(',')
 
    freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
-   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 
+   #because we skip 2 fine chans at the beginning (need to update all other functions)
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
    #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
-   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[16:]
-       
+   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
+   
+   #print(freq_MHz_fine_chan_index_array)
+   #print(freq_MHz_fine_chan_index_array.shape)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
+   
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
       freq_MHz = 400./512.*float(EDA2_chan)
+      if EDA2_chan_index==0:
+         fine_chans_per_EDA2_chan = 13
+         fine_chan_start_index = 0
+         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      else:
+         fine_chans_per_EDA2_chan = 27
+         fine_chan_start_index = fine_chan_end_index
+         fine_chan_end_index += fine_chans_per_EDA2_chan
 
-      fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
-      fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
       freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+      
+      print("what's going on here")
+      print(freq_MHz_fine_chan_subarray.shape)
       
       lst = lst_list[EDA2_chan_index]
       lst_deg = (float(lst)/24)*360.
@@ -3273,12 +3336,12 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
 
    np.save(t_sky_K_array_filename,t_sky_K_array)     
    np.save(t_sky_error_K_array_filename,t_sky_error_K_array)  
-   np.save(t_sky_K_array_filename_flagged,t_sky_K_array_flagged)     
-   np.save(t_sky_error_K_array_filename_flagged,t_sky_error_K_array_flagged) 
+   #np.save(t_sky_K_array_filename_flagged,t_sky_K_array_flagged)     
+   #np.save(t_sky_error_K_array_filename_flagged,t_sky_error_K_array_flagged) 
    print("saved %s" % t_sky_K_array_filename)
    print("saved %s" % t_sky_error_K_array_filename)
-   print("saved %s" % t_sky_K_array_filename_flagged)
-   print("saved %s" % t_sky_error_K_array_filename_flagged)
+   #print("saved %s" % t_sky_K_array_filename_flagged)
+   #print("saved %s" % t_sky_error_K_array_filename_flagged)
    
    np.save(t_sky_K_array_filename_fine_chan,t_sky_K_array_fine_chan)     
    np.save(t_sky_error_K_array_filename_fine_chan,t_sky_error_K_array_fine_chan)  
@@ -3295,11 +3358,7 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    base_name = t_sky_K_array_filename.split(".npy")[0]
    t_sky_K_array = np.load(t_sky_K_array_filename)
    t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
-   
-   #print(freq_MHz_list)
-   #print(t_sky_K_array)
-   #print(t_sky_error_K_array)
-   
+      
    plt.clf()
    plt.errorbar(freq_MHz_list,t_sky_K_array,yerr=t_sky_error_K_array)
    map_title="Global Tsky" 
@@ -3353,22 +3412,29 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
 
 def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename,poly_order=5,fine_chans_per_EDA2_chan=27):
    freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
-   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_array[0:14]
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+   freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
+   
    base_name = t_sky_K_array_filename.split(".npy")[0]
    t_sky_K_array = np.load(t_sky_K_array_filename)
    t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
    print(t_sky_K_array.shape)
    print(t_sky_error_K_array.shape)
-   base_name = t_sky_K_array_filename.split(".npy")[0]
-   t_sky_K_array = np.load(t_sky_K_array_filename)
-   t_sky_error_K_array = np.load(t_sky_error_K_array_filename)
+   print(freq_MHz_fine_chan_array.shape)
+
+   print(t_sky_K_array)
+   print(t_sky_error_K_array)
+   print(freq_MHz_fine_chan_array)
    
-   #print(freq_MHz_list)
-   #print(t_sky_K_array)
-   #print(t_sky_error_K_array)
+   t_sky_K_array_timestep_0 = t_sky_K_array[:,:,0]
+   t_sky_error_K_array_timestep_0 = t_sky_error_K_array[:,:,0]
+   t_sky_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_K_array_timestep_0)
+   t_sky_error_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_error_K_array_timestep_0)
    
    plt.clf()
-   plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array,yerr=t_sky_error_K_array)
+   plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
    map_title="Global Tsky" 
    plt.xlabel("Frequency (MHz)")
    plt.ylabel("EDA2 global Tsky (K)")
@@ -3382,14 +3448,14 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filenam
    print("saved %s" % fig_name)
       
    #log fit and subtract
-   log_sky_array = np.log10(t_sky_K_array)
+   log_sky_array = np.log10(t_sky_K_array_timestep_0_flatten)
    log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
    coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
    ffit = poly.polyval(log_freq_MHz_array, coefs)
    ffit_linear = 10**ffit
    
    #log_residual = log_signal_array_short_baselines - log_ffit
-   residual_of_log_fit = ffit_linear - t_sky_K_array
+   residual_of_log_fit = ffit_linear - t_sky_K_array_timestep_0_flatten
    
    rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
    print("rms_of_residuals is %0.3f K" % rms_of_residuals)
@@ -3678,10 +3744,10 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
 chan_num = 0
-freq_MHz_list = freq_MHz_list[0:3]
-lst_hrs_list = lst_hrs_list[0:3]
-EDA2_obs_time_list = EDA2_obs_time_list[0:3]
-EDA2_chan_list = EDA2_chan_list[0:3]
+freq_MHz_list = freq_MHz_list[0:1]
+lst_hrs_list = lst_hrs_list[0:1]
+EDA2_obs_time_list = EDA2_obs_time_list[0:1]
+EDA2_chan_list = EDA2_chan_list[0:1]
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3733,18 +3799,42 @@ check_figs=False
 fine_chan=True
 run_aoflagger=True
 plot_cal = True
+#do in /md0/EoR/EDA2/EEPs/freq_interp
 #simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
-#input_sky = "gsm"   #zenith_point_source  #unity
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-#input_sky = "unity"
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+input_sky = "gsm"   #zenith_point_source  #unity
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+input_sky = "unity"
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+sys.exit()
+#The cd to /md0/EoR/EDA2/20200303_data
 #######
-#plot_cal = True
-#run_aoflagger=True
-#
+plot_cal = True
+run_aoflagger=False
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
-extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 
+#up to here: need to get the indexing right for extract_global_signal_from_ms_complex and make compatible with plot_t_sky_and_fit_foregrounds_fine_chan
+
+#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
+#sys.exit()
+
+#So, what I appear to have done in extract_global_signal_from_ms_complex is to:
+#1. extract the signal for each timestep and fine chan separately 
+#2. average in time and coarse chan and extract signal
+#3. What I (think) I want is average in time only and extract signal per fine chan! 
+#But first need to get all the frequency arrays and stuff consistent - using half the first ms is a spanner in the works!
+
+#t_sky_K_array_filename = "t_sky_K_array_eda2.npy"
+#t_sky_error_K_array_filename = "t_sky_error_K_array_eda2.npy"
+#plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
+#t_sky_K_array_filename = "t_sky_K_array_eda2_flagged.npy"
+#t_sky_error_K_array_filename = "t_sky_error_K_array_eda2_flagged.npy"
+#plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
+t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
+t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
+plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+#plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+#t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
+#t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"
 
 
 
