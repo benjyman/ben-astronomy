@@ -2220,9 +2220,9 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       os.system(cmd)
       
       #test image the CORRECTED data'
-      cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
-      print(cmd)
-      os.system(cmd)     
+      #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
+      #print(cmd)
+      #os.system(cmd)     
     
 
 #am I always using the first obstime model to calibrate? check??         
@@ -2684,11 +2684,10 @@ def old_calibrate():
       #         sum_ms_table.close()
    
 
-def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,n_fine_chans_included=27,unity_vis_dir="/md0/EoR/EDA2/EEPs/freq_interp/"):
+def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,unity_vis_dir="/md0/EoR/EDA2/EEPs/freq_interp/"):
    fine_chans_per_EDA2_chan = 27
    #max umber of timesteps is set to eight 
    max_n_timesteps = 8
-   n_fine_chans = int(n_fine_chans_included*len(EDA2_chan_list))
    t_sky_K_array = np.zeros(len(EDA2_chan_list))
    t_sky_error_K_array = np.zeros(len(EDA2_chan_list))
    t_sky_K_array_flagged = np.zeros(len(EDA2_chan_list))
@@ -2699,10 +2698,10 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    t_sky_K_array_filename_flagged = "t_sky_K_array_eda2_flagged.npy"
    t_sky_error_K_array_filename_flagged = "t_sky_error_K_array_eda2_flagged.npy"   
    
-   t_sky_K_array_fine_chan = np.empty([len(EDA2_chan_list),n_fine_chans_included,max_n_timesteps])
-   t_sky_error_K_array_fine_chan = np.empty([len(EDA2_chan_list),n_fine_chans_included,max_n_timesteps])
-   t_sky_K_array_flagged_fine_chan = np.empty([len(EDA2_chan_list),n_fine_chans_included,max_n_timesteps])
-   t_sky_error_K_array_flagged_fine_chan = np.empty([len(EDA2_chan_list),n_fine_chans_included,max_n_timesteps])
+   t_sky_K_array_fine_chan = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
+   t_sky_error_K_array_fine_chan = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
+   t_sky_K_array_flagged_fine_chan = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
+   t_sky_error_K_array_flagged_fine_chan = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
    t_sky_K_array_fine_chan[:] = np.nan
    t_sky_error_K_array_fine_chan[:] = np.nan
    t_sky_K_array_flagged_fine_chan[:] = np.nan
@@ -2713,7 +2712,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    t_sky_K_array_filename_flagged_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
    t_sky_error_K_array_filename_flagged_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"   
    
-   eda2_chan_fine_chan_timestep_array = np.empty([len(EDA2_chan_list),n_fine_chans_included,max_n_timesteps])
+   eda2_chan_fine_chan_timestep_array = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
    eda2_chan_fine_chan_timestep_array[:,:,:] = np.nan
    eda2_chan_fine_chan_timestep_array_fileame = "eda2_chan_fine_chan_timestep_array.npy"
 
@@ -2810,7 +2809,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          end_index += n_baselines_eda2
          if EDA2_chan_index==0:
             n_fine_chans_included = 13
-         for fine_chan_included in range(n_fine_chans_included):
+         for fine_chan_included in range(fine_chans_per_EDA2_chan):
             
             print(fine_chan_included)
             freq_MHz_fine_chan = freq_MHz_fine_chan_subarray[fine_chan_included]
@@ -3068,6 +3067,8 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                t_sky_error_K = np.nan
             
             #save to arrays
+            if EDA2_chan_index==0:
+               fine_chan_included += 14
             t_sky_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K
             t_sky_error_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_error_K
             
@@ -3161,6 +3162,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       #but I think this is fine now? maybe because I am adding autos in the sims, not sure whats going on with 255
       
       #freq av and only use real for now, be sure to use nanmean so you dont make everything a nan.
+
       start_fine_chan = 2
       end_fine_chan = n_fine_chans_included+2
       common_eda2_data_complex_freq_av = np.nanmean(common_eda2_data_sorted[:,start_fine_chan:end_fine_chan,:],axis=1)
@@ -3424,14 +3426,21 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filenam
    print(t_sky_error_K_array.shape)
    print(freq_MHz_fine_chan_array.shape)
 
-   print(t_sky_K_array)
-   print(t_sky_error_K_array)
-   print(freq_MHz_fine_chan_array)
-   
+   #print(t_sky_K_array)
+   #print(t_sky_error_K_array)
+   #print(freq_MHz_fine_chan_array)
+
+
    t_sky_K_array_timestep_0 = t_sky_K_array[:,:,0]
    t_sky_error_K_array_timestep_0 = t_sky_error_K_array[:,:,0]
    t_sky_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_K_array_timestep_0)
    t_sky_error_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_error_K_array_timestep_0)
+   t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[14:]
+   t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[14:]
+   
+   print(t_sky_K_array_timestep_0_flatten.shape)
+   print(t_sky_error_K_array_timestep_0_flatten.shape)
+   print(freq_MHz_fine_chan_array.shape)
    
    plt.clf()
    plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
@@ -3743,11 +3752,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
 #sys.exit()  
       
 ##unity only sim takes 2 min with nside 32, 6 mins with nside 64, similar 
-chan_num = 0
-freq_MHz_list = freq_MHz_list[0:1]
-lst_hrs_list = lst_hrs_list[0:1]
-EDA2_obs_time_list = EDA2_obs_time_list[0:1]
-EDA2_chan_list = EDA2_chan_list[0:1]
+
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3792,6 +3797,12 @@ check_figs=False
 #plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
 
 #fine chan
+chan_num = 0
+freq_MHz_list = freq_MHz_list[0:3]
+lst_hrs_list = lst_hrs_list[0:3]
+EDA2_obs_time_list = EDA2_obs_time_list[0:3]
+EDA2_chan_list = EDA2_chan_list[0:3]
+
 plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
@@ -3800,22 +3811,21 @@ fine_chan=True
 run_aoflagger=True
 plot_cal = True
 #do in /md0/EoR/EDA2/EEPs/freq_interp
-#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
 input_sky = "gsm"   #zenith_point_source  #unity
 write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
 input_sky = "unity"
 write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
 sys.exit()
+
+
 #The cd to /md0/EoR/EDA2/20200303_data
 #######
 plot_cal = True
-run_aoflagger=False
+run_aoflagger=True
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
-
-#up to here: need to get the indexing right for extract_global_signal_from_ms_complex and make compatible with plot_t_sky_and_fit_foregrounds_fine_chan
-
 #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
-#sys.exit()
+
 
 #So, what I appear to have done in extract_global_signal_from_ms_complex is to:
 #1. extract the signal for each timestep and fine chan separately 
