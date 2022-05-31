@@ -49,27 +49,46 @@ mwa_longitude_rad = float(mwa_longitude_deg/180.*np.pi)
 mwa_latitude_astropy = '-26.7d'
 mwa_longitude_astropy = '116.67d'
 
-EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
-EDA2_chan_list = range(64,127)  #20200303:
 
-def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list):
+
+def make_EDA2_obs_time_list_each_chan(base_dir,eda2_chan_list,ms=False):
    obs_time_list_each_chan = []
-   temp_txt_filename = 'uvfits_time_list.txt'
-   for eda2_chan in eda2_chan_list:
-      chan_obs_time_list = []
-      chan_dir = "%s%s/" % (base_dir,eda2_chan)
-      cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
-      os.system(cmd)
-      with open(temp_txt_filename) as f:
-         lines=f.readlines()
-      for line in lines[1:-1]:
-         obs_time = line.split('.uvfits')[0].split()[-1].split('_')[-1]
-         chan_obs_time_list.append(obs_time)
-      #there might be no obs, if so just put in a zero
-      if len(chan_obs_time_list)!=0:
-         obs_time_list_each_chan.append(chan_obs_time_list)
-      else:
-         obs_time_list_each_chan.append([0])
+   if ms==False:
+      temp_txt_filename = 'uvfits_time_list.txt'
+      for eda2_chan in eda2_chan_list:
+         chan_obs_time_list = []
+         chan_dir = "%s%s/" % (base_dir,eda2_chan)
+         cmd = "ls -la %schan_%s_*.uvfits  > %s" % (chan_dir,eda2_chan,temp_txt_filename)
+         os.system(cmd)
+         with open(temp_txt_filename) as f:
+            lines=f.readlines()
+         for line in lines[1:-1]:
+            obs_time = line.split('.uvfits')[0].split()[-1].split('_')[-1]
+            chan_obs_time_list.append(obs_time)
+         #there might be no obs, if so just put in a zero
+         if len(chan_obs_time_list)!=0:
+            obs_time_list_each_chan.append(chan_obs_time_list)
+         else:
+            obs_time_list_each_chan.append([0])
+   else:
+      temp_txt_filename = 'ms_time_list.txt'
+      for eda2_chan in eda2_chan_list:
+         chan_obs_time_list = []
+         chan_dir = "%s%s/" % (base_dir,eda2_chan)
+         cmd = "ls %s*.ms | grep '.ms' > %s" % (chan_dir,temp_txt_filename)
+         os.system(cmd)
+         with open(temp_txt_filename) as f:
+            lines=f.readlines()
+         for line in lines[1:-1]:
+            obs_time = line.split('.ms')[0].split()[-1].split('_')[-6]
+            obs_date = line.split('.ms')[0].split()[-1].split('_')[-7].split('/')[-1]
+            obs_date_time = "%sT%s" % (obs_date,obs_time)
+            chan_obs_time_list.append(obs_date_time)
+         #there might be no obs, if so just put in a zero
+         if len(chan_obs_time_list)!=0:
+            obs_time_list_each_chan.append(chan_obs_time_list)
+         else:
+            obs_time_list_each_chan.append([0])
    return obs_time_list_each_chan
    
 def get_eda2_lst(eda_time_string):
@@ -159,13 +178,22 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    return(normalisation_factor)
    
 def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False):
+   base_freq_MHz = freq_MHz_list[0]
+   
+   #make a directory for the sims
+   cmd = "rm -rf sims; mkdir sims"
+   print(cmd)
+   os.system(cmd)
+   
+   os.chdir('sims')
+   
    fine_chans_per_EDA2_chan = 27
    freq_MHz_fine_chan_array_filename = "freq_MHz_fine_chan_array.npy"
    freq_MHz_fine_chan_array_text_filename = "freq_MHz_fine_chan_array.txt"
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
       #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
-      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz)
       #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
       freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
       np.save(freq_MHz_fine_chan_array_filename,freq_MHz_fine_chan_array)
@@ -1191,7 +1219,8 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #visibilities_shape = visibilities.shape
                   #print("visibilities_shape")
                   #print(visibilities_shape)
-
+   os.chdir('sims')
+   
 def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False):
    fine_chans_per_EDA2_chan = 27
    with open(antenna_layout_filename) as f:
@@ -2136,16 +2165,48 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             #print(new_common_model_data_sorted_squeeze.shape)
             new_common_model_data_sorted_tile[0:common_baselines,freq_MHz_fine_chan_index+2,:] = new_common_model_data_sorted_squeeze
 
+         #What if you flip and roll the data instead of the model?
+         #eda2_data_flip = np.flip(eda2_data,axis=1)
+         #since we flag 2 at start and 3 at end need to roll the array (need to roll it more for first EDA2 chan since first 16 chans flagged)
+         #if EDA2_chan_index==0:
+         #   eda2_data_flip_roll = np.roll(eda2_data_flip,13,axis=1)
+         #else:
+         #   eda2_data_flip_roll = np.roll(eda2_data_flip,-1,axis=1)
+         #put_col(eda2_ms_table, "DATA", eda2_data_flip_roll)
 
+       
+         ###To reverse the flip and roll do the opposite
+         #if EDA2_chan_index==0:
+            #eda2_data_roll = np.roll(eda2_data,-13,axis=1)
+            #eda2_data_roll = np.roll(eda2_data,-1,axis=1)
+         #else:
+         #   eda2_data_roll = np.roll(eda2_data,1,axis=1)
+         #eda2_data_roll_flip = np.flip(eda2_data_roll,axis=1)
+         #put_col(eda2_ms_table, "DATA", eda2_data_roll)
+         
+         #Think I need to roll the data col 1 across just for first coarse chan...
+    
+         #print(new_common_model_data_sorted_tile_flip_roll[0,:,0])
+         #try flipping the direction of the model col in freq
+         new_common_model_data_sorted_tile_flip = np.flip(new_common_model_data_sorted_tile,axis=1)
+         #since we flag 2 at start and 3 at end need to roll the array (need to roll it more for first EDA2 chan since first 16 chans flagged)
+         if EDA2_chan_index==0:
+            new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,13,axis=1)
+         else:
+            new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,-1,axis=1)
+         #print(new_common_model_data_sorted_tile[0,:,0])
+         #print(new_common_model_data_sorted_tile_flip[0,:,0])
+         #print(new_common_model_data_sorted_tile_flip_roll[0,:,0])
+         
+         
          try:
             add_col(eda2_ms_table, "MODEL_DATA")
          except:
             pass
-         put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+         put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile_flip_roll)
+         ##put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
          eda2_ms_table.close()  
       
-
-        
       #concat (mainly to allow/improve RFI flagging with AOflagger)
       #This does not average the data
 
@@ -2199,18 +2260,31 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       #print(cmd)
       #os.system(cmd)
       
-      #try cal with default (-ch 1) and -ch 32 for more SNR         
-      #try calibrate?
-      gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d.bin' % EDA2_chan
+      ##try cal with default (-ch 1) and -ch 32 for more SNR         
+      ##try calibrate?
+      #gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d_ch32.bin' % EDA2_chan
+      #calibrate_options = ''
+      #cmd = "rm -rf %s" % (gain_solutions_name)
+      #print(cmd)
+      #os.system(cmd)  
+      ##calibrate
+      #cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,concat_ms_name,gain_solutions_name)
+      #print(cmd)
+      #os.system(cmd)
+      ##plot cal sols
+      
+      gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d_ch1.bin' % EDA2_chan
       calibrate_options = ''
       cmd = "rm -rf %s" % (gain_solutions_name)
       print(cmd)
       os.system(cmd)  
       #calibrate
-      cmd = "calibrate -ch 32 %s %s %s " % (calibrate_options,concat_ms_name,gain_solutions_name)
+      cmd = "calibrate -ch 1 %s %s %s " % (calibrate_options,concat_ms_name,gain_solutions_name)
       print(cmd)
       os.system(cmd)
       #plot cal sols
+      
+      
       cmd = "aocal_plot.py %s  " % (gain_solutions_name)
       print(cmd)
       os.system(cmd)
@@ -2747,7 +2821,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          fine_chan_end_index += fine_chans_per_EDA2_chan
 
       freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
-      
+          
       print("what's going on here")
       print(freq_MHz_fine_chan_subarray.shape)
       
@@ -3128,7 +3202,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             t_sky_K_array_flagged_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K_flagged
             t_sky_error_K_array_flagged_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_error_K_flagged
       
-   
+
       ###
 
       #average the eda2 timesteps - 
@@ -3724,6 +3798,13 @@ def convert_matlab_to_hdf5(n_ants):
    #         dset_theta = f['Etheta']
    #         print(dset_theta.shape)
 
+
+EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
+#EDA2_chan_list = range(64,127)  #20200303:
+#i have corrupted the first 3 chans - waiting for Marcin to get the originals for me
+EDA2_chan_list = range(67,127)
+
+
 #times
 EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
@@ -3736,6 +3817,10 @@ freq_MHz_array = 400./512.*EDA2_chan_list_array
 freq_MHz_list = freq_MHz_array[0:]
 EDA2_chan_list = EDA2_chan_list[0:]
 
+#print(EDA2_obs_time_list)
+#sys.exit()
+
+
 #LSTs
 lst_hrs_list = []
 for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
@@ -3747,7 +3832,9 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
    else:
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       lst_hrs_list.append(lst_eda2_hrs)
-      
+
+
+ 
 #convert_matlab_to_hdf5(256)  
 #sys.exit()  
       
@@ -3757,7 +3844,8 @@ plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
 check_figs=False
-#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
+sys.exit()
 #input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
 #input_sky = "unity"
@@ -3810,19 +3898,19 @@ check_figs=False
 fine_chan=True
 run_aoflagger=True
 plot_cal = True
-#do in /md0/EoR/EDA2/EEPs/freq_interp
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
-input_sky = "gsm"   #zenith_point_source  #unity
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-input_sky = "unity"
-write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-sys.exit()
+#do in /md0/EoR/EDA2/EEPs/freq_interp ? #better to do everything in the data dir
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+#input_sky = "gsm"   #zenith_point_source  #unity
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+#input_sky = "unity"
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+#sys.exit()
 
 
 #The cd to /md0/EoR/EDA2/20200303_data
 #######
 plot_cal = True
-run_aoflagger=True
+run_aoflagger=False
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
 #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
 
@@ -3839,15 +3927,52 @@ run_aoflagger=True
 #t_sky_K_array_filename = "t_sky_K_array_eda2_flagged.npy"
 #t_sky_error_K_array_filename = "t_sky_error_K_array_eda2_flagged.npy"
 #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
-t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
-t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
-plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+#t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
+#t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
+#plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
 #plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
 #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
 #t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"
 
 
+###Start to work on new 1-channel sweep data
+#always need to sort out times, chans/freqs, lsts for each new dataset
 
+
+EDA2_chan_list = [142]  #20210813
+EDA2_data_dir = '/md0/EoR/EDA2/20210813/'
+
+#times
+EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list,ms=True)
+EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
+#for a single frequency drift scan we want to simulate and calibrate each lst separately, so comment this out
+#EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan] 
+EDA2_obs_time_list = EDA2_obs_time_list_each_chan[0]
+
+
+
+#chans
+EDA2_chan_list_array = np.asarray(EDA2_chan_list)
+freq_MHz_array = 400./512.*EDA2_chan_list_array
+freq_MHz_list = freq_MHz_array[0:]
+EDA2_chan_list = EDA2_chan_list[0:]
+
+#LSTs
+lst_hrs_list = []
+for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
+   #there might have been no obs:
+   if EDA2_obs_time!=0:
+      #print(EDA2_obs_time)
+      lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time)
+      lst_hrs_list.append(lst_eda2_hrs)
+   else:
+      lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
+      lst_hrs_list.append(lst_eda2_hrs)
+
+
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+#chan num is the index of the EDA2 chan in the full list of chans from 64 to 127 (so 64 would be zero)
+#only need to set if EDA2_cah_lin length is 1 ?
 
 
 
