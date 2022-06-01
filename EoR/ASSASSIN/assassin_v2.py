@@ -177,7 +177,9 @@ def calc_beam_normalisation(freq_MHz,LNA_impedance):
    normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
    return(normalisation_factor)
    
-def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False):
+def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time_list=[],sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=False,base_freq_index_offset=0):
+   #seems that for each coarse chan you offset from the base of 50 MHz you end up having to subtract 5 Hz from the fine chan freq - I don't know why, going
+   #to have to just hard code it for now. 
    base_freq_MHz = freq_MHz_list[0]
    
    #make a directory for the sims
@@ -193,7 +195,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
       #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
-      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz)
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
       #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
       freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
       np.save(freq_MHz_fine_chan_array_filename,freq_MHz_fine_chan_array)
@@ -1219,9 +1221,10 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #visibilities_shape = visibilities.shape
                   #print("visibilities_shape")
                   #print(visibilities_shape)
-   os.chdir('sims')
+   os.chdir('..')
    
 def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False):
+   os.chdir('sims')
    fine_chans_per_EDA2_chan = 27
    with open(antenna_layout_filename) as f:
       lines = f.readlines()
@@ -1800,7 +1803,8 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
       
             #took this from: https://stackoverflow.com/questions/16216078/test-for-membership-in-a-2d-numpy-array
       
-      
+   os.chdir('..') 
+     
 def asvoid(arr):
     """
     Based on http://stackoverflow.com/a/16973510/190597 (Jaime, 2013-06)
@@ -3802,7 +3806,8 @@ def convert_matlab_to_hdf5(n_ants):
 EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
 #EDA2_chan_list = range(64,127)  #20200303:
 #i have corrupted the first 3 chans - waiting for Marcin to get the originals for me
-EDA2_chan_list = range(67,127)
+base_freq_index_offset = 3
+EDA2_chan_list = range(64+base_freq_index_offset,127)
 
 
 #times
@@ -3844,12 +3849,13 @@ plot_from_saved = False
 sim_unity=True
 sim_pt_source=False
 check_figs=False
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
-sys.exit()
+#COARSE CHAN ONLY!
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs)
 #input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
 #input_sky = "unity"
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs)
+
 #######
 #just for initial testing of calibration
 #model_ms_name= "20200303T133733_50.000.ms"
@@ -3898,16 +3904,14 @@ check_figs=False
 fine_chan=True
 run_aoflagger=True
 plot_cal = True
-#do in /md0/EoR/EDA2/EEPs/freq_interp ? #better to do everything in the data dir
-#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+sys.exit()
 #input_sky = "gsm"   #zenith_point_source  #unity
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
 #input_sky = "unity"
 #write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-#sys.exit()
 
 
-#The cd to /md0/EoR/EDA2/20200303_data
 #######
 plot_cal = True
 run_aoflagger=False
