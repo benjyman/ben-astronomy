@@ -1223,7 +1223,11 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
                   #print(visibilities_shape)
    os.chdir('..')
    
-def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False):
+def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',input_sky="gsm",check_figs=False,fine_chan=False,base_freq_index_offset=0):
+   #seems that for each coarse chan you offset from the base of 50 MHz you end up having to subtract 5 Hz from the fine chan freq - I don't know why, going
+   #to have to just hard code it for now. 
+   base_freq_MHz = freq_MHz_list[0]
+      
    os.chdir('sims')
    fine_chans_per_EDA2_chan = 27
    with open(antenna_layout_filename) as f:
@@ -1236,7 +1240,7 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
    if fine_chan:
       freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
       #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + freq_MHz_list[0] - 0.46296
-      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+      freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
       #dont use the first 14 fine chans (not including 2 flagged at beginning) because beams havent been made  below 50 MHz and we dont want to extrapolate
       freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
    else:
@@ -2003,9 +2007,12 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(cmd)
       os.system(cmd)
 
-def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis'):
+def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis',base_freq_index_offset=0,model_dir = "sims/"):
+   #seems that for each coarse chan you offset from the base of 50 MHz you end up having to subtract 5 Hz from the fine chan freq - I don't know why, going
+   #to have to just hard code it for now. 
+   base_freq_MHz = EDA2_chan_list[0] * (400./512.)
+   
    fine_chans_per_EDA2_chan = 27
-   model_dir = "/md0/EoR/EDA2/EEPs/freq_interp/"
    if len(sim_only_EDA2)!=0:
       sim_only=True
    #think about how to use coherence:
@@ -2013,7 +2020,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
    
    freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
    #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296
-   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
    #dont use the first 14 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
    freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
     
@@ -2028,7 +2035,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       #if EDA2_chan_index==0:
       #   #miss 2 fine chans at start and 3 fine chans at end of each coarse chan so...
       #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:13]
-      if EDA2_chan_index==0:
+      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
          fine_chans_per_EDA2_chan = 13
          fine_chan_start_index = 0
          fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
@@ -2070,7 +2077,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          new_common_model_data_sorted_tile = np.empty([all_baselines,32,4],dtype=complex)       
                 
          for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
-            if EDA2_chan_index==0:
+            if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
                freq_MHz_fine_chan_index+=14
             #print(freq_MHz_fine_chan_subarray.shape)
             #print(freq_MHz_fine_chan_subarray)
@@ -2194,7 +2201,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          #try flipping the direction of the model col in freq
          new_common_model_data_sorted_tile_flip = np.flip(new_common_model_data_sorted_tile,axis=1)
          #since we flag 2 at start and 3 at end need to roll the array (need to roll it more for first EDA2 chan since first 16 chans flagged)
-         if EDA2_chan_index==0:
+         if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
             new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,13,axis=1)
          else:
             new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,-1,axis=1)
@@ -2249,7 +2256,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
       print(cmd)
       os.system(cmd)
       
-      if EDA2_chan_index==0:
+      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
          cmd = "flagsubbands %s 32 2 3 4 5 6 7 8 9 10 11 12 13 14 15" % (concat_ms_name) #flag the first 16 chans as well as edge ones
          print(cmd)
          os.system(cmd)            
@@ -2762,7 +2769,9 @@ def old_calibrate():
       #         sum_ms_table.close()
    
 
-def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,unity_vis_dir="/md0/EoR/EDA2/EEPs/freq_interp/"):
+def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,unity_vis_dir="sims/",base_freq_index_offset=0):
+   base_freq_MHz = EDA2_chan_list[0] * (400./512.)
+   
    fine_chans_per_EDA2_chan = 27
    #max umber of timesteps is set to eight 
    max_n_timesteps = 8
@@ -2802,7 +2811,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
    #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 
    #because we skip 2 fine chans at the beginning (need to update all other functions)
-   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 + (2.*fine_chan_width_MHz)
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
    #print(freq_MHz_fine_chan_array)
    #print(freq_MHz_fine_chan_array.shape)
    #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
@@ -2815,7 +2824,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
       freq_MHz = 400./512.*float(EDA2_chan)
-      if EDA2_chan_index==0:
+      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
          fine_chans_per_EDA2_chan = 13
          fine_chan_start_index = 0
          fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
@@ -2885,7 +2894,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
          timestep_data = eda2_data_complex[start_index:end_index,:,:]
          start_index += n_baselines_eda2
          end_index += n_baselines_eda2
-         if EDA2_chan_index==0:
+         if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
             n_fine_chans_included = 13
          for fine_chan_included in range(fine_chans_per_EDA2_chan):
             
@@ -3029,7 +3038,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             common_unity_data_complex_freq_av_x_real_sorted_no_auto = common_unity_data_complex_freq_av_x_real[uvdist_array_unity_lambda>0]
             common_unity_data_complex_freq_av_x_real_sorted = common_unity_data_complex_freq_av_x_real_sorted_no_auto[uvdist_array_unity_inds]
       
-            if EDA2_chan_index==0:
+            if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
                fine_chan_index = fine_chan_included+16
             else:
                fine_chan_index = fine_chan_included+2
@@ -3145,7 +3154,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                t_sky_error_K = np.nan
             
             #save to arrays
-            if EDA2_chan_index==0:
+            if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
                fine_chan_included += 14
             t_sky_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K
             t_sky_error_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_error_K
@@ -3904,20 +3913,20 @@ check_figs=False
 fine_chan=True
 run_aoflagger=True
 plot_cal = True
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
-sys.exit()
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
 #input_sky = "gsm"   #zenith_point_source  #unity
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
 #input_sky = "unity"
-#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan)
-
+#write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+#sys.exit()
 
 #######
+#next1:
 plot_cal = True
 run_aoflagger=False
-#calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger)
-#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list)
-
+#calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset)
+#extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset)
+#sys.exit()
 
 #So, what I appear to have done in extract_global_signal_from_ms_complex is to:
 #1. extract the signal for each timestep and fine chan separately 
@@ -3931,19 +3940,23 @@ run_aoflagger=False
 #t_sky_K_array_filename = "t_sky_K_array_eda2_flagged.npy"
 #t_sky_error_K_array_filename = "t_sky_error_K_array_eda2_flagged.npy"
 #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
+
+#next2:
 #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan.npy"
 #t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan.npy"
 #plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
+
 #plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
 #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
 #t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan.npy"
-
+#sys.exit()
 
 ###Start to work on new 1-channel sweep data
 #always need to sort out times, chans/freqs, lsts for each new dataset
 
 
 EDA2_chan_list = [142]  #20210813
+base_freq_index_offset = 1 
 EDA2_data_dir = '/md0/EoR/EDA2/20210813/'
 
 #times
@@ -3973,8 +3986,12 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       lst_hrs_list.append(lst_eda2_hrs)
 
-
-simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan)
+#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+input_sky = "gsm"   #zenith_point_source  #unity
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+input_sky = "unity"
+write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+sys.exit()
 #chan num is the index of the EDA2 chan in the full list of chans from 64 to 127 (so 64 would be zero)
 #only need to set if EDA2_cah_lin length is 1 ?
 
