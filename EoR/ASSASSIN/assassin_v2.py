@@ -288,7 +288,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
    vv_array = np.empty(n_baselines_test)
    ww_array = np.empty(n_baselines_test)
    baseline_number_array = np.empty(n_baselines_test)
-         
+   fine_chan_end_index = 0      
    for freq_MHz_index,freq_MHz in enumerate(freq_MHz_list):
       if fine_chan:
          #fine_chan_start_index = int(freq_MHz_index*fine_chans_per_EDA2_chan)
@@ -296,7 +296,7 @@ def simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs,nside=512,antenna_lay
          #freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
          #if freq_MHz_index==0:
          #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
-         if freq_MHz_index==0:
+         if (freq_MHz_index==0 and math.isclose(base_freq_MHz,50.0)):
             fine_chans_per_EDA2_chan = 13
             fine_chan_start_index = 0
             fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
@@ -1257,9 +1257,11 @@ def write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list,antenna_la
       lst_hrs = float(lst_hrs_list[freq_MHz_index])
       lst_deg = lst_hrs * 15.
       
+      fine_chan_end_index = 0
+      
       #up to here
       if fine_chan:
-         if freq_MHz_index==0:
+         if (freq_MHz_index==0 and math.isclose(base_freq_MHz,50.0)):
             fine_chans_per_EDA2_chan = 13
             fine_chan_start_index = 0
             fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
@@ -2025,6 +2027,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
    freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
     
    print("concatenate and flag EDA2 obs before calibration")
+   fine_chan_end_index = 0
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):  
       #fine_chan_start_index = int(EDA2_chan_index*fine_chans_per_EDA2_chan)
       #fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
@@ -2821,7 +2824,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
    #print(freq_MHz_fine_chan_index_array.shape)
    #print(freq_MHz_fine_chan_array)
    #print(freq_MHz_fine_chan_array.shape)
-   
+   fine_chan_end_index = 0
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
       freq_MHz = 400./512.*float(EDA2_chan)
       if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
@@ -3986,7 +3989,7 @@ for EDA2_obs_time_index,EDA2_obs_time in enumerate(EDA2_obs_time_list):
       lst_eda2_hrs = "%0.5f" % get_eda2_lst(EDA2_obs_time_list[0])
       lst_hrs_list.append(lst_eda2_hrs)
 
-#simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+simulate_eda2_with_complex_beams(freq_MHz_list,lst_hrs_list,nside=32,plot_from_saved=plot_from_saved,EDA2_obs_time_list=EDA2_obs_time_list,sim_unity=sim_unity,sim_pt_source=sim_pt_source,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
 input_sky = "gsm"   #zenith_point_source  #unity
 write_to_miriad_vis(freq_MHz_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
 input_sky = "unity"
