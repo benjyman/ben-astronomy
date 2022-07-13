@@ -2189,7 +2189,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          #   eda2_data_flip_roll = np.roll(eda2_data_flip,-1,axis=1)
          #put_col(eda2_ms_table, "DATA", eda2_data_flip_roll)
 
-       
+         #fine chan flipping - don't do anymore, have a function to do it prior
          ###To reverse the flip and roll do the opposite
          #if EDA2_chan_index==0:
             #eda2_data_roll = np.roll(eda2_data,-13,axis=1)
@@ -2203,12 +2203,12 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
     
          #print(new_common_model_data_sorted_tile_flip_roll[0,:,0])
          #try flipping the direction of the model col in freq
-         new_common_model_data_sorted_tile_flip = np.flip(new_common_model_data_sorted_tile,axis=1)
+         #new_common_model_data_sorted_tile_flip = np.flip(new_common_model_data_sorted_tile,axis=1)
          #since we flag 2 at start and 3 at end need to roll the array (need to roll it more for first EDA2 chan since first 16 chans flagged)
-         if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
-            new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,13,axis=1)
-         else:
-            new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,-1,axis=1)
+         #if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+         #   new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,13,axis=1)
+         #else:
+         #   new_common_model_data_sorted_tile_flip_roll = np.roll(new_common_model_data_sorted_tile_flip,-1,axis=1)
          #print(new_common_model_data_sorted_tile[0,:,0])
          #print(new_common_model_data_sorted_tile_flip[0,:,0])
          #print(new_common_model_data_sorted_tile_flip_roll[0,:,0])
@@ -2218,8 +2218,8 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             add_col(eda2_ms_table, "MODEL_DATA")
          except:
             pass
-         put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile_flip_roll)
-         ##put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
+         #put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile_flip_roll)
+         put_col(eda2_ms_table, "MODEL_DATA", new_common_model_data_sorted_tile)
          eda2_ms_table.close()  
       
       #concat (mainly to allow/improve RFI flagging with AOflagger)
@@ -2771,8 +2771,231 @@ def old_calibrate():
       #         sum_ms_data = get_data(sum_ms_table, col="DATA")
       #         #print(sum_ms_data.shape)
       #         sum_ms_table.close()
-   
 
+def reverse_ms_fine_chans(EDA2_chan_list=[],lst_list=[],n_fine_chans_included=27,base_freq_index_offset=0,copy=False):
+   base_freq_MHz = EDA2_chan_list[0] * (400./512.) 
+   fine_chans_per_EDA2_chan = 27
+
+   freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 
+   #because we skip 2 fine chans at the beginning (need to update all other functions)
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
+   #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+   if math.isclose(base_freq_MHz,50.0):
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
+   
+   #print(freq_MHz_fine_chan_index_array)
+   #print(freq_MHz_fine_chan_index_array.shape)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
+   fine_chan_end_index = 0
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
+      freq_MHz = 400./512.*float(EDA2_chan)
+      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+         fine_chans_per_EDA2_chan = 13
+         fine_chan_start_index = 0
+         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      else:
+         fine_chans_per_EDA2_chan = 27
+         fine_chan_start_index = fine_chan_end_index
+         fine_chan_end_index += fine_chans_per_EDA2_chan
+
+      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+          
+      print("what's going on here")
+      print(freq_MHz_fine_chan_subarray.shape)
+      
+      lst = lst_list[EDA2_chan_index]
+      lst_deg = (float(lst)/24)*360.
+      
+      if len(EDA2_chan_list)==1:
+         obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      else:
+         obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      first_obstime = obs_time_list[0]
+
+      av_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+      print("getting data from %s" % av_ms_name)
+
+      if copy:
+         print("making copy of %s" % av_ms_name)
+         copy_name = "%s/orig_copy_concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+         cmd = "cp -r %s %s" % (av_ms_name,copy_name)
+         print(cmd)
+         os.system(cmd)
+         
+      
+      eda2_ms_table = table(av_ms_name,readonly=False)
+      #print(eda2_ms_table.info())
+      #print(eda2_ms_table.summary())
+      colnames = eda2_ms_table.colnames()
+      for colname in colnames:
+         try:
+            data = get_data(eda2_ms_table, col=colname)
+            if (len(data.shape)>=2 and data.shape[1]==32):
+               print(colname)
+               print(data.shape)
+               flipped_data = np.flip(data,axis=1)
+               put_col(eda2_ms_table, colname, flipped_data)
+         except Exception as e:
+            #print("couldn't open %s" % colname)
+            print(e)
+            pass
+      eda2_ms_table.close()
+      #sys.exit()
+      #do uncalibrated date first
+      #eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
+      #table_summary = tablesummary(eda2_ms_table)
+      #print(table_summary)
+      
+      #eda2_data_complex = get_data(eda2_ms_table, col="DATA")
+      #print(eda2_data_complex.shape)
+       
+   
+def extract_autos_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,unity_vis_dir="sims/",n_fine_chans_included=27,base_freq_index_offset=0):
+   base_freq_MHz = EDA2_chan_list[0] * (400./512.)
+   
+   fine_chans_per_EDA2_chan = 27
+   #max umber of timesteps is set to eight 
+   max_n_timesteps = 8
+   #auto_array = np.zeros(len(EDA2_chan_list))
+   #auto_array_filename = "auto_array_eda2.npy"
+
+   auto_array_fine_chan = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
+   auto_array_fine_chan[:] = np.nan
+
+
+   auto_array_filename_fine_chan = "auto_array_eda2_fine_chan.npy"
+
+   eda2_chan_fine_chan_timestep_array = np.empty([len(EDA2_chan_list),fine_chans_per_EDA2_chan,max_n_timesteps])
+   eda2_chan_fine_chan_timestep_array[:,:,:] = np.nan
+   eda2_chan_fine_chan_timestep_array_fileame = "eda2_chan_fine_chan_timestep_array.npy"
+
+   #number_of_good_obs_list_filename = "number_of_good_obs_list.txt"
+   #with open(number_of_good_obs_list_filename) as f:
+   #   number_of_good_obs_list_string = f.read()
+   #number_of_good_obs_list = number_of_good_obs_list_string.split(',')
+
+   freq_MHz_fine_chan_index_array = np.arange(int(len(EDA2_chan_list)*fine_chans_per_EDA2_chan))
+   #freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + 50. - 0.46296 
+   #because we skip 2 fine chans at the beginning (need to update all other functions)
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
+   #dont use the first 16 fine chans because beams havent been made  below 50 MHz and we dont want to extrapolate
+   if math.isclose(base_freq_MHz,50.0):
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
+   
+   #print(freq_MHz_fine_chan_index_array)
+   #print(freq_MHz_fine_chan_index_array.shape)
+   #print(freq_MHz_fine_chan_array)
+   #print(freq_MHz_fine_chan_array.shape)
+   fine_chan_end_index = 0
+   for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list): 
+      freq_MHz = 400./512.*float(EDA2_chan)
+      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+         fine_chans_per_EDA2_chan = 13
+         fine_chan_start_index = 0
+         fine_chan_end_index = fine_chan_start_index + fine_chans_per_EDA2_chan
+      else:
+         fine_chans_per_EDA2_chan = 27
+         fine_chan_start_index = fine_chan_end_index
+         fine_chan_end_index += fine_chans_per_EDA2_chan
+
+      freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_array[fine_chan_start_index:fine_chan_end_index]
+          
+      print("what's going on here")
+      print(freq_MHz_fine_chan_subarray.shape)
+      
+      lst = lst_list[EDA2_chan_index]
+      lst_deg = (float(lst)/24)*360.
+      
+      if len(EDA2_chan_list)==1:
+         obs_time_list = EDA2_obs_time_list_each_chan[chan_num]
+      else:
+         obs_time_list = EDA2_obs_time_list_each_chan[EDA2_chan_index]
+      first_obstime = obs_time_list[0]
+
+      av_ms_name = "%s/concat_chan_%s.ms" % (EDA2_chan,EDA2_chan)
+      print("getting data from %s" % av_ms_name)
+
+      eda2_ms_table = table(av_ms_name,readonly=True)
+      #do uncalibrated date first
+      #eda2_data_complex = get_data(eda2_ms_table, col="CORRECTED_DATA")
+      eda2_data_complex = get_data(eda2_ms_table, col="DATA")
+      n_vis_eda2 = eda2_data_complex.shape[0]
+      
+      eda2_flags = get_flags(eda2_ms_table)
+      #make data where flags are true nans
+      flagged_indices = np.where(eda2_flags)
+      eda2_data_complex_flagged = np.copy(eda2_data_complex)
+      eda2_data_complex_flagged[flagged_indices] = np.nan
+      eda2_data_complex = eda2_data_complex_flagged
+      
+      #sort out common baselines just like in calibrate_with_complex_beams
+      eda2_uvw = get_uvw(eda2_ms_table)
+      #eda2_uvw = eda2_uvw[start_index:end_index]
+      eda2_ant1, eda2_ant2 = get_ant12(av_ms_name)
+      #eda2_ant1 = eda2_ant1[start_index:end_index]
+      #eda2_ant2 = eda2_ant2[start_index:end_index]
+      
+      #count number of ants in eda2
+      n_ant_eda2 = 0
+      for ant_num_index, ant_num in enumerate(eda2_ant1):
+         n_ant_eda2 += 1
+         if (eda2_ant1[ant_num_index] != eda2_ant1[ant_num_index+1]):
+            break
+      n_baselines_eda2 = int((n_ant_eda2*(n_ant_eda2-1) / 2) + n_ant_eda2)
+
+      n_timesteps_eda2 = int(n_vis_eda2/n_baselines_eda2)
+      print("n_timesteps_eda2 %s" % (n_timesteps_eda2))
+
+
+      eda2_ant1 = eda2_ant1[0:n_baselines_eda2]
+      eda2_ant2 = eda2_ant2[0:n_baselines_eda2]
+      eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
+      eda2_uvw = eda2_uvw[0:n_baselines_eda2]
+
+      
+      #Moving all the stuff below inside the fine chan loop since we have a separate unity file for each fine chan
+      #Instead of averaging in time and frequency, do all times and freqs separately to look for bad times/chans in x_y_plots
+      start_index = 0
+      end_index = n_baselines_eda2
+      for timestep in range(n_timesteps_eda2):
+         timestep_data = eda2_data_complex[start_index:end_index,:,:]
+         start_index += n_baselines_eda2
+         end_index += n_baselines_eda2
+         if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+            n_fine_chans_included = 13
+         for fine_chan_included in range(n_fine_chans_included):
+            print(fine_chan_included)
+            freq_MHz_fine_chan = freq_MHz_fine_chan_subarray[fine_chan_included]
+            print(freq_MHz_fine_chan)
+            
+            if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+               fine_chan_index = fine_chan_included+16
+            else:
+               fine_chan_index = fine_chan_included+2
+            timestep_data_fine_chan = timestep_data[:,fine_chan_index,:]
+            base_name = "%s_timestep_%s_chan_%03d_fine_%02d" % (first_obstime,timestep,EDA2_chan,fine_chan_index)
+            
+            auto_indices = np.equal(eda2_ant1, eda2_ant2).nonzero()[0]
+            
+            eda2_autos_array_fine_chan = timestep_data_fine_chan[auto_indices,:]
+            print(eda2_autos_array_fine_chan.shape)
+            
+            #just look at tile 1, XX for starters
+            auto = eda2_autos_array_fine_chan[0,0]
+            auto_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = auto
+            
+         #reverse everything along the fine_chan axis (yes the fine chans are reverse, it is clear from the autos)
+         #auto_array_fine_chan = np.flip(auto_array_fine_chan,axis=1)
+            
+   np.save(auto_array_filename_fine_chan,auto_array_fine_chan)  
+   print("saved %s" % auto_array_filename_fine_chan)        
+            
 def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_thresh_lambda=0.5,unity_vis_dir="sims/",n_fine_chans_included=27,base_freq_index_offset=0):
    base_freq_MHz = EDA2_chan_list[0] * (400./512.)
    
@@ -3120,7 +3343,8 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             print(len(common_eda2_data_complex_x_real_sorted_cut))
             print(len(common_unity_data_complex_x_real_sorted_cut))
       
-            if (len(common_eda2_data_complex_x_real_sorted_cut)>2 and len(common_unity_data_complex_x_real_sorted_cut)>2):
+            #if (len(common_eda2_data_complex_x_real_sorted_cut)>2 and len(common_unity_data_complex_x_real_sorted_cut)>2):
+            if (np.count_nonzero(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_x_real_sorted_cut))>2):
                model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut, common_unity_data_complex_x_real_sorted_cut,missing='drop')
                results = model.fit()
                parameters = results.params
@@ -3164,55 +3388,59 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             t_sky_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_K
             t_sky_error_K_array_fine_chan[EDA2_chan_index,fine_chan_included,timestep] = t_sky_error_K
             
-            ###FLAGGING bit 
-            max_deviations = 5
-            common_eda2_data_complex_x_real_sorted_cut_std_dev = np.nanstd(common_eda2_data_complex_x_real_sorted_cut)
-            max_distance_from_model = max_deviations * common_eda2_data_complex_x_real_sorted_cut_std_dev
+            if (np.count_nonzero(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_x_real_sorted_cut))>2):
             
-            ##need to deal with missing values from fit
-            common_eda2_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))[:,0]
-            common_eda2_data_complex_x_real_sorted_cut_missing = common_eda2_data_complex_x_real_sorted_cut[common_eda2_data_complex_x_real_sorted_cut_missing_indices]
-            distance_from_model = np.abs(common_eda2_data_complex_x_real_sorted_cut_missing - results.fittedvalues)
-            common_eda2_data_complex_x_real_sorted_cut_flagged = np.copy(common_eda2_data_complex_x_real_sorted_cut_missing)
-            common_eda2_data_complex_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
-            #print(common_eda2_data_complex_x_real_sorted_cut_flagged.shape)
-            #print(common_unity_data_complex_x_real_sorted_cut_missing.shape)
-      
-            print(len(common_eda2_data_complex_x_real_sorted_cut_flagged))
-            print(len(common_unity_data_complex_x_real_sorted_cut_missing))
+               ###FLAGGING bit 
+               max_deviations = 5
+               common_eda2_data_complex_x_real_sorted_cut_std_dev = np.nanstd(common_eda2_data_complex_x_real_sorted_cut)
+               max_distance_from_model = max_deviations * common_eda2_data_complex_x_real_sorted_cut_std_dev
+               
+               ##need to deal with missing values from fit
+               common_eda2_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))[:,0]
+               common_eda2_data_complex_x_real_sorted_cut_missing = common_eda2_data_complex_x_real_sorted_cut[common_eda2_data_complex_x_real_sorted_cut_missing_indices]
+               distance_from_model = np.abs(common_eda2_data_complex_x_real_sorted_cut_missing - results.fittedvalues)
+               common_eda2_data_complex_x_real_sorted_cut_flagged = np.copy(common_eda2_data_complex_x_real_sorted_cut_missing)
+               common_eda2_data_complex_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
+               #print(common_eda2_data_complex_x_real_sorted_cut_flagged.shape)
+               #print(common_unity_data_complex_x_real_sorted_cut_missing.shape)
+         
+               print(len(common_eda2_data_complex_x_real_sorted_cut_flagged))
+               print(len(common_unity_data_complex_x_real_sorted_cut_missing))
             
-            if (len(common_eda2_data_complex_x_real_sorted_cut_flagged)>2 and len(common_unity_data_complex_x_real_sorted_cut_missing)>2):
-               model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut_flagged, common_unity_data_complex_x_real_sorted_cut_missing,missing='drop')
-               results = model.fit()
-               parameters = results.params
-               #print parameters
-               t_sky_K_flagged = parameters[0]
-               t_sky_error_K_flagged = results.bse[0]    
-               
-               print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
-               fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
-               print(fit_string)
-               
-               plt.clf()
-               plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, common_eda2_data_complex_x_real_sorted_cut_flagged,linestyle='None',marker='.')
-               #deal with the missing values in the fit
-               common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))[:,0]
-               #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
-               common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut_missing[common_unity_data_complex_x_real_sorted_cut_missing_indices]
-               
-               
-               plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
-               map_title="Data and fit flagged" 
-               plt.xlabel("Expected global-signal response")
-               plt.ylabel("Real component of visibility X pol (Jy)")
-               plt.legend(loc=1)
-               #plt.text(x_pos, y_pos, fit_string)
-               #plt.ylim([0, 3.5])
-               fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"x")
-               figmap = plt.gcf()
-               figmap.savefig(fig_name)
-               plt.close()
-               print("saved %s" % fig_name)
+               #if (len(common_eda2_data_complex_x_real_sorted_cut_flagged)>2 and len(common_unity_data_complex_x_real_sorted_cut_missing)>2):
+               if (np.count_nonzero(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_x_real_sorted_cut_missing))>2):
+                  
+                  model = sm.OLS(common_eda2_data_complex_x_real_sorted_cut_flagged, common_unity_data_complex_x_real_sorted_cut_missing,missing='drop')
+                  results = model.fit()
+                  parameters = results.params
+                  #print parameters
+                  t_sky_K_flagged = parameters[0]
+                  t_sky_error_K_flagged = results.bse[0]    
+                  
+                  print("t_sky_K flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+                  fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
+                  print(fit_string)
+                  
+                  plt.clf()
+                  plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, common_eda2_data_complex_x_real_sorted_cut_flagged,linestyle='None',marker='.')
+                  #deal with the missing values in the fit
+                  common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))[:,0]
+                  #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
+                  common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut_missing[common_unity_data_complex_x_real_sorted_cut_missing_indices]
+                  
+                  
+                  plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
+                  map_title="Data and fit flagged" 
+                  plt.xlabel("Expected global-signal response")
+                  plt.ylabel("Real component of visibility X pol (Jy)")
+                  plt.legend(loc=1)
+                  #plt.text(x_pos, y_pos, fit_string)
+                  #plt.ylim([0, 3.5])
+                  fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"x")
+                  figmap = plt.gcf()
+                  figmap.savefig(fig_name)
+                  plt.close()
+                  print("saved %s" % fig_name)
             else:
                t_sky_K_flagged = np.nan
                t_sky_error_K_flagged = np.nan  
@@ -3504,6 +3732,47 @@ def plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_er
    print("saved %s" % fig_name)
    plt.close()    
 
+def plot_autos_and_fit_foregrounds_fine_chan(freq_MHz_list,auto_array_filename,poly_order=5,fine_chans_per_EDA2_chan=27,base_freq_index_offset=0):
+   base_freq_MHz = freq_MHz_list[0]
+   freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
+
+   freq_MHz_fine_chan_array = freq_MHz_fine_chan_index_array * fine_chan_width_MHz + base_freq_MHz - 0.46296 + (2.*fine_chan_width_MHz) - (base_freq_index_offset*.000005)
+   if math.isclose(base_freq_MHz,50.0):
+      freq_MHz_fine_chan_array=freq_MHz_fine_chan_array[14:]
+   
+   base_name = auto_array_filename.split(".npy")[0]
+   auto_array = np.load(auto_array_filename)
+
+   print(auto_array.shape)
+   print(freq_MHz_fine_chan_array.shape)
+
+   #print(t_sky_K_array)
+   #print(t_sky_error_K_array)
+   #print(freq_MHz_fine_chan_array)
+
+
+   auto_array_timestep_0 = auto_array[:,:,0]
+   auto_array_timestep_0_flatten = np.ndarray.flatten(auto_array_timestep_0,order='C')
+
+   if math.isclose(base_freq_MHz,50.0):
+      auto_array_timestep_0_flatten = auto_array_timestep_0_flatten[14:]
+   
+   plt.clf()
+   plt.plot(freq_MHz_fine_chan_array,auto_array_timestep_0_flatten)
+   map_title="Autocorrelation Tile 1 uncal" 
+   plt.xlabel("Frequency (MHz)")
+   plt.ylabel("Autocorrelation Tile 1 uncal")
+   #plt.legend(loc=1)
+   #plt.text(x_pos, y_pos, fit_string)
+   #plt.ylim([0, 3.5])
+   fig_name= "%s.png"  % base_name
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   plt.close()
+   print("saved %s" % fig_name)
+
+ 
+   
 def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename,poly_order=5,fine_chans_per_EDA2_chan=27,base_freq_index_offset=0):
    base_freq_MHz = freq_MHz_list[0]
    freq_MHz_fine_chan_index_array = np.arange(int(len(freq_MHz_list)*fine_chans_per_EDA2_chan))
@@ -3537,6 +3806,12 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filenam
    print(t_sky_error_K_array_timestep_0_flatten.shape)
    print(freq_MHz_fine_chan_array.shape)
    
+   #truncate the tsky array to size of freq array
+   t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
+   t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
+   print(t_sky_K_array_timestep_0_flatten.shape)
+   print(t_sky_error_K_array_timestep_0_flatten.shape)
+   
    plt.clf()
    plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
    map_title="Global Tsky" 
@@ -3564,7 +3839,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filenam
    rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
    print("rms_of_residuals is %0.3f K" % rms_of_residuals)
    
-   max_abs_residuals = np.max(np.abs(residual_of_log_fit))
+   max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
    y_max = 1.5 * max_abs_residuals
    y_min = 1.5 * -max_abs_residuals
    
@@ -3581,7 +3856,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filenam
    #if len(model_type_list)>1:
    plt.legend(loc=1)
    #plt.legend(loc=1)
-   plt.ylim([y_min, y_max])
+   #plt.ylim([y_min, y_max])
    fig_name= "%s_log_fit_residual_poly_order_%s.png" % (base_name,poly_order)
    figmap = plt.gcf()
    figmap.savefig(fig_name)
@@ -3907,12 +4182,14 @@ check_figs=False
 #t_sky_error_K_array_filename = "t_sky_K_array_manual_flagged_averaged_error_fine_chan.npy"
 #plot_t_sky_and_fit_foregrounds_fine_chan(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)      
 
+#note: base_freq_offset is set above not here
 #fine chan
 chan_num = 0
-freq_MHz_list = freq_MHz_list[0:3]
-lst_hrs_list = lst_hrs_list[0:3]
-EDA2_obs_time_list = EDA2_obs_time_list[0:3]
-EDA2_chan_list = EDA2_chan_list[0:3]
+#last two fine chans are missing in the beams - just skip the last coarse chan
+freq_MHz_list = freq_MHz_list[0:20]
+lst_hrs_list = lst_hrs_list[0:20]
+EDA2_obs_time_list = EDA2_obs_time_list[0:20]
+EDA2_chan_list = EDA2_chan_list[0:20]
 
 
 plot_from_saved = False
@@ -3932,9 +4209,20 @@ plot_cal = True
 #######
 #next1:
 plot_cal = True
-run_aoflagger=False
+run_aoflagger=True
+
+#reverse? only need to do this once!
+#done this for all chans (apart from first three which were corrupted and waiting on Marcin to replace them)
+#reverse_ms_fine_chans(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,copy=False)
+#sys.exit()
+
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset)
 #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset)
+#extract_autos_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset)
+#plot autos
+#auto_array_filename_fine_chan = "auto_array_eda2_fine_chan.npy"
+#plot_autos_and_fit_foregrounds_fine_chan(freq_MHz_list,auto_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset)
+
 #sys.exit()
 
 #So, what I appear to have done in extract_global_signal_from_ms_complex is to:
