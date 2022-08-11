@@ -1283,7 +1283,8 @@ def write_to_miriad_vis(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list,antenna_l
    #seems that for each coarse chan you offset from the base of 50 MHz you end up having to subtract 5 Hz from the fine chan freq - I don't know why, going
    #to have to just hard code it for now. 
    base_freq_MHz = EDA2_chan_list[0] * (400./512.)
-      
+    
+   
    os.chdir('sims')
    fine_chans_per_EDA2_chan = 27
    with open(antenna_layout_filename) as f:
@@ -1336,6 +1337,7 @@ def write_to_miriad_vis(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list,antenna_l
          #   freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[0:16]
       else:
          freq_MHz_fine_chan_subarray = np.asarray([freq_MHz])
+
       print("freq_MHz_fine_chan_subarray")
       print(freq_MHz_fine_chan_subarray)
       for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
@@ -3439,19 +3441,57 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             common_unity_data_complex_x_real_sorted_cut = common_unity_data_complex_freq_av_x_real_sorted[0:n_baselines_included_eda2]
             common_unity_data_complex_y_real_sorted_cut = common_unity_data_complex_freq_av_y_real_sorted[0:n_baselines_included_eda2]
             
+            #convert zeros to nan (there is something fishy with the y beams that puts some zeros in there)
+            common_unity_data_complex_x_real_sorted_cut_zero_indices = np.where(np.isclose(common_unity_data_complex_x_real_sorted_cut,0.0))
+            common_unity_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_zero_indices] = np.nan
+            common_unity_data_complex_y_real_sorted_cut_zero_indices = np.where(np.isclose(common_unity_data_complex_y_real_sorted_cut,0.0))
+            common_unity_data_complex_y_real_sorted_cut[common_unity_data_complex_y_real_sorted_cut_zero_indices] = np.nan
+
+            #remove the indices where common_unity_data_complex_y_real_sorted_cut is nan from common_unity_data_complex_y_real_sorted_cut and common_eda2_data_complex_y_real_sorted_cut
+            common_unity_data_complex_y_real_sorted_cut_nonnan_indices = np.where(~np.isnan(common_unity_data_complex_y_real_sorted_cut))
+            common_unity_data_complex_y_real_sorted_cut = common_unity_data_complex_y_real_sorted_cut[common_unity_data_complex_y_real_sorted_cut_nonnan_indices]
+            common_eda2_data_complex_y_real_sorted_cut = common_eda2_data_complex_y_real_sorted_cut[common_unity_data_complex_y_real_sorted_cut_nonnan_indices]
+            uvdist_array_eda2_lambda_sorted_cut_y = uvdist_array_eda2_lambda_sorted_cut[common_unity_data_complex_y_real_sorted_cut_nonnan_indices]
+            uvdist_array_unity_lambda_sorted_cut_y = uvdist_array_unity_lambda_sorted_cut[common_unity_data_complex_y_real_sorted_cut_nonnan_indices]
+            
+            #there can also be zeros in the data (model column for y pol), so repeat for eda2 data:
+            common_eda2_data_complex_y_real_sorted_cut_zero_indices = np.where(np.isclose(common_eda2_data_complex_y_real_sorted_cut,0.0))
+            common_eda2_data_complex_y_real_sorted_cut[common_eda2_data_complex_y_real_sorted_cut_zero_indices] = np.nan
+            common_eda2_data_complex_y_real_sorted_cut_nonnan_indices = np.where(~np.isnan(common_eda2_data_complex_y_real_sorted_cut))
+            common_eda2_data_complex_y_real_sorted_cut = common_eda2_data_complex_y_real_sorted_cut[common_eda2_data_complex_y_real_sorted_cut_nonnan_indices]
+            common_unity_data_complex_y_real_sorted_cut = common_unity_data_complex_y_real_sorted_cut[common_eda2_data_complex_y_real_sorted_cut_nonnan_indices]
+            uvdist_array_eda2_lambda_sorted_cut_y = uvdist_array_eda2_lambda_sorted_cut_y[common_eda2_data_complex_y_real_sorted_cut_nonnan_indices]
+            uvdist_array_unity_lambda_sorted_cut_y = uvdist_array_unity_lambda_sorted_cut_y[common_eda2_data_complex_y_real_sorted_cut_nonnan_indices]
+             
+            #x
+            #remove the indices where common_unity_data_complex_y_real_sorted_cut is nan from common_unity_data_complex_y_real_sorted_cut and common_eda2_data_complex_y_real_sorted_cut
+            common_unity_data_complex_x_real_sorted_cut_nonnan_indices = np.where(~np.isnan(common_unity_data_complex_x_real_sorted_cut))
+            common_unity_data_complex_x_real_sorted_cut = common_unity_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_nonnan_indices]
+            common_eda2_data_complex_x_real_sorted_cut = common_eda2_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_nonnan_indices]
+            uvdist_array_eda2_lambda_sorted_cut_x = uvdist_array_eda2_lambda_sorted_cut[common_unity_data_complex_x_real_sorted_cut_nonnan_indices]
+            uvdist_array_unity_lambda_sorted_cut_x = uvdist_array_unity_lambda_sorted_cut[common_unity_data_complex_x_real_sorted_cut_nonnan_indices]
+            
+            #there can also be zeros in the data (model column for y pol), so repeat for eda2 data:
+            common_eda2_data_complex_x_real_sorted_cut_zero_indices = np.where(np.isclose(common_eda2_data_complex_x_real_sorted_cut,0.0))
+            common_eda2_data_complex_x_real_sorted_cut[common_eda2_data_complex_x_real_sorted_cut_zero_indices] = np.nan
+            common_eda2_data_complex_x_real_sorted_cut_nonnan_indices = np.where(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))
+            common_eda2_data_complex_x_real_sorted_cut = common_eda2_data_complex_x_real_sorted_cut[common_eda2_data_complex_x_real_sorted_cut_nonnan_indices]
+            common_unity_data_complex_x_real_sorted_cut = common_unity_data_complex_x_real_sorted_cut[common_eda2_data_complex_x_real_sorted_cut_nonnan_indices]
+            uvdist_array_eda2_lambda_sorted_cut_x = uvdist_array_eda2_lambda_sorted_cut_x[common_eda2_data_complex_x_real_sorted_cut_nonnan_indices]
+            uvdist_array_unity_lambda_sorted_cut_x = uvdist_array_unity_lambda_sorted_cut_x[common_eda2_data_complex_x_real_sorted_cut_nonnan_indices]
             
             #print(uvdist_array_eda2_lambda_sorted_cut.shape)
             #print(common_eda2_data_complex_x_real_sorted_cut.shape)
             #plot the expected unity response vs baseline length
             plt.clf()
-            plt.scatter(uvdist_array_eda2_lambda_sorted_cut,common_eda2_data_complex_x_real_sorted_cut)            
+            plt.scatter(uvdist_array_eda2_lambda_sorted_cut_x,common_eda2_data_complex_x_real_sorted_cut)            
             map_title="Unity_response_vs_uvdist" 
             plt.xlabel("UV distance (wavelengths)")
             plt.ylabel("Real component of visibility X pol (Jy)")
             plt.legend(loc=1)
             #plt.text(x_pos, y_pos, fit_string)
             #plt.ylim([0, 3.5])
-            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"x")
+            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,"x",ms_column)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             plt.close()
@@ -3459,7 +3499,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       
             #plot the expected unity response vs baseline length
             plt.clf()
-            plt.scatter(uvdist_array_unity_lambda_sorted_cut,common_unity_data_complex_x_real_sorted_cut)            
+            plt.scatter(uvdist_array_unity_lambda_sorted_cut_x,common_unity_data_complex_x_real_sorted_cut)            
             map_title="Unity_response_vs_uvdist" 
             plt.xlabel("UV distance (wavelengths)")
             plt.ylabel("Real component of visibility X pol (Jy)")
@@ -3477,14 +3517,14 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
 
             #y pol
             plt.clf()
-            plt.scatter(uvdist_array_eda2_lambda_sorted_cut,common_eda2_data_complex_y_real_sorted_cut)            
-            map_title="Unity_response_vs_uvdist" 
+            plt.scatter(uvdist_array_eda2_lambda_sorted_cut_y,common_eda2_data_complex_y_real_sorted_cut)            
+            map_title="EDA2_response_vs_uvdist" 
             plt.xlabel("UV distance (wavelengths)")
             plt.ylabel("Real component of visibility Y pol (Jy)")
             plt.legend(loc=1)
             #plt.text(x_pos, y_pos, fit_string)
             #plt.ylim([0, 3.5])
-            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol.png" % (freq_MHz_fine_chan,"y")
+            fig_name= "eda2_response_vs_uvdist_%0.3f_MHz_%s_pol_%s.png" % (freq_MHz_fine_chan,"y",ms_column)
             figmap = plt.gcf()
             figmap.savefig(fig_name)
             plt.close()
@@ -3492,7 +3532,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
       
             #plot the expected unity response vs baseline length
             plt.clf()
-            plt.scatter(uvdist_array_unity_lambda_sorted_cut,common_unity_data_complex_y_real_sorted_cut)            
+            plt.scatter(uvdist_array_unity_lambda_sorted_cut_y,common_unity_data_complex_y_real_sorted_cut)            
             map_title="Unity_response_vs_uvdist" 
             plt.xlabel("UV distance (wavelengths)")
             plt.ylabel("Real component of visibility Y pol (Jy)")
@@ -3505,6 +3545,8 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             plt.close()
             print("saved %s" % fig_name)
             
+            
+            
             #x pol:
             #if (len(common_eda2_data_complex_x_real_sorted_cut)>2 and len(common_unity_data_complex_x_real_sorted_cut)>2):
             if (np.count_nonzero(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_x_real_sorted_cut))>2):
@@ -3515,35 +3557,40 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                t_sky_K = parameters[0]
                t_sky_error_K = results.bse[0]    
          
-               print("t_sky_K x pol is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+               print("t_sky_K %s x pol is %0.4E +/- %0.04f K" % (ms_column,t_sky_K,t_sky_error_K))
                fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
                print(fit_string)
                
                #t_sky_K_list.append(t_sky_K)
                #t_sky_error_K_list.append(t_sky_error_K)
-         
+               
+               print(common_unity_data_complex_x_real_sorted_cut.shape)
+               print(common_eda2_data_complex_x_real_sorted_cut.shape)
+
                plt.clf()
                plt.plot(common_unity_data_complex_x_real_sorted_cut, common_eda2_data_complex_x_real_sorted_cut,linestyle='None',marker='.')
                #deal with the missing values in the fit
                common_unity_data_complex_x_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_x_real_sorted_cut))[:,0]
                #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
                common_unity_data_complex_x_real_sorted_cut_missing = common_unity_data_complex_x_real_sorted_cut[common_unity_data_complex_x_real_sorted_cut_missing_indices]
+               
                plt.plot(common_unity_data_complex_x_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
                map_title="Data and fit" 
                plt.xlabel("Expected global-signal response")
                plt.ylabel("Real component of visibility X pol (Jy)")
                plt.legend(loc=1)
-               #optimaise for chan 079
+               #optimise for chan 079
                x_pos = 1100
                y_pos = 0.5e7
                plt.text(x_pos, y_pos, fit_string)
-               plt.ylim([-0.25e7, 1.5e7])
-               plt.xlim([1000, 3000])
-               fig_name= "x_y_OLS_%s_%s_pol.png" % (base_name,"x")
+               #plt.ylim([-0.25e7, 1.5e7])
+               #plt.xlim([1000, 3000])
+               fig_name= "x_y_OLS_%s_%s_pol_%s.png" % (base_name,"x",ms_column)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
                plt.close()
                print("saved %s" % fig_name)
+            
             
             else:
                t_sky_K = np.nan
@@ -3571,9 +3618,6 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                common_eda2_data_complex_x_real_sorted_cut_flagged[distance_from_model > max_distance_from_model] = np.nan
                #print(common_eda2_data_complex_x_real_sorted_cut_flagged.shape)
                #print(common_unity_data_complex_x_real_sorted_cut_missing.shape)
-         
-               print(len(common_eda2_data_complex_x_real_sorted_cut_flagged))
-               print(len(common_unity_data_complex_x_real_sorted_cut_missing))
             
                #if (len(common_eda2_data_complex_x_real_sorted_cut_flagged)>2 and len(common_unity_data_complex_x_real_sorted_cut_missing)>2):
                if (np.count_nonzero(~np.isnan(common_eda2_data_complex_x_real_sorted_cut_flagged))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_x_real_sorted_cut_missing))>2):
@@ -3585,7 +3629,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                   t_sky_K_flagged = parameters[0]
                   t_sky_error_K_flagged = results.bse[0]    
                   
-                  print("t_sky_K x pol flagged is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+                  print("t_sky_K %s x pol flagged is %0.4E +/- %0.04f K" % (ms_column,t_sky_K_flagged,t_sky_error_K_flagged))
                   fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
                   print(fit_string)
                   
@@ -3606,11 +3650,11 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                   x_pos = 1100
                   y_pos = 0.5e7
                   plt.text(x_pos, y_pos, fit_string)
-                  plt.ylim([-0.25e7, 1.5e7])
-                  plt.xlim([1000, 3000])
+                  #plt.ylim([-0.25e7, 1.5e7])
+                  #plt.xlim([1000, 3000])
                   #plt.text(x_pos, y_pos, fit_string)
                   #plt.ylim([0, 3.5])
-                  fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"x")
+                  fig_name= "x_y_OLS_%s_%s_pol_flagged_%s.png" % (base_name,"x",ms_column)
                   figmap = plt.gcf()
                   figmap.savefig(fig_name)
                   plt.close()
@@ -3622,6 +3666,8 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
             t_sky_K_array_flagged_fine_chan[EDA2_chan_index,freq_MHz_fine_chan_index,timestep,0] = t_sky_K_flagged
             t_sky_error_K_array_flagged_fine_chan[EDA2_chan_index,freq_MHz_fine_chan_index,timestep,0] = t_sky_error_K_flagged
       
+
+      
             #y pol
             if (np.count_nonzero(~np.isnan(common_eda2_data_complex_y_real_sorted_cut))>2 and np.count_nonzero(~np.isnan(common_unity_data_complex_y_real_sorted_cut))>2):
                model = sm.OLS(common_eda2_data_complex_y_real_sorted_cut, common_unity_data_complex_y_real_sorted_cut,missing='drop')
@@ -3631,19 +3677,26 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                t_sky_K = parameters[0]
                t_sky_error_K = results.bse[0]    
          
-               print("t_sky_K y pol is %0.4E +/- %0.04f K" % (t_sky_K,t_sky_error_K))
+               print("t_sky_K %s y pol is %0.4E +/- %0.04f K" % (ms_column,t_sky_K,t_sky_error_K))
                fit_string = "y=%0.1fx" % t_sky_K         #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
                print(fit_string)
                
                #t_sky_K_list.append(t_sky_K)
                #t_sky_error_K_list.append(t_sky_error_K)
-         
+               
                plt.clf()
+               print(common_unity_data_complex_y_real_sorted_cut.shape)
+               print(common_eda2_data_complex_y_real_sorted_cut.shape)
                plt.plot(common_unity_data_complex_y_real_sorted_cut, common_eda2_data_complex_y_real_sorted_cut,linestyle='None',marker='.')
                #deal with the missing values in the fit
                common_unity_data_complex_y_real_sorted_cut_missing_indices = np.argwhere(~np.isnan(common_eda2_data_complex_y_real_sorted_cut))[:,0]
+               #UP TO HERE:::  also need to remove the indices where common_unity_data_complex_y_real_sorted_cut is nan
                #print(common_unity_data_complex_x_real_sorted_cut_missing_indices.shape)
                common_unity_data_complex_y_real_sorted_cut_missing = common_unity_data_complex_y_real_sorted_cut[common_unity_data_complex_y_real_sorted_cut_missing_indices]
+               
+               print(common_unity_data_complex_y_real_sorted_cut_missing.shape)
+               print(results.fittedvalues.shape)
+               
                plt.plot(common_unity_data_complex_y_real_sorted_cut_missing, results.fittedvalues, 'r--.', label="OLS fit",linestyle='--',marker='None')
                map_title="Data and fit" 
                plt.xlabel("Expected global-signal response")
@@ -3653,22 +3706,22 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                x_pos = 1100
                y_pos = 0.5e7
                plt.text(x_pos, y_pos, fit_string)
-               plt.ylim([-0.25e7, 1.5e7])
-               plt.xlim([1000, 3000])
-               fig_name= "x_y_OLS_%s_%s_pol.png" % (base_name,"y")
+               #plt.ylim([-0.25e7, 1.5e7])
+               #plt.xlim([1000, 3000])
+               fig_name= "x_y_OLS_%s_%s_pol_%s.png" % (base_name,"y",ms_column)
                figmap = plt.gcf()
                figmap.savefig(fig_name)
                plt.close()
                print("saved %s" % fig_name)
-            
+
             else:
                t_sky_K = np.nan
                t_sky_error_K = np.nan
             
             #save to arrays
-            if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
-               freq_MHz_fine_chan_index += 14
-               print("base freq is %s, setting freq_MHz_fine_chan_index to %s " % (base_freq_MHz,freq_MHz_fine_chan_index))
+            #if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+            #   freq_MHz_fine_chan_index += 14
+            #   print("base freq is %s, setting freq_MHz_fine_chan_index to %s " % (base_freq_MHz,freq_MHz_fine_chan_index))
             t_sky_K_array_fine_chan[EDA2_chan_index,freq_MHz_fine_chan_index,timestep,1] = t_sky_K
             t_sky_error_K_array_fine_chan[EDA2_chan_index,freq_MHz_fine_chan_index,timestep,1] = t_sky_error_K
             
@@ -3699,7 +3752,7 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                   t_sky_K_flagged = parameters[0]
                   t_sky_error_K_flagged = results.bse[0]    
                   
-                  print("t_sky_K flagged y pol is %0.4E +/- %0.04f K" % (t_sky_K_flagged,t_sky_error_K_flagged))
+                  print("t_sky_K flagged %s y pol is %0.4E +/- %0.04f K" % (ms_column,t_sky_K_flagged,t_sky_error_K_flagged))
                   fit_string = "y=%0.1fx" % t_sky_K_flagged        #t_sky_K=%0.6f K" % (t_sky_jy,t_sky_K)
                   print(fit_string)
                   
@@ -3719,11 +3772,11 @@ def extract_global_signal_from_ms_complex(EDA2_chan_list=[],lst_list=[],uvdist_t
                   x_pos = 1100
                   y_pos = 0.5e7
                   plt.text(x_pos, y_pos, fit_string)
-                  plt.ylim([-0.25e7, 1.5e7])
-                  plt.xlim([1000, 3000])
+                  #plt.ylim([-0.25e7, 1.5e7])
+                  #plt.xlim([1000, 3000])
                   #plt.text(x_pos, y_pos, fit_string)
                   #plt.ylim([0, 3.5])
-                  fig_name= "x_y_OLS_%s_%s_pol_flagged.png" % (base_name,"y")
+                  fig_name= "x_y_OLS_%s_%s_pol_flagged_%s.png" % (base_name,"y",ms_column)
                   figmap = plt.gcf()
                   figmap.savefig(fig_name)
                   plt.close()
@@ -4109,88 +4162,162 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
    n_timesteps = t_sky_K_array.shape[2]
    #print("n_timesteps %s" % n_timesteps)
    
-   #just timestep 0 to compare
-   t_sky_K_array_timestep_0 = t_sky_K_array[:,:,0]
-   t_sky_error_K_array_timestep_0 = t_sky_error_K_array[:,:,0]
-   t_sky_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_K_array_timestep_0,order='C')
-   t_sky_error_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_error_K_array_timestep_0,order='C')
-   if math.isclose(base_freq_MHz,50.0):
-      t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[14:]
-      t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[14:]
-   
-   print(t_sky_K_array_timestep_0_flatten.shape)
-   print(t_sky_error_K_array_timestep_0_flatten.shape)
-   print(freq_MHz_fine_chan_array.shape)
-   
-   #truncate the tsky array to size of freq array
-   t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
-   t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
-   print(t_sky_K_array_timestep_0_flatten.shape)
-   print(t_sky_error_K_array_timestep_0_flatten.shape)
-   
-   plt.clf()
-   plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
-   map_title="Global Tsky" 
-   plt.xlabel("Frequency (MHz)")
-   plt.ylabel("EDA2 global Tsky (K)")
-   #plt.legend(loc=1)
-   #plt.text(x_pos, y_pos, fit_string)
-   #plt.ylim([0, 3.5])
-   fig_name= "%s_timestep_0.png"  % base_name
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   plt.close()
-   print("saved %s" % fig_name)
+   for pol_index,pol in enumerate(['x','y']):
+      #just timestep 0 to compare
+      t_sky_K_array_timestep_0 = t_sky_K_array[:,:,0,pol_index]
+      t_sky_error_K_array_timestep_0 = t_sky_error_K_array[:,:,0,pol_index]
+      t_sky_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_K_array_timestep_0,order='C')
+      t_sky_error_K_array_timestep_0_flatten = np.ndarray.flatten(t_sky_error_K_array_timestep_0,order='C')
+      if math.isclose(base_freq_MHz,50.0):
+         print("base_freq_MHz is %s not using first 14 t_skys" % base_freq_MHz)
+         t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[14:]
+         t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[14:]
       
-   #log fit and subtract
-   log_sky_array = np.log10(t_sky_K_array_timestep_0_flatten)
-   log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
-   coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
-   ffit = poly.polyval(log_freq_MHz_array, coefs)
-   ffit_linear = 10**ffit
+      #truncate the tsky array to size of freq array
+      t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
+      t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
    
-   #log_residual = log_signal_array_short_baselines - log_ffit
-   residual_of_log_fit = ffit_linear - t_sky_K_array_timestep_0_flatten
-   
-   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
-   print("rms_of_residuals is %0.3f K" % rms_of_residuals)
-   
-   max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
-   y_max = 1.5 * max_abs_residuals
-   y_min = 1.5 * -max_abs_residuals
-   
-   #print(freq_array_cut)
-   #print(residual_of_log_fit)
-   
-   plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
-   plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
-   
-    
-   map_title="Residual for log polynomial order %s fit " % poly_order
-   plt.ylabel("Residual Tb (K)")
-   plt.xlabel("Frequency (MHz)")
-   #if len(model_type_list)>1:
-   plt.legend(loc=1)
-   #plt.legend(loc=1)
-   #plt.ylim([y_min, y_max])
-   fig_name= "%s_log_fit_residual_poly_order_%s_timestep0.png" % (base_name,poly_order)
-   figmap = plt.gcf()
-   figmap.savefig(fig_name)
-   print("saved %s" % fig_name)
-   plt.close()
-
-   non_nan_counter = 0
-   for timestep_index in range(n_timesteps):
-      #check if not all nans - need to count how many non-nan entries there are so can average the errors correctly (i.e. by sqrt(n) ?)
-      t_sky_K_array_timestep = t_sky_K_array[:,:,timestep_index]
-      if (~np.isnan(t_sky_K_array_timestep).all()):
-         non_nan_counter +=1
+      
+      plt.clf()
+      plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
+      map_title="Global Tsky" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("EDA2 global Tsky (K)")
+      #plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "%s_timestep_0_%s.png"  % (base_name,pol)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
          
-   print("non_nan_counter %s" % non_nan_counter)
- 
-   t_sky_K_array_timestep_av = np.nanmean(t_sky_K_array[:,:,:],axis=2)
-   #now deal with the errors..... sum the squares.. root n something something....
-   #t_sky_error_K_array_av = np.nansum(t_sky_error_K_array[:,:,:])
+      #log fit and subtract
+      log_sky_array = np.log10(t_sky_K_array_timestep_0_flatten)
+      log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
+
+      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+      
+      #log_residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - t_sky_K_array_timestep_0_flatten
+      
+      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      print("rms_of_residuals %s pol is %0.3f K" % (pol,rms_of_residuals))
+      
+      max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
+      y_max = 1.5 * max_abs_residuals
+      y_min = 1.5 * -max_abs_residuals
+      
+      #print(freq_array_cut)
+      #print(residual_of_log_fit)
+      
+      #print(ffit_linear)
+      #print(t_sky_K_array_timestep_0_flatten)
+      #print(freq_MHz_fine_chan_array)
+      #print(residual_of_log_fit)
+      
+      plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
+      plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
+      
+       
+      map_title="Residual for log polynomial order %s fit " % poly_order
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("Frequency (MHz)")
+      #if len(model_type_list)>1:
+      plt.legend(loc=1)
+      #plt.legend(loc=1)
+      #plt.ylim([y_min, y_max])
+      fig_name= "%s_log_fit_residual_poly_order_%s_timestep0_%s.png" % (base_name,poly_order,pol)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      plt.close()
+   
+   
+      #now do average of timesteps
+      non_nan_counter = 0
+      for timestep_index in range(n_timesteps):
+         #check if not all nans - need to count how many non-nan entries there are so can average the errors correctly (i.e. by sqrt(n) ?)
+         t_sky_K_array_timestep = t_sky_K_array[:,:,timestep_index]
+         if (~np.isnan(t_sky_K_array_timestep).all()):
+            non_nan_counter +=1
+      print("non_nan_counter %s" % non_nan_counter)
+    
+      t_sky_K_array_timestep_av = np.nanmean(t_sky_K_array[:,:,:,pol_index],axis=2)
+      #now deal with the errors..... sum the squares.. root n something something....
+      t_sky_error_K_array_sq = t_sky_error_K_array**2
+      t_sky_error_K_array_sq_sum = np.nansum(t_sky_error_K_array_sq[:,:,:,pol_index],axis=2)
+      t_sky_error_K_array_av = (1./non_nan_counter) * np.sqrt(t_sky_error_K_array_sq_sum)
+   
+      t_sky_K_array_timestep_av_flatten = np.ndarray.flatten(t_sky_K_array_timestep_av,order='C')
+      t_sky_error_K_array_av_flatten = np.ndarray.flatten(t_sky_error_K_array_av,order='C')
+      
+      if math.isclose(base_freq_MHz,50.0):
+         print("base_freq_MHz is %s not using first 14 t_skys" % base_freq_MHz)
+         t_sky_K_array_timestep_av_flatten = t_sky_K_array_timestep_av_flatten[14:]
+         t_sky_error_K_array_av_flatten = t_sky_error_K_array_av_flatten[14:]
+      
+      #truncate the tsky array to size of freq array
+      t_sky_K_array_timestep_av_flatten = t_sky_K_array_timestep_av_flatten[0:len(freq_MHz_fine_chan_array)]
+      t_sky_error_K_array_av_flatten = t_sky_error_K_array_av_flatten[0:len(freq_MHz_fine_chan_array)]
+
+      
+         
+      plt.clf()
+      plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_av_flatten,yerr=t_sky_error_K_array_av_flatten)
+      map_title="Global Tsky" 
+      plt.xlabel("Frequency (MHz)")
+      plt.ylabel("EDA2 global Tsky (K)")
+      #plt.legend(loc=1)
+      #plt.text(x_pos, y_pos, fit_string)
+      #plt.ylim([0, 3.5])
+      fig_name= "%s_timestep_av_%s.png"  % (base_name,pol)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      plt.close()
+      print("saved %s" % fig_name)
+         
+      #log fit and subtract
+      log_sky_array = np.log10(t_sky_K_array_timestep_av_flatten)
+      log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
+      coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
+      ffit = poly.polyval(log_freq_MHz_array, coefs)
+      ffit_linear = 10**ffit
+
+      #log_residual = log_signal_array_short_baselines - log_ffit
+      residual_of_log_fit = ffit_linear - t_sky_K_array_timestep_av_flatten
+      
+      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      print("rms_of_residuals av %s is %0.3f K" % (pol,rms_of_residuals))
+      
+      
+      max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
+      y_max = 1.5 * max_abs_residuals
+      y_min = 1.5 * -max_abs_residuals
+      
+      #print(freq_array_cut)
+      #print(residual_of_log_fit)
+      
+      plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
+      plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
+      
+       
+      map_title="Residual for log polynomial order %s fit " % poly_order
+      plt.ylabel("Residual Tb (K)")
+      plt.xlabel("Frequency (MHz)")
+      #if len(model_type_list)>1:
+      plt.legend(loc=1)
+      #plt.legend(loc=1)
+      #plt.ylim([y_min, y_max])
+      fig_name= "%s_log_fit_residual_poly_order_%s_timestep_av_%s.png" % (base_name,poly_order,pol)
+      figmap = plt.gcf()
+      figmap.savefig(fig_name)
+      print("saved %s" % fig_name)
+      plt.close()
+
+
 
 def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
    freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
@@ -4446,12 +4573,13 @@ EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
 #the original data are on Marcin's Nimbus4 machine (accessed via nimbus1: /data/2020_03_03_sweep_test/20200303_213605/merged/)
 #EDA2_chan_list = range(64,127)  #20200303:
 #i have corrupted the first 3 chans - waiting for Marcin to get the originals for me
-base_freq_index_offset = 13
+base_freq_index_offset = 0
 EDA2_chan_list = range(64+base_freq_index_offset,127)
 
 
 #times
-EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list)
+ms=True
+EDA2_obs_time_list_each_chan = make_EDA2_obs_time_list_each_chan(EDA2_data_dir,EDA2_chan_list,ms=ms)
 EDA2_obs_time_list_each_chan = EDA2_obs_time_list_each_chan[0:]
 #n_obs_concat_list = [len(obs_list) for obs_list in EDA2_obs_time_list_each_chan] 
 EDA2_obs_time_list = [item[0] for item in EDA2_obs_time_list_each_chan] 
@@ -4571,11 +4699,11 @@ run_aoflagger=True
 #casa_calibrate = True
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset,casa_calibrate=casa_calibrate)
 #ms_column_name_list = ["CORRECTED_DATA","DATA","MODEL_DATA"]
-ms_column_name_list = ["CORRECTED_DATA"]
+ms_column_name_list = ["MODEL_DATA"]
 for ms_column_name in ms_column_name_list:
    #max deviation allowed from global response (form of flagging) 
-   #max_deviations = 5
-   #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
+   max_deviations = 5
+   extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
    #extract_autos_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset)
    #plot autos
    #plotcross=True
