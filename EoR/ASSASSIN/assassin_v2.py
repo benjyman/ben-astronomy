@@ -4152,13 +4152,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
    print(t_sky_K_array.shape)
    print(t_sky_error_K_array.shape)
    print(freq_MHz_fine_chan_array.shape)
-
-   #print(t_sky_K_array)
-   #print(t_sky_error_K_array)
-   #print(freq_MHz_fine_chan_array)
-
-   #do for each pol later - for now get timestep averaging working (some timesteps will be all nans)
-
+      
    n_timesteps = t_sky_K_array.shape[2]
    #print("n_timesteps %s" % n_timesteps)
    
@@ -4177,6 +4171,36 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       t_sky_K_array_timestep_0_flatten = t_sky_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
       t_sky_error_K_array_timestep_0_flatten = t_sky_error_K_array_timestep_0_flatten[0:len(freq_MHz_fine_chan_array)]
    
+      #Need to flag any really crazy outliers (I think these are due to the crazy beam behaviour at around 55 MHz?)  
+      #print(np.where(~np.isfinite(t_sky_K_array_timestep_0_flatten)))
+      #print(t_sky_K_array_timestep_0_flatten[180:182])
+      #print(freq_MHz_fine_chan_array[180:182])
+
+      
+      #mean_t_sky = np.nanmean(t_sky_K_array_timestep_0_flatten)
+      #max_distance = 2. * mean_t_sky
+      #print(mean_t_sky)
+      ##print(t_sky_K_array_timestep_0_flatten)
+      #t_sky_K_array_timestep_0_flatten_subtr_mean = t_sky_K_array_timestep_0_flatten - mean_t_sky
+      #bad_indices = np.where(np.abs(t_sky_K_array_timestep_0_flatten_subtr_mean) > max_distance)
+      #print(bad_indices)
+      #print(t_sky_K_array_timestep_0_flatten[bad_indices])
+      #t_sky_K_array_timestep_0_flatten[bad_indices] = np.nan
+      #t_sky_error_K_array_timestep_0_flatten[bad_indices] =np.nan
+      #bad_freqs = freq_MHz_fine_chan_array[bad_indices]
+      #print(bad_freqs)
+   
+      #Just do it manually for freqs [55.135994 55.164932] (index array([177, 178]))
+      replacement_value = (t_sky_K_array_timestep_0_flatten[173] + t_sky_K_array_timestep_0_flatten[186]) /2.
+      #print(replacement_value)
+      t_sky_K_array_timestep_0_flatten[175:184] = replacement_value
+      t_sky_error_K_array_timestep_0_flatten[175:184] = np.nan
+      
+      
+      #print(t_sky_K_array_timestep_0_flatten)
+      #number_nans = np.count_nonzero(np.isnan(t_sky_K_array_timestep_0_flatten))
+      #print(number_nans)
+  
       
       plt.clf()
       plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_0_flatten,yerr=t_sky_error_K_array_timestep_0_flatten)
@@ -4184,7 +4208,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       plt.xlabel("Frequency (MHz)")
       plt.ylabel("EDA2 global Tsky (K)")
       #plt.legend(loc=1)
-      #plt.text(x_pos, y_pos, fit_string)
+      #plt.text(50, 4000, fit_string)
       #plt.ylim([0, 3.5])
       fig_name= "%s_timestep_0_%s.png"  % (base_name,pol)
       figmap = plt.gcf()
@@ -4196,19 +4220,29 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       log_sky_array = np.log10(t_sky_K_array_timestep_0_flatten)
       log_freq_MHz_array = np.log10(np.asarray(freq_MHz_fine_chan_array))
 
+      #deal with nans:
+      #idx = np.isfinite(log_sky_array) & np.isfinite(log_freq_MHz_array)
+      #coefs = np.polyfit(log_sky_array[idx], log_freq_MHz_array[idx], poly_order)
+
       coefs = poly.polyfit(log_freq_MHz_array, log_sky_array, poly_order)
       ffit = poly.polyval(log_freq_MHz_array, coefs)
-      ffit_linear = 10**ffit
-      
+      ffit_linear = 10.**ffit
+
       #log_residual = log_signal_array_short_baselines - log_ffit
       residual_of_log_fit = ffit_linear - t_sky_K_array_timestep_0_flatten
       
-      rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit**2))
+      if pol=='x':
+         residual_of_log_fit_pol_sum = np.copy(residual_of_log_fit)
+      if pol=='y':
+         residual_of_log_fit_pol_sum += residual_of_log_fit
+         
+      rms_of_residuals = np.sqrt(np.nanmean(residual_of_log_fit**2))
       print("rms_of_residuals %s pol is %0.3f K" % (pol,rms_of_residuals))
       
       max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
-      y_max = 1.5 * max_abs_residuals
-      y_min = 1.5 * -max_abs_residuals
+      print(max_abs_residuals)
+      y_max = 0.5 * max_abs_residuals
+      y_min = 0.5 * -max_abs_residuals
       
       #print(freq_array_cut)
       #print(residual_of_log_fit)
@@ -4219,14 +4253,14 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       #print(residual_of_log_fit)
       
       plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
-      plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
+      plt.text(50, 10, "rms=%1.2f K" % rms_of_residuals)
       
        
       map_title="Residual for log polynomial order %s fit " % poly_order
       plt.ylabel("Residual Tb (K)")
       plt.xlabel("Frequency (MHz)")
       #if len(model_type_list)>1:
-      plt.legend(loc=1)
+      #plt.legend(loc=1)
       #plt.legend(loc=1)
       #plt.ylim([y_min, y_max])
       fig_name= "%s_log_fit_residual_poly_order_%s_timestep0_%s.png" % (base_name,poly_order,pol)
@@ -4234,7 +4268,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       figmap.savefig(fig_name)
       print("saved %s" % fig_name)
       plt.close()
-   
+
    
       #now do average of timesteps
       non_nan_counter = 0
@@ -4249,7 +4283,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       #now deal with the errors..... sum the squares.. root n something something....
       t_sky_error_K_array_sq = t_sky_error_K_array**2
       t_sky_error_K_array_sq_sum = np.nansum(t_sky_error_K_array_sq[:,:,:,pol_index],axis=2)
-      t_sky_error_K_array_av = (1./non_nan_counter) * np.sqrt(t_sky_error_K_array_sq_sum)
+      t_sky_error_K_array_av =  np.sqrt((1./non_nan_counter)*t_sky_error_K_array_sq_sum)
    
       t_sky_K_array_timestep_av_flatten = np.ndarray.flatten(t_sky_K_array_timestep_av,order='C')
       t_sky_error_K_array_av_flatten = np.ndarray.flatten(t_sky_error_K_array_av,order='C')
@@ -4263,7 +4297,10 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       t_sky_K_array_timestep_av_flatten = t_sky_K_array_timestep_av_flatten[0:len(freq_MHz_fine_chan_array)]
       t_sky_error_K_array_av_flatten = t_sky_error_K_array_av_flatten[0:len(freq_MHz_fine_chan_array)]
 
-      
+      replacement_value = (t_sky_K_array_timestep_av_flatten[173] + t_sky_K_array_timestep_av_flatten[186]) /2.
+      #print(replacement_value)
+      t_sky_K_array_timestep_av_flatten[175:184] = replacement_value
+      t_sky_error_K_array_av_flatten[175:184] = np.nan
          
       plt.clf()
       plt.errorbar(freq_MHz_fine_chan_array,t_sky_K_array_timestep_av_flatten,yerr=t_sky_error_K_array_av_flatten)
@@ -4294,14 +4331,15 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       
       
       max_abs_residuals = np.nanmax(np.abs(residual_of_log_fit))
-      y_max = 1.5 * max_abs_residuals
-      y_min = 1.5 * -max_abs_residuals
+      y_max = 0.5 * max_abs_residuals
+      y_min = 0.5 * -max_abs_residuals
       
       #print(freq_array_cut)
       #print(residual_of_log_fit)
       
+      plt.clf()
       plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit,label="residual")
-      plt.text(50, max_abs_residuals, "rms=%1.2f K" % rms_of_residuals)
+      plt.text(50, 10, "rms=%1.2f K" % rms_of_residuals)
       
        
       map_title="Residual for log polynomial order %s fit " % poly_order
@@ -4317,7 +4355,30 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       print("saved %s" % fig_name)
       plt.close()
 
-
+   residual_of_log_fit_pol_av = residual_of_log_fit_pol_sum/2.
+   rms_of_residuals = np.sqrt(np.mean(residual_of_log_fit_pol_av**2))
+   print("rms_of_residuals av combined pol is %0.3f K" % (rms_of_residuals))
+   
+   
+   plt.clf()
+   plt.plot(freq_MHz_fine_chan_array,residual_of_log_fit_pol_av,label="residual")
+   plt.text(50, 10, "rms=%1.2f K" % rms_of_residuals)
+   
+    
+   map_title="Residual for log polynomial order %s fit " % poly_order
+   plt.ylabel("Residual Tb (K)")
+   plt.xlabel("Frequency (MHz)")
+   #if len(model_type_list)>1:
+   plt.legend(loc=1)
+   #plt.legend(loc=1)
+   #plt.ylim([y_min, y_max])
+   fig_name= "%s_log_fit_residual_poly_order_%s_timestep_av_x_and_y.png" % (base_name,poly_order)
+   figmap = plt.gcf()
+   figmap.savefig(fig_name)
+   print("saved %s" % fig_name)
+   plt.close()
+      
+      
 
 def plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan):
    freq_MHz_array = np.asarray(EDA2_chan_list)*400./512.
@@ -4574,7 +4635,7 @@ EDA2_data_dir = '/md0/EoR/EDA2/20200303_data/'   #2020 paper
 #EDA2_chan_list = range(64,127)  #20200303:
 #i have corrupted the first 3 chans - waiting for Marcin to get the originals for me
 base_freq_index_offset = 0
-EDA2_chan_list = range(64+base_freq_index_offset,127)
+EDA2_chan_list = range(64+base_freq_index_offset,126)   #127
 
 
 #times
@@ -4664,9 +4725,10 @@ chan_num = 0
 #last two fine chans are missing in the beams - just skip the last coarse chan
 
 #freq_MHz_list = freq_MHz_list[0:5]
-lst_hrs_list = lst_hrs_list[0:5]
-EDA2_obs_time_list = EDA2_obs_time_list[0:5]
-EDA2_chan_list = EDA2_chan_list[0:5]
+#lst_hrs_list = lst_hrs_list[0:5]
+#EDA2_obs_time_list = EDA2_obs_time_list[0:5]
+#EDA2_chan_list = EDA2_chan_list[0:5]
+
 
 
 plot_from_saved = False
@@ -4698,12 +4760,12 @@ run_aoflagger=True
 #10:18 27 July 2022 - now try concat and calibrate with correct channel ordering (just basefreq offset = 13 and 0:5)!
 #casa_calibrate = True
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset,casa_calibrate=casa_calibrate)
-#ms_column_name_list = ["CORRECTED_DATA","DATA","MODEL_DATA"]
-ms_column_name_list = ["MODEL_DATA"]
+ms_column_name_list = ["CORRECTED_DATA","DATA","MODEL_DATA"]
+#ms_column_name_list = ["MODEL_DATA"]
 for ms_column_name in ms_column_name_list:
    #max deviation allowed from global response (form of flagging) 
-   max_deviations = 5
-   extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
+   #max_deviations = 5
+   #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
    #extract_autos_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset)
    #plot autos
    #plotcross=True
@@ -4725,13 +4787,14 @@ for ms_column_name in ms_column_name_list:
    #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
    
    #next2:
+   poly_order = 5
    t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan_%s.npy" % ms_column_name
    t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan_%s.npy" % ms_column_name
-   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset)
+   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
    
    t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
    t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
-   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset)
+   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
 
 sys.exit()
 
