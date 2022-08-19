@@ -41,7 +41,7 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
          outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%s\n\n" % str(fine_chans_per_EDA2_chan-1))
          
          
-         outfile.write("time python %sgarrawarla_sim_with_complex_beams.py --EDA2_chan=%s --EDA2_chan_index=%s --lst_hrs=%s --EDA2_obs_time=%s --freq_MHz_fine_chan_subarray=%s\n" % (git_repo_dir,EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,freq_MHz_fine_chan_subarray_string))
+         outfile.write("time python %sgarrawarla_sim_with_complex_beams.py --EDA2_chan=%s --EDA2_chan_index=%s --lst_hrs=%s --EDA2_obs_time=%s --freq_MHz_fine_chan_subarray=%s --beam_dir=%s\n" % (git_repo_dir,EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,freq_MHz_fine_chan_subarray_string,beam_dir))
          #for WODEN
          #outfile.write("module use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
          #outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
@@ -84,6 +84,8 @@ if __name__ == "__main__":
     parser.add_argument('--git_repo_dir', default='/astro/mwaeor/bmckinley/code/',
         help='directory where my code is kept --git_repo_dir="/astro/mwaeor/bmckinley/code/"')
 
+    parser.add_argument('--beam_dir', default='/astro/mwaeor/bmckinley/EoR/EDA2/EEPs/',
+        help='directory where beam files are kept --git_repo_dir="/astro/mwaeor/bmckinley/EoR/EDA2/EEPs/"')
         
     args = parser.parse_args()
     
@@ -100,6 +102,10 @@ if __name__ == "__main__":
        
     if args.git_repo_dir:
        git_repo_dir = args.git_repo_dir
+       
+    if args.beam_dir:
+       beam_dir = args.beam_dir
+       
     ##this is for LST 60.0 deg, will do rest of lsts later
     #year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
     #time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)

@@ -13,6 +13,27 @@ mwa_longitude_deg = 116.670575
 fine_chan_width_Hz =  (400./512.) / 27. * 1.0e6 #(see Marcin email)
 fine_chan_width_MHz = fine_chan_width_Hz / 1.0e6
 
+def calc_beam_normalisation(freq_MHz,LNA_impedance):
+   mu_0 = 4.*np.pi*10**(-7)
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+   normalisation_factor = (-4.*np.pi*1j / (mu_0 * w)) * LNA_impedance
+   return(normalisation_factor)
+   
+def calc_LNA_impedance_eda2(freq_MHz):
+   #See Daniel email from 18/09/2018 on normalisation factor, updated email 25 Nov for EDA2 normalisation calculation
+   #For EDA2 the LNA impedance is actually based on RLC lumped circuit model:
+   #Series component
+   Ls = 2.e-9 #nH
+   #Parallel component
+   Rp = 914. #ohms
+   Lp = 450.e-9 #nH
+   Cp = 3.2e-12 #pF
+   #So the full impedance is calculated as follows:
+   w = 2.*np.pi*freq_MHz*1e6; # angular frequency
+
+   Z = 1j*w*Ls + (1./Rp + (1j*w*Cp) + 1./(1j*w*Lp))**(-1)
+   return(Z)
+   
 def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,freq_MHz_fine_chan_subarray,beam_dir='/astro/mwaeor/bmckinley/EoR/EDA2/',nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=True,base_freq_index_offset=0):
    
    #make a directory for the sims
@@ -777,8 +798,8 @@ if __name__ == "__main__":
     parser.add_argument('--freq_MHz_fine_chan_subarray', default=None,
         help='List of fine channel frequencies that corresponds to the EDA2 chan (there should normally be 27 apart from base freq 50 MHz which has only 13). e.g. --lst_hrs="--freq_MHz_fine_chan_subarray=50.014467592592595,50.04340277777778,..."')
 
-    parser.add_argument('--beam_dir', default='/astro/mwaeor/bmckinley/EoR/EDA2/',
-        help='Directory that beams are stored in e.g. --lst_hrs="/astro/mwaeor/bmckinley/EoR/EDA2/"')
+    parser.add_argument('--beam_dir', default='/astro/mwaeor/bmckinley/EoR/EDA2/EEPs/',
+        help='Directory that beams are stored in e.g. --lst_hrs="/astro/mwaeor/bmckinley/EoR/EDA2/EEPs/"')
              
     args = parser.parse_args()
     
