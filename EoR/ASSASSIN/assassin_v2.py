@@ -4348,7 +4348,7 @@ def plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filena
       #if len(model_type_list)>1:
       plt.legend(loc=1)
       #plt.legend(loc=1)
-      #plt.ylim([y_min, y_max])
+      plt.ylim([-100, 100])
       fig_name= "%s_log_fit_residual_poly_order_%s_timestep_av_%s.png" % (base_name,poly_order,pol)
       figmap = plt.gcf()
       figmap.savefig(fig_name)
