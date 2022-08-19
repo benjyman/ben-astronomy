@@ -15,19 +15,18 @@ def calculate_freq_MHz_fine_chan_subarray(EDA2_chan):
    
 def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list,git_repo_dir="/astro/mwaeor/bmckinley/code/"):
    base_freq_MHz = EDA2_chan_list[0] * (400./512.)
+   
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
       
-      freq_MHz_fine_chan_subarray = calculate_freq_MHz_fine_chan_subarray(EDA2_chan)
-      
       if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
-         fine_chans_per_EDA2_chan = 13
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[14:]
+         array_job_start = 14
+         array_job_end = 26 
       else:
-         fine_chans_per_EDA2_chan = 27
+         array_job_start = 0
+         array_job_end = 26
       
       EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
       lst_hrs = float(lst_hrs_list[EDA2_chan_index])
-      freq_MHz_fine_chan_subarray_string = ','.join([str(x) for x in freq_MHz_fine_chan_subarray])
       
       #year,month,day,hour,min,sec = time_string.split('_')
       #time_formatted = '%d-%02d-%02dT%02d:%02d:%02d' % (float(year),float(month),float(day),float(hour),float(min),float(sec))
@@ -38,10 +37,9 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
       with open('%s' % sbatch_filename,'w') as outfile:
          outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=gpuq\n#SBATCH --gres=gpu:1\n")
          outfile.write("#SBATCH --time=00:30:00\n#SBATCH --account=mwaeor\n#SBATCH --nodes=1\n#SBATCH --mem=10gb\n")
-         outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=0-%s\n\n" % str(fine_chans_per_EDA2_chan-1))
+         outfile.write("#SBATCH --ntasks=1\n#SBATCH --cpus-per-task=1\n#SBATCH --array=%s-%s\n\n" % (str(array_job_start),str(array_job_end)))
          
-         
-         outfile.write("time python %sgarrawarla_sim_with_complex_beams.py --EDA2_chan=%s --EDA2_chan_index=%s --lst_hrs=%s --EDA2_obs_time=%s --freq_MHz_fine_chan_subarray=%s --beam_dir=%s\n" % (git_repo_dir,EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,freq_MHz_fine_chan_subarray_string,beam_dir))
+         outfile.write("time python %sgarrawarla_sim_with_complex_beams.py --EDA2_chan=%s --EDA2_chan_index=%s --lst_hrs=%s --EDA2_obs_time=%s --freq_MHz_fine_chan_index=${SLURM_ARRAY_TASK_ID} --beam_dir=%s --git_repo_dir=%s\n" % (git_repo_dir,EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,beam_dir,git_repo_dir))
          #for WODEN
          #outfile.write("module use /pawsey/mwa/software/python3/modulefiles\nmodule load erfa/1.7.0\n")
          #outfile.write("module load json-c/0.14\nmodule load hdf5/1.10.5\nmodule load cfitsio/3.48\nmodule load cmake/3.15.0\n")
