@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 
-def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,EDA2_obs_time,sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=True,base_freq_index_offset=0):
+import os 
+import healpy as hp
+import numpy as np
+import math
+from pygdsm import GlobalSkyModel
+import h5py
 
-   base_freq_MHz = EDA2_chan_list[0] * (400./512.)
+mwa_latitude_deg = -26.70331940
+mwa_longitude_deg = 116.670575
+
+fine_chan_width_Hz =  (400./512.) / 27. * 1.0e6 #(see Marcin email)
+fine_chan_width_MHz = fine_chan_width_Hz / 1.0e6
+
+def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_time,freq_MHz_fine_chan_subarray,beam_dir='/astro/mwaeor/bmckinley/EoR/EDA2/',nside=512,antenna_layout_filename='/md0/code/git/ben-astronomy/EoR/ASSASSIN/ant_pos_eda2_combined_on_ground_sim.txt',plot_from_saved=False,sim_unity=True,sim_pt_source=False,check_figs=False,fine_chan=True,base_freq_index_offset=0):
    
    #make a directory for the sims
    cmd = "rm -rf sims; mkdir sims"
@@ -69,19 +80,15 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
    k_x =  np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_cos, zenith_ang_repeats_array_rad_sin)
    k_y =  np.einsum('ij,ij->ij',az_ang_repeats_array_rad_transpose_sin, zenith_ang_repeats_array_rad_sin)
    
-
-
    uu_array = np.empty(n_baselines_test)
    vv_array = np.empty(n_baselines_test)
    ww_array = np.empty(n_baselines_test)
    baseline_number_array = np.empty(n_baselines_test)
-     
+    
    freq_MHz = (400./512.) * EDA2_chan
    if fine_chan:
-      freq_MHz_fine_chan_subarray = calculate_freq_MHz_fine_chan_subarray(EDA2_chan)
-      if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
+      if math.isclose(freq_MHz,50.0):
          fine_chans_per_EDA2_chan = 13
-         freq_MHz_fine_chan_subarray = freq_MHz_fine_chan_subarray[14:]
       else:
          fine_chans_per_EDA2_chan = 27
    else:
@@ -89,6 +96,7 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
    
    print("freq_MHz_fine_chan_subarray")
    print(freq_MHz_fine_chan_subarray)
+   
    for freq_MHz_fine_chan_index,freq_MHz_fine_chan in enumerate(freq_MHz_fine_chan_subarray):
       #freq_MHz = float(freq_MHz)
       freq_MHz = freq_MHz_fine_chan
@@ -103,11 +111,7 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
       #adding in geometric delay
       phase_delta = k_0 * (np.einsum('i,jk->jki', delta_x_array, k_x) + np.einsum('i,jk->jki', delta_y_array, k_y))
       
-      lst_hrs = float(lst_hrs_list[EDA2_chan_index])
       lst_deg = lst_hrs * 15.
-   
-
-      EDA2_obs_time = EDA2_obs_time_list[EDA2_chan_index]
    
       unity_sky_value = 1.
       
@@ -316,8 +320,8 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
    
             if not plot_from_saved:
                if fine_chan:
-                  EEP_name1 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol1)
-                  EEP_name2 = '/md0/EoR/EDA2/EEPs/freq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol2)
+                  EEP_name1 = '%sfreq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (beam_dir,freq_Hz_string,daniel_pol1)
+                  EEP_name2 = '%sfreq_interp/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (beam_dir,freq_Hz_string,daniel_pol2)
                   #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
                   #beam_data1 = mat73.loadmat(EEP_name1)
                   beam_data1 = h5py.File(EEP_name1, 'r')
@@ -342,8 +346,8 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
                   E_theta_cube2 = E_theta_cube2['real']+E_theta_cube2['imag']*1j
                   
                else:
-                  EEP_name1 = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol1)
-                  EEP_name2 = '/md0/EoR/EDA2/EEPs/new_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (freq_Hz_string,daniel_pol2)
+                  EEP_name1 = '%snew_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (beam_dir,freq_Hz_string,daniel_pol1)
+                  EEP_name2 = '%snew_20210616/FEKO_EDA2_256_elem_%sHz_%spol.mat' % (beam_dir,freq_Hz_string,daniel_pol2)
                   #SITARA MATLAB beam file here: /md0/EoR/EDA2/EEPs/SITARA/chall_beam_Y.mat (1 MHz res) (70 - 200 MHz?)
                   beam_data1 = loadmat(EEP_name1)
                   print("loaded %s " % EEP_name1)
@@ -741,4 +745,67 @@ def simulate_eda2_with_complex_beams(EDA2_chan,lst_hrs,nside=512,antenna_layout_
                             
 
    os.chdir('..')
+
+if __name__ == "__main__":
+    import argparse
+    
+    class SmartFormatter(argparse.HelpFormatter):
+        def _split_lines(self, text, width):
+            if text.startswith('R|'):
+                return text[2:].splitlines()
+            # this is the RawTextHelpFormatter._split_lines
+            return argparse.HelpFormatter._split_lines(self, text, width)
+            
+            from argparse import RawTextHelpFormatter
+            
+    parser = argparse.ArgumentParser(description="Run this to make assassin2 sims and \
+            run global signal analysis on Garrawarla with array jobs",formatter_class=SmartFormatter)
+
+    parser.add_argument('--EDA2_chan', default='64',
+        help='EDA2 coarse chan. e.g. --eda2_chan="64"')
+        
+    parser.add_argument('--EDA2_chan_index', default='0',
+        help='index of the EDA2 coarse chan in the overall EDA2 chan list (i.e. EDA_chan 64 corresponds to EDA2_chan_index 0). This is needed to find the right beam file. e.g. --eda2_chan_index="0"')
+        
+    parser.add_argument('--EDA2_obs_time', default='20200303T000000',
+        help='EDA2 obs time that corresponds to EDA2 coarse chan. \
+             e.g. --eda2_obs_time_list="20200303T000000"')
+
+    parser.add_argument('--lst_hrs', default='6.0',
+        help='LST (in hours) that corresponds to the EDA2 obs time. e.g. --lst_hrs="6.0"')
+
+    parser.add_argument('--freq_MHz_fine_chan_subarray', default=None,
+        help='List of fine channel frequencies that corresponds to the EDA2 chan (there should normally be 27 apart from base freq 50 MHz which has only 13). e.g. --lst_hrs="--freq_MHz_fine_chan_subarray=50.014467592592595,50.04340277777778,..."')
+
+    parser.add_argument('--beam_dir', default='/astro/mwaeor/bmckinley/EoR/EDA2/',
+        help='Directory that beams are stored in e.g. --lst_hrs="/astro/mwaeor/bmckinley/EoR/EDA2/"')
+             
+    args = parser.parse_args()
+    
+    if args.EDA2_chan:
+       EDA2_chan = float(args.EDA2_chan)
+       
+    if args.EDA2_chan_index:
+       EDA2_chan_index = int(args.EDA2_chan_index)
+       
+    if args.EDA2_obs_time:
+       EDA2_obs_time = args.EDA2_obs_time
+       
+    if args.lst_hrs:
+       lst_hrs = float(args.lst_hrs)
+
+    if args.freq_MHz_fine_chan_subarray:
+       freq_MHz_fine_chan_subarray_strings = [s.strip() for s in args.freq_MHz_fine_chan_subarray.split(",")]
+       freq_MHz_fine_chan_subarray = [float(x) for x in freq_MHz_fine_chan_subarray_strings] 
+
+    if args.beam_dir:
+       beam_dir = args.beam_dir
+
+
+    ##this is for LST 60.0 deg, will do rest of lsts later
+    #year,month,day,hour,min,sec = 2015,11,29,15,40,29 #LST=60 deg
+    #time_string = '%d_%02d_%02d_%02d_%02d_%02d' % (year,month,day,hour,min,sec)
+    
+    simulate_eda2_with_complex_beams(EDA2_chan=EDA2_chan,EDA2_chan_index=EDA2_chan_index,lst_hrs=lst_hrs,EDA2_obs_time=EDA2_obs_time,freq_MHz_fine_chan_subarray=freq_MHz_fine_chan_subarray,beam_dir=beam_dir)  
+
 
