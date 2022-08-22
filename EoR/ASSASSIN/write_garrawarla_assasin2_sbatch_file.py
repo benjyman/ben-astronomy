@@ -117,11 +117,36 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
       print("wrote %s" % sbatch_filename) 
    
    with open('%s' % launch_sbatch_jobs_filename,'w') as outfile:
+      batch_size=5
+      n_batches = len(sbatch_filename_list) / batch_size
+      batch_remainder = len(sbatch_filename_list) % batch_size
+      print("n_batches %d" % n_batches)
+      print("batch_remainder %d" % batch_remainder)
       outfile.write("#!/bin/bash\n\n")
-      for sbatch_filename in sbatch_filename_list:
-         outfile.write("sbatch %s;\n" % sbatch_filename)
+      job_index_start = 0
+      job_index_end = job_index_start + batch_size
+      for batch in range(int(n_batches)):
+         sbatch_filename_sub_list = sbatch_filename_list[job_index_start:job_index_end]
+         for sbatch_filename_sub_index,sbatch_filename in enumerate(sbatch_filename_sub_list):
+            sbatch_filename_index = int(sbatch_filename_sub_index + (batch*batch_size))
+            if sbatch_filename_sub_index==0:
+               outfile.write("job%d = $(sbatch %s);\n" % (sbatch_filename_index,sbatch_filename))
+            else:
+               outfile.write("job%d = $(sbatch --dependency=afterany:$job%d %s);\n" % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
+         job_index_start += batch_size
+         job_index_end += batch_size
+      sbatch_filename_sub_list_remainder = sbatch_filename_list[job_index_end-batch_size:job_index_end-batch_size+batch_remainder]
+      batch+=1
+      for sbatch_filename_sub_index,sbatch_filename in enumerate(sbatch_filename_sub_list_remainder):
+         sbatch_filename_index = int(sbatch_filename_sub_index + (batch*batch_size))
+         if sbatch_filename_sub_index==0:
+            outfile.write("job%d = $(sbatch %s);\n" % (sbatch_filename_index,sbatch_filename))
+         else:
+            outfile.write("job%d = $(sbatch --dependency=afterany:$job%d %s);\n" % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
       
-   
+   cmd = "chmod +x %s" % launch_sbatch_jobs_filename
+   print(cmd)
+   os.system(cmd) 
    
  
 if __name__ == "__main__":
