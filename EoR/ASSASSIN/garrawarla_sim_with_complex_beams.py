@@ -79,11 +79,6 @@ def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_
 
    antenna_layout_filename='/%sant_pos_eda2_combined_on_ground_sim.txt' % git_repo_dir
    
-   #make a directory for the sims
-   cmd = "rm -rf sims; mkdir sims"
-   print(cmd)
-   os.system(cmd)
-   
    os.chdir('sims')
    
    freq_MHz_fine_chan_subarray = calculate_freq_MHz_fine_chan_subarray(EDA2_chan)
