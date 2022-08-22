@@ -119,7 +119,7 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
    with open('%s' % launch_sbatch_jobs_filename,'w') as outfile:
       outfile.write("#!/bin/bash\n\n")
       for sbatch_filename in sbatch_filename_list:
-         outfile.write("sbatch %s\n\n" % sbatch_filename)
+         outfile.write("sbatch %s;\n" % sbatch_filename)
       
    
    
