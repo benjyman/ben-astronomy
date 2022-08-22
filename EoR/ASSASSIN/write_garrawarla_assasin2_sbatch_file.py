@@ -130,9 +130,9 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
          for sbatch_filename_sub_index,sbatch_filename in enumerate(sbatch_filename_sub_list):
             sbatch_filename_index = int(sbatch_filename_sub_index + (batch*batch_size))
             if sbatch_filename_sub_index==0:
-               outfile.write("job%d=$(sbatch %s)\n" % (sbatch_filename_index,sbatch_filename))
+               outfile.write('job%d=$(sbatch %s | cut -f 4 -d " ")\n' % (sbatch_filename_index,sbatch_filename))
             else:
-               outfile.write("job%d=$(sbatch --dependency=afterany:$job%d %s)\n" % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
+               outfile.write('job%d=$(sbatch --dependency=afterany:$job%d %s | cut -f 4 -d " ")\n' % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
          job_index_start += batch_size
          job_index_end += batch_size
       sbatch_filename_sub_list_remainder = sbatch_filename_list[job_index_end-batch_size:job_index_end-batch_size+batch_remainder]
@@ -140,9 +140,9 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
       for sbatch_filename_sub_index,sbatch_filename in enumerate(sbatch_filename_sub_list_remainder):
          sbatch_filename_index = int(sbatch_filename_sub_index + (batch*batch_size))
          if sbatch_filename_sub_index==0:
-            outfile.write("job%d=$(sbatch %s)\n" % (sbatch_filename_index,sbatch_filename))
+            outfile.write('job%d=$(sbatch %s | cut -f 4 -d " ")\n' % (sbatch_filename_index,sbatch_filename))
          else:
-            outfile.write("job%d=$(sbatch --dependency=afterany:$job%d %s)\n" % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
+            outfile.write('job%d=$(sbatch --dependency=afterany:$job%d %s | cut -f 4 -d " ")\n' % (sbatch_filename_index,sbatch_filename_index-1,sbatch_filename))
       
    cmd = "chmod +x %s" % launch_sbatch_jobs_filename
    print(cmd)
