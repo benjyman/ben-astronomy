@@ -73,6 +73,9 @@ def calculate_freq_MHz_fine_chan_subarray(EDA2_chan):
 def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list,git_repo_dir="/astro/mwaeor/bmckinley/code/"):
    base_freq_MHz = EDA2_chan_list[0] * (400./512.)
    
+   launch_sbatch_jobs_filename = "launch_sbatch_jobs.sh"
+   sbatch_filename_list = []
+   
    for EDA2_chan_index,EDA2_chan in enumerate(EDA2_chan_list):
       
       if (EDA2_chan_index==0 and math.isclose(base_freq_MHz,50.0)):
@@ -90,6 +93,8 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
 
       name_base = "assassin2_sbatch_eda2_chan_%03d_%s" % (EDA2_chan,EDA2_obs_time)  
       sbatch_filename = "%s.sh" % name_base
+      
+      sbatch_filename_list.append(sbatch_filename)
    
       with open('%s' % sbatch_filename,'w') as outfile:
          outfile.write("#!/bin/bash --login\n#SBATCH --nodes=1\n#SBATCH --partition=workq\n")
@@ -110,6 +115,14 @@ def write_garrawarla_assassin2_sbatch_file(EDA2_chan_list,lst_hrs_list,EDA2_obs_
         
                      
       print("wrote %s" % sbatch_filename) 
+   
+   with open('%s' % launch_sbatch_jobs_filename,'w') as outfile:
+      outfile.write("#!/bin/bash\n\n"
+      for sbatch_filename in sbatch_filename_list:
+         outfile.write("sbatch %s\n\n" % sbatch_filename)
+      
+   
+   
  
 if __name__ == "__main__":
     import argparse
