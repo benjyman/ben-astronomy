@@ -18,6 +18,8 @@ fine_chans_per_EDA2_chan = 27
 fine_chan_width_Hz =  (400./512.) / 27. * 1.0e6 #(see Marcin email)
 fine_chan_width_MHz = fine_chan_width_Hz / 1.0e6
 
+gsm_dir = "/astro/mwaeor/bmckinley/EoR/EDA2/gsm_maps/"
+
 def calc_uvw(x_diff,y_diff,z_diff,freq_MHz,hourangle=0.,declination=mwa_latitude_rad):
    #https://web.njit.edu/~gary/728/Lecture6.html
    print("calculating uvws")
@@ -162,8 +164,15 @@ def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_
    unity_sky_value = 1.
    
    #Do all the gsm sky stuff outside the pol loop
-   gsm = GlobalSkyModel(freq_unit='MHz')
-   gsm_map_512 = gsm.generate(freq_MHz_fine_chan)
+   #dont generate gsm maps here, do on desktop and copy across
+   #gsm = GlobalSkyModel(freq_unit='MHz')
+   #gsm_map_512 = gsm.generate(freq_MHz_fine_chan)
+   
+            
+   gsm_fits_name = "%sgsm_map_%0.3f_MHz.fits" % (gsm_dir,freq_MHz_fine_chan)
+   gsm_map_512 = gsm.read_fits(gsm_fits_name)
+   print("Read %s" % gsm_fits_name)
+   
    full_nside = hp.npix2nside(gsm_map_512.shape[0])
    
    gsm_auto_array = np.empty(test_n_ants)

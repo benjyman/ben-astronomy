@@ -48,8 +48,10 @@ fine_chan_width_MHz = fine_chan_width_Hz / 1.0e6
 
 
 
-mwa_latitude_ephem = '-26.7'
-mwa_longitude_ephem = '116.67'
+#mwa_latitude_ephem = '-26.7'
+#mwa_longitude_ephem = '116.67'
+mwa_latitude_ephem = '-26.70331940'
+mwa_longitude_ephem = '116.670575'
 mwa_latitude_deg = -26.70331940
 mwa_longitude_deg = 116.670575
 mwa_latitude_rad = float(mwa_latitude_deg/180.*np.pi)
@@ -400,6 +402,13 @@ def simulate_eda2_with_complex_beams(EDA2_chan_list,lst_hrs_list,nside=512,anten
          #Now we have beams, need a sky!
          gsm = GlobalSkyModel(freq_unit='MHz')
          gsm_map_512 = gsm.generate(freq_MHz)
+         
+         #write out the gsm map as a fits file so it can be read in on Garrawarla
+         #gsm_fits_name = "gsm_map_%0.3f_MHz.fits" % (freq_MHz)
+         #gsm.write_fits(gsm_fits_name)
+         #print("wrote %s" % gsm_fits_name)
+         #continue 
+         
          full_nside = hp.npix2nside(gsm_map_512.shape[0])
          #print(full_nside)
          #point_source_at_zenith_sky_512 = gsm_map_512 * 0.
