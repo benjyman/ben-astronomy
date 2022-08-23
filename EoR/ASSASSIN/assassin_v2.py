@@ -2078,7 +2078,7 @@ def calibrate_with_complex_beam_model(model_ms_name,eda2_ms_name):
       print(cmd)
       os.system(cmd)
 
-def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis',base_freq_index_offset=0,model_dir = "sims/",casa_calibrate=False):
+def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_cal=False,uv_cutoff=0,EDA2_data=True,sim_only_EDA2=[],run_aoflagger=True,rfi_strategy_name='/md0/code/git/ben-astronomy/EoR/ASSASSIN/rfi_strategy_new.rfis',base_freq_index_offset=0,model_dir = "sims/",casa_calibrate=False,andre_calibrate=False):
    #seems that for each coarse chan you offset from the base of 50 MHz you end up having to subtract 5 Hz from the fine chan freq - I don't know why, going
    #to have to just hard code it for now. 
    base_freq_MHz = EDA2_chan_list[0] * (400./512.)
@@ -2393,7 +2393,7 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          os.system(cmd) 
          
          
-      else:
+      elif andre_calibrate:
          gain_solutions_name = 'complex_beam_test_calibrate_sols_%03d_ch1.bin' % EDA2_chan
          calibrate_options = ''
          cmd = "rm -rf %s" % (gain_solutions_name)
@@ -2414,6 +2414,8 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          print(cmd)
          os.system(cmd)
       
+      else: 
+         continue
       #test image the CORRECTED data'
       #cmd = "wsclean -name %s -size %s %s -multiscale -channels-out 32 -weight briggs 0 -niter 500 -scale %s -pol xx,yy -data-column CORRECTED_DATA  %s " % (test_image_name+"_corrected",wsclean_imsize,wsclean_imsize,wsclean_scale,concat_ms_name)
       #print(cmd)
@@ -4756,8 +4758,8 @@ plot_cal = True
 
 #######
 #next1:
-plot_cal = True
-run_aoflagger=True 
+#plot_cal = True
+#run_aoflagger=True 
 
 #reverse? only need to do this once!
 #done this for all chans (apart from first three which were corrupted and waiting on Marcin to replace them)
@@ -4769,9 +4771,9 @@ run_aoflagger=True
 #10:18 27 July 2022 - now try concat and calibrate with correct channel ordering (just basefreq offset = 13 and 0:5)!
 #casa_calibrate = True
 #calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset,casa_calibrate=casa_calibrate)
-ms_column_name_list = ["CORRECTED_DATA","DATA","MODEL_DATA"]
+#ms_column_name_list = ["CORRECTED_DATA","DATA","MODEL_DATA"]
 #ms_column_name_list = ["MODEL_DATA"]
-for ms_column_name in ms_column_name_list:
+#for ms_column_name in ms_column_name_list:
    #max deviation allowed from global response (form of flagging) 
    #max_deviations = 5
    #extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
@@ -4796,16 +4798,51 @@ for ms_column_name in ms_column_name_list:
    #plot_t_sky_and_fit_foregrounds(freq_MHz_list,t_sky_K_array_filename,t_sky_error_K_array_filename)
    
    #next2:
-   poly_order = 5
-   t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan_%s.npy" % ms_column_name
-   t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan_%s.npy" % ms_column_name
-   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
+   #poly_order = 5
+   #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan_%s.npy" % ms_column_name
+   #t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan_%s.npy" % ms_column_name
+   #plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
    
-   t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
-   t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
-   plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
+   #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
+   #t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_flagged_fine_chan_%s.npy" % ms_column_name
+   #plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
+
+#sys.exit()
+
+
+######################################
+##Sims from garrawarla - MODEL only!
+
+#copy sim data across from Garrawarla
+#copy eda2 20200303 data into separate directory in garrawarla_sims
+
+input_sky = "gsm"   #zenith_point_source  #unity
+write_to_miriad_vis(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+input_sky = "unity"
+write_to_miriad_vis(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list=EDA2_obs_time_list,input_sky=input_sky,check_figs=check_figs,fine_chan=fine_chan,base_freq_index_offset=base_freq_index_offset)
+#sys.exit()
+
+#eun calibrate just to get sim data into model column - dont do any calibration
+casa_calibrate = False
+andre_calibrate = False
+run_aoflagger=False
+plot_cal = False
+calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,plot_cal=plot_cal,uv_cutoff=0,run_aoflagger=run_aoflagger,base_freq_index_offset=base_freq_index_offset,casa_calibrate=casa_calibrate,andre_calibrate=andre_calibrate)
+
+ms_column_name_list = ["MODEL_DATA"]
+extract_global_signal_from_ms_complex(EDA2_chan_list=EDA2_chan_list,lst_list=lst_hrs_list,base_freq_index_offset=base_freq_index_offset,ms_column=ms_column_name,max_deviations=max_deviations)
+   
+poly_order = 5
+t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_fine_chan_%s.npy" % ms_column_name
+t_sky_error_K_array_filename_fine_chan = "t_sky_error_K_array_eda2_fine_chan_%s.npy" % ms_column_name
+plot_t_sky_and_fit_foregrounds_fine_chan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan,base_freq_index_offset=base_freq_index_offset,poly_order=poly_order)
 
 sys.exit()
+   
+#######################################
+
+
+
 
 #plot_t_sky_waterfalls_timestep_finechan(EDA2_chan_list,t_sky_K_array_filename_fine_chan,t_sky_error_K_array_filename_fine_chan)
 #t_sky_K_array_filename_fine_chan = "t_sky_K_array_eda2_flagged_fine_chan.npy"
