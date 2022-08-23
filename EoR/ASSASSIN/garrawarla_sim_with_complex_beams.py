@@ -170,7 +170,7 @@ def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_
    
             
    gsm_fits_name = "%sgsm_map_%0.3f_MHz.fits" % (gsm_dir,freq_MHz_fine_chan)
-   gsm_map_512 = gsm.read_fits(gsm_fits_name)
+   gsm_map_512 = hp.read_map(gsm_fits_name)
    print("Read %s" % gsm_fits_name)
    
    full_nside = hp.npix2nside(gsm_map_512.shape[0])
