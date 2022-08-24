@@ -1523,7 +1523,8 @@ def write_to_miriad_vis(EDA2_chan_list,lst_hrs_list,EDA2_obs_time_list,antenna_l
          #cross_visibility_imag_array_YX = np.imag(cross_visibility_complex_array_YX)     
                 
          baseline_number_array = np.load(baseline_number_array_filename)
-   
+         
+         
          #miriad expects uvw in nanosecs so need to multiply by wavelength, divide by speed of light and times by 1e9
          #swapping uu and vv and making the new vv negative () fixes the rotation, but then the uvw ratios between data ad sime don't match so well (this way they match exactly)
          uu_array = np.load(uu_array_filename) * wavelength * 1.0e9 / c
@@ -2146,8 +2147,10 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
          eda2_uvw = get_uvw(eda2_ms_table)
          eda2_ant1, eda2_ant2 = get_ant12(eda2_ms_name)
          eda2_ants = np.vstack((eda2_ant1,eda2_ant2)).T
-          
+        
+
          all_baselines = eda2_ants.shape[0]
+         print(all_baselines)
          new_common_model_data_sorted_tile = np.empty([all_baselines,32,4],dtype=complex)       
          print("freq_MHz_fine_chan_subarray")
          print(freq_MHz_fine_chan_subarray)   
@@ -2166,7 +2169,6 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             model_uvw = get_uvw(model_ms_table)    
             model_ant1, model_ant2 = get_ant12(model_ms_name)
             model_ants = np.vstack((model_ant1,model_ant2)).T
-            
             
             model_ms_indices = inNd(model_ants, eda2_ants, assume_unique=False)
             #n_common = np.count_nonzero(model_ms_indices) 
@@ -2216,7 +2218,6 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             #print(a)
             #b = np.insert(a, 1, 5, axis=0)
             #print(b)
-            
             #model has no ant 255 and no autos, data is missing some other antennas, but has 255 and autos
             #need to add autos into model, and to add in missing ant 255 correlations as dummy data, and then flag that ant in the data before calibration
         
@@ -2241,15 +2242,16 @@ def calibrate_with_complex_beam_model_fine_chan(EDA2_chan_list,lst_list=[],plot_
             new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
             new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
             new_common_model_data_sorted = np.append(new_common_model_data_sorted,np.array([[[0,0,0,0]]]),axis=0)
-  
+            
+            
             common_baselines = new_common_model_data_sorted.shape[0]
             #repeating
             #repetitions = 32
             #new_common_model_data_sorted_tile = np.tile(new_common_model_data_sorted, (repetitions, 1))
-            #print(new_common_model_data_sorted.shape)
-            #print(new_common_model_data_sorted_tile.shape)
+            print(new_common_model_data_sorted.shape)
+            print(new_common_model_data_sorted_tile.shape)
             new_common_model_data_sorted_squeeze = np.squeeze(new_common_model_data_sorted, axis=1)
-            #print(new_common_model_data_sorted_squeeze.shape)
+            print(new_common_model_data_sorted_squeeze.shape)
             new_common_model_data_sorted_tile[0:common_baselines,freq_MHz_fine_chan_index+2,:] = new_common_model_data_sorted_squeeze
 
          #What if you flip and roll the data instead of the model?
@@ -4736,9 +4738,9 @@ chan_num = 0
 #last two fine chans are missing in the beams - just skip the last coarse chan
 
 #freq_MHz_list = freq_MHz_list[0:5]
-#lst_hrs_list = lst_hrs_list[0:5]
-#EDA2_obs_time_list = EDA2_obs_time_list[0:5]
-#EDA2_chan_list = EDA2_chan_list[0:5]
+lst_hrs_list = lst_hrs_list[0:2]
+EDA2_obs_time_list = EDA2_obs_time_list[0:2]
+EDA2_chan_list = EDA2_chan_list[0:2]
 
 
 
