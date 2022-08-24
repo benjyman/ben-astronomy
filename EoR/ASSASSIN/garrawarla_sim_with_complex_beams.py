@@ -632,10 +632,11 @@ def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_
                   #also see CASA coord convention doc https://casa.nrao.edu/Memos/CoordConvention.pdf
                   ## Assign x->East and x-North. This is the local geographic csys
                   baseline_number_sub_array = (ant_index_1 * 256) + np.arange(ant_index_1,test_n_ants)
+                  print(baseline_number_sub_array)
                   baseline_length_lambda = np.sqrt((uu_sub_array)**2 + (vv_sub_array)**2 + (ww_sub_array)**2) #u,v,w already in wavelength units / wavelength
                        
 
-               if (pol_index1==0 and pol_index2==0 and EDA2_chan_index==0):
+               if (pol_index1==0 and pol_index2==0):
                   uu_array[start_index:end_index] = uu_sub_array[1:]
                   vv_array[start_index:end_index] = vv_sub_array[1:]
                   ww_array[start_index:end_index] = ww_sub_array[1:]
