@@ -488,7 +488,7 @@ def simulate_eda2_with_complex_beams(EDA2_chan,EDA2_chan_index,lst_hrs,EDA2_obs_
             start_index = 0
             end_index = start_index + (test_n_ants-1)
             for ant_index_1 in range(0,test_n_ants):
-               print(ant_index_1)
+               #print(ant_index_1)
                #sitara-like baseline ant1,ant2 = (0,69) or 0,10
                #for ant_index_1 in range(68,69):
                #from jishnu via slack:
